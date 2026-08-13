@@ -121,7 +121,7 @@
                     </div>
                     <div>
                         <h6 class="text-muted fw-normal mb-1">Total Stock Weight</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($totalYardTonnage ?? 0, 2) }} MT</h4>
+                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($totalYardTonnage ?? 0, 2) }} KG</h4>
                     </div>
                 </div>
             </div>
@@ -184,7 +184,7 @@
                                 <i class="fe fe-dollar-sign fs-4"></i>
                             </div>
                             <div>
-                                <h6 class="text-muted fw-normal mb-1">Cash in Hand (1110)</h6>
+                                <h6 class="text-muted fw-normal mb-1">Cash in Hand</h6>
                                 <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($liquidCash ?? 0, 2) }}</h4>
                             </div>
                         </div>
@@ -210,7 +210,7 @@
                                 <i class="fe fe-user-check fs-4"></i>
                             </div>
                             <div>
-                                <h6 class="text-muted fw-normal mb-1">Receivables (AR - 1130)</h6>
+                                <h6 class="text-muted fw-normal mb-1">Receivables</h6>
                                 <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($receivables ?? 0, 2) }}</h4>
                             </div>
                         </div>
@@ -223,7 +223,7 @@
                                 <i class="fe fe-truck fs-4"></i>
                             </div>
                             <div>
-                                <h6 class="text-muted fw-normal mb-1">Payables (AP - 2110)</h6>
+                                <h6 class="text-muted fw-normal mb-1">Payables</h6>
                                 <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($payables ?? 0, 2) }}</h4>
                             </div>
                         </div>
@@ -344,7 +344,7 @@
                                     <th class="ps-3">Coil Tag #</th>
                                     <th>Specs (Thick / Size)</th>
                                     <th>Remaining (kg)</th>
-                                    <th>Yard Location</th>
+                                    <!-- <th>Yard Location</th> -->
                                     <th class="pe-3 text-end">Status</th>
                                 </tr>
                             </thead>
@@ -352,13 +352,13 @@
                                 @forelse ($recentCoils ?? [] as $coil)
                                     <tr>
                                         <td class="ps-3">
-                                            <span class="fw-bold text-dark font-monospace fs-8">{{ $coil->coil_number }}</span>
+                                            <span class="fw-bold text-dark fs-8">Coil No - {{ $coil->coil_number }}</span>
                                             @if($coil->lot)
                                                 <small class="text-muted d-block">{{ $coil->lot->lot_number }}</small>
                                             @endif
                                         </td>
                                         <td>
-                                            <span class="fw-semibold text-dark">{{ $coil->thickness ?? '-' }}</span>
+                                            <span class="fw-semibold text-dark">Thickness - {{ $coil->thickness ?? '-' }}</span>
                                             <small class="text-muted">[{{ $coil->width ?? '-' }} × {{ $coil->length ?? '-' }}]</small>
                                         </td>
                                         <td>
@@ -366,11 +366,11 @@
                                                 {{ number_format($coil->remaining_weight, 2) }} kg
                                             </span>
                                         </td>
-                                        <td>
+                                        <!-- <td>
                                             <span class="text-muted small">
                                                 <i class="fe fe-map-pin text-secondary me-1"></i>{{ $coil->warehouse->name ?? 'Main Yard' }}
                                             </span>
-                                        </td>
+                                        </td> -->
                                         <td class="pe-3 text-end">
                                             <span class="badge badge-soft-success px-2 py-1 rounded-pill fs-8">In Stock</span>
                                         </td>

@@ -72,6 +72,11 @@ class Sale extends Model
         return $this->belongsTo(Customer::class, 'customer_id');
     }
 
+    public function client()
+    {
+        return $this->belongsTo(Customer::class, 'client_id');
+    }
+
     public function warehouse()
     {
         return $this->belongsTo(Warehouse::class, 'warehouse_id');

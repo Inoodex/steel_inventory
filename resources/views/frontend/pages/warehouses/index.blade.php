@@ -193,7 +193,6 @@
                             <th>Contact Person</th>
                             <th>Phone</th>
                             <th class="text-center">Stored Coils</th>
-                            <th class="text-center">Inward / Dispatches</th>
                             <th>Status</th>
                             <th class="text-end pe-4">Action</th>
                         </tr>
@@ -208,7 +207,7 @@
                                 </td>
                                 <td>
                                     <div>
-                                        <span class="fw-bold text-dark fs-6 d-block">{{ $wh->name }}</span>
+                                        <span class="fw-bold text-dark d-block">{{ $wh->name }}</span>
                                         @if($wh->capacity_ton)
                                             <small class="text-muted fs-7">Capacity: {{ number_format($wh->capacity_ton, 1) }} MT</small>
                                         @endif
@@ -228,11 +227,6 @@
                                 <td class="text-center">
                                     <span class="badge badge-soft-primary px-3 py-2 rounded-pill fs-7">
                                         <i class="fe fe-disc me-1"></i> {{ $wh->coils_count ?? 0 }} Coils
-                                    </span>
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge bg-light text-dark border px-2 py-1 fs-8">
-                                        {{ $wh->purchases_count }} Inward | {{ $wh->sales_count }} Dispatches
                                     </span>
                                 </td>
                                 <td>

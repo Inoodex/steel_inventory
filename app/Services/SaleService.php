@@ -102,14 +102,14 @@ class SaleService
      */
     private function resolveCustomer(array $data): Customer
     {
-        if (!empty($data['customer_id'])) {
-            return Customer::findOrFail($data['customer_id']);
+        if (!empty($data['existing_client_id'])) {
+            return Customer::findOrFail($data['existing_client_id']);
         }
 
         return Customer::create([
-            'name'           => $data['customer_name'] ?? 'Walk-in Customer',
-            'phone'          => $data['customer_phone'] ?? null,
-            'address'        => $data['customer_address'] ?? null,
+            'name'           => $data['name'] ?? 'Walk-in Customer',
+            'phone'          => $data['phone'] ?? null,
+            'address'        => $data['address'] ?? null,
             'opening_balance'=> 0,
             'status'         => 'active',
         ]);

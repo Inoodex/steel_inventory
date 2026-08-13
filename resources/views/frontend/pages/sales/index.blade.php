@@ -13,8 +13,8 @@
     .table-custom tbody tr {
         transition: background-color 0.15s ease;
     }
-    .table-custom tbody tr:hover {
-        background-color: #fcfbff !important;
+    .table-custom tbody tr:hover td {
+        background-color: #f8fafc !important;
     }
     .badge-soft-success {
         background-color: rgba(25, 135, 84, 0.12) !important;
@@ -58,6 +58,7 @@
         background-color: #7638ff !important;
         color: #ffffff !important;
         border-color: #7638ff !important;
+        box-shadow: 0 4px 10px rgba(118, 56, 255, 0.3) !important;
     }
     .table-custom th, .table-custom td {
         white-space: nowrap;
@@ -152,20 +153,12 @@
     <div class="card border-0 shadow-sm rounded-3">
         <!-- Filter Controls -->
         <div class="card-header bg-white py-3 border-bottom border-light">
-            <div class="row align-items-center g-3">
-                <div class="col-12 col-md-6 col-lg-5">
+            <div class="row align-items-center g-3">                <div class="col-12 col-md-6 col-lg-6">
                     <div class="search-box-custom">
                         <input type="text" id="salesSearchInput" class="form-control border-light-subtle" placeholder="Search by order no, customer name, phone, sales person..." autocomplete="off">
                     </div>
                 </div>
-                <div class="col-12 col-md-3 col-lg-3">
-                    <select id="saleTypeFilterSelect" class="form-select border-light-subtle">
-                        <option value="all">All Sale Types</option>
-                        <option value="retail">Retail Only</option>
-                        <option value="project">Project Only</option>
-                    </select>
-                </div>
-                <div class="col-12 col-md-3 col-lg-4 text-md-end text-muted small">
+                <div class="col-12 col-md-6 col-lg-6 text-md-end text-muted small">
                     Showing <span id="visibleSalesCount" class="fw-bold text-dark">{{ $services->count() }}</span> of {{ $services->total() }} records
                 </div>
             </div>
@@ -181,12 +174,11 @@
                             <th>Date</th>
                             <th>Order No</th>
                             <th>Customer Info</th>
-                            <th>Warehouse / Yard</th>
+                            <!-- <th>Warehouse / Yard</th> -->
                             <th>Payable Amount</th>
                             <th>Delivery</th>
-                            <th>Sale Type</th>
                             <th>Sales By</th>
-                            <th>Action</th>
+                            <th class="text-end pe-4">Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
@@ -214,11 +206,11 @@
                                         <small class="text-muted fs-7"><i class="fe fe-phone me-1"></i>{{ $customerPhone }}</small>
                                     </div>
                                 </td>
-                                <td>
+                                <!-- <td>
                                     <span class="badge bg-light text-dark border px-2 py-1 fs-7">
                                         <i class="fe fe-map-pin text-primary me-1"></i>{{ Str::limit($warehouseName, 18) }}
                                     </span>
-                                </td>
+                                </td> -->
                                 <td>
                                     <span class="badge badge-soft-primary px-3 py-1 rounded-pill fs-7">
                                         ৳{{ number_format($service->payble, 2) }}
@@ -227,7 +219,7 @@
                                 <td>
                                     @if($deliveryStatus == 'delivered')
                                         <span class="badge badge-soft-success px-3 py-1 rounded-pill text-capitalize fs-7">
-                                            <i class="fe fe-check-circle me-1"></i> Delivered
+                                             <i class="fe fe-check-circle me-1"></i> Delivered
                                         </span>
                                     @elseif($deliveryStatus == 'dispatched')
                                         <span class="badge badge-soft-primary px-3 py-1 rounded-pill text-capitalize fs-7">
@@ -244,24 +236,13 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($service->sale_type == 'project')
-                                        <span class="badge badge-soft-warning px-3 py-1 rounded-pill text-capitalize fs-7">
-                                            Project
-                                        </span>
-                                    @else
-                                        <span class="badge badge-soft-info px-3 py-1 rounded-pill text-capitalize fs-7">
-                                            Retail
-                                        </span>
-                                    @endif
-                                </td>
-                                <td>
                                     <span class="text-secondary small fw-semibold">
                                         {{ $salesBy }}
                                     </span>
                                 </td>
                                 <td class="text-end pe-4">
                                     <div class="dropdown">
-                                        <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                                        <a href="javascript:void(0)" class="btn-action-icon" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
                                             <i class="fas fa-ellipsis-v"></i>
                                         </a>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
@@ -299,7 +280,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
                                         <div class="avatar avatar-xl bg-primary-light text-primary rounded-circle mb-3 d-flex align-items-center justify-content-center">
                                             <i class="fe fe-shopping-cart fs-1"></i>

@@ -18,7 +18,7 @@ class SalesController extends Controller
     public function __construct(private SaleService $saleService) {}
     public function index(Request $request)
     {
-        $query = Sale::with(['customer', 'client', 'salesPerson', 'warehouse']);
+        $query = Sale::with(['customer', 'salesPerson', 'warehouse']);
 
         // Filter by date range (from - to)
         if ($request->filled('from') && $request->filled('to')) {
@@ -306,10 +306,10 @@ class SalesController extends Controller
 
     public function makeInvoice(Request $request, $serviceId)
     {
-        $sales = Sale::with(['customer', 'client', 'returns.items.product', 'returns.processedBy'])->find($serviceId);
+        $sales = Sale::with(['customer', 'returns.items.product', 'returns.processedBy'])->find($serviceId);
         if (!$sales) abort(404);
 
-        $customer = $sales->sale_type == 'project' ? $sales->client : $sales->customer;
+        $customer = $sales->customer;
         if (!$customer) {
             $customer = (object) [
                 'name' => 'N/A',
@@ -318,9 +318,8 @@ class SalesController extends Controller
             ];
         }
 
-        $items = SalesItem::join('products', 'products.id', 'sales_items.product_id')
-            ->where('order_id',  $sales->id)
-            ->select('sales_items.*', 'products.name', 'products.model')
+        $items = SalesItem::with(['coil', 'lot.vendor'])
+            ->where('order_id', $sales->id)
             ->get();
 
         // Get completed returns for this sale
@@ -331,12 +330,12 @@ class SalesController extends Controller
 
     public function downloadInvoicePdf($id)
     {
-        $sales = Sale::with(['customer', 'client', 'warehouse', 'salesPerson', 'items.product', 'items.lot.vendor', 'returns.items.product', 'returns.processedBy'])->find($id);
+        $sales = Sale::with(['customer', 'warehouse', 'salesPerson', 'items.product', 'items.lot.vendor', 'returns.items.product', 'returns.processedBy'])->find($id);
         if (!$sales) {
             abort(404);
         }
 
-        $customer = $sales->sale_type == 'project' ? $sales->client : $sales->customer;
+        $customer = $sales->customer;
         if (!$customer) {
             $customer = (object) [
                 'name' => 'N/A',

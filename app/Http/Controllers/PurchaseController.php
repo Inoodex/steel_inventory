@@ -191,6 +191,19 @@ class PurchaseController extends Controller
      */
     public function destroy(Purchase $purchase)
     {
+        // Safety check: Prevent deletion if any coil under this purchase has sales records or sold weight
+        $hasSalesItems = \App\Models\SalesItem::whereHas('coil', function ($q) use ($purchase) {
+            $q->where('purchase_id', $purchase->id);
+        })->exists();
+
+        $hasSoldWeight = \App\Models\Coil::where('purchase_id', $purchase->id)
+            ->whereColumn('remaining_weight', '<', 'net_weight')
+            ->exists();
+
+        if ($hasSalesItems || $hasSoldWeight) {
+            return redirect()->back()->with('error', 'Cannot delete purchase: Steel coils from this procurement intake have already been sold.');
+        }
+
         $purchase->delete();
         return redirect()->back()->with('success', 'Purchase deleted successfully.');
     }

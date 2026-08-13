@@ -28,6 +28,11 @@ class ReturnItem extends Model
     ];
 
     // Relationships
+    public function product()
+    {
+        return $this->belongsTo(Coil::class, 'product_id');
+    }
+
     public function productReturn()
     {
         return $this->belongsTo(ProductReturn::class, 'return_id');

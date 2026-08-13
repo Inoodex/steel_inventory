@@ -142,7 +142,7 @@
                                 </tr>
                             @endforelse
                         </tbody>
-                        <tfoot style="color: #ffffff; font-weight: 800; font-size: 14px;">
+                        <tfoot style="background-color: #cdd7e7ff; color: #ffffff; font-weight: 800; font-size: 14px;">
                             <tr>
                                 <td colspan="3" class="text-end text-uppercase ps-3">Total Trial Balance:</td>
                                 <td class="text-end text-success">৳{{ number_format($totalDebit, 2) }}</td>

@@ -730,7 +730,7 @@ function calculateTotal() {
 
 function reloadAfterSubmit() {
     setTimeout(function() {
-        window.location.reload();
+        window.location.href = "{{ route('sales.index') }}";
     }, 500);
 }
 </script>

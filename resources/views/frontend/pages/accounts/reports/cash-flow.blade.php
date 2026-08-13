@@ -110,7 +110,7 @@
                                 </td>
                             </tr>
                         </tbody>
-                        <tfoot style="background-color: #1e293b; color: #ffffff; font-weight: 800; font-size: 14px;">
+                        <tfoot style="background-color: #cdd7e7ff; color: #ffffff; font-weight: 800; font-size: 14px;">
                             <tr>
                                 <td class="text-uppercase">Cash & Cash Equivalents at End of Period:</td>
                                 <td class="text-end text-success">{{ number_format($closingCash, 2) }}</td>

@@ -87,7 +87,7 @@
                                         </tr>
                                     @endforelse
                                 </tbody>
-                                <tfoot style="background-color: #f8fafc; font-weight: 800;">
+                                <tfoot style="background-color: #cdd7e7ff; font-weight: 800;">
                                     <tr>
                                         <td colspan="2" class="text-uppercase">Total Operating Revenue:</td>
                                         <td class="text-end text-success">{{ number_format($totalRevenue, 2) }}</td>
@@ -134,7 +134,7 @@
                                         </tr>
                                     @endforelse
                                 </tbody>
-                                <tfoot style="background-color: #f8fafc; font-weight: 800;">
+                                <tfoot style="background-color: #cdd7e7ff; font-weight: 800;">
                                     <tr>
                                         <td colspan="2" class="text-uppercase">Total Operating Expenses:</td>
                                         <td class="text-end text-danger">{{ number_format($totalExpense, 2) }}</td>

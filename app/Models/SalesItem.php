@@ -26,6 +26,11 @@ class SalesItem extends Model
         'profit',
     ];
 
+    public function product()
+    {
+        return $this->belongsTo(Coil::class, 'coil_id');
+    }
+
     public function coil()
     {
         return $this->belongsTo(Coil::class, 'coil_id');

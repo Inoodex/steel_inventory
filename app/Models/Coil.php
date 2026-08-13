@@ -70,6 +70,11 @@ class Coil extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function getNameAttribute(): string
+    {
+        return 'Coil #' . ($this->coil_number ?? '');
+    }
+
     /**
      * Generate unique sequential Coil tag
      */

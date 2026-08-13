@@ -80,7 +80,7 @@
                                         </tr>
                                     @endforelse
                                 </tbody>
-                                <tfoot style="background-color: #1e293b; color: #ffffff; font-weight: 800;">
+                                <tfoot style="background-color: #cdd7e7ff; color: #ffffff; font-weight: 800;">
                                     <tr>
                                         <td colspan="2" class="text-uppercase">Total Assets:</td>
                                         <td class="text-end text-success">{{ number_format($totalAssets, 2) }}</td>
@@ -161,7 +161,7 @@
                                         </td>
                                     </tr>
                                 </tbody>
-                                <tfoot style="background-color: #1e293b; color: #ffffff; font-weight: 800;">
+                                <tfoot style="background-color: #cdd7e7ff; color: #ffffff; font-weight: 800;">
                                     <tr>
                                         <td colspan="2" class="text-uppercase">Total Liabilities & Equity:</td>
                                         <td class="text-end text-success">{{ number_format($totalLiabAndEquity, 2) }}</td>
