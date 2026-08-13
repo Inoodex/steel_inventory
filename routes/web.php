@@ -87,6 +87,8 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('purchase/report/pdf', [PurchaseController::class, 'reportPdf'])->name('purchase.report.pdf');
     Route::get('sales-report', [SalesController::class, 'report'])->name('sales.report');
     Route::get('sales-report/pdf', [SalesController::class, 'reportPdf'])->name('sales.report.pdf');
+    Route::get('extra-charges-report', [SalesController::class, 'extraChargesReport'])->name('sales.extra-charges-report');
+    Route::get('extra-charges-report/pdf', [SalesController::class, 'extraChargesReportPdf'])->name('sales.extra-charges-report.pdf');
     Route::get('/revenues/pdf', [RevenueController::class, 'downloadPdf'])->name('revenues.pdf');
     Route::get('/revenues', [RevenueController::class, 'index'])->name('revenues.index');
     Route::post('/revenues/generate', [RevenueController::class, 'generate'])->name('revenues.generate');
@@ -144,13 +146,6 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
             Route::get('reports/balance-sheet', [FinancialStatementController::class, 'balanceSheet'])->name('reports.balance-sheet');
             Route::get('reports/balance-sheet/pdf', [FinancialStatementController::class, 'balanceSheetPdf'])->name('reports.balance-sheet.pdf');
             Route::get('reports/cash-flow', [FinancialStatementController::class, 'cashFlow'])->name('reports.cash-flow');
-
-            // Contra Entries (Transfers)
-            Route::resource('contra-entries', ContraEntryController::class)->only(['index', 'create', 'store']);
-
-            // Bank Reconciliation
-            Route::get('reconciliation', [ReconciliationController::class, 'index'])->name('reconciliation.index');
-            Route::post('reconciliation', [ReconciliationController::class, 'store'])->name('reconciliation.store');
 
             // Fiscal Years & Year-End Close
             Route::get('fiscal-years', [FiscalYearController::class, 'index'])->name('fiscal-years.index');

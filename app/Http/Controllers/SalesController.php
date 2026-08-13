@@ -658,4 +658,73 @@ public function duePaymentsPdf()
         'Content-Type' => 'application/pdf',
     ]);
 }
+
+public function extraChargesReport(Request $request)
+{
+    $query = Sale::with('customer')
+        ->where(function($q) {
+            $q->where('delivery_charge', '>', 0)
+              ->orWhere('labour_cost', '>', 0)
+              ->orWhere('weight_scale_cost', '>', 0)
+              ->orWhere('other_charges', '>', 0);
+        });
+
+    if ($request->filled('from') && $request->filled('to')) {
+        $query->whereBetween('created_at', [$request->from . ' 00:00:00', $request->to . ' 23:59:59']);
+    } else {
+        $query->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()]);
+    }
+
+    $sales = $query->latest()->get();
+
+    $totalDelivery = $sales->sum('delivery_charge');
+    $totalLabour = $sales->sum('labour_cost');
+    $totalScale = $sales->sum('weight_scale_cost');
+    $totalOther = $sales->sum('other_charges');
+    $totalCharges = $totalDelivery + $totalLabour + $totalScale + $totalOther;
+
+    return view('frontend.pages.report.extra_charges.index', compact(
+        'sales', 'totalDelivery', 'totalLabour', 'totalScale', 'totalOther', 'totalCharges', 'request'
+    ));
+}
+
+public function extraChargesReportPdf(Request $request)
+{
+    $query = Sale::with('customer')
+        ->where(function($q) {
+            $q->where('delivery_charge', '>', 0)
+              ->orWhere('labour_cost', '>', 0)
+              ->orWhere('weight_scale_cost', '>', 0)
+              ->orWhere('other_charges', '>', 0);
+        });
+
+    if ($request->filled('from') && $request->filled('to')) {
+        $query->whereBetween('created_at', [$request->from . ' 00:00:00', $request->to . ' 23:59:59']);
+    } else {
+        $query->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()]);
+    }
+
+    $sales = $query->latest()->get();
+
+    $totalDelivery = $sales->sum('delivery_charge');
+    $totalLabour = $sales->sum('labour_cost');
+    $totalScale = $sales->sum('weight_scale_cost');
+    $totalOther = $sales->sum('other_charges');
+    $totalCharges = $totalDelivery + $totalLabour + $totalScale + $totalOther;
+
+    $html = view('pdf.extra_charges_report', compact(
+        'sales', 'totalDelivery', 'totalLabour', 'totalScale', 'totalOther', 'totalCharges', 'request'
+    ))->render();
+
+    $mpdf = new \Mpdf\Mpdf([
+        'mode' => 'utf-8',
+        'format' => 'A4',
+        'default_font' => 'Helvetica',
+    ]);
+    $mpdf->WriteHTML($html);
+
+    return response($mpdf->Output('Extra_Charges_Report_' . now()->format('Y_m_d_His') . '.pdf', 'I'), 200, [
+        'Content-Type' => 'application/pdf',
+    ]);
+}
 }

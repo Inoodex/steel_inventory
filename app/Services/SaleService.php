@@ -35,9 +35,11 @@ class SaleService
             // 4. Create Sale record
             $sale = Sale::create([
                 'order_no'         => $invoiceNumber,
+                'sale_type'        => $data['sale_type'] ?? 'retail',
                 'customer_id'      => $customer->id,
                 'product_id'       => $data['product'][0] ?? null,
                 'qty'              => !empty($data['qty']) ? array_sum($data['qty']) : 0,
+                'subtotal'         => $financials['subtotal'],
                 'total'            => $financials['total'],
                 'payble'           => $financials['payble'],
                 'bill'             => $financials['total'],
@@ -66,19 +68,49 @@ class SaleService
                 $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
                 $revAcc = \App\Models\ChartOfAccount::where('account_code', '4110')->first();
 
+                // Pass-Through Charges Payable account (2140)
+                $chargesAcc = \App\Models\ChartOfAccount::firstOrCreate(
+                    ['account_code' => '2140'],
+                    [
+                        'account_name' => 'Collected Extra Charges Payable (Pass-Through)',
+                        'account_type' => 'liability',
+                        'level' => 3,
+                        'is_system' => true,
+                        'status' => 'active',
+                    ]
+                );
+
                 if ($arAcc && $revAcc) {
                     $items = [];
-                    $grandTotal = (float) $sale->payble;
                     $paid = (float) $sale->advanced_payment;
                     $due = (float) $sale->due_payment;
 
+                    $subtotal = (float) ($sale->subtotal > 0 ? $sale->subtotal : $sale->items()->sum('total_price'));
+                    $discount = (float) $sale->discount;
+                    $netSalesRevenue = max(0, $subtotal - $discount);
+
+                    $extraCharges = (float)$sale->delivery_charge
+                                  + (float)$sale->labour_cost
+                                  + (float)$sale->weight_scale_cost
+                                  + (float)$sale->other_charges
+                                  + (float)$sale->vat
+                                  + (float)$sale->tax;
+
+                    // 1. Debits: Cash / Receivable
                     if ($paid > 0 && $cashAcc) {
                         $items[] = ['account_id' => $cashAcc->id, 'debit' => $paid, 'credit' => 0.00, 'description' => 'Cash/Bank collected for Sale ' . $sale->order_no];
                     }
                     if ($due > 0) {
                         $items[] = ['account_id' => $arAcc->id, 'debit' => $due, 'credit' => 0.00, 'description' => 'Receivable due for Sale ' . $sale->order_no];
                     }
-                    $items[] = ['account_id' => $revAcc->id, 'debit' => 0.00, 'credit' => $grandTotal, 'description' => 'Sales revenue recognized'];
+
+                    // 2. Credits: Net Product Revenue (4110)
+                    $items[] = ['account_id' => $revAcc->id, 'debit' => 0.00, 'credit' => $netSalesRevenue, 'description' => 'Net product sales revenue recognized'];
+
+                    // 3. Credits: Pass-Through Extra Charges Payable (2140)
+                    if ($extraCharges > 0 && $chargesAcc) {
+                        $items[] = ['account_id' => $chargesAcc->id, 'debit' => 0.00, 'credit' => $extraCharges, 'description' => 'Collected extra charges (delivery/labour/scale) payable to handlers'];
+                    }
 
                     postJournalEntry([
                         'entry_date' => date('Y-m-d'),
@@ -88,7 +120,10 @@ class SaleService
                         'items' => $items
                     ]);
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error("Sale journal posting failed: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+                throw $e;
+            }
 
             // 7. Broadcast real-time Pusher event
             event(new \App\Events\SaleCreatedEvent($sale));
@@ -147,7 +182,7 @@ class SaleService
             default                   => 'credit',
         };
 
-        return compact('total', 'discount', 'payble', 'advancedPayment', 'duePayment', 'status')
+        return compact('subtotal', 'total', 'discount', 'payble', 'advancedPayment', 'duePayment', 'status')
             + ['advanced_payment' => $advancedPayment, 'due_payment' => $duePayment];
     }
 
