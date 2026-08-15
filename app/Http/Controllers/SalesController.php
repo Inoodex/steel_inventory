@@ -661,7 +661,7 @@ public function duePaymentsPdf()
 
 public function extraChargesReport(Request $request)
 {
-    $query = Sale::with('customer')
+    $query = Sale::with(['customer', 'payoutUser'])
         ->where(function($q) {
             $q->where('delivery_charge', '>', 0)
               ->orWhere('labour_cost', '>', 0)
@@ -675,6 +675,10 @@ public function extraChargesReport(Request $request)
         $query->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()]);
     }
 
+    if ($request->filled('payout_status') && $request->payout_status !== 'all') {
+        $query->where('charges_payout_status', $request->payout_status);
+    }
+
     $sales = $query->latest()->get();
 
     $totalDelivery = $sales->sum('delivery_charge');
@@ -683,14 +687,120 @@ public function extraChargesReport(Request $request)
     $totalOther = $sales->sum('other_charges');
     $totalCharges = $totalDelivery + $totalLabour + $totalScale + $totalOther;
 
+    $totalPaidCharges = $sales->where('charges_payout_status', 'paid')->sum(function($s) {
+        return (float)$s->delivery_charge + (float)$s->labour_cost + (float)$s->weight_scale_cost + (float)$s->other_charges;
+    });
+    $totalUnpaidCharges = $sales->where('charges_payout_status', '!=', 'paid')->sum(function($s) {
+        return (float)$s->delivery_charge + (float)$s->labour_cost + (float)$s->weight_scale_cost + (float)$s->other_charges;
+    });
+
+    $paymentAccounts = \App\Models\ChartOfAccount::whereIn('account_code', ['1110', '1120'])
+        ->orWhere('account_type', 'asset')
+        ->where('level', '>=', 2)
+        ->get();
+
     return view('frontend.pages.report.extra_charges.index', compact(
-        'sales', 'totalDelivery', 'totalLabour', 'totalScale', 'totalOther', 'totalCharges', 'request'
+        'sales', 'totalDelivery', 'totalLabour', 'totalScale', 'totalOther', 'totalCharges',
+        'totalPaidCharges', 'totalUnpaidCharges', 'paymentAccounts', 'request'
     ));
+}
+
+public function updateChargesPayoutStatus(Request $request, $id)
+{
+    $sale = Sale::findOrFail($id);
+
+    $totalCharges = (float)$sale->delivery_charge + (float)$sale->labour_cost + (float)$sale->weight_scale_cost + (float)$sale->other_charges;
+
+    if ($totalCharges <= 0) {
+        return redirect()->back()->with('error', 'This invoice has no extra charges to pay out.');
+    }
+
+    $payoutDate = $request->input('payout_date', date('Y-m-d'));
+    $payoutNote = $request->input('payout_note');
+    $accountId = $request->input('payment_account_id');
+
+    DB::beginTransaction();
+    try {
+        $sale->update([
+            'charges_payout_status' => 'paid',
+            'charges_payout_at' => $payoutDate ? \Carbon\Carbon::parse($payoutDate)->setTimeFrom(now()) : now(),
+            'charges_payout_by' => auth()->id(),
+            'charges_payout_note' => $payoutNote,
+        ]);
+
+        // Post Journal Entry: Debit 2140 (Pass-Through Payable), Credit 1110 (Cash/Bank)
+        try {
+            $chargesAcc = \App\Models\ChartOfAccount::where('account_code', '2140')->first();
+            $cashAcc = $accountId ? \App\Models\ChartOfAccount::find($accountId) : \App\Models\ChartOfAccount::where('account_code', '1110')->first();
+
+            if ($chargesAcc && $cashAcc) {
+                // Delete previous payout entry for this sale if any
+                \App\Models\JournalEntry::where('reference_type', 'charges_payout')
+                    ->where('reference_id', $sale->id)
+                    ->delete();
+
+                postJournalEntry([
+                    'entry_date' => $payoutDate,
+                    'reference_type' => 'charges_payout',
+                    'reference_id' => $sale->id,
+                    'description' => "Worker extra charges payout for Invoice #{$sale->order_no}" . ($payoutNote ? " ({$payoutNote})" : ""),
+                    'items' => [
+                        [
+                            'account_id' => $chargesAcc->id,
+                            'debit' => $totalCharges,
+                            'credit' => 0.00,
+                            'description' => "Clear pass-through liability for Invoice #{$sale->order_no}"
+                        ],
+                        [
+                            'account_id' => $cashAcc->id,
+                            'debit' => 0.00,
+                            'credit' => $totalCharges,
+                            'description' => "Disburse cash/bank to workers/handlers for Invoice #{$sale->order_no}"
+                        ]
+                    ]
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Charges payout journal posting skipped: " . $e->getMessage());
+        }
+
+        DB::commit();
+        return redirect()->back()->with('success', 'Extra charges marked as Paid to workers successfully!');
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        return redirect()->back()->with('error', 'Failed to update payout status: ' . $e->getMessage());
+    }
+}
+
+public function revertChargesPayoutStatus($id)
+{
+    $sale = Sale::findOrFail($id);
+
+    DB::beginTransaction();
+    try {
+        $sale->update([
+            'charges_payout_status' => 'unpaid',
+            'charges_payout_at' => null,
+            'charges_payout_by' => null,
+            'charges_payout_note' => null,
+        ]);
+
+        // Remove the payout journal voucher
+        \App\Models\JournalEntry::where('reference_type', 'charges_payout')
+            ->where('reference_id', $sale->id)
+            ->delete();
+
+        DB::commit();
+        return redirect()->back()->with('success', 'Extra charges status reverted to Unpaid / Pending.');
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        return redirect()->back()->with('error', 'Failed to revert payout status: ' . $e->getMessage());
+    }
 }
 
 public function extraChargesReportPdf(Request $request)
 {
-    $query = Sale::with('customer')
+    $query = Sale::with(['customer', 'payoutUser'])
         ->where(function($q) {
             $q->where('delivery_charge', '>', 0)
               ->orWhere('labour_cost', '>', 0)
@@ -704,6 +814,10 @@ public function extraChargesReportPdf(Request $request)
         $query->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()]);
     }
 
+    if ($request->filled('payout_status') && $request->payout_status !== 'all') {
+        $query->where('charges_payout_status', $request->payout_status);
+    }
+
     $sales = $query->latest()->get();
 
     $totalDelivery = $sales->sum('delivery_charge');
@@ -712,8 +826,16 @@ public function extraChargesReportPdf(Request $request)
     $totalOther = $sales->sum('other_charges');
     $totalCharges = $totalDelivery + $totalLabour + $totalScale + $totalOther;
 
+    $totalPaidCharges = $sales->where('charges_payout_status', 'paid')->sum(function($s) {
+        return (float)$s->delivery_charge + (float)$s->labour_cost + (float)$s->weight_scale_cost + (float)$s->other_charges;
+    });
+    $totalUnpaidCharges = $sales->where('charges_payout_status', '!=', 'paid')->sum(function($s) {
+        return (float)$s->delivery_charge + (float)$s->labour_cost + (float)$s->weight_scale_cost + (float)$s->other_charges;
+    });
+
     $html = view('pdf.extra_charges_report', compact(
-        'sales', 'totalDelivery', 'totalLabour', 'totalScale', 'totalOther', 'totalCharges', 'request'
+        'sales', 'totalDelivery', 'totalLabour', 'totalScale', 'totalOther', 'totalCharges',
+        'totalPaidCharges', 'totalUnpaidCharges', 'request'
     ))->render();
 
     $mpdf = new \Mpdf\Mpdf([

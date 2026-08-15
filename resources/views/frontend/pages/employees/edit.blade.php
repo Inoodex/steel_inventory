@@ -27,12 +27,12 @@
 
                 <div class="row g-3">
                     <div class="col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Employee ID <span class="text-danger">*</span></label>
-                        <input type="text" name="employee_id" value="{{ $employee->employee_id }}" class="form-control border-light-subtle font-monospace fw-bold" required>
+                        <label class="form-label small text-secondary fw-bold mb-1">Employee ID <span class="text-danger">*</span></label>
+                        <input type="text" name="employee_id" value="{{ $employee->employee_id }}" class="form-control border-light-subtle" required>
                     </div>
 
                     <div class="col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Full Name <span class="text-danger">*</span></label>
+                        <label class="form-label small text-secondary fw-bold mb-1">Full Name <span class="text-danger">*</span></label>
                         <input type="text" name="name" value="{{ $employee->name }}" class="form-control border-light-subtle" required>
                     </div>
 

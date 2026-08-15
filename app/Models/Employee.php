@@ -24,10 +24,18 @@ class Employee extends Model
     return $this->belongsTo(User::class);
 }
 
-public function tadas()
-{
-    return $this->hasMany(TaDa::class, 'employee_id', 'id');
-}
+    public function tadas()
+    {
+        return $this->hasMany(TaDa::class, 'employee_id', 'id');
+    }
 
+    public function salaries()
+    {
+        return $this->hasMany(Salary::class, 'employee_id', 'id');
+    }
 
+    public function dailyExpenses()
+    {
+        return $this->hasMany(DailyExpense::class, 'employee_id', 'id');
+    }
 }

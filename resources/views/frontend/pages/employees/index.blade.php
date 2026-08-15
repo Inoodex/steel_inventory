@@ -153,29 +153,52 @@
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
                             <th class="ps-4">#</th>
-                            <th>Employee ID</th>
-                            <th>Name</th>
-                            <th>Designation</th>
+                            <th>Employee ID & Name</th>
+                            <th>Designation & Email</th>
                             <th>Phone</th>
+                            <th>Join Date</th>
+                            <th>Monthly Salary</th>
                             <th>Status</th>
                             <th class="pe-4 text-end">Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
                         @forelse ($employees as $key => $employee)
-                            <tr class="employee-row" data-status="{{ strtolower($employee->status) }}" data-search="{{ strtolower($employee->name . ' ' . $employee->employee_id . ' ' . $employee->phone . ' ' . $employee->designation) }}">
+                            <tr class="employee-row" data-status="{{ strtolower($employee->status) }}" data-search="{{ strtolower($employee->name . ' ' . $employee->employee_id . ' ' . $employee->phone . ' ' . $employee->designation . ' ' . $employee->email) }}">
                                 <td class="ps-4 text-muted fw-semibold">{{ $key + 1 }}</td>
                                 <td>
-                                    <span class="badge badge-soft-primary px-3 py-1 rounded-pill fs-7 font-monospace fw-bold">{{ $employee->employee_id }}</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar avatar-md rounded-circle overflow-hidden bg-light flex-shrink-0 border">
+                                            @if ($employee->image && file_exists(public_path('uploads/employees/' . $employee->image)))
+                                                <img src="{{ asset('uploads/employees/' . $employee->image) }}" alt="{{ $employee->name }}" class="w-100 h-100 object-fit-cover">
+                                            @else
+                                                <span class="avatar-title bg-primary-light text-primary fw-bold fs-6">
+                                                    {{ strtoupper(substr($employee->name, 0, 2)) }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <a href="{{ route('employees.view', $employee->id) }}" class="fw-bold text-dark text-decoration-none d-block hover-primary">
+                                                {{ $employee->name }}
+                                            </a>
+                                            <span class="badge badge-soft-primary px-2 py-0 fs-8 font-monospace">{{ $employee->employee_id }}</span>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
-                                    <span class="fw-bold text-dark d-block">{{ $employee->name }}</span>
+                                    <div>
+                                        <span class="fw-semibold text-dark d-block fs-7">{{ $employee->designation ?? 'Staff Member' }}</span>
+                                        <small class="text-muted fs-8">{{ $employee->email ?? 'N/A' }}</small>
+                                    </div>
                                 </td>
                                 <td>
-                                    <span class="text-secondary small">{{ $employee->designation ?? 'N/A' }}</span>
+                                    <span class="text-muted small"><i class="fe fe-phone-call me-1 text-secondary"></i>{{ $employee->phone ?? 'N/A' }}</span>
                                 </td>
                                 <td>
-                                    <span class="text-muted small">{{ $employee->phone ?? 'N/A' }}</span>
+                                    <span class="text-secondary small">{{ $employee->join_date ? date('d M, Y', strtotime($employee->join_date)) : 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-dark small">৳ {{ number_format($employee->salary ?? 0, 2) }}</span>
                                 </td>
                                 <td>
                                     @if ($employee->status == 'active')
@@ -190,6 +213,12 @@
                                             <i class="fas fa-ellipsis-v"></i>
                                         </a>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('employees.view', $employee->id) }}">
+                                                    <i class="fe fe-eye text-info"></i>
+                                                    <span>View Details</span>
+                                                </a>
+                                            </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('employees.edit', $employee->id) }}">
                                                     <i class="fe fe-edit text-primary"></i>
@@ -213,7 +242,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-5">
+                                <td colspan="8" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
                                         <div class="avatar avatar-xl bg-primary-light text-primary rounded-circle mb-3 d-flex align-items-center justify-content-center">
                                             <i class="fe fe-users fs-1"></i>

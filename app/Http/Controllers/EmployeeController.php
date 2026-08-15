@@ -38,11 +38,26 @@ class EmployeeController extends Controller
         return view('frontend.pages.employees.create');
     }
 
-public function show($id)
-{
-    $employee = Employee::findOrFail($id);
-    return view('frontend.pages.employees.show', compact('employee'));
-}
+    public function show($id)
+    {
+        $employee = Employee::with(['user', 'tadas' => function ($q) {
+            $q->latest();
+        }, 'salaries' => function ($q) {
+            $q->latest();
+        }, 'dailyExpenses.category' => function ($q) {
+            $q->latest();
+        }])->findOrFail($id);
+
+        $advanceCategory = ExpenseCategory::where('name', 'Advance Salary')->first();
+        $advanceExpenses = $employee->dailyExpenses;
+        if ($advanceCategory) {
+            $advanceExpenses = $employee->dailyExpenses->where('expense_category_id', $advanceCategory->id);
+        }
+        $totalAdvance = $advanceExpenses->sum('amount');
+        $totalTaDa = $employee->tadas->sum('total_bill');
+
+        return view('frontend.pages.employees.show', compact('employee', 'advanceExpenses', 'totalAdvance', 'totalTaDa'));
+    }
 
     public function store(StoreEmployeeRequest $request)
     {

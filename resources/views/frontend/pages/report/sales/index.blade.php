@@ -75,7 +75,7 @@
                     </div>
                     <div>
                         <h6 class="text-muted fw-normal mb-1">Total Items Sold</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($salesReport->sum('qty')) }} Pcs</h4>
+                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($salesReport->sum('qty')) }} Kg(s)</h4>
                     </div>
                 </div>
             </div>
@@ -189,7 +189,7 @@
                                 <td>{{ $prodName }}</td>
                                 <td>
                                     <span class="badge badge-soft-info px-3 py-1 rounded-pill fs-7">
-                                        {{ number_format($purchase->qty) }} Pcs
+                                        {{ number_format($purchase->qty) }} Kg(s)
                                     </span>
                                 </td>
                                 <td>৳{{ number_format($purchase->unit_price, 2) }}</td>

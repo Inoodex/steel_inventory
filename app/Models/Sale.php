@@ -37,7 +37,15 @@ class Sale extends Model
         'labour_cost',
         'weight_scale_cost',
         'other_charges',
+        'charges_payout_status',
+        'charges_payout_at',
+        'charges_payout_by',
+        'charges_payout_note',
         'note',
+    ];
+
+    protected $casts = [
+        'charges_payout_at' => 'datetime',
     ];
 
     // protected static function boot()
@@ -85,5 +93,10 @@ class Sale extends Model
     public function salesPerson()
     {
         return $this->belongsTo(User::class, 'sales_by');
+    }
+
+    public function payoutUser()
+    {
+        return $this->belongsTo(User::class, 'charges_payout_by');
     }
 }

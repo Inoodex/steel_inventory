@@ -153,15 +153,15 @@
                     </li>
                 @endif
 
-                <!-- 13. Employee Portal -->
-                @if(auth()->check() && (auth()->user()->hasRole(['Employee', 'employee']) || auth()->user()->employee))
-                    <li class="menu-title"><span>Employee Portal</span></li>
+                <!-- 12. HR & Staff Management -->
+                @if($canView('Employee Management') || (auth()->check() && auth()->user()->hasRole(['Super Admin', 'Admin', 'admin'])))
+                    <li class="menu-title"><span>HR & Staff Management</span></li>
                     <li>
-                        <a href="{{ route('employee.tada.index') }}" class="{{ request()->routeIs('employee.tada.index') ? 'active' : '' }}">
-                            <i class="fe fe-list"></i> <span>My TA/DA List</span>
+                        <a href="{{ route('employees.index') }}" class="{{ request()->routeIs('employees.*') ? 'active' : '' }}">
+                            <i class="fe fe-users"></i> <span>Employee Directory</span>
                         </a>
-                        <a href="{{ route('employee.tada.create') }}" class="{{ request()->routeIs('employee.tada.create') ? 'active' : '' }}">
-                            <i class="fe fe-upload"></i> <span>Submit TA/DA</span>
+                        <a href="{{ route('salary.index') }}" class="{{ request()->routeIs('salary.*') ? 'active' : '' }}">
+                            <i class="fe fe-dollar-sign"></i> <span>Salary & Payroll</span>
                         </a>
                     </li>
                 @endif
