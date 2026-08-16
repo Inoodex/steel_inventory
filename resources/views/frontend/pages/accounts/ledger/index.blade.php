@@ -68,7 +68,7 @@
                         <input type="date" name="to_date" class="form-control form-control-sm" value="{{ $toDate }}">
                     </div>
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-filter me-1"></i> View
+                        <button type="submit" class="btn btn-primary btn-sm w-100"> View
                             Ledger</button>
                     </div>
                     <div class="col-md-1 text-end">

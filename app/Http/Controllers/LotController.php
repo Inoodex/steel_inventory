@@ -111,7 +111,7 @@ class LotController extends Controller
      */
     public function show(string $id)
     {
-        $lot = Lot::with(['vendor', 'purchases.product', 'purchases.vendor', 'creator'])->findOrFail($id);
+        $lot = Lot::with(['vendor', 'purchases.coils', 'purchases.vendor', 'creator'])->findOrFail($id);
 
         $totalPurchases = $lot->purchases->count();
         $totalQuantity  = $lot->purchases->sum('quantity');

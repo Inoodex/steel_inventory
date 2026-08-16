@@ -151,10 +151,10 @@
                                     <tr>
                                         <td class="ps-3">{{ $purchase->created_at ? $purchase->created_at->format('d M Y') : 'N/A' }}</td>
                                         <td class="fw-semibold">
-                                            {{ $purchase->product ? $purchase->product->name : 'N/A' }}
-                                            @if($purchase->product && ($purchase->product->thickness || $purchase->product->size))
+                                            <span class="text-dark">Steel Spec: {{ $purchase->thickness ? $purchase->thickness . 'mm' : 'Standard' }} {{ $purchase->size ? ' | ' . $purchase->size : '' }} {{ $purchase->size_type ? '(' . $purchase->size_type . ')' : '' }}</span>
+                                            @if($purchase->coils->count() > 0)
                                                 <small class="text-muted d-block font-monospace">
-                                                    {{ $purchase->product->thickness ?: '' }}{{ $purchase->product->thickness && $purchase->product->size ? ' | ' : '' }}{{ $purchase->product->size }}{{ $purchase->product->size_type ? ' ' . $purchase->product->size_type : '' }}
+                                                    {{ $purchase->coils->count() }} Coil(s) Attached
                                                 </small>
                                             @endif
                                         </td>

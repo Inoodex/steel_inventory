@@ -16,9 +16,12 @@
                     @if($journalEntry->status !== 'reversed')
                         <a href="{{ route('journal-entries.reverse', $journalEntry->id) }}"
                             class="btn btn-outline-warning btn-sm">
-                            <i class="fas fa-undo me-1"></i> Reversal Entry (Storno)
+                            <i class="fas fa-undo me-1"></i> Reversal Entry
                         </a>
                     @endif
+                    <a href="{{ route('journal-entries.index') }}" class="btn btn-sm btn-outline-primary ms-2">
+                        <i class="fas fa-arrow-left me-1"></i> Back
+                    </a>
                 </div>
             </div>
         </div>

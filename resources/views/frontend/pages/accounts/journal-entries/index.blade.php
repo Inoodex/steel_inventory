@@ -129,7 +129,7 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="text-dark">{{ Str::limit($entry->description, 30) ?? 'No description' }}</div>
+                                        <div class="text-dark">{{ Str::limit($entry->description, 50) ?? 'No description' }}</div>
                                         <small class="text-muted">{{ $entry->items->count() }} split line(s)</small>
                                     </td>
                                     <td class="text-end fw-bold text-dark">{{ number_format($entry->total_debit, 2) }}</td>

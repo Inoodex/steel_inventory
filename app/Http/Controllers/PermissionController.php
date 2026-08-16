@@ -13,7 +13,7 @@ class PermissionController extends Controller
      */
     public function index()
     {
-        $permissions = Permission::get();
+        $permissions = Permission::with('roles')->latest()->get();
         return view('frontend.pages.permission.index', compact('permissions'));
     }
 
@@ -30,23 +30,25 @@ class PermissionController extends Controller
      */
     public function store(Request $request)
     {
-        $rules = [
-            'name' => 'required|string',
-        ];
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:100|unique:permissions,name',
+            'guard_name' => 'nullable|string|max:50',
+        ]);
 
-        $validatedData = $request->validate($rules);
+        $permission = Permission::create([
+            'name' => $validatedData['name'],
+            'guard_name' => $validatedData['guard_name'] ?? 'web',
+        ]);
 
-        $user = new Permission();
-        $user->name = $validatedData['name'];
-        $user->guard_name  = 'web';
-        $user->save();
+        // Reset Spatie permission cache
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         session()->flash('sweet_alert', [
             'type' => 'success',
             'title' => 'Success!',
-            'text' => 'User added success',
+            'text' => 'Permission created successfully.',
         ]);
-        // Redirect or return a response as needed
+
         return redirect()->route('permission.index')->with('success', 'Permission created successfully');
     }
 
@@ -62,8 +64,9 @@ class PermissionController extends Controller
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
-    {   $permission = Permission::where('id',$id)->first();
-        return view('frontend.pages.permission.edit',compact('permission'));
+    {
+        $permission = Permission::findOrFail($id);
+        return view('frontend.pages.permission.edit', compact('permission'));
     }
 
     /**
@@ -71,23 +74,28 @@ class PermissionController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $rules = [
-            'name' => 'required|string',
-        ];
+        $permission = Permission::findOrFail($id);
 
-        $validatedData = $request->validate($rules);
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:100|unique:permissions,name,' . $permission->id,
+            'guard_name' => 'nullable|string|max:50',
+        ]);
 
-        $user = Permission::findOrFail($id);
-        $user->name = $validatedData['name'];
-        $user->save();
+        $permission->update([
+            'name' => $validatedData['name'],
+            'guard_name' => $validatedData['guard_name'] ?? $permission->guard_name ?? 'web',
+        ]);
+
+        // Reset Spatie permission cache
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         session()->flash('sweet_alert', [
             'type' => 'success',
             'title' => 'Success!',
-            'text' => 'User update success',
+            'text' => 'Permission updated successfully.',
         ]);
-        // Redirect or return a response as needed
-        return redirect()->route('permission.index')->with('success', 'Permission update successfully');
+
+        return redirect()->route('permission.index')->with('success', 'Permission updated successfully');
     }
 
     /**
@@ -95,13 +103,18 @@ class PermissionController extends Controller
      */
     public function destroy(string $id)
     {
-        $category = Permission::findOrFail($id);
-        $category->delete();
+        $permission = Permission::findOrFail($id);
+        $permission->delete();
+
+        // Reset Spatie permission cache
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
         session()->flash('sweet_alert', [
             'type' => 'success',
             'title' => 'Success!',
-            'text' => 'Permission Delete success',
+            'text' => 'Permission deleted successfully.',
         ]);
-        return redirect()->route('permission.index');
+
+        return redirect()->route('permission.index')->with('success', 'Permission deleted successfully');
     }
 }

@@ -11,50 +11,51 @@
                 <p class="text-muted small mb-0">Define permission key for authorization rules</p>
             </div>
             <div>
-                <a href="{{ route('permission.index') }}" class="btn btn-outline-secondary px-4 py-2 rounded-3 shadow-sm">
-                    <i class="fa fa-arrow-left me-2"></i>Back to Permissions
+                <a href="{{ route('permission.index') }}" class="btn btn-outline-secondary px-4 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
+                    <i class="fe fe-arrow-left"></i>
+                    <span>Back to Permissions</span>
                 </a>
             </div>
         </div>
     </div>
     <!-- /Page Header -->
-                    <!-- end card header -->
-                    <div class="card-body">
-                        <div class="live-preview">
-                            <div class="row gy-4">
-                                <form action="{{ route('permission.store') }}" method="post" enctype="multipart/form-data">
-                                    @csrf
-                                    <div class="row">
-                                        <div class="col-xxl-3 col-md-6 mb-3">
-                                            <label for="name" class="form-label">Name</label>
-                                            <input type="text" class="form-control" value="{{ old('name') }}"
-                                                id="name" name="name" placeholder="Enter Permission name">
-                                        </div>
-                                    </div>
-                                    <div class="d-flex justify-content-end gap-2 mt-4">
-                                        <a href="{{ route('permission.index') }}" class="btn btn-outline-secondary px-4 rounded-3">Cancel</a>
-                                        <button type="submit" class="btn btn-primary px-4 rounded-3">Create Permission</button>
-                                    </div>
-                                </form>
 
-                            </div>
-                            <!--end row-->
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-12">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 border-bottom border-light">
+                    <h5 class="card-title fw-bold text-dark mb-0">Permission Details</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ route('permission.store') }}" method="POST">
+                        @csrf
+                        <div class="mb-3">
+                            <label for="name" class="form-label small text-secondary fw-semibold mb-1">
+                                Permission Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control border-light-subtle @error('name') is-invalid @enderror" 
+                                   value="{{ old('name') }}" id="name" name="name" 
+                                   placeholder="e.g. Sales Management, Purchase Management" required>
+                            @error('name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">Use clear descriptive module names (e.g. <code>Sales Management</code>).</small>
                         </div>
-                    </div>
+
+                        <div class="mb-4">
+                            <label for="guard_name" class="form-label small text-secondary fw-semibold mb-1">Guard Name</label>
+                            <input type="text" class="form-control border-light-subtle" 
+                                   value="{{ old('guard_name', 'web') }}" id="guard_name" name="guard_name" readonly>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                            <a href="{{ route('permission.index') }}" class="btn btn-outline-secondary px-4 rounded-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary px-4 rounded-2">Create Permission</button>
+                        </div>
+                    </form>
                 </div>
             </div>
-            <!--end col-->
         </div>
-        <!-- container-fluid -->
     </div>
-
-@section('script')
-    <script>
-        ClassicEditor
-            .create(document.querySelector('#editor'))
-            .catch(error => {
-                console.error(error);
-            });
-    </script>
-@endsection
+</div>
 @endsection

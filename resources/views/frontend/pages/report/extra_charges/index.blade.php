@@ -235,14 +235,14 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#viewPayoutModal{{ $sale->id }}">
                                                         <i class="fe fe-eye text-info"></i>
-                                                        <span>View Payout Details</span>
+                                                        <span>View Details</span>
                                                     </a>
                                                 </li>
                                                 <li><hr class="dropdown-divider opacity-50"></li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" onclick="if (confirm('Revert payout status to Unpaid? This will remove the payout journal entry.')) { document.getElementById('revertForm{{ $sale->id }}').submit(); }">
                                                         <i class="fe fe-rotate-ccw text-danger"></i>
-                                                        <span>Mark as Unpaid (Revert)</span>
+                                                        <span>Mark as Unpaid</span>
                                                     </a>
                                                     <form id="revertForm{{ $sale->id }}" action="{{ route('sales.extra-charges.revert', $sale->id) }}" method="POST" class="d-none">
                                                         @csrf
@@ -332,7 +332,7 @@
                                 <textarea name="payout_note" class="form-control" rows="2" placeholder="e.g. Paid to Truck Driver Karim & Labour Team"></textarea>
                             </div>
                         </div>
-                        <div class="modal-footer bg-light border-top">
+                        <div class="modal-footer bg-light border-top gap-2">
                             <button type="button" class="btn btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">Cancel</button>
                             <button type="submit" class="btn btn-primary px-4 rounded-2">Confirm & Pay ৳{{ number_format($rowTotal, 2) }}</button>
                         </div>

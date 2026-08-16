@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
-use App\Http\Controllers\Controller;
 use Spatie\Permission\Models\Permission;
 
 class RoleController extends Controller
@@ -15,8 +13,11 @@ class RoleController extends Controller
      */
     public function index()
     {
-        $users = Role::get();
-        return view('frontend.pages.role.index', compact('users'));
+        $roles = Role::withCount(['users', 'permissions'])
+            ->with(['permissions', 'users'])
+            ->get();
+
+        return view('frontend.pages.role.index', compact('roles'));
     }
 
     /**
@@ -24,8 +25,8 @@ class RoleController extends Controller
      */
     public function create()
     {
-        $permissions = Permission::get();
-        return view('frontend.pages.role.create',compact('permissions'));
+        $permissions = Permission::orderBy('name')->get();
+        return view('frontend.pages.role.create', compact('permissions'));
     }
 
     /**
@@ -33,28 +34,31 @@ class RoleController extends Controller
      */
     public function store(Request $request)
     {
-        // return $request;
-        $rules = [
-            'name' => 'required|string',
-        ];
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:100|unique:roles,name',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'exists:permissions,id',
+        ]);
 
-        $validatedData = $request->validate($rules);
+        $role = Role::create([
+            'name' => $validatedData['name'],
+            'guard_name' => 'web',
+        ]);
 
-        $user = new Role();
-        $user->name = $validatedData['name'];
-        $user->save();
-        if ($request->permissions) {
-            foreach ($request->permissions as $permission) {
-                // return $permission;
-                DB::insert('INSERT INTO role_has_permissions (role_id, permission_id) VALUES (?, ?)', [$user->id, $permission]);
-            }
-        }    
+        if (!empty($request->permissions)) {
+            $permissionModels = Permission::whereIn('id', $request->permissions)->get();
+            $role->syncPermissions($permissionModels);
+        }
+
+        // Reset Spatie cache
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
         session()->flash('sweet_alert', [
             'type' => 'success',
             'title' => 'Success!',
-            'text' => 'User added success',
+            'text' => 'Role created successfully.',
         ]);
-        // Redirect or return a response as needed
+
         return redirect()->route('role.index')->with('success', 'Role created successfully');
     }
 
@@ -63,7 +67,7 @@ class RoleController extends Controller
      */
     public function show(string $id)
     {
-       
+        //
     }
 
     /**
@@ -71,13 +75,11 @@ class RoleController extends Controller
      */
     public function edit(string $id)
     {
-        $role = Role::find($id);
-        $permissions = Permission::get();
-        $roleHasPermissions = DB::table('role_has_permissions')
-        ->where('role_id',$id)
-        ->get();
+        $role = Role::with('permissions')->findOrFail($id);
+        $permissions = Permission::orderBy('name')->get();
+        $rolePermissionIds = $role->permissions->pluck('id')->toArray();
 
-        return view('frontend.pages.role.edit', compact('role','permissions','roleHasPermissions'));
+        return view('frontend.pages.role.edit', compact('role', 'permissions', 'rolePermissionIds'));
     }
 
     /**
@@ -85,27 +87,34 @@ class RoleController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        // return $request;
-        $rules = [
-            'name' => 'required|string',
-        ];
-        
-        $validatedData = $request->validate($rules);
-        
-        $role = Role::findOrFail($id); // Assuming $id is the id of the role being updated
-        $role->name = $validatedData['name'];
-        $role->save();
-        if ($request->permissions) {
-            // Sync permissions for the role
-            $role->permissions()->sync($request->permissions);
-        }        
+        $role = Role::findOrFail($id);
+
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:100|unique:roles,name,' . $role->id,
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'exists:permissions,id',
+        ]);
+
+        $role->update([
+            'name' => $validatedData['name'],
+        ]);
+
+        if (isset($request->permissions)) {
+            $permissionModels = Permission::whereIn('id', $request->permissions)->get();
+            $role->syncPermissions($permissionModels);
+        } else {
+            $role->syncPermissions([]);
+        }
+
+        // Reset Spatie cache
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
         session()->flash('sweet_alert', [
             'type' => 'success',
             'title' => 'Success!',
-            'text' => 'Role updated successfully',
+            'text' => 'Role updated successfully.',
         ]);
-        
-        // Redirect or return a response as needed
+
         return redirect()->route('role.index')->with('success', 'Role updated successfully');
     }
 
@@ -114,13 +123,28 @@ class RoleController extends Controller
      */
     public function destroy(string $id)
     {
-        $category = Role::findOrFail($id);
-        $category->delete();
+        $role = Role::findOrFail($id);
+
+        if (in_array(strtolower($role->name), ['super admin', 'admin'])) {
+            session()->flash('sweet_alert', [
+                'type' => 'error',
+                'title' => 'Protected Role!',
+                'text' => 'System administrator roles cannot be deleted.',
+            ]);
+            return redirect()->route('role.index')->with('error', 'System administrator roles cannot be deleted.');
+        }
+
+        $role->delete();
+
+        // Reset Spatie cache
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
         session()->flash('sweet_alert', [
             'type' => 'success',
             'title' => 'Success!',
-            'text' => 'Role Delete success',
+            'text' => 'Role deleted successfully.',
         ]);
-        return redirect()->route('role.index');
+
+        return redirect()->route('role.index')->with('success', 'Role deleted successfully');
     }
 }

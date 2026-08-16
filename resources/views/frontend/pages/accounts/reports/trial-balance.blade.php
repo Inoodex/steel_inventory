@@ -53,8 +53,8 @@
                         <label class="form-label fw-bold mb-0">As of Date:</label>
                         <input type="date" name="as_of_date" class="form-control" value="{{ $asOfDate }}">
                     </div>
-                    <div class="col-md-4 mt-auto">
-                        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-calculator me-1"></i>
+                    <div class="col-md-2 mt-auto">
+                        <button type="submit" class="btn btn-primary w-100">
                             Calculate</button>
                     </div>
                 </form>
