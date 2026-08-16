@@ -2,28 +2,29 @@
 
 @push('styles')
 <style>
-    .stat-card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    .badge-soft-success {
+        background-color: rgba(25, 135, 84, 0.12) !important;
+        color: #198754 !important;
+        font-weight: 600;
     }
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08) !important;
-    }
-    .table-custom tbody tr {
-        transition: background-color 0.15s ease;
-    }
-    .table-custom tbody tr:hover {
-        background-color: #fcfbff !important;
-    }
-    .badge-soft-primary {
-        background-color: rgba(118, 56, 255, 0.12) !important;
-        color: #7638ff !important;
+    .badge-soft-danger {
+        background-color: rgba(220, 53, 69, 0.12) !important;
+        color: #dc3545 !important;
         font-weight: 600;
     }
     .badge-soft-info {
         background-color: rgba(13, 202, 240, 0.12) !important;
         color: #0dcaf0 !important;
+        font-weight: 600;
+    }
+    .badge-soft-warning {
+        background-color: rgba(255, 193, 7, 0.15) !important;
+        color: #b58105 !important;
+        font-weight: 600;
+    }
+    .badge-soft-primary {
+        background-color: rgba(118, 56, 255, 0.12) !important;
+        color: #7638ff !important;
         font-weight: 600;
     }
     .table-custom th, .table-custom td {
@@ -39,12 +40,13 @@
     <div class="page-header mb-4">
         <div class="content-page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-                <h4 class="card-title fw-bold text-dark mb-1">Purchase Report</h4>
-                <p class="text-muted small mb-0">Detailed breakdown of product purchases, quantities, and vendor expenses</p>
+                <h4 class="card-title fw-bold text-dark mb-1">Purchases Report</h4>
+                <p class="text-muted small mb-0">Track raw steel intake, vendor consignments, and procurement costs</p>
             </div>
-            <div>
-                <a href="{{ route('purchase.report.pdf', request()->all()) }}" class="btn btn-outline-danger px-4 py-2 rounded-3 shadow-sm" target="_blank">
-                    <i class="fe fe-file-text me-2"></i>Export PDF
+            <div class="d-flex align-items-center gap-2">
+                <a href="{{ route('purchase.report.pdf', request()->query()) }}" class="btn btn-outline-danger px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2 shadow-sm" target="_blank">
+                    <i class="fe fe-download fs-6"></i>
+                    <span>Export PDF</span>
                 </a>
             </div>
         </div>
@@ -57,10 +59,10 @@
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
                     <div class="avatar avatar-lg bg-primary-light text-primary rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-shopping-bag fs-4"></i>
+                        <i class="fe fe-shopping-cart fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Products Purchased</h6>
+                        <h6 class="text-muted fw-normal mb-1">Total Purchases</h6>
                         <h4 class="mb-0 fw-bold text-dark">{{ number_format($purchases->count()) }}</h4>
                     </div>
                 </div>
@@ -71,11 +73,11 @@
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
                     <div class="avatar avatar-lg bg-info-light text-info rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-box fs-4"></i>
+                        <i class="fe fe-layers fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Quantity</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($purchases->sum('total_qty')) }} Pcs</h4>
+                        <h6 class="text-muted fw-normal mb-1">Total Weight Intake</h6>
+                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($purchases->sum('total_weight'), 2) }} kg</h4>
                     </div>
                 </div>
             </div>
@@ -89,7 +91,7 @@
                     </div>
                     <div>
                         <h6 class="text-muted fw-normal mb-1">Total Purchase Value</h6>
-                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($purchases->sum('total_amount'), 2) }}</h4>
+                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($purchases->sum('total_price'), 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -104,12 +106,12 @@
             <form action="{{ route('purchase.report.get') }}" method="GET">
                 <div class="row g-3 align-items-end">
                     <div class="col-lg-3 col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Product Name</label>
-                        <select name="item_name" class="form-select border-light-subtle">
-                            <option value="">All Products</option>
-                            @foreach ($products as $product)
-                                <option value="{{ $product->id }}" {{ request('item_name') == $product->id ? 'selected' : '' }}>
-                                    {{ $product->name }}
+                        <label class="form-label small text-secondary fw-semibold mb-1">Lot Number</label>
+                        <select name="lot_id" class="form-select border-light-subtle">
+                            <option value="">All Lots</option>
+                            @foreach ($lots as $lot)
+                                <option value="{{ $lot->id }}" {{ request('lot_id') == $lot->id ? 'selected' : '' }}>
+                                    {{ $lot->lot_number }}
                                 </option>
                             @endforeach
                         </select>
@@ -153,7 +155,7 @@
             <div class="row align-items-center g-3">
                 <div class="col-12 col-md-6">
                     <div class="search-box-custom">
-                        <input type="text" id="purchaseSearchInput" class="form-control border-light-subtle" placeholder="Search product name, total qty, amount..." autocomplete="off">
+                        <input type="text" id="purchaseSearchInput" class="form-control border-light-subtle" placeholder="Search lot no, vendor, warehouse, weight, amount..." autocomplete="off">
                     </div>
                 </div>
                 <div class="col-12 col-md-6 text-md-end text-muted small">
@@ -168,35 +170,60 @@
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
                             <th class="ps-4" style="width: 80px;">#</th>
-                            <th>Product Name</th>
-                            <th>Total Quantity</th>
-                            <th class="pe-4">Total Amount</th>
+                            <th>Date</th>
+                            <th>Lot Number</th>
+                            <th>Vendor</th>
+                            <th>Warehouse</th>
+                            <th>Total Weight</th>
+                            <th>Total Amount</th>
+                            <th class="pe-4">Payment / Due</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
                         @forelse($purchases as $index => $purchase)
                             @php
-                                $productName = $purchase->product->name ?? 'N/A';
+                                $lotNo = $purchase->lot->lot_number ?? 'N/A';
+                                $vendorName = $purchase->vendor->name ?? 'N/A';
+                                $whName = $purchase->warehouse->name ?? 'Main Yard';
+                                $searchData = strtolower($lotNo . ' ' . $vendorName . ' ' . $whName . ' ' . $purchase->total_weight . ' ' . $purchase->total_price);
                             @endphp
-                            <tr class="purchase-row" data-search="{{ strtolower($productName . ' ' . $purchase->total_qty . ' ' . $purchase->total_amount) }}">
+                            <tr class="purchase-row" data-search="{{ $searchData }}">
                                 <td class="ps-4 text-muted fw-semibold">{{ $index + 1 }}</td>
                                 <td>
-                                    <span class="fw-bold text-dark">{{ $productName }}</span>
+                                    <span class="text-secondary small fw-semibold">
+                                        {{ $purchase->created_at ? $purchase->created_at->format('d M Y') : 'N/A' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-primary font-monospace">{{ $lotNo }}</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-dark d-block">{{ $vendorName }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border px-2 py-1 fs-7">
+                                        <i class="fe fe-map-pin text-primary me-1"></i>{{ $whName }}
+                                    </span>
                                 </td>
                                 <td>
                                     <span class="badge badge-soft-info px-3 py-1 rounded-pill fs-7">
-                                        {{ number_format($purchase->total_qty) }} Pcs
+                                        {{ number_format($purchase->total_weight, 2) }} kg
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-soft-primary px-3 py-1 rounded-pill fs-7">
+                                        ৳{{ number_format($purchase->total_price, 2) }}
                                     </span>
                                 </td>
                                 <td class="pe-4">
-                                    <span class="badge badge-soft-primary px-3 py-1 rounded-pill fs-7">
-                                        ৳{{ number_format($purchase->total_amount, 2) }}
+                                    <span class="badge {{ $purchase->due > 0 ? 'badge-soft-danger' : 'badge-soft-success' }} px-3 py-1 rounded-pill fs-7">
+                                        {{ $purchase->due > 0 ? 'Due: ৳' . number_format($purchase->due, 2) : 'Paid' }}
                                     </span>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center py-5">
+                                <td colspan="8" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
                                         <div class="avatar avatar-xl bg-primary-light text-primary rounded-circle mb-3 d-flex align-items-center justify-content-center">
                                             <i class="fe fe-shopping-bag fs-1"></i>
@@ -214,32 +241,34 @@
     </div>
 </div>
 
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('purchaseSearchInput');
     const rows = document.querySelectorAll('.purchase-row');
-    const visibleCountSpan = document.getElementById('visiblePurchaseCount');
+    const countEl = document.getElementById('visiblePurchaseCount');
 
-    function filterTable() {
-        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        let visibleCount = 0;
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            let count = 0;
 
-        rows.forEach(row => {
-            const rowSearchText = row.dataset.search || '';
-            if (query === '' || rowSearchText.includes(query)) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
+            rows.forEach(row => {
+                const searchData = row.getAttribute('data-search') || '';
+                if (query === '' || searchData.includes(query)) {
+                    row.style.display = '';
+                    count++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (countEl) {
+                countEl.textContent = count;
             }
         });
-
-        if (visibleCountSpan) {
-            visibleCountSpan.textContent = visibleCount;
-        }
     }
-
-    if (searchInput) searchInput.addEventListener('input', filterTable);
 });
 </script>
+@endpush
 @endsection

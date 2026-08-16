@@ -7,7 +7,6 @@ use Validator;
 use App\Models\Sale;
 use App\Models\User;
 use App\Models\Payment;
-use App\Models\Product;
 use Twilio\Rest\Client;
 use App\Models\Employee;
 use App\Models\DailyExpense;

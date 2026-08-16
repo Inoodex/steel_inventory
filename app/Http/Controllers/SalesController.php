@@ -415,13 +415,6 @@ class SalesController extends Controller
 
         $payments = $paymentsQuery->get();
 
-        // PDF export
-        // if ($request->search_for === 'pdf') {
-        //     $pdf = Pdf::loadView('pdf.service_payments', compact('payments', 'request'))
-        //         ->setPaper('A4', 'portrait');
-        //     return $pdf->download('service_payments.pdf');
-        // }
-
         return view('frontend.pages.sales.payments', compact('payments', 'request', 'saleId', 'sale'));
     }
 
@@ -531,18 +524,18 @@ class SalesController extends Controller
             ->where('sales.id', $id)
             ->firstOrFail();
 
-        // Get items for this sale with warranty info
+        // Get items for this sale — join coils (not products) for steel system
         $items = \DB::table('sales_items')
             ->select(
                 'sales_items.*',
-                'products.name',
-                'products.model',
+                'coils.coil_number as name',
+                'coils.thickness as model',
                 'sales_items.warranty',
                 'sales_items.unit_price',
                 'sales_items.qty',
                 'sales_items.total_price'
             )
-            ->join('products', 'products.id', '=', 'sales_items.product_id')
+            ->leftJoin('coils', 'coils.id', '=', 'sales_items.coil_id')
             ->where('sales_items.order_id', $id)
             ->get()
             ->map(function ($item) use ($sale) {

@@ -20,7 +20,7 @@ class UpdateSaleRequest extends FormRequest
             'phone'                => 'nullable|required_if:client_type,new|string',
             'address'              => 'nullable|required_if:client_type,new|string',
             'product'              => 'required|array',
-            'product.*'            => 'required|integer|exists:products,id',
+            'product.*'            => 'required|integer',
             'qty'                  => 'required|array',
             'qty.*'                => 'required|numeric|min:1',
             'unit_price'           => 'required|array',

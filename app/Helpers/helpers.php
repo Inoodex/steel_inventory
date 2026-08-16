@@ -408,3 +408,22 @@ if (!function_exists('getNotify')) {
     }
 }
 
+if (!function_exists('getInvoicePadBase64')) {
+    /**
+     * Get base64 encoded invoice pad background for mPDF views.
+     */
+    function getInvoicePadBase64(): string
+    {
+        $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
+        if (!file_exists($padPath)) {
+            $padPath = public_path('assets/invoice/final_pad.png');
+        }
+        if (!file_exists($padPath)) {
+            return '';
+        }
+        $mime = (pathinfo($padPath, PATHINFO_EXTENSION) === 'png') ? 'image/png' : 'image/jpeg';
+        return "data:{$mime};base64," . base64_encode(file_get_contents($padPath));
+    }
+}
+
+

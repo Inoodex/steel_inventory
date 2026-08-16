@@ -262,7 +262,7 @@ class ChartOfAccountSeeder extends Seeder
                                 ],
                                 [
                                     'code' => '5120',
-                                    'name' => 'Sales Returns (Contra Revenue)',
+                                    'name' => 'Sales Returns',
                                     'type' => 'expense',
                                     'level' => 3,
                                     'is_system' => true,

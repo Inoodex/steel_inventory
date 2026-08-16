@@ -19,6 +19,21 @@
     </div>
     <!-- /Page Header -->
 
+    @if ($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4" role="alert">
+            <div class="d-flex align-items-center mb-2">
+                <i class="fe fe-alert-triangle fs-4 me-2"></i>
+                <strong class="fs-6">Please check the form below for errors:</strong>
+            </div>
+            <ul class="mb-0 ps-3">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
     <form method="POST" action="{{ route('returns.store') }}" id="returnForm">
         @csrf
 
@@ -35,8 +50,8 @@
                         <select name="sale_id" id="saleSelect" class="form-select border-light-subtle select2" required onchange="handleSaleChange(this.value)">
                             <option value="">Select Sale Order</option>
                             @foreach($sales as $s)
-                                <option value="{{ $s->id }}" {{ request('sale_id') == $s->id ? 'selected' : '' }} data-customer="{{ $s->customer_id }}">
-                                    #{{ $s->order_no }} - {{ $s->customer->name ?? 'No Customer' }}
+                                <option value="{{ $s->id }}" {{ (old('sale_id', request('sale_id')) == $s->id) ? 'selected' : '' }} data-customer="{{ $s->customer_id }}">
+                                    #{{ $s->order_no }} - {{ $s->customer->name ?? 'No Customer' }} (৳{{ number_format($s->total ?? 0, 2) }})
                                 </option>
                             @endforeach
                         </select>
@@ -44,14 +59,14 @@
 
                     <div class="col-lg-6 col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Return Date <span class="text-danger">*</span></label>
-                        <input type="date" name="return_date" class="form-control border-light-subtle" value="{{ date('Y-m-d') }}" required>
+                        <input type="date" name="return_date" class="form-control border-light-subtle" value="{{ old('return_date', date('Y-m-d')) }}" required>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Section 2: Sale Items Display -->
-        <div id="saleItemsSection" class="card border-0 shadow-sm rounded-3 mb-4 {{ $sale ? '' : 'd-none' }}">
+        <div id="saleItemsSection" class="card border-0 shadow-sm rounded-3 mb-4 {{ ($sale && count($saleItems) > 0) ? '' : 'd-none' }}">
             <div class="card-body p-4">
                 <h6 class="fw-bold text-dark mb-3"><i class="fe fe-box me-2 text-primary"></i>Select Items to Return</h6>
 
@@ -59,10 +74,10 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light text-secondary fs-7 text-uppercase">
                             <tr>
-                                <th>Product</th>
+                                <th>Item / Coil</th>
                                 <th>Sold Qty</th>
-                                <th>Return Qty</th>
-                                <th>Unit Price</th>
+                                <th style="width: 120px;">Return Qty</th>
+                                <th style="width: 130px;">Unit Price</th>
                                 <th>Return Reason</th>
                                 <th>Condition</th>
                                 <th>Notes</th>
@@ -72,16 +87,25 @@
                         <tbody id="saleItemsTable">
                             @if($sale && $saleItems)
                                 @foreach($saleItems as $item)
-                                    <tr data-product-id="{{ $item->product_id }}" data-max-qty="{{ $item->quantity }}">
+                                    @php
+                                        $coilNo = $item->coil->coil_number ?? $item->product->coil_number ?? null;
+                                        $itemName = $coilNo ? ('Coil #' . $coilNo) : ('Item #' . $item->id);
+                                        if ($item->size) {
+                                            $itemName .= " ({$item->size} {$item->size_type})";
+                                        }
+                                        $availQty = (float)($item->qty - ($item->returned_qty ?? 0));
+                                    @endphp
+                                    <tr data-product-id="{{ $item->coil_id ?? $item->product_id }}" data-max-qty="{{ $availQty }}">
                                         <td>
-                                            <span class="fw-bold text-dark d-block">{{ $item->product->name ?? 'N/A' }}</span>
-                                            <input type="hidden" name="items[{{ $loop->index }}][product_id]" value="{{ $item->product_id }}">
+                                            <span class="fw-bold text-dark d-block">{{ $itemName }}</span>
+                                            <input type="hidden" name="items[{{ $loop->index }}][sales_item_id]" value="{{ $item->id }}">
+                                            <input type="hidden" name="items[{{ $loop->index }}][product_id]" value="{{ $item->coil_id ?? $item->product_id }}">
                                         </td>
                                         <td>
-                                            <span class="badge badge-soft-info px-2 py-1 rounded-2">{{ $item->quantity }}</span>
+                                            <span class="badge badge-soft-info px-2 py-1 rounded-2">{{ $item->qty }}</span>
                                         </td>
                                         <td>
-                                            <input type="number" name="items[{{ $loop->index }}][quantity]" class="form-control border-light-subtle qty-input" min="0" max="{{ $item->quantity }}" value="0" style="width: 90px;" oninput="calculateTotal()">
+                                            <input type="number" step="any" name="items[{{ $loop->index }}][quantity]" class="form-control border-light-subtle qty-input" min="0" max="{{ $availQty }}" value="0" style="width: 100px;" oninput="calculateTotal()">
                                         </td>
                                         <td>
                                             <input type="number" step="0.01" name="items[{{ $loop->index }}][unit_price]" class="form-control border-light-subtle bg-light unit-price" value="{{ $item->unit_price }}" readonly style="width: 110px;">
@@ -93,12 +117,12 @@
                                                 <option value="customer_changed_mind">Customer Changed Mind</option>
                                                 <option value="defective">Defective</option>
                                                 <option value="expired">Expired</option>
-                                                <option value="other">Other</option>
+                                                <option value="other" selected>Other</option>
                                             </select>
                                         </td>
                                         <td>
                                             <select name="items[{{ $loop->index }}][condition]" class="form-select border-light-subtle">
-                                                <option value="good">Good</option>
+                                                <option value="good" selected>Good</option>
                                                 <option value="damaged">Damaged</option>
                                                 <option value="defective">Defective</option>
                                             </select>
@@ -118,7 +142,7 @@
                     </table>
                 </div>
 
-                <div class="alert alert-info border-0 rounded-3 mt-3 mb-0" id="noItemsMessage" style="display: {{ $sale && count($saleItems) > 0 ? 'none' : 'block' }}">
+                <div class="alert alert-info border-0 rounded-3 mt-3 mb-0" id="noItemsMessage" style="display: {{ ($sale && count($saleItems) > 0) ? 'none' : 'block' }}">
                     <i class="fe fe-info me-2"></i>Select a sale order above to display available purchased items.
                 </div>
             </div>
@@ -132,7 +156,7 @@
                 <div class="row g-3 align-items-end mb-4">
                     <div class="col-lg-8 col-md-7 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">General Reason / Additional Notes</label>
-                        <textarea name="reason" class="form-control border-light-subtle" rows="3" placeholder="Enter general reason or return instructions..."></textarea>
+                        <textarea name="reason" class="form-control border-light-subtle" rows="3" placeholder="Enter general reason or return instructions...">{{ old('reason') }}</textarea>
                     </div>
 
                     <div class="col-lg-4 col-md-5 col-12">
@@ -161,11 +185,12 @@
         const noItemsMessage = document.getElementById('noItemsMessage');
 
         if (!saleId) {
-            saleItemsSection.classList.add('d-none');
+            if (saleItemsSection) saleItemsSection.classList.add('d-none');
+            if (noItemsMessage) noItemsMessage.style.display = 'block';
             return;
         }
 
-        if (saleItemsTable) saleItemsTable.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Loading purchased sale items...</td></tr>';
+        if (saleItemsTable) saleItemsTable.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted"><i class="fe fe-loader fa-spin me-2"></i>Loading purchased sale items...</td></tr>';
         if (saleItemsSection) saleItemsSection.classList.remove('d-none');
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -187,17 +212,17 @@
                     let html = '';
                     data.items.forEach((item, index) => {
                         html += `
-                            <tr data-product-id="${item.product_id}" data-max-qty="${item.quantity}">
+                            <tr data-product-id="${item.product_id || ''}" data-max-qty="${item.quantity}">
                                 <td>
                                     <span class="fw-bold text-dark d-block">${item.product_name}</span>
-                                    <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
                                     <input type="hidden" name="items[${index}][sales_item_id]" value="${item.id}">
+                                    <input type="hidden" name="items[${index}][product_id]" value="${item.product_id || ''}">
                                 </td>
                                 <td><span class="badge badge-soft-info px-2 py-1 rounded-2">${item.quantity}</span></td>
                                 <td>
-                                    <input type="number" name="items[${index}][quantity]"
+                                    <input type="number" step="any" name="items[${index}][quantity]"
                                         class="form-control border-light-subtle qty-input" min="0" max="${item.quantity}"
-                                        value="0" style="width: 90px;" oninput="calculateTotal()">
+                                        value="0" style="width: 100px;" oninput="calculateTotal()">
                                 </td>
                                 <td>
                                     <input type="number" step="0.01" name="items[${index}][unit_price]"
@@ -210,12 +235,12 @@
                                         <option value="customer_changed_mind">Customer Changed Mind</option>
                                         <option value="defective">Defective</option>
                                         <option value="expired">Expired</option>
-                                        <option value="other">Other</option>
+                                        <option value="other" selected>Other</option>
                                     </select>
                                 </td>
                                 <td>
                                     <select name="items[${index}][condition]" class="form-select border-light-subtle">
-                                        <option value="good">Good</option>
+                                        <option value="good" selected>Good</option>
                                         <option value="damaged">Damaged</option>
                                         <option value="defective">Defective</option>
                                     </select>
@@ -282,14 +307,18 @@
 
             if (!hasValidItem) {
                 e.preventDefault();
-                alert('Please select at least one item to return with quantity greater than 0.');
+                alert('Please enter a return quantity greater than 0 for at least one item.');
                 return false;
             }
         });
 
         const saleSelect = document.getElementById('saleSelect');
         if (saleSelect && saleSelect.value) {
-            handleSaleChange(saleSelect.value);
+            // Only auto-trigger if table is empty
+            const saleItemsTable = document.getElementById('saleItemsTable');
+            if (saleItemsTable && saleItemsTable.children.length === 0) {
+                handleSaleChange(saleSelect.value);
+            }
         }
     });
 </script>

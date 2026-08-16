@@ -21,30 +21,6 @@ class WarehouseSeeder extends Seeder
                 'phone'          => '01700000001',
                 'status'         => 'active',
             ],
-            [
-                'name'           => 'Chittagong Mill Depot',
-                'code'           => 'WH-CTG',
-                'location'       => 'Port Connecting Road, Chittagong',
-                'contact_person' => 'Depot Manager',
-                'phone'          => '01700000002',
-                'status'         => 'active',
-            ],
-            [
-                'name'           => 'Dhaka Central Warehouse',
-                'code'           => 'WH-DHK',
-                'location'       => 'Tejgaon Industrial Area, Dhaka',
-                'contact_person' => 'Disposal Officer',
-                'phone'          => '01700000003',
-                'status'         => 'active',
-            ],
-            [
-                'name'           => 'Factory Rolling Mill Yard',
-                'code'           => 'WH-MILL',
-                'location'       => 'Rolling Mill Complex, Yard 3',
-                'contact_person' => 'Mill Dispatch Supervisor',
-                'phone'          => '01700000004',
-                'status'         => 'active',
-            ],
         ];
 
         foreach ($warehouses as $wh) {

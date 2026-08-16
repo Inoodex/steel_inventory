@@ -113,8 +113,7 @@ class JournalEntryController extends Controller
     {
         $journalEntry->load(['items.account', 'creator', 'approver']);
 
-        $padPath = public_path('assets/invoice/final_pad.png');
-        $padBase64 = file_exists($padPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($padPath)) : '';
+        $padBase64 = function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '';
 
         $html = view('pdf.accounts.voucher', compact('journalEntry', 'padBase64'))->render();
 

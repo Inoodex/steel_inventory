@@ -5,8 +5,8 @@
     <meta charset="UTF-8" />
     <title>Invoice #{{ $sales->order_no }}</title>
     @php
-        $padPath = public_path('assets/invoice/final_pad.png');
-        $padBase64 = file_exists($padPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($padPath)) : '';
+        $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
+        $padBase64 = file_exists($padPath) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($padPath)) : (function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '');
     @endphp
     <style>
         @page {
@@ -238,15 +238,15 @@
                                 @endif
                                 <tr>
                                     <td style="padding: 5px 0; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; font-size: 12px; font-weight: 800; color: #4f46e5;">Grand Total:</td>
-                                    <td style="padding: 5px 0; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; text-align: right; font-size: 12px; font-weight: 800; color: #4f46e5;">৳ {{ number_format($sales->payble, 2) }}</td>
+                                    <td style="padding: 5px 0; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; text-align: right; font-size: 12px; font-weight: 800; color: #4f46e5;">{{ number_format($sales->payble, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 3px 0; color: #16a34a; font-weight: 600;">Paid Amount:</td>
-                                    <td style="padding: 3px 0; text-align: right; font-weight: 700; color: #16a34a;">৳ {{ number_format($sales->advanced_payment ?? 0, 2) }}</td>
+                                    <td style="padding: 3px 0; text-align: right; font-weight: 700; color: #16a34a;">{{ number_format($sales->advanced_payment ?? 0, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 3px 0; font-weight: 800; color: #dc2626;">Invoice Due:</td>
-                                    <td style="padding: 3px 0; text-align: right; font-weight: 800; color: {{ ($sales->due_payment ?? 0) > 0 ? '#dc2626' : '#16a34a' }};">৳ {{ number_format($sales->due_payment ?? 0, 2) }}</td>
+                                    <td style="padding: 3px 0; text-align: right; font-weight: 800; color: {{ ($sales->due_payment ?? 0) > 0 ? '#dc2626' : '#16a34a' }};">{{ number_format($sales->due_payment ?? 0, 2) }}</td>
                                 </tr>
                             </table>
                         </td>

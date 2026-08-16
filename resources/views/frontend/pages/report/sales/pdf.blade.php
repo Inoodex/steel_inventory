@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <title>Sales Report</title>
     @php
-        $padPath = public_path('assets/invoice/final_pad.png');
-        $padBase64 = file_exists($padPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($padPath)) : '';
+        $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
+        $padBase64 = file_exists($padPath) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($padPath)) : (function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '');
     @endphp
     <style>
         @page {
@@ -19,25 +19,17 @@
             margin-right: 15mm;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Helvetica, Arial, sans-serif;
-        }
-
         body {
             font-family: Helvetica, Arial, sans-serif;
-            font-size: 12px;
+            font-size: 11px;
             color: #0f172a;
             line-height: 1.4;
         }
 
         .header-table {
             width: 100%;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 12px;
+            border-collapse: collapse;
+            margin-bottom: 15px;
         }
 
         .report-title {
@@ -45,63 +37,75 @@
         }
 
         .report-title h1 {
-            font-size: 26px;
+            font-size: 22px;
             font-weight: 800;
             color: #0f172a;
-            margin-bottom: 4px;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .report-title p {
-            font-size: 12px;
+            font-size: 10px;
             color: #64748b;
-            margin-top: 3px;
+            margin: 3px 0 0 0;
         }
 
-        .filter-info {
-            font-size: 11px;
-            color: #475569;
-            margin-bottom: 20px;
-            padding: 10px 14px;
-            background: #f8fafc;
+        .filter-card {
+            background-color: #f8fafc;
             border: 1px solid #cbd5e1;
             border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 10px;
+            color: #475569;
+            margin-bottom: 15px;
         }
 
         .items-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            margin-bottom: 25px;
             border: 1px solid #cbd5e1;
-            border-radius: 12px;
-            overflow: hidden;
+            border-radius: 8px;
+            margin-bottom: 15px;
         }
 
         .items-table th {
             background-color: #1e293b;
             color: #ffffff;
-            padding: 10px 14px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            padding: 8px 10px;
+            border: none;
         }
 
         .items-table td {
-            padding: 10px 14px;
-            font-size: 12px;
-            color: #334155;
+            padding: 7px 10px;
             border-bottom: 1px solid #f1f5f9;
+            font-size: 10px;
+        }
+
+        .items-table tr:last-child td {
+            border-bottom: none;
         }
 
         .summary-card {
-            background: #f8fafc;
+            background-color: #f8fafc;
             border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            padding: 12px 16px;
-            font-size: 12px;
-            color: #334155;
-            margin-bottom: 40px;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 25px;
+        }
+
+        .summary-card table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .summary-card td {
+            font-size: 11px;
+            font-weight: 700;
         }
 
         .text-right {
@@ -111,6 +115,22 @@
         .text-center {
             text-align: center;
         }
+
+        .signature-section {
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .signature-box {
+            width: 180px;
+            text-align: center;
+            float: right;
+        }
+
+        .signature-line {
+            border-top: 1.5px solid #475569;
+            margin-bottom: 4px;
+        }
     </style>
 </head>
 <body>
@@ -118,25 +138,27 @@
         <tr>
             <td style="width:50%;"></td>
             <td style="width:50%;" class="report-title">
-                <h1>SALES REPORT</h1>
-                <p>Generated: {{ now()->format('d M Y') }}</p>
+                <h1>Sales Report</h1>
+                <p>Generated on: {{ now()->format('d M Y, h:i A') }}</p>
             </td>
         </tr>
     </table>
 
-    <div class="filter-info">
-        @if ($request->customer_id)
-            <strong>Customer ID:</strong> {{ $request->customer_id }} &nbsp;|&nbsp;
+    <div class="filter-card">
+        @if ($request->filled('customer_id'))
+            <strong>Customer:</strong> {{ \App\Models\Customer::find($request->customer_id)?->name ?? $request->customer_id }} &nbsp;|&nbsp;
         @else
-            <strong>All Customers</strong> &nbsp;|&nbsp;
+            <strong>Customer:</strong> All Customers &nbsp;|&nbsp;
         @endif
-        @if ($request->item_name)
-            <strong>Product ID:</strong> {{ $request->item_name }} &nbsp;|&nbsp;
+        @if ($request->filled('coil_id'))
+            <strong>Coil:</strong> Coil No - {{ \App\Models\Coil::find($request->coil_id)?->coil_number ?? $request->coil_id }} &nbsp;|&nbsp;
+        @else
+            <strong>Coil:</strong> All Coils &nbsp;|&nbsp;
         @endif
-        @if ($request->from)
+        @if ($request->filled('from'))
             <strong>From:</strong> {{ $request->from }} &nbsp;|&nbsp;
         @endif
-        @if ($request->to)
+        @if ($request->filled('to'))
             <strong>To:</strong> {{ $request->to }} &nbsp;|&nbsp;
         @endif
         <strong>Total Records:</strong> {{ $salesReport->count() }}
@@ -145,47 +167,57 @@
     <table class="items-table" cellpadding="0" cellspacing="0">
         <thead>
             <tr>
-                <th style="width: 6%; text-align: center;">#</th>
+                <th style="width: 5%; text-align: center;">#</th>
+                <th style="width: 12%; text-align: left;">Date</th>
                 <th style="width: 25%; text-align: left;">Customer</th>
-                <th style="width: 35%; text-align: left;">Product</th>
-                <th style="width: 10%; text-align: center;">Qty</th>
-                <th style="width: 12%; text-align: right;">Unit Price</th>
-                <th style="width: 12%; text-align: right;">Total</th>
+                <th style="width: 26%; text-align: left;">Coil / Specification</th>
+                <th style="width: 10%; text-align: right;">Weight (kg)</th>
+                <th style="width: 10%; text-align: right;">Rate</th>
+                <th style="width: 12%; text-align: right;">Total (BDT)</th>
             </tr>
         </thead>
         <tbody>
-            @forelse ($salesReport as $item)
+            @forelse ($salesReport as $index => $item)
+                @php
+                    $prodName = $item->product_name ?? 'N/A';
+                    $displayName = (is_numeric($prodName) || str_starts_with($prodName, 'Coil')) 
+                        ? (str_starts_with($prodName, 'Coil') ? $prodName : 'Coil No - ' . $prodName)
+                        : $prodName;
+                @endphp
                 <tr style="background-color: {{ $loop->even ? '#f8fafc' : '#ffffff' }};">
-                    <td class="text-center">{{ $loop->index + 1 }}</td>
+                    <td class="text-center">{{ $index + 1 }}</td>
+                    <td>{{ $item->sale_date ? \Carbon\Carbon::parse($item->sale_date)->format('d M Y') : 'N/A' }}</td>
                     <td>{{ $item->customer_name ?? 'N/A' }}</td>
-                    <td>{{ $item->product_name ?? 'N/A' }}</td>
-                    <td class="text-center">{{ $item->qty }}</td>
+                    <td style="font-weight: 700; color: #1e293b;">{{ $displayName }}</td>
+                    <td class="text-right">{{ number_format($item->qty, 2) }}</td>
                     <td class="text-right">{{ number_format($item->unit_price, 2) }}</td>
-                    <td class="text-right">{{ number_format($item->total_price, 2) }}</td>
+                    <td class="text-right" style="font-weight: 700;">{{ number_format($item->total_price, 2) }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="text-center">No data available</td>
+                    <td colspan="7" class="text-center" style="padding: 15px; color: #64748b;">No sales records found for the selected criteria</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 
     <div class="summary-card">
-        <strong style="color: #4f46e5; margin-right: 20px;">Total Items: {{ $salesReport->count() }}</strong>
-        <strong style="color: #0f172a;">Grand Total: {{ number_format($salesReport->sum('total_price'), 2) }} Tk</strong>
+        <table>
+            <tr>
+                <td style="color: #475569;">Total Weight Sold: <span style="color: #0f172a;">{{ number_format($salesReport->sum('qty'), 2) }} kg</span></td>
+                <td class="text-right" style="color: #475569;">Grand Total Revenue: <span style="color: #16a34a; font-size: 13px;">{{ number_format($salesReport->sum('total_price'), 2) }}</span></td>
+            </tr>
+        </table>
     </div>
 
-    <!-- Signatures -->
-    <table style="width: 100%; border-collapse: collapse; margin-top: 50px;">
+    <table class="signature-section" cellpadding="0" cellspacing="0">
         <tr>
-            <td width="100%" align="right" style="vertical-align: bottom;">
-                <table align="right" style="width: 180px; margin: 0 0 8px auto; border-collapse: collapse;">
-                    <tr>
-                        <td style="border-top: 1.5px solid #475569; height: 1px; font-size: 1px; line-height: 1px;">&nbsp;</td>
-                    </tr>
-                </table>
-                <div style="font-size: 11px; font-weight: 600; color: #475569; padding-right: 35px;">Authorized Signature</div>
+            <td style="width: 60%;"></td>
+            <td style="width: 40%; text-align: right;">
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <span style="font-size: 10px; color: #475569; font-weight: 600;">Authorized Signature</span>
+                </div>
             </td>
         </tr>
     </table>

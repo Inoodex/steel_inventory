@@ -4,8 +4,15 @@
     <meta charset="UTF-8" />
     <title>Extra Charges & Worker Payouts Report</title>
     @php
-        $padPath = public_path('assets/invoice/final_pad.png');
-        $padBase64 = file_exists($padPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($padPath)) : '';
+        $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
+        $padBase64 = file_exists($padPath) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($padPath)) : (function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '');
+        $totalDelivery = $totalDelivery ?? $sales->sum('delivery_charge');
+        $totalLabour = $totalLabour ?? $sales->sum('labour_cost');
+        $totalScale = $totalScale ?? $sales->sum('weight_scale_cost');
+        $totalOther = $totalOther ?? $sales->sum('other_charges');
+        $totalCharges = $totalCharges ?? ($totalDelivery + $totalLabour + $totalScale + $totalOther);
+        $totalPaidCharges = $totalPaidCharges ?? $sales->where('charges_payout_status', 'paid')->sum(fn($s) => (float)$s->delivery_charge + (float)$s->labour_cost + (float)$s->weight_scale_cost + (float)$s->other_charges);
+        $totalUnpaidCharges = $totalUnpaidCharges ?? ($totalCharges - $totalPaidCharges);
     @endphp
     <style>
         @page {

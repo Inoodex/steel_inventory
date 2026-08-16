@@ -89,39 +89,50 @@ class ReturnController extends Controller
      */
     public function store(StoreReturnRequest $request)
     {
-        $validated = $request->validate([
-            'sale_id' => 'required|exists:sales,id',
-            'return_date' => 'required|date',
-            'reason' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.return_reason' => 'required|in:damaged,wrong_item,customer_changed_mind,defective,expired,other',
-            'items.*.condition' => 'required|in:good,damaged,defective',
-            'items.*.notes' => 'nullable|string'
-        ]);
+        $validated = $request->validated();
 
         DB::beginTransaction();
 
         try {
-            $sale = Sale::find($request->sale_id);
+            $sale = Sale::findOrFail($validated['sale_id']);
 
             // Create return
             $return = ProductReturn::create([
-                'sale_id' => $request->sale_id,
-                'customer_id' => $sale->customer_id,
-                'return_date' => $request->return_date,
-                'status' => 'pending',
-                'reason' => $request->reason,
+                'sale_id'             => $sale->id,
+                'customer_id'         => $sale->customer_id,
+                'return_date'         => $validated['return_date'],
+                'status'              => 'pending',
+                'reason'              => $validated['reason'] ?? null,
+                'notes'               => $validated['notes'] ?? null,
                 'total_refund_amount' => 0
             ]);
 
             // Create return items
-            foreach ($request->items as $item) {
-                $item['total_price'] = $item['quantity'] * $item['unit_price'];
-                $item['return_id'] = $return->id;
-                ReturnItem::create($item);
+            foreach ($validated['items'] as $item) {
+                $salesItemId = $item['sales_item_id'] ?? null;
+                $productId = $item['product_id'] ?? null;
+
+                if (!$productId && $salesItemId) {
+                    $sItem = \App\Models\SalesItem::find($salesItemId);
+                    if ($sItem) {
+                        $productId = $sItem->coil_id ?? $sItem->product_id;
+                    }
+                }
+
+                $qty = (float)($item['quantity'] ?? 0);
+                $unitPrice = (float)($item['unit_price'] ?? 0);
+
+                ReturnItem::create([
+                    'return_id'     => $return->id,
+                    'sales_item_id' => $salesItemId,
+                    'product_id'    => $productId,
+                    'quantity'      => $qty,
+                    'unit_price'    => $unitPrice,
+                    'total_price'   => $qty * $unitPrice,
+                    'return_reason' => $item['return_reason'] ?? 'other',
+                    'condition'     => $item['condition'] ?? 'good',
+                    'notes'         => $item['notes'] ?? null,
+                ]);
             }
 
             // Update total refund amount
@@ -130,12 +141,18 @@ class ReturnController extends Controller
 
             DB::commit();
 
-            return redirect()->route('returns.index')
+            session()->flash('sweet_alert', [
+                'type'  => 'success',
+                'title' => 'Success!',
+                'text'  => 'Return request created. Status: Pending Approval.',
+            ]);
+
+            return redirect()->route('returns.show', $return->id)
                 ->with('success', 'Return request created successfully. Status: Pending');
 
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->with('error', 'Error creating return: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Error creating return: ' . $e->getMessage());
         }
     }
 
@@ -149,43 +166,41 @@ class ReturnController extends Controller
     }
 
     /**
-     * Approve the return.
+     * Approve the return (immediately updates stock and adjusts sales balance).
      */
     public function approve($id)
     {
-        $return = ProductReturn::findOrFail($id);
-
-        if (!$return->isPending()) {
-            return back()->with('error', 'Return is not in pending status');
-        }
-
-        $return->approve(auth()->id());
-
-        return back()->with('success', 'Return approved successfully');
-    }
-
-    /**
-     * Complete the return and add items back to stock.
-     */
-    public function complete($id)
-    {
         $return = ProductReturn::with('items')->findOrFail($id);
 
-        if (!$return->isApproved()) {
-            return back()->with('error', 'Return must be approved before completing');
+        if (!$return->isPending()) {
+            return back()->with('error', 'Only pending returns can be approved');
         }
 
         DB::beginTransaction();
 
         try {
-            $return->complete(auth()->id());
+            $return->approve(auth()->id());
             DB::commit();
 
-            return back()->with('success', 'Return completed successfully. Stock updated.');
+            session()->flash('sweet_alert', [
+                'type'  => 'success',
+                'title' => 'Return Approved!',
+                'text'  => 'Return approved. Stock has been updated and sale balance adjusted.',
+            ]);
+
+            return back()->with('success', 'Return approved successfully. Stock updated and sale balance adjusted.');
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->with('error', 'Error completing return: ' . $e->getMessage());
+            return back()->with('error', 'Error approving return: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Complete the return (alias for backward compatibility).
+     */
+    public function complete($id)
+    {
+        return $this->approve($id);
     }
 
     /**
@@ -209,7 +224,7 @@ class ReturnController extends Controller
      */
     public function getSaleItems($saleId)
     {
-        $sale = Sale::with(['items.product', 'customer'])->find($saleId);
+        $sale = Sale::with(['items.coil', 'items.product', 'customer'])->find($saleId);
 
         if (!$sale) {
             return response()->json(['error' => 'Sale not found'], 404);
@@ -218,13 +233,19 @@ class ReturnController extends Controller
         return response()->json([
             'sale' => $sale,
             'items' => $sale->items->map(function ($item) {
+                $coilNo = $item->coil->coil_number ?? $item->product->coil_number ?? null;
+                $name = $coilNo ? ('Coil #' . $coilNo) : ('Item #' . $item->id);
+                if ($item->size) {
+                    $name .= " ({$item->size} {$item->size_type})";
+                }
                 return [
-                    'id' => $item->id,
-                    'product_id' => $item->product_id,
-                    'product_name' => $item->product->name ?? 'N/A',
-                    'quantity' => $item->qty,
-                    'unit_price' => $item->unit_price,
-                    'total_price' => $item->total_price
+                    'id'            => $item->id,
+                    'sales_item_id' => $item->id,
+                    'product_id'    => $item->coil_id ?? $item->product_id,
+                    'product_name'  => $name,
+                    'quantity'      => (float)$item->qty,
+                    'unit_price'    => (float)$item->unit_price,
+                    'total_price'   => (float)$item->total_price
                 ];
             })
         ]);

@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <title>Vendor Directory Report</title>
     @php
-        $padPath = public_path('assets/invoice/final_pad.png');
-        $padBase64 = file_exists($padPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($padPath)) : '';
+        $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
+        $padBase64 = file_exists($padPath) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($padPath)) : (function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '');
     @endphp
     <style>
         @page {

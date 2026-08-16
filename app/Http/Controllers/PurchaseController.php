@@ -213,8 +213,9 @@ class PurchaseController extends Controller
         return response()->json(['price' => 0]);
     }
 
-    public function reportIndex(Request $request)
+    public function reportIndex(?Request $request = null)
     {
+        $request = $request ?? request();
         $query = Purchase::with(['vendor', 'lot', 'warehouse']);
         $hasFilters = $request->filled('vendor_id') || $request->filled('lot_id') || $request->filled('from') || $request->filled('to');
 
@@ -228,11 +229,10 @@ class PurchaseController extends Controller
         }
 
         $purchases = $query->latest()->get();
-        $products = collect();
         $vendors = Vendor::latest()->get();
         $lots = Lot::latest()->get();
 
-        return view('frontend.pages.report.purchase.index', compact('purchases', 'products', 'vendors', 'lots'));
+        return view('frontend.pages.report.purchase.index', compact('purchases', 'vendors', 'lots', 'request'));
     }
 
     public function report(Request $request)

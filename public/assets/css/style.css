@@ -3358,18 +3358,7 @@ span.select2-container.select2-container--default.select2-container--open {
   border-radius: 0 10px 10px 0px;
 }
 .sidebar .sidebar-menu ul li.active a::after {
-  width: 8px;
-  content: "";
-  height: 5px;
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  background: #7638ff;
-  -webkit-transition: all 0.5s;
-  -ms-transition: all 0.5s;
-  transition: all 0.5s;
-  border-radius: 0 10px 10px 0px;
+  display: none;
 }
 .sidebar .sidebar-menu ul li.active a svg {
   width: 18px;

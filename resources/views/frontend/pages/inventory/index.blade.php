@@ -104,21 +104,21 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 col-12">
+        <!-- <div class="col-xl-3 col-md-6 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
                     <div class="avatar avatar-lg bg-warning-light text-warning rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
                         <i class="fe fe-dollar-sign fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Stock Valuation</h6>
+                        <h6 class="text-muted fw-normal mb-1">Total Stock Valuation (BDT)</h6>
                         <h4 class="mb-0 fw-bold text-dark">
                             ৳{{ number_format($coils->sum(fn($c) => ($c->remaining_weight / 1000) * $c->rate_per_ton), 2) }}
                         </h4>
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
     <!-- /Summary Stats Bar -->
 
@@ -161,13 +161,13 @@
                                 $vendorName = $coil->lot && $coil->lot->vendor ? $coil->lot->vendor->name : ($coil->vendor->name ?? 'N/A');
                                 $lotNo = $coil->lot ? $coil->lot->lot_number : 'N/A';
                                 $whName = $coil->warehouse ? $coil->warehouse->name : 'Main Yard';
-                                $spec = trim(($coil->thickness ? 'Thk: '.$coil.thickness : '') . ' ' . ($coil->width ? 'Size: '.$coil->width . ' ' . ($coil->length ?? 'ft') : ''));
+                                $spec = trim(($coil->thickness ? 'Thk: '.$coil->thickness : '') . ' ' . ($coil->width ? 'Size: '.$coil->width . ' ' . ($coil->length ?? 'ft') : ''));
                                 $searchText = strtolower($coil->coil_number . ' ' . $lotNo . ' ' . $vendorName . ' ' . $whName . ' ' . $spec);
                             @endphp
                             <tr class="inventory-row" data-search="{{ $searchText }}">
                                 <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
                                 <td>
-                                    <span class="fw-bold text-primary font-monospace">Coil No - {{ $coil->coil_number }}</span>
+                                    <span class="fw-bold text-primary">Coil No - {{ $coil->coil_number }}</span>
                                 </td>
                                 <td>
                                     <div>

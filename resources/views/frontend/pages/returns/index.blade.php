@@ -2,20 +2,6 @@
 
 @push('styles')
 <style>
-    .stat-card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border: 1px solid rgba(0, 0, 0, 0.05) !important;
-    }
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08) !important;
-    }
-    .table-custom tbody tr {
-        transition: background-color 0.15s ease;
-    }
-    .table-custom tbody tr:hover {
-        background-color: #fcfbff !important;
-    }
     .badge-soft-success {
         background-color: rgba(25, 135, 84, 0.12) !important;
         color: #198754 !important;
@@ -36,6 +22,11 @@
         color: #b58105 !important;
         font-weight: 600;
     }
+    .badge-soft-secondary {
+        background-color: rgba(108, 117, 125, 0.12) !important;
+        color: #6c757d !important;
+        font-weight: 600;
+    }
     .btn-action-icon {
         width: 32px;
         height: 32px;
@@ -53,12 +44,16 @@
         background-color: #7638ff !important;
         color: #ffffff !important;
         border-color: #7638ff !important;
+        box-shadow: 0 4px 10px rgba(118, 56, 255, 0.3) !important;
     }
     .table-custom th, .table-custom td {
         white-space: nowrap;
     }
     .table-responsive {
         overflow: visible !important;
+    }
+    .dropdown-menu {
+        z-index: 1060 !important;
     }
 </style>
 @endpush
@@ -70,11 +65,11 @@
     <div class="page-header mb-4">
         <div class="content-page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-                <h4 class="card-title fw-bold text-dark mb-1">Product Returns</h4>
-                <p class="text-muted small mb-0">Manage customer product return requests, approvals, and stock refunds</p>
+                <h4 class="card-title fw-bold text-dark mb-1">Product Returns Management</h4>
+                <p class="text-muted small mb-0">Track customer product returns, inventory restocks, and refund adjustments</p>
             </div>
             <div>
-                <a href="{{ route('returns.create') }}" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
+                <a class="btn btn-primary px-4 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2" href="{{ route('returns.create') }}">
                     <i class="fe fe-plus-circle fs-6"></i>
                     <span>New Return</span>
                 </a>
@@ -92,22 +87,8 @@
                         <i class="fe fe-rotate-ccw fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Return Requests</h6>
+                        <h6 class="text-muted fw-normal mb-1">Total Returns</h6>
                         <h4 class="mb-0 fw-bold text-dark">{{ number_format($returns->count()) }}</h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 col-12">
-            <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
-                <div class="card-body d-flex align-items-center">
-                    <div class="avatar avatar-lg bg-danger-light text-danger rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-dollar-sign fs-4"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Refund Amount</h6>
-                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($returns->sum('total_refund_amount'), 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -134,8 +115,22 @@
                         <i class="fe fe-check-circle fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Completed Returns</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($returns->where('status', 'completed')->count()) }}</h4>
+                        <h6 class="text-muted fw-normal mb-1">Approved & Restocked</h6>
+                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($returns->where('status', 'approved')->count()) }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 col-12">
+            <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
+                <div class="card-body d-flex align-items-center">
+                    <div class="avatar avatar-lg bg-danger-light text-danger rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                        <i class="fe fe-dollar-sign fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted fw-normal mb-1">Total Refund Amount</h6>
+                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($returns->where('status', 'approved')->sum('total_refund_amount'), 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -143,27 +138,26 @@
     </div>
     <!-- /Summary Stats Bar -->
 
-    <!-- Table Card -->
-    <div class="card border-0 shadow-sm rounded-3">
-        <!-- Filter Controls -->
+    <!-- Returns Table Card -->
+    <div class="card border-0 shadow-sm rounded-3" style="overflow: visible;">
+        <!-- Filter & Search Controls -->
         <div class="card-header bg-white py-3 border-bottom border-light">
             <div class="row align-items-center g-3">
-                <div class="col-12 col-md-6 col-lg-5">
+                <div class="col-12 col-md-5 col-lg-5">
                     <div class="search-box-custom">
-                        <input type="text" id="returnSearchInput" class="form-control border-light-subtle" placeholder="Search by return ID, order no, customer name..." autocomplete="off">
+                        <input type="text" id="returnSearchInput" class="form-control border-light-subtle" placeholder="Search by return ID, order no, customer name, phone..." autocomplete="off">
                     </div>
                 </div>
-                <div class="col-12 col-md-3 col-lg-3">
+                <div class="col-12 col-md-4 col-lg-4">
                     <select id="returnStatusFilterSelect" class="form-select border-light-subtle">
-                        <option value="all">All Statuses</option>
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="completed">Completed</option>
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending Approval</option>
+                        <option value="approved">Approved & Restocked</option>
                         <option value="rejected">Rejected</option>
                     </select>
                 </div>
-                <div class="col-12 col-md-3 col-lg-4 text-md-end text-muted small">
-                    Showing <span id="visibleReturnCount" class="fw-bold text-dark">{{ $returns->count() }}</span> of {{ $returns->count() }} records
+                <div class="col-12 col-md-3 col-lg-3 text-md-end text-muted small">
+                    Showing <span id="visibleReturnsCount" class="fw-bold text-dark">{{ $returns->count() }}</span> of {{ $returns->count() }} records
                 </div>
             </div>
         </div>
@@ -181,7 +175,7 @@
                             <th>Items</th>
                             <th>Refund Amount</th>
                             <th>Status</th>
-                            <th>Action</th>
+                            <th class="text-end pe-4">Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
@@ -189,14 +183,15 @@
                             @php
                                 $orderNo = $return->sale->order_no ?? 'N/A';
                                 $customerName = $return->customer->name ?? 'N/A';
+                                $customerPhone = $return->customer->phone ?? '';
                                 $statusClass = [
                                     'pending' => 'badge-soft-warning',
-                                    'approved' => 'badge-soft-info',
+                                    'approved' => 'badge-soft-success',
                                     'completed' => 'badge-soft-success',
                                     'rejected' => 'badge-soft-danger'
                                 ][$return->status] ?? 'badge-soft-secondary';
                             @endphp
-                            <tr class="return-row" data-search="{{ strtolower('#' . $return->id . ' ' . $orderNo . ' ' . $customerName . ' ' . $return->status) }}" data-status="{{ strtolower($return->status) }}">
+                            <tr class="return-row" data-search="{{ strtolower('#' . $return->id . ' ' . $orderNo . ' ' . $customerName . ' ' . $customerPhone . ' ' . $return->status) }}" data-status="{{ strtolower($return->status) }}">
                                 <td class="ps-4 text-muted fw-semibold">#{{ $return->id }}</td>
                                 <td>
                                     <span class="text-secondary small fw-semibold">
@@ -204,10 +199,19 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="fw-bold text-primary font-monospace">#{{ $orderNo }}</span>
+                                    @if($return->sale)
+                                        <a href="{{ route('sales.show', $return->sale->id) }}" class="fw-bold text-primary font-monospace">
+                                            #{{ $orderNo }}
+                                        </a>
+                                    @else
+                                        <span class="text-muted">#{{ $orderNo }}</span>
+                                    @endif
                                 </td>
                                 <td>
                                     <span class="fw-bold text-dark d-block">{{ $customerName }}</span>
+                                    @if($customerPhone)
+                                        <small class="text-muted fs-7"><i class="fe fe-phone me-1"></i>{{ $customerPhone }}</small>
+                                    @endif
                                 </td>
                                 <td>
                                     <span class="badge badge-soft-primary px-2 py-1 rounded-2 fs-7">
@@ -221,7 +225,7 @@
                                 </td>
                                 <td>
                                     <span class="badge {{ $statusClass }} px-3 py-1 rounded-pill text-capitalize fs-7">
-                                        {{ ucfirst($return->status) }}
+                                        {{ $return->status === 'approved' ? 'Approved' : ucfirst($return->status) }}
                                     </span>
                                 </td>
                                 <td class="text-end pe-4">
@@ -238,12 +242,12 @@
                                             </li>
                                             @if($return->isPending())
                                                 <li>
-                                                    <form method="POST" action="{{ route('returns.approve', $return->id) }}" onsubmit="return confirm('Approve this product return request?')">
+                                                    <form method="POST" action="{{ route('returns.approve', $return->id) }}" onsubmit="return confirm('Approve this return request? Stock will be updated and invoice balance adjusted immediately.')">
                                                         @csrf
                                                         @method('PATCH')
                                                         <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-success">
                                                             <i class="fe fe-check-circle text-success"></i>
-                                                            <span>Approve Return</span>
+                                                            <span>Approve & Restock</span>
                                                         </button>
                                                     </form>
                                                 </li>
@@ -252,18 +256,6 @@
                                                         <i class="fe fe-x-circle text-danger"></i>
                                                         <span>Reject Return</span>
                                                     </a>
-                                                </li>
-                                            @endif
-                                            @if($return->isApproved())
-                                                <li>
-                                                    <form method="POST" action="{{ route('returns.complete', $return->id) }}" onsubmit="return confirm('Complete return and update inventory stock?')">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-primary">
-                                                            <i class="fe fe-box text-primary"></i>
-                                                            <span>Complete & Update Stock</span>
-                                                        </button>
-                                                    </form>
                                                 </li>
                                             @endif
                                             @if($return->isPending() || $return->isRejected())
@@ -281,34 +273,6 @@
                                             @endif
                                         </ul>
                                     </div>
-
-                                    <!-- Reject Modal -->
-                                    @if($return->isPending())
-                                        <div class="modal fade text-start" id="rejectModal{{ $return->id }}" tabindex="-1" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content border-0 shadow rounded-3">
-                                                    <form method="POST" action="{{ route('returns.reject', $return->id) }}">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <div class="modal-header border-bottom">
-                                                            <h5 class="modal-title fw-bold text-dark">Reject Return #{{ $return->id }}</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                        </div>
-                                                        <div class="modal-body p-4">
-                                                            <div class="mb-3">
-                                                                <label class="form-label small text-secondary fw-semibold mb-1">Rejection Reason <span class="text-danger">*</span></label>
-                                                                <textarea name="reason" class="form-control border-light-subtle" rows="3" placeholder="Enter reason for rejection..." required></textarea>
-                                                            </div>
-                                                        </div>
-                                                        <div class="modal-footer border-top pt-3">
-                                                            <button type="button" class="btn btn-outline-secondary rounded-2 px-3" data-bs-dismiss="modal">Cancel</button>
-                                                            <button type="submit" class="btn btn-danger rounded-2 px-4">Reject Return</button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -334,26 +298,56 @@
     </div>
 </div>
 
+{{-- Reject Modals Placed Outside Table DOM --}}
+@foreach($returns as $return)
+    @if($return->isPending())
+        <div class="modal fade text-start" id="rejectModal{{ $return->id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow rounded-3">
+                    <form method="POST" action="{{ route('returns.reject', $return->id) }}">
+                        @csrf
+                        @method('PATCH')
+                        <div class="modal-header border-bottom">
+                            <h5 class="modal-title fw-bold text-dark">Reject Return #{{ $return->id }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label small text-secondary fw-semibold mb-1">Rejection Reason <span class="text-danger">*</span></label>
+                                <textarea name="reason" class="form-control border-light-subtle" rows="3" placeholder="Enter reason for rejection..." required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top pt-3">
+                            <button type="button" class="btn btn-outline-secondary rounded-2 px-3" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger rounded-2 px-4">Reject Return</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+@endforeach
+
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('returnSearchInput');
     const statusSelect = document.getElementById('returnStatusFilterSelect');
     const rows = document.querySelectorAll('.return-row');
-    const visibleCountSpan = document.getElementById('visibleReturnCount');
 
-    function filterTable() {
+    function filterRows() {
         const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const statusFilter = statusSelect ? statusSelect.value : 'all';
+        const status = statusSelect ? statusSelect.value.toLowerCase().trim() : '';
         let visibleCount = 0;
 
         rows.forEach(row => {
-            const rowSearchText = row.dataset.search || '';
-            const rowStatus = row.dataset.status || '';
+            const searchData = row.getAttribute('data-search') || '';
+            const statusData = row.getAttribute('data-status') || '';
 
-            const matchesSearch = query === '' || rowSearchText.includes(query);
-            const matchesStatus = statusFilter === 'all' || rowStatus === statusFilter;
+            const matchesQuery = query === '' || searchData.includes(query);
+            const matchesStatus = status === '' || statusData === status;
 
-            if (matchesSearch && matchesStatus) {
+            if (matchesQuery && matchesStatus) {
                 row.style.display = '';
                 visibleCount++;
             } else {
@@ -361,13 +355,19 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        if (visibleCountSpan) {
-            visibleCountSpan.textContent = visibleCount;
+        const countEl = document.getElementById('visibleReturnsCount');
+        if (countEl) {
+            countEl.textContent = visibleCount;
         }
     }
 
-    if (searchInput) searchInput.addEventListener('input', filterTable);
-    if (statusSelect) statusSelect.addEventListener('change', filterTable);
+    if (searchInput) {
+        searchInput.addEventListener('input', filterRows);
+    }
+    if (statusSelect) {
+        statusSelect.addEventListener('change', filterRows);
+    }
 });
 </script>
+@endpush
 @endsection

@@ -40,11 +40,12 @@
         <div class="content-page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
                 <h4 class="card-title fw-bold text-dark mb-1">Sales Report</h4>
-                <p class="text-muted small mb-0">Comprehensive breakdown of customer sales, product quantities, unit prices, and revenue</p>
+                <p class="text-muted small mb-0">Comprehensive breakdown of customer sales, coil shipments, weights, rates, and revenue</p>
             </div>
             <div>
-                <a href="{{ route('sales.report.pdf', request()->query()) }}" class="btn btn-outline-danger px-4 py-2 rounded-3 shadow-sm" target="_blank">
-                    <i class="fe fe-file-text me-2"></i>Export PDF
+                <a href="{{ route('sales.report.pdf', request()->query()) }}" class="btn btn-outline-danger px-4 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2" target="_blank">
+                    <i class="fe fe-download fs-6"></i>
+                    <span>Export PDF</span>
                 </a>
             </div>
         </div>
@@ -71,11 +72,11 @@
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
                     <div class="avatar avatar-lg bg-info-light text-info rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-box fs-4"></i>
+                        <i class="fe fe-layers fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Items Sold</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($salesReport->sum('qty')) }} Kg(s)</h4>
+                        <h6 class="text-muted fw-normal mb-1">Total Weight Sold</h6>
+                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($salesReport->sum('qty'), 2) }} kg</h4>
                     </div>
                 </div>
             </div>
@@ -109,19 +110,19 @@
                             <option value="">All Customers</option>
                             @foreach ($customers as $customer)
                                 <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
-                                    {{ $customer->name }} - {{ $customer->phone }}
+                                    {{ $customer->name }} {{ $customer->phone ? '(' . $customer->phone . ')' : '' }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
                     <div class="col-lg-3 col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Product Name</label>
-                        <select name="item_name" class="form-select border-light-subtle">
-                            <option value="">All Products</option>
-                            @foreach ($products as $product)
-                                <option value="{{ $product->id }}" {{ request('item_name') == $product->id ? 'selected' : '' }}>
-                                    {{ $product->name }}
+                        <label class="form-label small text-secondary fw-semibold mb-1">Coil Number</label>
+                        <select name="coil_id" class="form-select border-light-subtle">
+                            <option value="">All Coils</option>
+                            @foreach ($coils as $coil)
+                                <option value="{{ $coil->id }}" {{ request('coil_id') == $coil->id ? 'selected' : '' }}>
+                                    Coil No - {{ $coil->coil_number }}
                                 </option>
                             @endforeach
                         </select>
@@ -153,7 +154,7 @@
             <div class="row align-items-center g-3">
                 <div class="col-12 col-md-6">
                     <div class="search-box-custom">
-                        <input type="text" id="salesReportSearchInput" class="form-control border-light-subtle" placeholder="Search customer, product name, qty..." autocomplete="off">
+                        <input type="text" id="salesReportSearchInput" class="form-control border-light-subtle" placeholder="Search customer, coil no, weight, price..." autocomplete="off">
                     </div>
                 </div>
                 <div class="col-12 col-md-6 text-md-end text-muted small">
@@ -168,40 +169,58 @@
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
                             <th class="ps-4" style="width: 80px;">#</th>
+                            <th>Date</th>
                             <th>Customer</th>
-                            <th>Product Name</th>
-                            <th>Qty</th>
-                            <th>Unit Price</th>
+                            <th>Coil No / Specification</th>
+                            <th>Weight Sold</th>
+                            <th>Unit Rate (BDT)</th>
                             <th class="pe-4">Total Amount</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
-                        @forelse($salesReport as $index => $purchase)
+                        @forelse($salesReport as $index => $saleItem)
                             @php
-                                $custName = $purchase->customer_name ?? 'N/A';
-                                $prodName = $purchase->product_name ?? 'N/A';
+                                $custName = $saleItem->customer_name ?? 'N/A';
+                                $custPhone = $saleItem->customer_phone ?? '';
+                                $prodName = $saleItem->product_name ?? 'N/A';
+                                $saleDate = $saleItem->sale_date ? \Carbon\Carbon::parse($saleItem->sale_date)->format('d M Y') : 'N/A';
+                                $searchData = strtolower($custName . ' ' . $custPhone . ' ' . $prodName . ' ' . $saleItem->qty . ' ' . $saleItem->total_price);
                             @endphp
-                            <tr class="sales-report-row" data-search="{{ strtolower($custName . ' ' . $prodName . ' ' . $purchase->qty . ' ' . $purchase->total_price) }}">
+                            <tr class="sales-report-row" data-search="{{ $searchData }}">
                                 <td class="ps-4 text-muted fw-semibold">{{ $index + 1 }}</td>
                                 <td>
-                                    <span class="fw-bold text-dark">{{ $custName }}</span>
+                                    <span class="text-secondary small fw-semibold">{{ $saleDate }}</span>
                                 </td>
-                                <td>{{ $prodName }}</td>
                                 <td>
-                                    <span class="badge badge-soft-info px-3 py-1 rounded-pill fs-7">
-                                        {{ number_format($purchase->qty) }} Kg(s)
+                                    <span class="fw-bold text-dark d-block">{{ $custName }}</span>
+                                    @if($custPhone)
+                                        <small class="text-muted fs-7"><i class="fe fe-phone me-1"></i>{{ $custPhone }}</small>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-primary">
+                                        @if(is_numeric($prodName) || str_starts_with($prodName, 'Coil'))
+                                            {{ str_starts_with($prodName, 'Coil') ? $prodName : 'Coil No - ' . $prodName }}
+                                        @else
+                                            {{ $prodName }}
+                                        @endif
                                     </span>
                                 </td>
-                                <td>৳{{ number_format($purchase->unit_price, 2) }}</td>
+                                <td>
+                                    <span class="badge badge-soft-info px-3 py-1 rounded-pill fs-7">
+                                        {{ number_format($saleItem->qty, 2) }} kg
+                                    </span>
+                                </td>
+                                <td>৳{{ number_format($saleItem->unit_price, 2) }}</td>
                                 <td class="pe-4">
                                     <span class="badge badge-soft-primary px-3 py-1 rounded-pill fs-7">
-                                        ৳{{ number_format($purchase->total_price, 2) }}
+                                        ৳{{ number_format($saleItem->total_price, 2) }}
                                     </span>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-5">
+                                <td colspan="7" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
                                         <div class="avatar avatar-xl bg-primary-light text-primary rounded-circle mb-3 d-flex align-items-center justify-content-center">
                                             <i class="fe fe-shopping-cart fs-1"></i>
@@ -219,6 +238,7 @@
     </div>
 </div>
 
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('salesReportSearchInput');
@@ -247,4 +267,5 @@ document.addEventListener('DOMContentLoaded', function () {
     if (searchInput) searchInput.addEventListener('input', filterTable);
 });
 </script>
+@endpush
 @endsection
