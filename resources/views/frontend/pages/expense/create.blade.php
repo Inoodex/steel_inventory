@@ -32,10 +32,10 @@
 
                     <div class="col-lg-4 col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Employee</label>
-                        <select id="employeeSelect" class="form-select border-light-subtle" name="employee_id">
+                        <select id="employeeSelect" class="form-select border-light-subtle select2" name="employee_id" data-placeholder="Select Employee">
                             <option value="">Select Employee</option>
                             @foreach ($employees as $emp)
-                                <option value="{{ $emp->id }}" data-salary="{{ $emp->salary }}">
+                                <option value="{{ $emp->id }}" {{ old('employee_id') == $emp->id ? 'selected' : '' }} data-salary="{{ $emp->salary }}">
                                     {{ $emp->name }} ({{ $emp->employee_id }})
                                 </option>
                             @endforeach
@@ -44,7 +44,7 @@
 
                     <div class="col-lg-4 col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Expense Category <span class="text-danger">*</span></label>
-                        <select name="expense_category_id" class="form-select border-light-subtle" required>
+                        <select name="expense_category_id" id="categorySelect" class="form-select border-light-subtle select2" required data-placeholder="Select Category">
                             <option value="">Select Category</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}" {{ old('expense_category_id') == $category->id ? 'selected' : '' }}>
@@ -61,9 +61,9 @@
 
                     <div class="col-lg-4 col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Spend Method <span class="text-danger">*</span></label>
-                        <select name="spend_method" class="form-select border-light-subtle" required>
+                        <select name="spend_method" id="spendMethodSelect" class="form-select border-light-subtle select2" required data-placeholder="Select Spend Method">
                             <option value="">Select Spend Method</option>
-                            <option value="cash" {{ old('spend_method') == 'cash' ? 'selected' : '' }}>Cash Payment</option>
+                            <option value="cash" {{ old('spend_method', 'cash') == 'cash' ? 'selected' : '' }}>Cash Payment</option>
                             <option value="card" {{ old('spend_method') == 'card' ? 'selected' : '' }}>Card Payment</option>
                             <option value="bank_transfer" {{ old('spend_method') == 'bank_transfer' ? 'selected' : '' }}>Bank Transfer / Other</option>
                         </select>
@@ -84,3 +84,13 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            width: '100%'
+        });
+    });
+</script>
+@endpush

@@ -39,11 +39,10 @@
         <div class="card-body p-4">
             <form method="POST" action="{{ route('salary.store') }}" id="salaryForm">
                     @csrf
-                    <div class="row">
-
-                        <div class="col-md-6 mb-3">
-                            <label>Month <span class="text-danger">*</span></label>
-                            <select name="month" class="form-control" id="monthSelect" required>
+                    <div class="row g-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Month <span class="text-danger">*</span></label>
+                            <select name="month" class="form-select border-light-subtle select2" id="monthSelect" required data-placeholder="Select Month">
                                 <option value="">Select Month</option>
                                 @php
                                     $months = [
@@ -72,9 +71,9 @@
                             </select>
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label>Employee <span class="text-danger">*</span></label>
-                            <select name="employee_id" class="form-control" id="employeeSelect" required>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Employee <span class="text-danger">*</span></label>
+                            <select name="employee_id" class="form-select border-light-subtle select2" id="employeeSelect" required data-placeholder="Select Employee">
                                 <option value="">Select Employee</option>
                                 @foreach ($employees as $emp)
                                     <option value="{{ $emp->id }}" data-salary="{{ $emp->salary }}">
@@ -84,47 +83,47 @@
                             </select>
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label>Basic Salary</label>
-                            <input type="number" id="basicSalary" name="basic_salary" class="form-control" readonly>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Basic Salary</label>
+                            <input type="number" id="basicSalary" name="basic_salary" class="form-control border-light-subtle bg-light" readonly>
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label>Advance (Salary)</label>
-                            <input type="number" id="advanceInput" name="advance" class="form-control" readonly>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Advance (Salary)</label>
+                            <input type="number" id="advanceInput" name="advance" class="form-control border-light-subtle bg-light" readonly>
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label>Allowance (TA/DA)</label>
-                            <input type="number" name="allowance" class="form-control" id="allowanceInput" readonly>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Allowance (TA/DA)</label>
+                            <input type="number" name="allowance" class="form-control border-light-subtle bg-light" id="allowanceInput" readonly>
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label>Deduction</label>
-                            <input type="number" name="deduction" class="form-control" id="deductionInput" value="0">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Deduction</label>
+                            <input type="number" name="deduction" class="form-control border-light-subtle" id="deductionInput" value="0">
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label>Net Salary</label>
-                            <input type="number" name="net_salary" class="form-control fw-bold" id="netSalary" readonly>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Net Salary</label>
+                            <input type="number" name="net_salary" class="form-control border-light-subtle fw-bold bg-light" id="netSalary" readonly>
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label>Status</label>
-                            <select name="payment_status" class="form-control">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Payment Status</label>
+                            <select name="payment_status" class="form-select border-light-subtle select2" data-placeholder="Select Status">
                                 <option value="paid">Paid</option>
                                 <option value="unpaid">Unpaid</option>
                             </select>
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label>Payment Date</label>
-                            <input type="date" name="payment_date" class="form-control" value="{{ date('Y-m-d') }}">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Payment Date</label>
+                            <input type="date" name="payment_date" class="form-control border-light-subtle" value="{{ date('Y-m-d') }}">
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label>Notes</label>
-                            <textarea name="note" class="form-control" rows="3"></textarea>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Notes</label>
+                            <textarea name="note" class="form-control border-light-subtle" rows="2" placeholder="Optional notes..."></textarea>
                         </div>
 
                         <div class="d-flex justify-content-end gap-2 border-top pt-3 mt-3">
@@ -136,272 +135,146 @@
             </div>
         </div>
     </div>
+</div>
+@endsection
 
-    {{-- <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const employeeSelect = document.getElementById('employeeSelect');
-            const basicSalaryInput = document.getElementById('basicSalary');
-            const monthSelect = document.getElementById('monthSelect');
-
-            // Basic Salary from data attribute
-            employeeSelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                basicSalaryInput.value = selectedOption.dataset.salary || '';
-
-                // Fetch advance
-                let employeeId = this.value;
-                if (!employeeId) {
-                    document.getElementById('advanceInput').value = 0;
-                    resetCalculations();
-                    return;
-                }
-
-                fetch(`/employee/${employeeId}/advance-sum`)
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('advanceInput').value = data.sum || 0;
-
-                        // If month is selected, fetch TA/DA data via AJAX
-                        if (monthSelect.value) {
-                            fetchTaDaDataViaAjax(employeeId, monthSelect.value);
-                        } else {
-                            // Calculate without TA/DA data
-                            calculateNetSalary(0, 0);
-                        }
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        document.getElementById('advanceInput').value = 0;
-                        calculateNetSalary(0, 0);
-                    });
-            });
-
-            // Month selection for TA/DA
-            monthSelect.addEventListener('change', function() {
-                const employeeId = document.getElementById('employeeSelect').value;
-                if (employeeId && this.value) {
-                    fetchTaDaDataViaAjax(employeeId, this.value);
-                }
-            });
-
-            // Deduction input
-            document.getElementById('deductionInput').addEventListener('input', function() {
-                const employeeId = document.getElementById('employeeSelect').value;
-                const month = document.getElementById('monthSelect').value;
-
-                if (employeeId && month) {
-                    // Re-fetch TA/DA data to recalculate
-                    fetchTaDaDataViaAjax(employeeId, month);
-                } else {
-                    // Calculate without TA/DA data
-                    calculateNetSalary(0, 0);
-                }
-            });
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        // Initialize Select2
+        $('.select2').select2({
+            width: '100%'
         });
 
-        // Fetch TA/DA data using AJAX (no page refresh)
-        function fetchTaDaDataViaAjax(employeeId, month) {
-            console.log('Fetching TA/DA data for employee:', employeeId, 'month:', month);
+        const $employeeSelect = $('#employeeSelect');
+        const $monthSelect = $('#monthSelect');
+        const $basicSalaryInput = $('#basicSalary');
+        const $deductionInput = $('#deductionInput');
 
-            // Show loading state
-            document.getElementById('allowanceInput').value = 'Loading...';
+        // Handle Employee Change (supports both native and Select2 events)
+        $employeeSelect.on('change select2:select', function() {
+            const selectedOpt = $(this).find('option:selected')[0];
+            const salary = selectedOpt ? selectedOpt.dataset.salary : '';
+            $basicSalaryInput.val(salary || '');
 
-            fetch('/salary/get-tada-data-ajax', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        employee_id: employeeId,
-                        month: month
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('TA/DA Data received:', data);
-                    calculateNetSalary(data.total_advance || 0, data.total_claim || 0);
-                })
-                .catch(error => {
-                    console.error('Error fetching TA/DA data:', error);
-                    document.getElementById('allowanceInput').value = 0;
-                    calculateNetSalary(0, 0);
-                });
-        }
+            const employeeId = $(this).val();
+            const month = $monthSelect.val();
 
-        function calculateNetSalary(taDaAdvance = 0, taDaClaim = 0) {
-            const basicSalary = parseFloat(document.getElementById('basicSalary').value) || 0;
-            const salaryAdvance = parseFloat(document.getElementById('advanceInput').value) || 0;
-            const deduction = parseFloat(document.getElementById('deductionInput').value) || 0;
-
-            console.log('Calculating net salary with:', {
-                basicSalary,
-                salaryAdvance,
-                deduction,
-                taDaAdvance,
-                taDaClaim
-            });
-
-            // Start with: basic_salary - salary_advance - deduction
-            let netSalary = basicSalary - salaryAdvance - deduction;
-            let allowance = 0;
-
-            // Apply both Advance and Claim if they exist
-            if (taDaAdvance > 0) {
-                netSalary -= taDaAdvance; // Deduct remaining_amount from advance
-                allowance -= taDaAdvance;
-            }
-
-            if (taDaClaim > 0) {
-                netSalary += taDaClaim; // Add amount from claim
-                allowance += taDaClaim;
-            }
-
-            document.getElementById('allowanceInput').value = allowance;
-            document.getElementById('netSalary').value = Math.max(0, netSalary).toFixed(2);
-
-            console.log('Final Calculation - Allowance:', allowance, 'Net Salary:', netSalary);
-        }
-
-        function resetCalculations() {
-            document.getElementById('allowanceInput').value = 0;
-            document.getElementById('netSalary').value = 0;
-            document.getElementById('deductionInput').value = 0;
-        }
-    </script> --}}
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const employeeSelect = document.getElementById('employeeSelect');
-            const basicSalaryInput = document.getElementById('basicSalary');
-            const monthSelect = document.getElementById('monthSelect');
-
-            // Basic Salary from data attribute
-            employeeSelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                basicSalaryInput.value = selectedOption.dataset.salary || '';
-
-                let employeeId = this.value;
-                let month = monthSelect.value;
-
-                if (!employeeId) {
-                    document.getElementById('advanceInput').value = 0;
-                    resetCalculations();
-                    return;
-                }
-
-                fetchAdvanceByMonth(employeeId, month);
-            });
-
-            // Month selection for both advance and TA/DA
-            monthSelect.addEventListener('change', function() {
-                const employeeId = document.getElementById('employeeSelect').value;
-                const month = this.value;
-
-                if (employeeId && month) {
-                    fetchAdvanceByMonth(employeeId, month);
-                    fetchTaDaDataViaAjax(employeeId, month);
-                }
-            });
-
-            // Deduction input
-            document.getElementById('deductionInput').addEventListener('input', function() {
-                calculateNetSalaryWithCurrentData();
-            });
-        });
-
-        // Fetch advance from daily_expenses table with month filter
-        function fetchAdvanceByMonth(employeeId, month) {
-            if (!employeeId || !month) {
-                document.getElementById('advanceInput').value = 0;
+            if (!employeeId) {
+                $('#advanceInput').val(0);
+                resetCalculations();
                 return;
             }
 
-            fetch(`/employee/${employeeId}/advance-sum-by-month?month=${month}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('advanceInput').value = data.sum || 0;
+            fetchAdvanceByMonth(employeeId, month);
+        });
 
-                    // Also fetch TA/DA data
-                    fetchTaDaDataViaAjax(employeeId, month);
-                })
-                .catch(err => {
-                    console.error(err);
-                    document.getElementById('advanceInput').value = 0;
-                    calculateNetSalary(0, 0);
-                });
-        }
+        // Handle Month Change
+        $monthSelect.on('change select2:select', function() {
+            const employeeId = $employeeSelect.val();
+            const month = $(this).val();
 
-        // Fetch TA/DA data
-        function fetchTaDaDataViaAjax(employeeId, month) {
-            console.log('Fetching TA/DA data for employee:', employeeId, 'month:', month);
-            document.getElementById('allowanceInput').value = 'Loading...';
-
-            fetch('/salary/get-tada-data-ajax', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        employee_id: employeeId,
-                        month: month
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    calculateNetSalary(data.total_advance || 0, data.total_claim || 0);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('allowanceInput').value = 0;
-                    calculateNetSalary(0, 0);
-                });
-        }
-
-        function calculateNetSalary(taDaAdvance = 0, taDaClaim = 0) {
-            const basicSalary = parseFloat(document.getElementById('basicSalary').value) || 0;
-            const salaryAdvance = parseFloat(document.getElementById('advanceInput').value) || 0;
-            const deduction = parseFloat(document.getElementById('deductionInput').value) || 0;
-
-            let netSalary = basicSalary - salaryAdvance - deduction;
-            let allowance = 0;
-
-            if (taDaAdvance > 0) {
-                netSalary -= taDaAdvance;
-                allowance -= taDaAdvance;
+            if (employeeId && month) {
+                fetchAdvanceByMonth(employeeId, month);
+                fetchTaDaDataViaAjax(employeeId, month);
             }
+        });
 
-            if (taDaClaim > 0) {
-                netSalary += taDaClaim;
-                allowance += taDaClaim;
-            }
+        // Deduction input event
+        $deductionInput.on('input', function() {
+            calculateNetSalaryWithCurrentData();
+        });
 
-            document.getElementById('allowanceInput').value = allowance;
-            document.getElementById('netSalary').value = Math.max(0, netSalary).toFixed(2);
+        // Trigger initial calculation if employee is already selected (e.g. from session)
+        if ($employeeSelect.val()) {
+            $employeeSelect.trigger('change');
+        }
+    });
+
+    // Fetch advance from daily_expenses table with month filter
+    function fetchAdvanceByMonth(employeeId, month) {
+        if (!employeeId || !month) {
+            $('#advanceInput').val(0);
+            return;
         }
 
-        function calculateNetSalaryWithCurrentData() {
-            const basicSalary = parseFloat(document.getElementById('basicSalary').value) || 0;
-            const salaryAdvance = parseFloat(document.getElementById('advanceInput').value) || 0;
-            const allowance = parseFloat(document.getElementById('allowanceInput').value) || 0;
-            const deduction = parseFloat(document.getElementById('deductionInput').value) || 0;
+        fetch(`/employee/${employeeId}/advance-sum-by-month?month=${month}`)
+            .then(response => response.json())
+            .then(data => {
+                $('#advanceInput').val(data.sum || 0);
+                // Also fetch TA/DA data
+                fetchTaDaDataViaAjax(employeeId, month);
+            })
+            .catch(err => {
+                console.error(err);
+                $('#advanceInput').val(0);
+                calculateNetSalary(0, 0);
+            });
+    }
 
-            const netSalary = basicSalary - salaryAdvance + allowance - deduction;
-            document.getElementById('netSalary').value = Math.max(0, netSalary).toFixed(2);
+    // Fetch TA/DA data
+    function fetchTaDaDataViaAjax(employeeId, month) {
+        $('#allowanceInput').val('Loading...');
+
+        fetch('/salary/get-tada-data-ajax', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                employee_id: employeeId,
+                month: month
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            calculateNetSalary(data.total_advance || 0, data.total_claim || 0);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            $('#allowanceInput').val(0);
+            calculateNetSalary(0, 0);
+        });
+    }
+
+    function calculateNetSalary(taDaAdvance = 0, taDaClaim = 0) {
+        const basicSalary = parseFloat($('#basicSalary').val()) || 0;
+        const salaryAdvance = parseFloat($('#advanceInput').val()) || 0;
+        const deduction = parseFloat($('#deductionInput').val()) || 0;
+
+        let netSalary = basicSalary - salaryAdvance - deduction;
+        let allowance = 0;
+
+        if (taDaAdvance > 0) {
+            netSalary -= taDaAdvance;
+            allowance -= taDaAdvance;
         }
 
-        function resetCalculations() {
-            document.getElementById('allowanceInput').value = 0;
-            document.getElementById('netSalary').value = 0;
-            document.getElementById('deductionInput').value = 0;
+        if (taDaClaim > 0) {
+            netSalary += taDaClaim;
+            allowance += taDaClaim;
         }
-    </script>
-@endsection
+
+        $('#allowanceInput').val(allowance);
+        $('#netSalary').val(Math.max(0, netSalary).toFixed(2));
+    }
+
+    function calculateNetSalaryWithCurrentData() {
+        const basicSalary = parseFloat($('#basicSalary').val()) || 0;
+        const salaryAdvance = parseFloat($('#advanceInput').val()) || 0;
+        const allowance = parseFloat($('#allowanceInput').val()) || 0;
+        const deduction = parseFloat($('#deductionInput').val()) || 0;
+
+        const netSalary = basicSalary - salaryAdvance + allowance - deduction;
+        $('#netSalary').val(Math.max(0, netSalary).toFixed(2));
+    }
+
+    function resetCalculations() {
+        $('#allowanceInput').val(0);
+        $('#netSalary').val(0);
+        $('#deductionInput').val(0);
+    }
+</script>
+@endpush

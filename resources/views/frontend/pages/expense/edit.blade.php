@@ -33,7 +33,7 @@
 
                     <div class="col-md-4 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Employee <span class="text-danger">*</span></label>
-                        <select id="employeeSelect" class="form-select border-light-subtle" name="employee_id" required>
+                        <select id="employeeSelect" class="form-select border-light-subtle select2" name="employee_id" required data-placeholder="Select Employee">
                             <option value="">Select Employee</option>
                             @foreach ($employees as $emp)
                                 <option value="{{ $emp->id }}" {{ old('employee_id', $expense->employee_id) == $emp->id ? 'selected' : '' }} data-basic_salary="{{ $emp->basic_salary }}">
@@ -45,7 +45,7 @@
 
                     <div class="col-md-4 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Expense Category <span class="text-danger">*</span></label>
-                        <select name="expense_category_id" class="form-select border-light-subtle" required>
+                        <select name="expense_category_id" id="categorySelect" class="form-select border-light-subtle select2" required data-placeholder="Select Category">
                             <option value="">Select Category</option>
                             @foreach ($categories as $cat)
                                 <option value="{{ $cat->id }}" {{ old('expense_category_id', $expense->expense_category_id) == $cat->id ? 'selected' : '' }}>
@@ -62,7 +62,7 @@
 
                     <div class="col-md-4 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Spend Method <span class="text-danger">*</span></label>
-                        <select name="spend_method" class="form-select border-light-subtle" required>
+                        <select name="spend_method" id="spendMethodSelect" class="form-select border-light-subtle select2" required data-placeholder="Select Spend Method">
                             <option value="">Select Spend Method</option>
                             <option value="cash" {{ $expense->spend_method == 'cash' ? 'selected' : '' }}>Cash Payment</option>
                             <option value="card" {{ $expense->spend_method == 'card' ? 'selected' : '' }}>Card Payment</option>
@@ -85,3 +85,13 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            width: '100%'
+        });
+    });
+</script>
+@endpush

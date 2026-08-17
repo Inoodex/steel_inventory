@@ -14,7 +14,7 @@ class RevenueController extends Controller
     public function index()
     {
         $revenues = Revenue::orderByDesc('year')->orderByDesc('month')->get();
-        return view('frontend.pages.revenue.index', compact('revenues'));
+        return view('frontend.pages.report.revenue.index', compact('revenues'));
     }
 
     public function downloadPdf()
@@ -60,7 +60,7 @@ class RevenueController extends Controller
      public function export($id)
     {
         $revenue = Revenue::findOrFail($id);
-        $html = view('frontend.pages.revenue.pdf', compact('revenue'))->render();
+        $html = view('frontend.pages.report.revenue.pdf', compact('revenue'))->render();
         $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8',
             'format' => 'A4',

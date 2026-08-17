@@ -35,20 +35,16 @@
                     <li class="menu-title"><span>Sales & Commercial</span></li>
 
                     @if($canView('Sales Management'))
-                        {{-- New Sale (direct link, prominent) --}}
-                        <li class="{{ $active(['sales.create']) ? 'active' : '' }}">
-                            <a href="{{ route('sales.create') }}">
-                                <i class="fe fe-plus-circle"></i><span> New Sale</span>
-                            </a>
-                        </li>
-
                         {{-- Sales submenu --}}
-                        <li class="submenu {{ $active(['sales.index','sales.show','sales.edit','sales.invoice','returns.*']) ? 'active' : '' }}">
+                        <li class="submenu {{ $active(['sales.*','returns.*']) ? 'active' : '' }}">
                             <a href="javascript:void(0)">
                                 <i class="fe fe-shopping-bag"></i><span> Sales</span>
                                 <span class="menu-arrow"></span>
                             </a>
-                            <ul class="{{ $active(['sales.index','sales.show','sales.edit','sales.invoice','returns.*']) ? '' : '' }}" style="{{ $active(['sales.index','sales.show','sales.edit','sales.invoice','returns.*']) ? 'display:block' : '' }}">
+                            <ul style="{{ $active(['sales.*','returns.*']) ? 'display:block' : '' }}">
+                                <li class="{{ $active(['sales.create']) ? 'active' : '' }}">
+                                    <a href="{{ route('sales.create') }}"><i class="fe fe-plus-circle"></i> New Sale</a>
+                                </li>
                                 <li class="{{ $active(['sales.index','sales.show','sales.edit','sales.invoice']) ? 'active' : '' }}">
                                     <a href="{{ route('sales.index') }}"><i class="fe fe-list"></i> Sales Orders</a>
                                 </li>

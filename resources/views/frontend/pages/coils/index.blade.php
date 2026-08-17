@@ -157,10 +157,23 @@
                                     ৳ {{ number_format($coil->rate_per_ton, 2) }}
                                 </td>
                                 <td>
-                                    <span class="fw-bold text-dark">{{ number_format($coil->remaining_weight, 2) }} kg</span>
-                                    @if(($coil->piece_count ?? 1) > 1)
-                                        <small class="text-muted d-block" style="font-size: 11px;">({{ number_format($coil->gross_weight / $coil->piece_count, 2) }} kg/ea)</small>
-                                    @endif
+                                    @php
+                                        $coilPct = $coil->remaining_percentage;
+                                    @endphp
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="fw-bold text-dark">{{ number_format($coil->remaining_weight, 2) }} kg</span>
+                                        <span class="badge {{ $coilPct > 50 ? 'badge-soft-success' : ($coilPct > 20 ? 'badge-soft-warning' : 'badge-soft-danger') }} rounded-pill px-2 py-0 fs-8">
+                                            {{ $coilPct }}%
+                                        </span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <span class="badge bg-light text-dark border px-2 py-0 fs-8">
+                                            {{ $coil->formatted_remaining_coils }} / {{ $coil->formatted_piece_count }} Coils
+                                        </span>
+                                        @if(($coil->piece_count ?? 1) > 1)
+                                            <small class="text-muted" style="font-size: 10px;">({{ number_format($coil->unit_weight, 1) }} kg/ea)</small>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td >
                                     <i class="fe fe-map-pin me-1"></i>{{ $coil->warehouse->name }}

@@ -161,7 +161,7 @@
                             <th>Total Sales</th>
                             <th>Total Expenses</th>
                             <th>Net Profit</th>
-                            <th class="pe-4 text-end">Action</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
@@ -187,7 +187,7 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="pe-4 text-end">
+                                <td>
                                     <a href="{{ route('revenues.export', $rev->id) }}" target="_blank" class="btn btn-sm btn-outline-danger rounded-2 px-3 shadow-none">
                                         <i class="fe fe-file-text me-1"></i>Export PDF
                                     </a>

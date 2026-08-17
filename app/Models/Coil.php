@@ -76,6 +76,73 @@ class Coil extends Model
     }
 
     /**
+     * Total initial intake weight (net weight preferred, gross weight fallback).
+     */
+    public function getInitialWeightAttribute(): float
+    {
+        $net = (float) $this->net_weight;
+        if ($net > 0) return $net;
+        $gross = (float) $this->gross_weight;
+        return $gross > 0 ? $gross : (float) $this->remaining_weight;
+    }
+
+    /**
+     * Initial weight per individual coil / piece in kg.
+     */
+    public function getUnitWeightAttribute(): float
+    {
+        $pieces = (float) ($this->piece_count > 0 ? $this->piece_count : 1);
+        $initial = $this->initial_weight;
+        return $pieces > 0 && $initial > 0 ? round($initial / $pieces, 2) : $initial;
+    }
+
+    /**
+     * Remaining count of physical coils based on remaining weight.
+     * E.g. 5 coils = 500kg, sold 150kg -> remaining 350kg = 3.5 coils.
+     */
+    public function getRemainingCoilsAttribute(): float
+    {
+        $initial = $this->initial_weight;
+        $pieces = (float) ($this->piece_count > 0 ? $this->piece_count : 1);
+        if ($initial <= 0) return 0;
+        
+        $remWeight = (float) $this->remaining_weight;
+        $remCoils = ($remWeight / $initial) * $pieces;
+        return round($remCoils, 2);
+    }
+
+    /**
+     * Percentage of remaining weight relative to initial intake weight (0 - 100%).
+     */
+    public function getRemainingPercentageAttribute(): float
+    {
+        $initial = $this->initial_weight;
+        if ($initial <= 0) return 0;
+        
+        $remWeight = (float) $this->remaining_weight;
+        $pct = ($remWeight / $initial) * 100;
+        return round(min(100, max(0, $pct)), 1);
+    }
+
+    /**
+     * Clean string format for remaining coils (e.g. "3.5" or "5" instead of "5.00").
+     */
+    public function getFormattedRemainingCoilsAttribute(): string
+    {
+        $val = $this->remaining_coils;
+        return (string) (floor($val) == $val ? (int)$val : (float)$val);
+    }
+
+    /**
+     * Clean string format for initial piece count (e.g. "5" instead of "5.00").
+     */
+    public function getFormattedPieceCountAttribute(): string
+    {
+        $val = (float) ($this->piece_count > 0 ? $this->piece_count : 1);
+        return (string) (floor($val) == $val ? (int)$val : (float)$val);
+    }
+
+    /**
      * Generate unique sequential Coil tag
      */
     public static function generateCoilNumber(): string

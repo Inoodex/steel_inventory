@@ -62,7 +62,7 @@ class VendorController extends Controller
     {
         $vendor = Vendor::findOrFail($id);
         $customer = $vendor; // Alias for compatibility
-        $purchases = Purchase::where('vendor_id', $id)->latest()->get();
+        $purchases = Purchase::where('vendor_id', $id)->with(['lot', 'coils', 'warehouse'])->latest()->get();
         return view('frontend.pages.vendor.show', compact('vendor', 'customer', 'purchases'));
     }
 

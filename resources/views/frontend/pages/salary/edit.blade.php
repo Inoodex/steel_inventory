@@ -82,7 +82,7 @@
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Payment Status <span class="text-danger">*</span></label>
-                        <select name="payment_status" class="form-select border-light-subtle">
+                        <select name="payment_status" class="form-select border-light-subtle select2" data-placeholder="Select Status">
                             <option value="paid" {{ $salary->payment_status == 'paid' ? 'selected' : '' }}>Paid</option>
                             <option value="unpaid" {{ $salary->payment_status == 'unpaid' ? 'selected' : '' }}>Unpaid</option>
                         </select>
@@ -108,3 +108,13 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            width: '100%'
+        });
+    });
+</script>
+@endpush

@@ -48,9 +48,15 @@
         border-color: #7638ff !important;
     }
 
-    /* Responsive adjustments for laptop screens */
+    .table-responsive {
+        overflow: visible !important;
+    }
+    .dropdown-menu {
+        z-index: 1060 !important;
+    }
     .table-custom th, .table-custom td {
         white-space: nowrap;
+        vertical-align: middle;
     }
 </style>
 @endpush
@@ -169,17 +175,17 @@
         </div>
 
         <!-- Table Body -->
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-custom align-middle mb-0" id="vendorsTable">
+        <div class="card-body p-0" style="overflow: visible;">
+            <div class="table-responsive" style="overflow: visible !important;">
+                <table class="table table-hover table-custom align-middle mb-0 w-100" id="vendorsTable">
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
-                            <th class="ps-4" style="width: 50px;">#</th>
-                            <th style="min-width: 180px;">Vendor Name</th>
-                            <th style="min-width: 160px;">Phone & Email</th>
-                            <th style="min-width: 180px;">Address</th>
-                            <th style="width: 100px;">Status</th>
-                            <th class="text-end pe-4" style="width: 70px;">Action</th>
+                            <th class="ps-4">#</th>
+                            <th>Vendor Details</th>
+                            <th>Contact Information</th>
+                            <th>Address</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
@@ -191,28 +197,29 @@
                                 <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
                                 <td>
                                     <div>
-                                        <a href="{{ route('vendors.show', $vendor->id) }}" class="fw-bold text-dark hover-primary mb-0 text-decoration-none d-block text-truncate" title="{{ $vendor->name }}" style="max-width: 200px;">
-                                            {{ Str::limit($vendor->name, 25) }}
+                                        <a href="{{ route('vendors.show', $vendor->id) }}" class="fw-bold text-dark hover-primary mb-0 text-decoration-none d-inline-block" title="{{ $vendor->name }}">
+                                            {{ $vendor->name }}
                                         </a>
-                                        <small class="text-muted fs-7">Added {{ $vendor->created_at?->format('d M Y') ?? 'N/A' }}</small>
+                                        <small class="text-muted fs-7 d-block">Added {{ $vendor->created_at?->format('d M Y') ?? 'N/A' }}</small>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="d-flex flex-column gap-1">
                                         <div class="fw-semibold text-dark fs-7 d-flex align-items-center gap-1">
-                                            <span>{{ $vendor->phone }}</span>
+                                            <i class="fe fe-phone text-muted fs-8"></i>
+                                            <span>{{ $vendor->phone ?: 'N/A' }}</span>
                                         </div>
                                         @if($vendor->email)
-                                            <div class="text-muted small d-flex align-items-center gap-1 text-truncate" style="max-width: 180px;" title="{{ $vendor->email }}">
-                                                <i class="fe fe-mail text-muted fs-8 me-1"></i>
-                                                <span>{{ Str::limit($vendor->email, 22) }}</span>
+                                            <div class="text-muted small d-flex align-items-center gap-1" title="{{ $vendor->email }}">
+                                                <i class="fe fe-mail text-muted fs-8"></i>
+                                                <span>{{ $vendor->email }}</span>
                                             </div>
                                         @endif
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="text-secondary small text-truncate d-inline-block" style="max-width: 220px;" title="{{ $vendor->address }}">
-                                        {{ Str::limit($vendor->address, 30) ?: 'N/A' }}
+                                    <span class="text-secondary small d-inline-block" title="{{ $vendor->address }}">
+                                        {{ $vendor->address ?: 'N/A' }}
                                     </span>
                                 </td>
                                 <td>

@@ -43,7 +43,7 @@
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Phone Number</label>
-                        <input type="text" name="phone" class="form-control border-light-subtle" placeholder="017xxxxxxxx">
+                        <input type="text" name="phone" class="form-control border-light-subtle" placeholder="01xxxxxxxxx">
                     </div>
 
                     <div class="col-md-6 col-12">

@@ -483,7 +483,10 @@ function handleLotSelection(lotId) {
         const pieceCount = coil.piece_count ? Number(coil.piece_count) : 1;
         const grossWeight = parseFloat(coil.gross_weight || coil.net_weight || 0);
         const unitWeight = pieceCount > 0 && grossWeight > 0 ? (grossWeight / pieceCount) : remaining;
-        const text = `${coil.coil_number} | Qty: ${pieceCount} ${thickness}${sizeText} | Avail: ${remaining.toLocaleString()} kg`;
+        const remainingCoils = unitWeight > 0 ? (remaining / unitWeight) : (pieceCount > 0 ? pieceCount : 1);
+        const formattedRemCoils = (Math.round(remainingCoils * 100) / 100).toFixed(remainingCoils % 1 === 0 ? 0 : (remainingCoils * 10 % 1 === 0 ? 1 : 2));
+        const remainingPct = grossWeight > 0 ? Math.min(100, Math.max(0, (remaining / grossWeight) * 100)).toFixed(1) : '100.0';
+        const text = `${coil.coil_number} | Stock: ${formattedRemCoils}/${pieceCount} Coils (${remainingPct}%) ${thickness}${sizeText} | Avail: ${remaining.toLocaleString()} kg`;
 
         const opt = $('<option></option>')
             .val(coil.id)
@@ -493,6 +496,8 @@ function handleLotSelection(lotId) {
             .attr('data-size', sizeVal)
             .attr('data-size-type', sizeUnit || 'ft')
             .attr('data-piece-count', pieceCount)
+            .attr('data-remaining-coils', formattedRemCoils)
+            .attr('data-remaining-pct', remainingPct)
             .attr('data-unit-weight', unitWeight)
             .attr('data-gross-weight', grossWeight)
             .attr('data-remaining', remaining)
@@ -535,6 +540,8 @@ function selectCoil(selectEl) {
     const rate = parseFloat(selectedOption.dataset.rate) || 0;
     const unitWeight = parseFloat(selectedOption.dataset.unitWeight) || 0;
     const pieceCount = parseFloat(selectedOption.dataset.pieceCount) || 1;
+    const remainingCoils = selectedOption.dataset.remainingCoils || '1';
+    const remainingPct = selectedOption.dataset.remainingPct || '100.0';
     const lotId = selectedOption.dataset.lotId;
 
     currentSelectedCoil = {
@@ -544,6 +551,8 @@ function selectCoil(selectEl) {
         size: selectedOption.dataset.size,
         size_type: selectedOption.dataset.sizeType,
         piece_count: pieceCount,
+        remaining_coils: remainingCoils,
+        remaining_pct: remainingPct,
         unit_weight: unitWeight,
         remaining: remaining,
         rate: rate,
@@ -556,7 +565,7 @@ function selectCoil(selectEl) {
     if (perCoilEl) {
         perCoilEl.value = unitWeight > 0 ? (unitWeight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg') : '—';
     }
-    document.getElementById('stock1').value = remaining.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg';
+    document.getElementById('stock1').value = remaining.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ` kg (${remainingCoils} Coils | ${remainingPct}%)`;
     document.getElementById('purchase_price1').value = rate.toFixed(2);
     document.getElementById('unit_price1').value = rate > 0 ? rate.toFixed(2) : '';
     document.getElementById('qty1').value = '';

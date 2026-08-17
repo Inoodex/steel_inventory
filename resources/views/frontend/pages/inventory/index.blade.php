@@ -61,6 +61,12 @@
     <!-- /Page Header -->
 
     <!-- Summary Stats Bar -->
+    @php
+        $totalAvailWeight = $coils->sum('remaining_weight');
+        $totalIntakeWeight = $coils->sum(fn($c) => $c->initial_weight);
+        $totalRemainingCoilCount = $coils->sum(fn($c) => $c->remaining_coils);
+        $overallRetentionPct = $totalIntakeWeight > 0 ? round(($totalAvailWeight / $totalIntakeWeight) * 100, 1) : 0;
+    @endphp
     <div class="row g-3 mb-4">
         <div class="col-xl-3 col-md-6 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
@@ -70,7 +76,7 @@
                     </div>
                     <div>
                         <h6 class="text-muted fw-normal mb-1">In-Stock Coils</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($coils->count()) }}</h4>
+                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($totalRemainingCoilCount, 1) }} <small class="text-muted fs-7 fw-normal">({{ number_format($coils->count()) }} batches)</small></h4>
                     </div>
                 </div>
             </div>
@@ -84,7 +90,7 @@
                     </div>
                     <div>
                         <h6 class="text-muted fw-normal mb-1">Available Stock Weight</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($coils->sum('remaining_weight'), 2) }} kg</h4>
+                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($totalAvailWeight, 2) }} kg</h4>
                     </div>
                 </div>
             </div>
@@ -97,28 +103,26 @@
                         <i class="fe fe-layers fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Net Weight Intake</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($coils->sum('net_weight'), 2) }} kg</h4>
+                        <h6 class="text-muted fw-normal mb-1">Total Net Intake Weight</h6>
+                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($totalIntakeWeight, 2) }} kg</h4>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- <div class="col-xl-3 col-md-6 col-12">
+        <div class="col-xl-3 col-md-6 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
                     <div class="avatar avatar-lg bg-warning-light text-warning rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-dollar-sign fs-4"></i>
+                        <i class="fe fe-pie-chart fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Stock Valuation (BDT)</h6>
-                        <h4 class="mb-0 fw-bold text-dark">
-                            ৳{{ number_format($coils->sum(fn($c) => ($c->remaining_weight / 1000) * $c->rate_per_ton), 2) }}
-                        </h4>
+                        <h6 class="text-muted fw-normal mb-1">Yard Stock Retention</h6>
+                        <h4 class="mb-0 fw-bold text-dark">{{ $overallRetentionPct }}% <small class="text-muted fs-7 fw-normal">in yard</small></h4>
                     </div>
                 </div>
             </div>
-        </div> -->
+        </div>
     </div>
     <!-- /Summary Stats Bar -->
 
@@ -145,12 +149,12 @@
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
                             <th class="ps-4">#</th>
-                            <th>Coil No</th>
-                            <th>Lot Source & Vendor</th>
-                            <th>Warehouse / Yard</th>
-                            <th>Specifications</th>
-                            <th>Rate / Ton</th>
-                            <th>Available Stock (kg)</th>
+                            <th>Coil &amp; Specifications</th>
+                            <th>Lot Source &amp; Vendor</th>
+                            <th>Warehouse</th>
+                            <th>Rate (KG)</th>
+                            <th>Available Weight</th>
+                            <th style="min-width: 190px;">Remaining Coils &amp; Stock %</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -158,16 +162,25 @@
                         @forelse ($coils as $coil)
                             @php
                                 $rem = (float) $coil->remaining_weight;
+                                $pct = $coil->remaining_percentage;
                                 $vendorName = $coil->lot && $coil->lot->vendor ? $coil->lot->vendor->name : ($coil->vendor->name ?? 'N/A');
                                 $lotNo = $coil->lot ? $coil->lot->lot_number : 'N/A';
                                 $whName = $coil->warehouse ? $coil->warehouse->name : 'Main Yard';
                                 $spec = trim(($coil->thickness ? 'Thk: '.$coil->thickness : '') . ' ' . ($coil->width ? 'Size: '.$coil->width . ' ' . ($coil->length ?? 'ft') : ''));
-                                $searchText = strtolower($coil->coil_number . ' ' . $lotNo . ' ' . $vendorName . ' ' . $whName . ' ' . $spec);
+                                $searchText = strtolower($coil->coil_number . ' ' . $lotNo . ' ' . $vendorName . ' ' . $whName . ' ' . $spec . ' ' . $coil->formatted_remaining_coils . ' coils');
                             @endphp
                             <tr class="inventory-row" data-search="{{ $searchText }}">
                                 <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
                                 <td>
-                                    <span class="fw-bold text-primary">Coil No - {{ $coil->coil_number }}</span>
+                                    <span class="fw-bold text-primary d-block">{{ $coil->coil_number }}</span>
+                                    <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
+                                        @if($coil->thickness)
+                                            <span class="badge bg-light text-dark border px-2 py-0 fs-8">Thk: {{ $coil->thickness }}</span>
+                                        @endif
+                                        @if($coil->width)
+                                            <span class="badge bg-light text-secondary border px-2 py-0 fs-8">Size: {{ $coil->width }} {{ $coil->length ?? 'ft' }}</span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td>
                                     <div>
@@ -181,25 +194,34 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="d-flex flex-wrap align-items-center gap-1">
-                                        @if($coil->thickness)
-                                            <span class="badge bg-light text-dark border px-2 py-1 fs-8">Thickness: {{ $coil->thickness }}</span>
-                                        @endif
-                                        @if($coil->width)
-                                            <span class="badge bg-light text-secondary border px-2 py-1 fs-8">Size: {{ $coil->width }} {{ $coil->length ?? 'ft' }}</span>
-                                        @endif
-                                    </div>
-                                </td>
-                                <td>
                                     <span class="fw-semibold text-dark small">৳{{ number_format($coil->rate_per_ton, 2) }}</span>
                                 </td>
                                 <td>
-                                    <span class="badge badge-soft-success px-3 py-2 rounded-pill fs-7">
+                                    <span class="badge badge-soft-success px-3 py-2 rounded-pill fs-7 fw-bold">
                                         <i class="fe fe-check-circle me-1"></i> {{ number_format($rem, 2) }} kg
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="badge badge-soft-primary px-3 py-1 rounded-pill fs-7 text-capitalize">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="badge bg-light text-dark border px-2 py-0 fs-8 fw-semibold">
+                                            <i class="fe fe-disc text-primary me-1"></i>{{ $coil->formatted_remaining_coils }} / {{ $coil->formatted_piece_count }} Coils
+                                        </span>
+                                        <span class="badge {{ $pct > 50 ? 'badge-soft-success' : ($pct > 20 ? 'badge-soft-warning' : 'badge-soft-danger') }} rounded-pill px-2 py-0 fs-8">
+                                            {{ $pct }}% Left
+                                        </span>
+                                    </div>
+                                    <div class="progress mt-2" style="height: 4px; background-color: #e2e8f0;">
+                                        <div class="progress-bar {{ $pct > 50 ? 'bg-success' : ($pct > 20 ? 'bg-warning' : 'bg-danger') }}" 
+                                             role="progressbar" 
+                                             style="width: {{ $pct }}%;" 
+                                             aria-valuenow="{{ $pct }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-soft-secondary px-3 py-1 rounded-pill fs-7 text-capitalize">
                                         In Stock
                                     </span>
                                 </td>
