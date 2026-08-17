@@ -17,6 +17,7 @@ use App\Http\Controllers\{
 use Illuminate\Support\Facades\{Auth, Route};
 
 Auth::routes(['register' => false, 'reset' => false, 'verify' => false]);
+Route::get('/logout', [\App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout.get');
 
 // 1. DASHBOARD + EMPLOYEE-ONLY ROUTES → accessible by Super Admin AND Employee
 Route::middleware(['auth', 'role:Super Admin|Employee'])->group(function () {
