@@ -286,7 +286,7 @@
 
     <div class="login-card">
         <div class="brand-header">
-            <img src="{{ asset('assets') }}/img/logo.jpg" alt="Inoodex Logo" class="brand-logo">
+            <img src="{{ asset('assets') }}/img/logo.png" alt="Inoodex Logo" class="brand-logo">
             <h1>Inoodex Inventory</h1>
             <p>Enter your credentials to access dashboard</p>
         </div>

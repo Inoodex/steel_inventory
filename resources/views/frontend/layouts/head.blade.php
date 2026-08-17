@@ -28,7 +28,7 @@
     <title>Inoodex Inventory</title>
 
     <!-- Favicon -->
-    <link rel="shortcut icon" href="{{ asset('assets') }}/img/logo.jpg">
+    <link rel="shortcut icon" href="{{ asset('assets') }}/img/logo.png">
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="{{ asset('assets') }}/css/bootstrap.min.css">
