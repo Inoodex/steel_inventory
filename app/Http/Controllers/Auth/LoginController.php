@@ -8,11 +8,13 @@ use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
+use App\Providers\RouteServiceProvider;
+
 class LoginController extends Controller
 {
     use AuthenticatesUsers;
 
-    protected $redirectTo = '/admin/dashboard';
+    protected $redirectTo = RouteServiceProvider::HOME;
 
     public function __construct()
     {
