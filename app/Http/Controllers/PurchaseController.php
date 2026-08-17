@@ -114,7 +114,7 @@ class PurchaseController extends Controller
      */
     public function show(Purchase $purchase)
     {
-        return view('frontend.pages.purchase.show', compact('purchase'));
+        return redirect()->route('purchase.index');
     }
 
     /**
@@ -122,12 +122,7 @@ class PurchaseController extends Controller
      */
     public function edit(Purchase $purchase)
     {
-        $products   = collect();
-        $vendors    = Vendor::all();
-        $lots       = Lot::where('status', 'active')->latest()->get();
-        $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
-
-        return view('frontend.pages.purchase.edit', compact('purchase', 'products', 'vendors', 'lots', 'warehouses'));
+        return redirect()->route('purchase.index');
     }
 
     /**

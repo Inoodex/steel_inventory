@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\{Service, User, Vendor, Purchase};
-use App\Http\Controllers\Controller;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 
 class VendorController extends Controller
 {

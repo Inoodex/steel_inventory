@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Inventory;
 use App\Http\Requests\StoreReturnRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ReturnController extends Controller
@@ -67,7 +68,7 @@ class ReturnController extends Controller
         $saleItems = [];
 
         if ($request->filled('sale_id')) {
-            $sale = Sale::with(['customer', 'items'])->find($request->sale_id);
+            $sale = Sale::with(['customer', 'items'])->where('id', $request->sale_id)->first();
             if ($sale) {
                 $saleItems = $sale->items;
             }
@@ -179,7 +180,7 @@ class ReturnController extends Controller
         DB::beginTransaction();
 
         try {
-            $return->approve(auth()->id());
+            $return->approve(Auth::id());
             DB::commit();
 
             session()->flash('sweet_alert', [
@@ -214,7 +215,7 @@ class ReturnController extends Controller
             return back()->with('error', 'Return is not in pending status');
         }
 
-        $return->reject(auth()->id(), $request->reason);
+        $return->reject(Auth::id(), $request->reason);
 
         return back()->with('success', 'Return rejected');
     }
@@ -224,7 +225,8 @@ class ReturnController extends Controller
      */
     public function getSaleItems($saleId)
     {
-        $sale = Sale::with(['items.coil', 'items.product', 'customer'])->find($saleId);
+        /** @var Sale|null $sale */
+        $sale = Sale::with(['items.coil', 'items.product', 'customer'])->where('id', $saleId)->first();
 
         if (!$sale) {
             return response()->json(['error' => 'Sale not found'], 404);

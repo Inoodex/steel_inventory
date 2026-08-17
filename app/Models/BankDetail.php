@@ -36,4 +36,12 @@ class BankDetail extends Model
     {
         return $query->where('is_default', true);
     }
+
+    /**
+     * Associated Chart of Account
+     */
+    public function chartOfAccount()
+    {
+        return $this->hasOne(ChartOfAccount::class, 'bank_detail_id');
+    }
 }

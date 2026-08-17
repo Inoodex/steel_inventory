@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Input;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Sale;
 use App\Models\User;
 use App\Models\Payment;
@@ -161,7 +160,7 @@ class ExpenseController extends Controller
     ]);
 
     DailyExpense::create([
-        'user_id' => auth()->id(),
+        'user_id' => Auth::id(),
         'employee_id' => $request->employee_id,
         'date' => $request->date,
         'expense_category_id' => $request->expense_category_id,

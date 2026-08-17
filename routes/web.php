@@ -45,7 +45,7 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('/user/pin', [UserController::class, 'pin'])->name('users.pin');
     Route::post('/user/pin', [UserController::class, 'pinStore'])->name('users.pin_store');
     Route::get('/inventory/pdf', [InventoryController::class, 'downloadPdf'])->name('inventory.pdf');
-    Route::resource('inventory', InventoryController::class);
+    Route::resource('inventory', InventoryController::class)->only(['index', 'show']);
     Route::resource('warehouses', WarehouseController::class);
 
     // === Ship Steel Coils & Plates Registry ===
@@ -58,7 +58,7 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::resource('vendors', VendorController::class);
 
     Route::post('lots/quick-store', [LotController::class, 'quickStore'])->name('lots.quick_store');
-    Route::resource('lots', LotController::class);
+    Route::resource('lots', LotController::class)->except(['create', 'edit']);
 
     Route::resource('purchase', PurchaseController::class);
     Route::get('purchase/latest-price/{id}', [PurchaseController::class, 'getLatestPrice'])->name('purchase.latest_price');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use App\Models\User;
 use App\Models\Sale;
 use App\Models\Purchase;
 use App\Models\DailyExpense;
@@ -15,12 +16,14 @@ use App\Models\Warehouse;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class FrontendController extends Controller
 {
     public function index()
     {
-        $user = auth()->user();
+        /** @var User|null $user */
+        $user = Auth::user();
 
         if ($user && $user->hasRole('Employee')) {
             return view('frontend.pages.dashboard_employee', [

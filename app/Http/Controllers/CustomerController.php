@@ -7,8 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Service;
 use App\Models\User;
 use App\Models\Customer;
-use Input;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 
 class CustomerController extends Controller
 {

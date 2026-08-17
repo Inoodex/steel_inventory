@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{DB, Log, Mail};
+use Illuminate\Support\Facades\{Auth, DB, Log, Mail};
 use App\Models\{Customer, Inventory, Lot, Payment, Sale, SalesItem, User, Warehouse, Coil};
 use App\Mail\CreateSalesMail;
 use App\Http\Controllers\Controller;
@@ -297,26 +297,7 @@ class SalesController extends Controller
 
     public function makeInvoice(Request $request, $serviceId)
     {
-        $sales = Sale::with(['customer', 'returns.items.product', 'returns.processedBy'])->find($serviceId);
-        if (!$sales) abort(404);
-
-        $customer = $sales->customer;
-        if (!$customer) {
-            $customer = (object) [
-                'name' => 'N/A',
-                'phone' => 'N/A',
-                'address' => 'N/A',
-            ];
-        }
-
-        $items = SalesItem::with(['coil', 'lot.vendor'])
-            ->where('order_id', $sales->id)
-            ->get();
-
-        // Get completed returns for this sale
-        $returns = $sales->returns->where('status', 'completed');
-
-        return view('frontend.pages.sales.invoice', compact('sales', 'items', 'customer', 'returns'));
+        return $this->downloadInvoicePdf($serviceId);
     }
 
     public function downloadInvoicePdf($id)
@@ -516,7 +497,7 @@ class SalesController extends Controller
             ->firstOrFail();
 
         // Get items for this sale — join coils (not products) for steel system
-        $items = \DB::table('sales_items')
+        $items = DB::table('sales_items')
             ->select(
                 'sales_items.*',
                 'coils.coil_number as name',
@@ -530,7 +511,7 @@ class SalesController extends Controller
             ->where('sales_items.order_id', $id)
             ->get()
             ->map(function ($item) use ($sale) {
-                $warrantyStart = \Carbon\Carbon::parse($sale->created_at);
+                $warrantyStart = Carbon::parse($sale->created_at);
                 $warrantyEnd = $warrantyStart->copy()->addDays($item->warranty);
                 $daysLeft = $warrantyEnd->isFuture() ? now()->diffInDays($warrantyEnd) : 0;
 
@@ -708,7 +689,7 @@ public function updateChargesPayoutStatus(Request $request, $id)
         $sale->update([
             'charges_payout_status' => 'paid',
             'charges_payout_at' => $payoutDate ? \Carbon\Carbon::parse($payoutDate)->setTimeFrom(now()) : now(),
-            'charges_payout_by' => auth()->id(),
+            'charges_payout_by' => Auth::id(),
             'charges_payout_note' => $payoutNote,
         ]);
 
