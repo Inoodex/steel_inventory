@@ -123,11 +123,11 @@
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
                     <div class="avatar avatar-lg bg-info-light text-info rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-tag fs-4"></i>
+                        <i class="fe fe-check-circle fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Retail Orders</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($services->where('sale_type', 'retail')->count()) }}</h4>
+                        <h6 class="text-muted fw-normal mb-1">Total Paid</h6>
+                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($services->sum('advanced_payment'), 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -137,11 +137,11 @@
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
                     <div class="avatar avatar-lg bg-warning-light text-warning rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-briefcase fs-4"></i>
+                        <i class="fe fe-alert-circle fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Project Orders</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($services->where('sale_type', 'project')->count()) }}</h4>
+                        <h6 class="text-muted fw-normal mb-1">Total Outstanding Due</h6>
+                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($services->sum('due_payment'), 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -153,7 +153,8 @@
     <div class="card border-0 shadow-sm rounded-3">
         <!-- Filter Controls -->
         <div class="card-header bg-white py-3 border-bottom border-light">
-            <div class="row align-items-center g-3">                <div class="col-12 col-md-6 col-lg-6">
+            <div class="row align-items-center g-3">
+                <div class="col-12 col-md-6 col-lg-6">
                     <div class="search-box-custom">
                         <input type="text" id="salesSearchInput" class="form-control border-light-subtle" placeholder="Search by order no, customer name, phone, sales person..." autocomplete="off">
                     </div>
@@ -184,13 +185,13 @@
                     <tbody class="border-top-0">
                         @forelse ($services as $service)
                             @php
-                                $customerName = $service->sale_type == 'project' ? ($service->client->name ?? 'N/A') : ($service->customer->name ?? 'N/A');
-                                $customerPhone = $service->sale_type == 'project' ? ($service->client->phone ?? 'N/A') : ($service->customer->phone ?? 'N/A');
+                                $customerName = $service->customer->name ?? 'N/A';
+                                $customerPhone = $service->customer->phone ?? 'N/A';
                                 $warehouseName = $service->warehouse->name ?? 'Main Yard';
                                 $deliveryStatus = $service->delivery_status ?? 'pending';
                                 $salesBy = $service->salesPerson->name ?? 'N/A';
                             @endphp
-                            <tr class="sale-row" data-search="{{ strtolower($service->order_no . ' ' . $customerName . ' ' . $customerPhone . ' ' . $salesBy . ' ' . $service->sale_type . ' ' . $warehouseName . ' ' . $deliveryStatus) }}" data-type="{{ strtolower($service->sale_type) }}">
+                            <tr class="sale-row" data-search="{{ strtolower($service->order_no . ' ' . $customerName . ' ' . $customerPhone . ' ' . $salesBy . ' ' . $warehouseName . ' ' . $deliveryStatus) }}">
                                 <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
                                 <td>
                                     <span class="text-secondary small">
@@ -243,26 +244,24 @@
                                 <td class="text-end pe-4">
                                     <div class="dropdown">
                                         <a href="javascript:void(0)" class="btn-action-icon" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
-                                            <i class="fas fa-ellipsis-v"></i>
+                                             <i class="fas fa-ellipsis-v"></i>
                                         </a>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
-                                            @if ($service->sale_type == 'retail')
-                                                <li>
-                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" target="_blank"
-                                                        href="{{ route('sales.invoice.pdf', $service->id) }}">
-                                                        <i class="fe fe-download text-info"></i>
-                                                        <span>Download PDF</span>
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2"
-                                                        href="{{ route('sales.edit', $service->id) }}">
-                                                        <i class="fe fe-edit text-warning"></i>
-                                                        <span>Edit Sale</span>
-                                                    </a>
-                                                </li>
-                                                <li><hr class="dropdown-divider opacity-50"></li>
-                                            @endif
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" target="_blank"
+                                                    href="{{ route('sales.invoice.pdf', $service->id) }}">
+                                                    <i class="fe fe-download text-info"></i>
+                                                    <span>Download PDF</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2"
+                                                    href="{{ route('sales.edit', $service->id) }}">
+                                                    <i class="fe fe-edit text-warning"></i>
+                                                    <span>Edit Sale</span>
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider opacity-50"></li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
                                                     onclick="if (confirm('Are you sure you want to delete this sales order?')) { document.getElementById('serviceDelete{{ $service->id }}').submit(); }">

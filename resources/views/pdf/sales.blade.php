@@ -138,21 +138,18 @@
             <tr>
                 <th width="4%" class="text-center">#</th>
                 <th width="12%">Date</th>
-                <th width="15%">Order No</th>
-                <th width="26%">Customer / Client Name</th>
-                <th width="14%">Phone</th>
-                <th width="10%" class="text-center">Sale Type</th>
-                <th width="10%">Sales By</th>
-                <th width="9%" class="text-end">Payable (৳)</th>
+                <th width="18%">Order No</th>
+                <th width="32%">Customer Name</th>
+                <th width="16%">Phone</th>
+                <th width="18%" class="text-end">Payable (৳)</th>
             </tr>
         </thead>
         <tbody>
             @php $totalSalesAmount = 0; @endphp
             @forelse($services as $index => $sale)
                 @php
-                    $custName = $sale->sale_type == 'project' ? ($sale->client->name ?? 'N/A') : ($sale->customer->name ?? 'N/A');
-                    $custPhone = $sale->sale_type == 'project' ? ($sale->client->phone ?? 'N/A') : ($sale->customer->phone ?? 'N/A');
-                    $salesPersonName = $sale->salesPerson->name ?? 'N/A';
+                    $custName = $sale->customer->name ?? 'N/A';
+                    $custPhone = $sale->customer->phone ?? 'N/A';
                     $amount = $sale->payble ?? $sale->bill ?? $sale->total ?? 0;
                     $totalSalesAmount += $amount;
                 @endphp
@@ -162,12 +159,6 @@
                     <td class="fw-bold">{{ $sale->order_no }}</td>
                     <td>{{ $custName }}</td>
                     <td>{{ $custPhone }}</td>
-                    <td class="text-center">
-                        <span class="badge {{ $sale->sale_type == 'project' ? 'badge-project' : 'badge-retail' }}">
-                            {{ ucfirst($sale->sale_type) }}
-                        </span>
-                    </td>
-                    <td>{{ $salesPersonName }}</td>
                     <td class="text-end fw-bold">{{ number_format($amount, 2) }}</td>
                 </tr>
             @empty

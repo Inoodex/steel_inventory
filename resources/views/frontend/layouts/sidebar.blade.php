@@ -115,7 +115,7 @@
                                     <a href="{{ route('inventory.index') }}"><i class="fe fe-bar-chart-2"></i> Stock Levels</a>
                                 </li>
                                 <li class="{{ $active(['warehouses.*']) ? 'active' : '' }}">
-                                    <a href="{{ route('warehouses.index') }}"><i class="fe fe-map-pin"></i> Stockyards & Warehouses</a>
+                                    <a href="{{ route('warehouses.index') }}"><i class="fe fe-map-pin"></i> Warehouses</a>
                                 </li>
                             </ul>
                         </li>

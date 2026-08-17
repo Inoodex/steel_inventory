@@ -24,8 +24,6 @@ class StorePurchaseRequest extends FormRequest
             
             // Multi-row items / coils validation
             'items'                => 'required|array|min:1',
-            'items.*.product_id'   => 'nullable',
-            'items.*.steel_type'   => 'nullable|string|max:150',
             'items.*.coil_number'  => 'nullable|string|max:100',
             'items.*.thickness'    => 'nullable|string|max:100',
             'items.*.width'        => 'nullable|string|max:100',
@@ -66,9 +64,14 @@ class StorePurchaseRequest extends FormRequest
             $calculatedGrandTotal = 0;
             if (is_array($items)) {
                 foreach ($items as $item) {
-                    $qty = floatval($item['quantity'] ?? $item['net_weight'] ?? 0);
+                    $coilQty = max(1, floatval($item['quantity'] ?? 1));
+                    $perCoilWeight = floatval($item['unit_weight'] ?? $item['net_weight'] ?? 0);
+                    $totalWeight = floatval($item['total_weight'] ?? ($coilQty * $perCoilWeight));
+                    if ($totalWeight <= 0 && $perCoilWeight > 0) {
+                        $totalWeight = $coilQty * $perCoilWeight;
+                    }
                     $rate = floatval($item['unit_price'] ?? 0);
-                    $calculatedGrandTotal += ($qty * $rate);
+                    $calculatedGrandTotal += ($totalWeight * $rate);
                 }
             }
 

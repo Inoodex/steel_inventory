@@ -35,9 +35,7 @@ class SaleService
             // 4. Create Sale record
             $sale = Sale::create([
                 'order_no'         => $invoiceNumber,
-                'sale_type'        => $data['sale_type'] ?? 'retail',
                 'customer_id'      => $customer->id,
-                'product_id'       => $data['product'][0] ?? null,
                 'qty'              => !empty($data['qty']) ? array_sum($data['qty']) : 0,
                 'subtotal'         => $financials['subtotal'],
                 'total'            => $financials['total'],
@@ -87,14 +85,21 @@ class SaleService
 
                     $subtotal = (float) ($sale->subtotal > 0 ? $sale->subtotal : $sale->items()->sum('total_price'));
                     $discount = (float) $sale->discount;
-                    $netSalesRevenue = max(0, $subtotal - $discount);
+
+                    $vatPercent = (float) $sale->vat;
+                    $taxPercent = (float) $sale->tax;
+                    $vatAmount = round(($subtotal * $vatPercent) / 100, 2);
+                    $taxAmount = round(($subtotal * $taxPercent) / 100, 2);
 
                     $extraCharges = (float)$sale->delivery_charge
                                   + (float)$sale->labour_cost
                                   + (float)$sale->weight_scale_cost
                                   + (float)$sale->other_charges
-                                  + (float)$sale->vat
-                                  + (float)$sale->tax;
+                                  + $vatAmount
+                                  + $taxAmount;
+
+                    $totalDebits = round($paid + $due, 2);
+                    $netSalesRevenue = max(0, round($totalDebits - $extraCharges, 2));
 
                     // 1. Debits: Cash / Receivable
                     if ($paid > 0 && $cashAcc) {
@@ -105,11 +110,13 @@ class SaleService
                     }
 
                     // 2. Credits: Net Product Revenue (4110)
-                    $items[] = ['account_id' => $revAcc->id, 'debit' => 0.00, 'credit' => $netSalesRevenue, 'description' => 'Net product sales revenue recognized'];
+                    if ($netSalesRevenue > 0) {
+                        $items[] = ['account_id' => $revAcc->id, 'debit' => 0.00, 'credit' => $netSalesRevenue, 'description' => 'Net product sales revenue recognized'];
+                    }
 
                     // 3. Credits: Pass-Through Extra Charges Payable (2140)
                     if ($extraCharges > 0 && $chargesAcc) {
-                        $items[] = ['account_id' => $chargesAcc->id, 'debit' => 0.00, 'credit' => $extraCharges, 'description' => 'Collected extra charges (delivery/labour/scale) payable to handlers'];
+                        $items[] = ['account_id' => $chargesAcc->id, 'debit' => 0.00, 'credit' => $extraCharges, 'description' => 'Collected extra charges (delivery/labour/scale/vat/tax) payable to handlers'];
                     }
 
                     postJournalEntry([
@@ -162,19 +169,24 @@ class SaleService
             }
         }
 
+        $vatPercent = (float)($data['vat'] ?? 0);
+        $taxPercent = (float)($data['tax'] ?? 0);
+        $vatAmount  = round(($subtotal * $vatPercent) / 100, 2);
+        $taxAmount  = round(($subtotal * $taxPercent) / 100, 2);
+
         $otherCharges = (float)($data['delivery_charge'] ?? 0)
                       + (float)($data['labour_cost'] ?? 0)
                       + (float)($data['weight_scale_cost'] ?? 0)
                       + (float)($data['other_charges'] ?? 0)
-                      + (float)($data['vat'] ?? 0)
-                      + (float)($data['tax'] ?? 0);
+                      + $vatAmount
+                      + $taxAmount;
 
         $discount = (float)($data['discount'] ?? 0);
-        $total    = max(0, $subtotal + $otherCharges);
-        $payble   = max(0, $total - $discount);
+        $total    = max(0, round($subtotal + $otherCharges, 2));
+        $payble   = max(0, round($total - $discount, 2));
 
         $advancedPayment = (float)($data['advanced_payment'] ?? 0);
-        $duePayment = $data['duePayment'] ?? ($payble - $advancedPayment);
+        $duePayment = isset($data['duePayment']) ? (float)$data['duePayment'] : max(0, round($payble - $advancedPayment, 2));
 
         $status = match(true) {
             $duePayment <= 0          => 'paid',

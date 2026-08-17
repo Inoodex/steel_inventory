@@ -60,17 +60,6 @@ return new class extends Migration
             $table->foreign('lot_id')->references('id')->on('lots')->onDelete('set null');
         });
 
-        Schema::create('daily_sales', function (Blueprint $table) {
-            $table->id();
-            $table->date('date');
-            $table->decimal('total_sales', 15, 2)->default(0.00);
-            $table->decimal('total_collected', 15, 2)->default(0.00);
-            $table->decimal('total_due', 15, 2)->default(0.00);
-            $table->integer('invoice_count')->default(0);
-            $table->text('notes')->nullable();
-            $table->timestamps();
-        });
-
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('sale_id')->nullable();
@@ -142,7 +131,6 @@ return new class extends Migration
         Schema::dropIfExists('return_items');
         Schema::dropIfExists('returns');
         Schema::dropIfExists('payments');
-        Schema::dropIfExists('daily_sales');
         Schema::dropIfExists('sales_items');
         Schema::dropIfExists('sales');
     }

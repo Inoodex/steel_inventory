@@ -177,7 +177,7 @@
                     <tr>
                         <td style="padding: 12px 14px;">
                             <h3 style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">Terms &amp; Conditions</h3>
-                            <p style="font-size: 10px; color: #475569; line-height: 1.4; margin-bottom: 4px;">&bull; Steel products must be verified upon dispatch / weighbridge slip.</p>
+                            <p style="font-size: 10px; color: #475569; line-height: 1.4; margin-bottom: 4px;">&bull; Steel products must be verified upon dispatch slip.</p>
                             <p style="font-size: 10px; color: #475569; line-height: 1.4; margin-bottom: 6px;">&bull; All claims must reference this invoice #{{ $sales->order_no }}.</p>
                         </td>
                     </tr>

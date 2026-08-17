@@ -17,7 +17,6 @@ class Purchase extends Model
 
     // Mass assignable fields
     protected $fillable = [
-        'product_id',
         'lot_id',
         'vendor_id',
         'warehouse_id',

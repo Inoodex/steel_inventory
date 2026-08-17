@@ -266,14 +266,21 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <!-- <span class="badge badge-soft-info px-3 py-1 rounded-pill fs-7">
-                                        {{ number_format($purchase->quantity, 2) }} Units
-                                    </span> -->
                                     @php
-                                        $totW = $purchase->total_weight ?: ($purchase->unit_weight ? ($purchase->unit_weight * $purchase->quantity) : ($purchase->product && $purchase->product->weight ? $purchase->product->weight * $purchase->quantity : null));
+                                        $coilPcs = (int) $purchase->quantity;
+                                        $unitW = (float) $purchase->unit_weight;
+                                        $totW = (float) ($purchase->total_weight ?: ($unitW ? ($unitW * $purchase->quantity) : 0));
                                     @endphp
-                                    @if($totW)
-                                        <small class="d-block mt-1">{{ number_format($totW, 3) }} kg</small>
+                                    <span class="badge bg-light text-dark border px-2 py-1 fs-8">
+                                        {{ $coilPcs > 0 ? $coilPcs : 1 }} {{ Str::plural('Coil', $coilPcs > 0 ? $coilPcs : 1) }}
+                                    </span>
+                                    @if($totW > 0)
+                                        <small class="text-secondary d-block mt-1">
+                                            <strong>{{ number_format($totW, 2) }} kg</strong>
+                                            @if($unitW > 0 && $coilPcs > 1)
+                                                <span class="text-muted">({{ number_format($unitW, 2) }} kg/ea)</span>
+                                            @endif
+                                        </small>
                                     @endif
                                 </td>
                                 <td>৳{{ number_format($purchase->unit_price, 2) }}</td>

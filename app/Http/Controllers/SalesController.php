@@ -39,21 +39,12 @@ class SalesController extends Controller
             $query->whereYear('sales.created_at', $request->year);
         }
 
-        // Filter by sale_type
-        if ($request->filled('sale_type') && $request->sale_type != 'all') {
-            $query->where('sales.sale_type', $request->sale_type);
-        }
-
         // Filter by search keyword / order number
         if ($request->filled('key')) {
             $key = $request->key;
             $query->where(function ($q) use ($key) {
                 $q->where('sales.order_no', 'like', '%' . $key . '%')
                   ->orWhereHas('customer', function ($cq) use ($key) {
-                      $cq->where('name', 'like', '%' . $key . '%')
-                         ->orWhere('phone', 'like', '%' . $key . '%');
-                  })
-                  ->orWhereHas('client', function ($cq) use ($key) {
                       $cq->where('name', 'like', '%' . $key . '%')
                          ->orWhere('phone', 'like', '%' . $key . '%');
                   });

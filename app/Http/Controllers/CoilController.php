@@ -21,7 +21,6 @@ class CoilController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('coil_number', 'like', "%{$search}%")
-                  ->orWhere('steel_type', 'like', "%{$search}%")
                   ->orWhere('thickness', 'like', "%{$search}%")
                   ->orWhereHas('vendor', function ($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%");
@@ -30,10 +29,6 @@ class CoilController extends Controller
                       $q->where('lot_number', 'like', "%{$search}%");
                   });
             });
-        }
-
-        if ($request->filled('steel_type')) {
-            $query->where('steel_type', $request->steel_type);
         }
 
         if ($request->filled('lot_id')) {

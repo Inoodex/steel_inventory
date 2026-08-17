@@ -14,12 +14,7 @@ class Sale extends Model
 
     protected $fillable = [
         'order_no',
-        'sale_type',
         'customer_id',
-        'client_id',
-        'project_id',
-        'product_id',
-        'price',
         'qty',
         'total',
         'payble',
@@ -78,11 +73,6 @@ class Sale extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'customer_id');
-    }
-
-    public function client()
-    {
-        return $this->belongsTo(Customer::class, 'client_id');
     }
 
     public function warehouse()

@@ -61,4 +61,34 @@ class StoreSaleRequest extends FormRequest
             'grandTotal.required'            => 'Grand total is required.',
         ];
     }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $quantities = $this->input('qty', []);
+            $coilIds = $this->input('coil_id', []);
+
+            // Aggregate requested weight per coil
+            $aggregatedPerCoil = [];
+            foreach ($quantities as $index => $qty) {
+                $coilId = $coilIds[$index] ?? null;
+                if ($coilId) {
+                    $aggregatedPerCoil[$coilId] = ($aggregatedPerCoil[$coilId] ?? 0) + (float)$qty;
+                }
+            }
+
+            foreach ($aggregatedPerCoil as $coilId => $totalRequestedQty) {
+                $coil = \App\Models\Coil::find($coilId);
+                if ($coil) {
+                    $available = (float) $coil->remaining_weight;
+                    if ($totalRequestedQty > ($available + 0.0001)) {
+                        $validator->errors()->add(
+                            'qty',
+                            "Selling quantity (" . number_format($totalRequestedQty, 2) . " kg) exceeds available stock for Coil #{$coil->coil_number} (Available: " . number_format($available, 2) . " kg)."
+                        );
+                    }
+                }
+            }
+        });
+    }
 }

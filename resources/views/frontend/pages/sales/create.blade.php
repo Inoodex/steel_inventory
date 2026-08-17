@@ -1,20 +1,5 @@
 @extends('frontend.layouts.app')
 
-@push('styles')
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<style>
-    .select2-container .select2-selection--single {
-        height: 38px !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 6px !important;
-        display: flex !important;
-        align-items: center !important;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 36px !important;
-    }
-</style>
-@endpush
 
 @section('content')
 <div class="content container-fluid">
@@ -35,7 +20,7 @@
     </div>
     <!-- /Page Header -->
 
-    <form action="{{ route('sales.store') }}" method="POST" target="_blank" onsubmit="reloadAfterSubmit()" id="createSaleForm">
+    <form action="{{ route('sales.store') }}" method="POST" target="_blank" onsubmit="return validateSaleFormSubmission(event)" id="createSaleForm">
         @csrf
 
         <!-- Section 1: Customer & Order Dispatch Information -->
@@ -162,6 +147,7 @@
                 <div class="p-3 bg-light rounded-3 mb-4 border" id="form-group-item1">
                     <div class="row g-3 align-items-end">
                         <!-- 1. Mandatory Lot Select Dropdown -->
+                        <!-- 1. Select Lot Source -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">
                                 1. Select Lot Source <span class="text-danger">*</span>
@@ -179,7 +165,7 @@
                         </div>
 
                         <!-- 2. Coil Select Dropdown (Filtered by selected Lot) -->
-                        <div class="col-lg-4 col-md-6 col-12">
+                        <div class="col-lg-3 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">
                                 2. Select In-Stock Coil <span class="text-danger">*</span>
                             </label>
@@ -188,37 +174,43 @@
                             </select>
                         </div>
 
-                        <!-- 3. Available Coil Weight -->
+                        <!-- 3. Per Coil Weight (Readonly) -->
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Per Coil Wt (kg)</label>
+                            <input type="text" id="per_coil_weight1" class="form-control border-light-subtle bg-white fw-bold text-dark" readonly placeholder="0.00 kg">
+                        </div>
+
+                        <!-- 4. Available Coil Weight -->
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Available Weight</label>
                             <input type="text" id="stock1" class="form-control border-light-subtle bg-white fw-bold text-primary" readonly placeholder="0.00 kg">
                         </div>
 
-                        <!-- 4. Cost Rate -->
-                        <div class="col-lg-3 col-md-4 col-6">
+                        <!-- 5. Cost Rate -->
+                        <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Cost Rate (৳)</label>
                             <input type="number" id="purchase_price1" class="form-control border-light-subtle bg-white" readonly placeholder="0.00">
                         </div>
 
-                        <!-- 5. Selling Rate -->
+                        <!-- 6. Selling Rate -->
                         <div class="col-lg-3 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Selling Rate (৳) <span class="text-danger">*</span></label>
                             <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="unit_price1" class="form-control border-light-subtle" step="0.01" min="0" placeholder="0.00">
                         </div>
 
-                        <!-- 6. Selling Quantity -->
+                        <!-- 7. Selling Quantity -->
                         <div class="col-lg-3 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Selling Qty / Wt (kg) <span class="text-danger">*</span></label>
                             <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="qty1" class="form-control border-light-subtle text-dark" step="0.01" min="0.01" placeholder="Enter weight in kg">
                         </div>
 
-                        <!-- 7. Line Total Preview -->
+                        <!-- 8. Line Total Preview -->
                         <div class="col-lg-3 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Line Total (৳)</label>
                             <input type="text" id="total1" class="form-control border-light-subtle bg-white fw-bold text-success" readonly value="0.00">
                         </div>
 
-                        <!-- 8. Add Item Button -->
+                        <!-- 9. Add Item Button -->
                         <div class="col-lg-3 col-md-6 col-12 ms-auto">
                             <button type="button" onclick="addItem()" class="btn btn-success w-100 rounded-3 d-inline-flex align-items-center justify-content-center gap-2 py-2">
                                 <i class="fe fe-plus"></i>
@@ -488,7 +480,10 @@ function handleLotSelection(lotId) {
         const sizeUnit = (coil.length && coil.length !== 'N/A') ? coil.length : (coil.size_type || '');
         const sizeText = sizeVal ? ` | Size: ${sizeVal}${sizeUnit ? ' ' + sizeUnit : ''}` : '';
         const yard = coil.warehouse ? ` (${coil.warehouse.name})` : '';
-        const text = `Coil No - ${coil.coil_number}${thickness}${sizeText} | Avail: ${remaining.toLocaleString()} kg${yard}`;
+        const pieceCount = coil.piece_count ? Number(coil.piece_count) : 1;
+        const grossWeight = parseFloat(coil.gross_weight || coil.net_weight || 0);
+        const unitWeight = pieceCount > 0 && grossWeight > 0 ? (grossWeight / pieceCount) : remaining;
+        const text = `${coil.coil_number} | Qty: ${pieceCount} ${thickness}${sizeText} | Avail: ${remaining.toLocaleString()} kg`;
 
         const opt = $('<option></option>')
             .val(coil.id)
@@ -497,6 +492,9 @@ function handleLotSelection(lotId) {
             .attr('data-thickness', coil.thickness || '')
             .attr('data-size', sizeVal)
             .attr('data-size-type', sizeUnit || 'ft')
+            .attr('data-piece-count', pieceCount)
+            .attr('data-unit-weight', unitWeight)
+            .attr('data-gross-weight', grossWeight)
             .attr('data-remaining', remaining)
             .attr('data-rate', coil.rate_per_ton || 0)
             .attr('data-lot-id', coil.lot_id)
@@ -517,6 +515,8 @@ function handleLotSelection(lotId) {
 
 function resetCoilFields() {
     currentSelectedCoil = null;
+    const perCoilEl = document.getElementById('per_coil_weight1');
+    if (perCoilEl) perCoilEl.value = '';
     document.getElementById('stock1').value = '';
     document.getElementById('purchase_price1').value = '';
     document.getElementById('unit_price1').value = '';
@@ -533,6 +533,8 @@ function selectCoil(selectEl) {
 
     const remaining = parseFloat(selectedOption.dataset.remaining) || 0;
     const rate = parseFloat(selectedOption.dataset.rate) || 0;
+    const unitWeight = parseFloat(selectedOption.dataset.unitWeight) || 0;
+    const pieceCount = parseFloat(selectedOption.dataset.pieceCount) || 1;
     const lotId = selectedOption.dataset.lotId;
 
     currentSelectedCoil = {
@@ -541,6 +543,8 @@ function selectCoil(selectEl) {
         thickness: selectedOption.dataset.thickness,
         size: selectedOption.dataset.size,
         size_type: selectedOption.dataset.sizeType,
+        piece_count: pieceCount,
+        unit_weight: unitWeight,
         remaining: remaining,
         rate: rate,
         lot_id: lotId,
@@ -548,6 +552,10 @@ function selectCoil(selectEl) {
         warehouse: selectedOption.dataset.warehouse
     };
 
+    const perCoilEl = document.getElementById('per_coil_weight1');
+    if (perCoilEl) {
+        perCoilEl.value = unitWeight > 0 ? (unitWeight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg') : '—';
+    }
     document.getElementById('stock1').value = remaining.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg';
     document.getElementById('purchase_price1').value = rate.toFixed(2);
     document.getElementById('unit_price1').value = rate > 0 ? rate.toFixed(2) : '';
@@ -587,10 +595,25 @@ function addItem() {
 
     const availableStock = currentSelectedCoil.remaining;
     if (qty > availableStock) {
-        if (!confirm(`Warning: Entered quantity (${qty.toLocaleString()} kg) exceeds available coil stock (${availableStock.toLocaleString()} kg). Do you wish to proceed?`)) {
-            qtyInput.focus();
-            return;
-        }
+        alert(`Cannot sell more than available coil stock!\n\nRequested: ${qty.toLocaleString()} kg\nAvailable Stock: ${availableStock.toLocaleString()} kg`);
+        qtyInput.value = availableStock;
+        qtyInput.focus();
+        updatePreviewTotal();
+        return;
+    }
+
+    // Check if coil is already added in another row in the cart
+    let alreadyAddedQty = 0;
+    document.querySelectorAll(`#item_container tr.item-coil-${currentSelectedCoil.id}`).forEach(row => {
+        alreadyAddedQty += parseFloat(row.querySelector('.qty')?.value) || 0;
+    });
+    if ((alreadyAddedQty + qty) > (availableStock + 0.0001)) {
+        const remainingAllowed = Math.max(0, availableStock - alreadyAddedQty);
+        alert(`Cannot exceed available coil stock!\n\nCoil: ${currentSelectedCoil.coil_number}\nTotal Available: ${availableStock.toLocaleString()} kg\nAlready in Cart: ${alreadyAddedQty.toLocaleString()} kg\nRemaining Allowed: ${remainingAllowed.toLocaleString()} kg`);
+        qtyInput.value = remainingAllowed > 0 ? remainingAllowed : '';
+        qtyInput.focus();
+        updatePreviewTotal();
+        return;
     }
 
     const unitPriceInput = document.getElementById('unit_price1');
@@ -611,7 +634,9 @@ function addItem() {
     const lot = currentSelectedLot;
     const lotId = lot ? lot.id : (coil.lot_id || '');
     const lotLabel = lot ? `<span class="badge bg-light text-dark border px-2 py-1 fs-8"><i class="fe fe-package text-primary me-1"></i>${lot.lot_number}</span>` : '<span class="text-muted small">Lot</span>';
+    const pieceCount = coil.piece_count ? Number(coil.piece_count) : 1;
     let specBadges = ``;
+    if (pieceCount > 1) specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1">Qty: ${pieceCount} Coils</span>`;
     if (thickness) specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1">Thickness: ${thickness}</span>`;
     if (size) specBadges += `<span class="badge bg-light text-secondary border px-2 py-1 fs-8 me-1">Size: ${size} ${sizeType}</span>`;
 
@@ -635,7 +660,7 @@ function addItem() {
                 <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" step="0.01" name="unit_price[]" id="unit_price${itemNumber}" class="form-control border-light-subtle unit-price" value="${unitPrice.toFixed(2)}">
             </td>
             <td>
-                <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" step="0.01" name="qty[]" id="qty${itemNumber}" class="form-control border-light-subtle qty fw-bold" min="0.01" value="${qty}">
+                <input oninput="validateRowQty(this); calculateTotal()" onchange="validateRowQty(this); calculateTotal()" type="number" step="0.01" name="qty[]" id="qty${itemNumber}" class="form-control border-light-subtle qty fw-bold" min="0.01" max="${availableStock}" data-available="${availableStock}" data-coil-id="${coilId}" data-coil-number="${coil.coil_number}" value="${qty}">
             </td>
             <td>
                 <input type="number" step="0.01" name="total" id="total${itemNumber}" class="form-control border-light-subtle bg-light total fw-bold text-dark" readonly value="${rowTotal}">
@@ -726,6 +751,72 @@ function calculateTotal() {
     }
 
     toggleSummarySection();
+}
+
+function validateRowQty(inputEl) {
+    const coilId = inputEl.getAttribute('data-coil-id');
+    const availableStock = parseFloat(inputEl.getAttribute('data-available')) || 0;
+    const coilNumber = inputEl.getAttribute('data-coil-number') || '';
+    
+    let totalCoilInCart = 0;
+    document.querySelectorAll(`#item_container tr.item-coil-${coilId}`).forEach(row => {
+        totalCoilInCart += parseFloat(row.querySelector('.qty')?.value) || 0;
+    });
+
+    if (totalCoilInCart > (availableStock + 0.0001)) {
+        alert(`Quantity exceeds available stock for Coil ${coilNumber}!\n\nAvailable: ${availableStock.toLocaleString()} kg\nTotal In Cart: ${totalCoilInCart.toLocaleString()} kg`);
+        const otherRowsQty = totalCoilInCart - (parseFloat(inputEl.value) || 0);
+        const maxForThisRow = Math.max(0.01, availableStock - otherRowsQty);
+        inputEl.value = maxForThisRow.toFixed(2);
+        inputEl.classList.add('is-invalid');
+        setTimeout(() => inputEl.classList.remove('is-invalid'), 2000);
+    }
+}
+
+function validateSaleFormSubmission(e) {
+    const rows = document.querySelectorAll('#item_container tr');
+    if (rows.length === 0) {
+        if (e) e.preventDefault();
+        alert('Please add at least one steel line item before submitting.');
+        return false;
+    }
+
+    let hasError = false;
+    let errorMsg = '';
+    const coilTotals = {};
+    const coilMax = {};
+    const coilNames = {};
+
+    rows.forEach(row => {
+        const qtyInput = row.querySelector('.qty');
+        const coilId = qtyInput?.getAttribute('data-coil-id');
+        const qty = parseFloat(qtyInput?.value) || 0;
+        const maxStock = parseFloat(qtyInput?.getAttribute('data-available')) || 0;
+        const coilNum = qtyInput?.getAttribute('data-coil-number') || '';
+
+        if (coilId) {
+            coilTotals[coilId] = (coilTotals[coilId] || 0) + qty;
+            coilMax[coilId] = maxStock;
+            coilNames[coilId] = coilNum;
+        }
+    });
+
+    for (const [coilId, totalQty] of Object.entries(coilTotals)) {
+        const maxStock = coilMax[coilId];
+        if (totalQty > (maxStock + 0.0001)) {
+            hasError = true;
+            errorMsg += `• Coil ${coilNames[coilId]}: Total selling weight (${totalQty.toLocaleString()} kg) exceeds available stock (${maxStock.toLocaleString()} kg).\n`;
+        }
+    }
+
+    if (hasError) {
+        if (e) e.preventDefault();
+        alert(`Cannot save sale invoice due to stock limits:\n\n${errorMsg}`);
+        return false;
+    }
+
+    reloadAfterSubmit();
+    return true;
 }
 
 function reloadAfterSubmit() {

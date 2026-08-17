@@ -121,11 +121,11 @@
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
                     <div class="avatar avatar-lg bg-info-light text-info rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-tag fs-4"></i>
+                        <i class="fe fe-check-circle fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Retail Dues</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($sales->where('sale_type', 'retail')->count()) }}</h4>
+                        <h6 class="text-muted fw-normal mb-1">Total Paid on Due Invoices</h6>
+                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($sales->sum('advanced_payment'), 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -135,11 +135,11 @@
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
                     <div class="avatar avatar-lg bg-warning-light text-warning rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-briefcase fs-4"></i>
+                        <i class="fe fe-file-text fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Project Dues</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($sales->where('sale_type', 'project')->count()) }}</h4>
+                        <h6 class="text-muted fw-normal mb-1">Due Invoices Count</h6>
+                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($sales->count()) }}</h4>
                     </div>
                 </div>
             </div>
@@ -152,19 +152,12 @@
         <!-- Filter Controls -->
         <div class="card-header bg-white py-3 border-bottom border-light">
             <div class="row align-items-center g-3">
-                <div class="col-12 col-md-6 col-lg-5">
+                <div class="col-12 col-md-6 col-lg-6">
                     <div class="search-box-custom">
                         <input type="text" id="dueSearchInput" class="form-control border-light-subtle" placeholder="Search order no, customer name, phone..." autocomplete="off">
                     </div>
                 </div>
-                <div class="col-12 col-md-3 col-lg-3">
-                    <select id="dueTypeFilterSelect" class="form-select border-light-subtle">
-                        <option value="all">All Order Types</option>
-                        <option value="retail">Retail Dues</option>
-                        <option value="project">Project Dues</option>
-                    </select>
-                </div>
-                <div class="col-12 col-md-3 col-lg-4 text-md-end text-muted small">
+                <div class="col-12 col-md-6 col-lg-6 text-md-end text-muted small">
                     Showing <span id="visibleDueCount" class="fw-bold text-dark">{{ $sales->count() }}</span> of {{ $sales->count() }} records
                 </div>
             </div>
@@ -179,21 +172,20 @@
                             <th class="ps-4">#</th>
                             <th>Date</th>
                             <th>Order No</th>
-                            <th>Customer / Client</th>
+                            <th>Customer</th>
                             <th>Total Amount</th>
                             <th>Paid Amount</th>
                             <th>Due Amount</th>
-                            <th>Type</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
                         @forelse ($sales as $sale)
                             @php
-                                $customerName = $sale->sale_type == 'project' ? ($sale->client->name ?? 'N/A') : ($sale->customer->name ?? 'N/A');
-                                $customerPhone = $sale->sale_type == 'project' ? ($sale->client->phone ?? 'N/A') : ($sale->customer->phone ?? 'N/A');
+                                $customerName = $sale->customer->name ?? 'N/A';
+                                $customerPhone = $sale->customer->phone ?? 'N/A';
                             @endphp
-                            <tr class="due-row" data-search="{{ strtolower($sale->order_no . ' ' . $customerName . ' ' . $customerPhone . ' ' . $sale->sale_type) }}" data-type="{{ strtolower($sale->sale_type) }}">
+                            <tr class="due-row" data-search="{{ strtolower($sale->order_no . ' ' . $customerName . ' ' . $customerPhone) }}">
                                 <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
                                 <td>
                                     <span class="text-secondary small fw-semibold">
@@ -225,27 +217,10 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if($sale->sale_type == 'project')
-                                        <span class="badge badge-soft-warning px-3 py-1 rounded-pill text-capitalize fs-7">
-                                            Project
-                                        </span>
-                                    @else
-                                        <span class="badge badge-soft-info px-3 py-1 rounded-pill text-capitalize fs-7">
-                                            Retail
-                                        </span>
-                                    @endif
-                                </td>
-                                <td>
                                     @if ($sale->due_payment > 0)
-                                        @if ($sale->sale_type == 'project')
-                                            <a href="{{ route('projects.payments', $sale->id) }}" class="btn btn-sm btn-outline-success rounded-2 px-3">
-                                                <i class="fe fe-credit-card me-1"></i> Pay Now
-                                            </a>
-                                        @else
-                                            <a href="{{ route('sales.payments', $sale->id) }}" class="btn btn-sm btn-outline-success rounded-2 px-3">
-                                                <i class="fe fe-credit-card me-1"></i> Pay Now
-                                            </a>
-                                        @endif
+                                        <a href="{{ route('sales.payments', $sale->id) }}" class="btn btn-sm btn-outline-success rounded-2 px-3">
+                                            <i class="fe fe-credit-card me-1"></i> Pay Now
+                                        </a>
                                     @endif
                                 </td>
                             </tr>

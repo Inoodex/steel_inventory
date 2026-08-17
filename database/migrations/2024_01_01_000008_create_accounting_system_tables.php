@@ -81,41 +81,6 @@ return new class extends Migration
             $table->foreign('account_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
         });
 
-        Schema::create('contra_entries', function (Blueprint $table) {
-            $table->id();
-            $table->string('entry_number')->unique();
-            $table->date('date');
-            $table->unsignedBigInteger('from_account_id');
-            $table->unsignedBigInteger('to_account_id');
-            $table->decimal('amount', 15, 2);
-            $table->string('transfer_type')->default('bank_to_cash');
-            $table->string('cheque_number')->nullable();
-            $table->text('narration')->nullable();
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->timestamps();
-
-            $table->foreign('from_account_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
-            $table->foreign('to_account_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
-            $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
-        });
-
-        Schema::create('account_reconciliations', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('account_id');
-            $table->date('statement_date');
-            $table->decimal('statement_balance', 15, 2);
-            $table->decimal('book_balance', 15, 2);
-            $table->decimal('reconciled_balance', 15, 2);
-            $table->decimal('difference', 15, 2)->default(0.00);
-            $table->enum('status', ['draft', 'completed'])->default('draft');
-            $table->text('notes')->nullable();
-            $table->unsignedBigInteger('reconciled_by')->nullable();
-            $table->timestamp('reconciled_at')->nullable();
-            $table->timestamps();
-
-            $table->foreign('account_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
-            $table->foreign('reconciled_by')->references('id')->on('users')->onDelete('set null');
-        });
     }
 
     /**

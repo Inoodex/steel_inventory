@@ -45,7 +45,13 @@ class LotController extends Controller
         $lots = $query->latest()->paginate(15)->withQueryString();
         $vendors = Vendor::latest()->get();
 
-        return view('frontend.pages.lots.index', compact('lots', 'vendors'));
+        // Calculate summary metrics
+        $totalLots = Lot::count();
+        $activeLots = Lot::where('status', 'active')->count();
+        $totalWeight = (float) \App\Models\Purchase::whereNotNull('lot_id')->sum('total_weight');
+        $totalValuation = (float) \App\Models\Purchase::whereNotNull('lot_id')->sum('total_price');
+
+        return view('frontend.pages.lots.index', compact('lots', 'vendors', 'totalLots', 'activeLots', 'totalWeight', 'totalValuation'));
     }
 
     /**

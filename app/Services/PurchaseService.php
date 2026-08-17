@@ -27,13 +27,22 @@ class PurchaseService
             // Calculate total batch bill
             $batchSubTotal = 0;
             foreach ($items as $item) {
-                $qty = !empty($item['quantity']) ? (float) $item['quantity'] : (!empty($item['net_weight']) ? (float) $item['net_weight'] : 1);
+                $coilQty = max(1, (int) ($item['quantity'] ?? 1));
+                $perCoilWeight = (float) ($item['unit_weight'] ?? (!empty($item['net_weight']) ? $item['net_weight'] : 0));
+                $totalWeight = !empty($item['total_weight']) && (float) $item['total_weight'] > 0 
+                    ? (float) $item['total_weight'] 
+                    : ($coilQty * $perCoilWeight);
+
+                if ($perCoilWeight <= 0 && $totalWeight > 0) {
+                    $perCoilWeight = $totalWeight / $coilQty;
+                }
+
                 $rate = !empty($item['unit_price']) ? (float) $item['unit_price'] : (!empty($item['rate_per_ton']) ? (float) $item['rate_per_ton'] : 0);
 
                 if (!empty($item['sub_price']) && (float) $item['sub_price'] > 0) {
                     $itemSub = (float) $item['sub_price'];
                 } else {
-                    $itemSub = $qty * $rate;
+                    $itemSub = $totalWeight * $rate;
                 }
                 $batchSubTotal += $itemSub;
             }
@@ -43,13 +52,22 @@ class PurchaseService
             $itemCount = count($items);
 
             foreach ($items as $index => $item) {
-                $qty = !empty($item['quantity']) ? (float) $item['quantity'] : (!empty($item['net_weight']) ? (float) $item['net_weight'] : 1);
+                $coilQty = max(1, (int) ($item['quantity'] ?? 1));
+                $perCoilWeight = (float) ($item['unit_weight'] ?? (!empty($item['net_weight']) ? $item['net_weight'] : 0));
+                $totalWeight = !empty($item['total_weight']) && (float) $item['total_weight'] > 0 
+                    ? (float) $item['total_weight'] 
+                    : ($coilQty * $perCoilWeight);
+
+                if ($perCoilWeight <= 0 && $totalWeight > 0) {
+                    $perCoilWeight = $totalWeight / $coilQty;
+                }
+
                 $rate = !empty($item['unit_price']) ? (float) $item['unit_price'] : (!empty($item['rate_per_ton']) ? (float) $item['rate_per_ton'] : 0);
 
                 if (!empty($item['sub_price']) && (float) $item['sub_price'] > 0) {
                     $itemSub = (float) $item['sub_price'];
                 } else {
-                    $itemSub = $qty * $rate;
+                    $itemSub = $totalWeight * $rate;
                 }
 
                 // Proportional payment allocation across batch items
@@ -71,16 +89,15 @@ class PurchaseService
 
                 // 1. Record Purchase Line
                 $purchase = Purchase::create([
-                    'product_id'   => null,
                     'lot_id'       => $lotId,
                     'vendor_id'    => $vendorId,
                     'warehouse_id' => $warehouseId,
                     'thickness'    => $thickness,
                     'size'         => $size,
                     'size_type'    => $sizeType,
-                    'unit_weight'  => $qty,
-                    'total_weight' => $qty,
-                    'quantity'     => $qty,
+                    'quantity'     => $coilQty,
+                    'unit_weight'  => $perCoilWeight,
+                    'total_weight' => $totalWeight,
                     'unit_price'   => $rate,
                     'sub_price'    => $itemSub,
                     'total_price'  => $itemSub,
@@ -89,23 +106,23 @@ class PurchaseService
                     'created_by'   => Auth::id(),
                 ]);
 
-                // 2. Register Physical Coil / Plate in Yard Stock
-                $coilNumber = !empty($item['coil_number']) ? trim($item['coil_number']) : Coil::generateCoilNumber();
+                // 2. Register Single Batch Coil in Yard Stock
+                $coilNumber = Coil::generateCoilNumber();
+
                 Coil::create([
                     'coil_number'      => $coilNumber,
                     'purchase_id'      => $purchase->id,
                     'lot_id'           => $lotId,
                     'vendor_id'        => $vendorId,
                     'warehouse_id'     => $warehouseId,
-                    'product_id'       => null,
-                    'steel_type'       => $thickness ? "Steel {$thickness}" : 'Ship Steel Coil',
                     'thickness'        => $thickness,
                     'width'            => $size,
                     'length'           => $sizeType,
-                    'gross_weight'     => $qty,
+                    'piece_count'      => $coilQty,
+                    'gross_weight'     => $totalWeight,
                     'tare_weight'      => 0,
-                    'net_weight'       => $qty,
-                    'remaining_weight' => $qty,
+                    'net_weight'       => $totalWeight,
+                    'remaining_weight' => $totalWeight,
                     'rate_per_ton'     => $rate,
                     'total_price'      => $itemSub,
                     'status'           => 'in_stock',
@@ -120,7 +137,7 @@ class PurchaseService
             if (!empty($lotId)) {
                 $lot = Lot::find($lotId);
                 if ($lot) {
-                    $lot->total_quantity = $lot->purchases()->sum('quantity');
+                    $lot->total_quantity = $lot->purchases()->sum('total_weight');
                     $lot->total_amount   = $lot->purchases()->sum('total_price');
                     $lot->save();
                 }

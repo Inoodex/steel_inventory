@@ -63,15 +63,80 @@
 @section('content')
 <div class="content container-fluid">
     <!-- Header -->
-    <div class="page-header">
+    <div class="page-header mb-4">
         <div class="row align-items-center">
             <div class="col">
                 <h3 class="page-title fw-bold text-dark mb-1">Lot Management</h3>
+                <p class="text-muted small mb-0">Manage ship breaking procurement lots, intake specifications, and inventory sources</p>
             </div>
             <div class="col-auto">
-                <button type="button" class="btn btn-primary px-3 rounded-3" data-bs-toggle="modal" data-bs-target="#createLotModal">
-                    <i class="fe fe-plus-circle me-1"></i> Create New Lot
+                <button type="button" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#createLotModal">
+                    <i class="fe fe-plus-circle fs-6"></i>
+                    <span>Create New Lot</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Stats Bar -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6 col-12">
+            <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0" style="border-left: 4px solid #fe3727 !important;">
+                <div class="card-body d-flex align-items-center p-3">
+                    <div class="avatar avatar-lg rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(254, 55, 39, 0.12); color: #fe3727; width: 48px; height: 48px;">
+                        <i class="fe fe-layers fs-4"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-medium d-block mb-1">Total Vessel Lots</span>
+                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($totalLots ?? $lots->total()) }} <span class="fs-7 fw-normal text-muted">Lots</span></h4>
+                        <small class="text-muted fs-8">All registered consignments</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 col-12">
+            <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0" style="border-left: 4px solid #16a34a !important;">
+                <div class="card-body d-flex align-items-center p-3">
+                    <div class="avatar avatar-lg rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(22, 163, 74, 0.12); color: #16a34a; width: 48px; height: 48px;">
+                        <i class="fe fe-check-circle fs-4"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-medium d-block mb-1">Active Intake Lots</span>
+                        <h4 class="mb-0 fw-bold text-success">{{ number_format($activeLots ?? 0) }} <span class="fs-7 fw-normal text-muted">Active</span></h4>
+                        <small class="text-muted fs-8">Open for procurement intake</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 col-12">
+            <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0" style="border-left: 4px solid #0ea5e9 !important;">
+                <div class="card-body d-flex align-items-center p-3">
+                    <div class="avatar avatar-lg rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(14, 165, 233, 0.12); color: #0ea5e9; width: 48px; height: 48px;">
+                        <i class="fe fe-database fs-4"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-medium d-block mb-1">Consignment Intake Wt</span>
+                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($totalWeight ?? 0, 2) }} <span class="fs-7 fw-normal text-muted">kg</span></h4>
+                        <small class="text-muted fs-8">Total steel weight purchased</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 col-12">
+            <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0" style="border-left: 4px solid #f59e0b !important;">
+                <div class="card-body d-flex align-items-center p-3">
+                    <div class="avatar avatar-lg rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(245, 158, 11, 0.12); color: #f59e0b; width: 48px; height: 48px;">
+                        <i class="fe fe-dollar-sign fs-4"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-medium d-block mb-1">Total Lot Valuation</span>
+                        <h4 class="mb-0 fw-bold text-dark">৳ {{ number_format($totalValuation ?? 0, 2) }}</h4>
+                        <small class="text-muted fs-8">Cumulative purchase cost</small>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -251,7 +316,8 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Vendor <span class="text-danger">*</span></label>
-                                <select name="vendor_id" class="form-select rounded-3" required>
+                                <select name="vendor_id" class="form-select select2-lot-vendor rounded-3" required>
+                                    <option value="">Search & Select Vendor</option>
                                     @foreach($vendors as $vendor)
                                         <option value="{{ $vendor->id }}" {{ $lot->vendor_id == $vendor->id ? 'selected' : '' }}>
                                             {{ $vendor->name }}
@@ -304,8 +370,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Vendor <span class="text-danger">*</span></label>
-                        <select name="vendor_id" class="form-select rounded-3" required>
-                            <option value="">Select Vendor</option>
+                        <select name="vendor_id" id="createLotVendor" class="form-select select2-lot-vendor rounded-3" required>
+                            <option value="">Search & Select Vendor</option>
                             @foreach($vendors as $vendor)
                                 <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
                             @endforeach
@@ -339,9 +405,19 @@
 
 @push('scripts')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function () {
         let lotSearchTimer = null;
+
+        // Initialize Select2 in Modals on open
+        $(document).on('shown.bs.modal', '.modal', function () {
+            $(this).find('.select2-lot-vendor').select2({
+                dropdownParent: $(this),
+                width: '100%',
+                placeholder: 'Search & Select Vendor'
+            });
+        });
 
         function performLotFilter(targetUrl) {
             const spinner = $('#lotSearchSpinner');

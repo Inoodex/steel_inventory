@@ -58,7 +58,7 @@
             <form action="{{ route('coils.index') }}" method="GET" class="row g-2 align-items-center">
                 <div class="col-lg-3 col-md-6 col-12">
                     <input type="text" name="search" class="form-control form-control-sm border-light-subtle" 
-                        placeholder="Search Coil Tag, Vessel Lot, Steel Type..." value="{{ request('search') }}">
+                        placeholder="Search Coil Tag, Vessel Lot..." value="{{ request('search') }}">
                 </div>
                 <div class="col-lg-2 col-md-3 col-6">
                     <select name="lot_id" class="form-select form-select-sm border-light-subtle">
@@ -90,9 +90,9 @@
                 </div>
                 <div class="col-lg-1 col-md-12 col-12 d-flex gap-1">
                     <button type="submit" class="btn btn-sm btn-primary w-100 rounded-2" title="Apply Filter">
-                        <i class="fe fe-filter"></i>
+                        <i class="fe fe-filter"></i> Filter
                     </button>
-                    @if(request()->hasAny(['search', 'steel_type', 'lot_id', 'warehouse_id', 'status']))
+                    @if(request()->hasAny(['search', 'lot_id', 'warehouse_id', 'status']))
                         <a href="{{ route('coils.index') }}" class="btn btn-sm btn-outline-secondary rounded-2" title="Clear Filter">
                             <i class="fe fe-x"></i>
                         </a>
@@ -125,7 +125,12 @@
                         @forelse($coils as $coil)
                             <tr>
                                 <td class="ps-3">
-                                    <span class="fw-bold text-dark ">Coil No - {{ $coil->coil_number }}</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="fw-bold text-dark">Coil No - {{ $coil->coil_number }}</span>
+                                        @if(($coil->piece_count ?? 1) > 1)
+                                            <span class="badge bg-light text-dark border px-2 py-0 fs-8">{{ (int)$coil->piece_count }} Coils</span>
+                                        @endif
+                                    </div>
                                     <small class="text-muted d-block" style="font-size: 11px;">{{ $coil->created_at->format('d M Y') }}</small>
                                 </td>
                                 <td>
@@ -152,7 +157,10 @@
                                     ৳ {{ number_format($coil->rate_per_ton, 2) }}
                                 </td>
                                 <td>
-                                    {{ number_format($coil->net_weight) }} Kg 
+                                    <span class="fw-bold text-dark">{{ number_format($coil->remaining_weight, 2) }} kg</span>
+                                    @if(($coil->piece_count ?? 1) > 1)
+                                        <small class="text-muted d-block" style="font-size: 11px;">({{ number_format($coil->gross_weight / $coil->piece_count, 2) }} kg/ea)</small>
+                                    @endif
                                 </td>
                                 <td >
                                     <i class="fe fe-map-pin me-1"></i>{{ $coil->warehouse->name }}

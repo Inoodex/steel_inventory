@@ -19,11 +19,10 @@ class Coil extends Model
         'lot_id',
         'vendor_id',
         'warehouse_id',
-        'product_id',
-        'steel_type',
         'thickness',
         'width',
         'length',
+        'piece_count',
         'gross_weight',
         'tare_weight',
         'net_weight',
@@ -37,6 +36,7 @@ class Coil extends Model
     ];
 
     protected $casts = [
+        'piece_count'      => 'decimal:2',
         'gross_weight'     => 'decimal:3',
         'tare_weight'      => 'decimal:3',
         'net_weight'       => 'decimal:3',

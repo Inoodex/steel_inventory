@@ -134,31 +134,23 @@
         <thead>
             <tr>
                 <th style="width: 5%; text-align: center;">#</th>
-                <th style="width: 12%; text-align: left;">Date</th>
-                <th style="width: 16%; text-align: left;">Order No</th>
-                <th style="width: 12%; text-align: center;">Type</th>
-                <th style="width: 25%; text-align: left;">Customer / Client</th>
-                <th style="width: 10%; text-align: right;">Payable</th>
-                <th style="width: 10%; text-align: right;">Paid</th>
-                <th style="width: 10%; text-align: right;">Due</th>
+                <th style="width: 14%; text-align: left;">Date</th>
+                <th style="width: 18%; text-align: left;">Order No</th>
+                <th style="width: 30%; text-align: left;">Customer Name</th>
+                <th style="width: 11%; text-align: right;">Payable</th>
+                <th style="width: 11%; text-align: right;">Paid</th>
+                <th style="width: 11%; text-align: right;">Due</th>
             </tr>
         </thead>
         <tbody>
             @forelse($sales as $index => $item)
                 @php
-                    $customerName = $item->sale_type == 'project' 
-                        ? ($item->client->name ?? 'N/A') 
-                        : ($item->customer->name ?? 'N/A');
+                    $customerName = $item->customer->name ?? 'N/A';
                 @endphp
                 <tr style="background-color: {{ $loop->even ? '#f8fafc' : '#ffffff' }};">
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td>{{ $item->created_at ? $item->created_at->format('d-m-Y') : 'N/A' }}</td>
                     <td class="fw-bold">{{ $item->order_no }}</td>
-                    <td class="text-center">
-                        <span class="badge {{ $item->sale_type == 'project' ? 'badge-project' : 'badge-retail' }}">
-                            {{ ucfirst($item->sale_type) }}
-                        </span>
-                    </td>
                     <td class="fw-bold">{{ $customerName }}</td>
                     <td class="text-right">{{ number_format($item->payble ?? 0, 2) }}</td>
                     <td class="text-right" style="color: #16a34a;">{{ number_format($item->advanced_payment ?? 0, 2) }}</td>
@@ -166,7 +158,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" class="text-center" style="padding: 20px; color: #64748b;">No due payment records found.</td>
+                    <td colspan="7" class="text-center" style="padding: 20px; color: #64748b;">No due payment records found.</td>
                 </tr>
             @endforelse
         </tbody>

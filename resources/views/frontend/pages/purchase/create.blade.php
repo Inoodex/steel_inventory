@@ -1,25 +1,7 @@
 @extends('frontend.layouts.app')
 
 @push('styles')
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
-        .select2-container .select2-selection--single {
-            height: 38px !important;
-            border: 1px solid #dbe2ea !important;
-            border-radius: 8px !important;
-            display: flex;
-            align-items: center;
-        }
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 36px !important;
-            padding-left: 12px;
-            color: #334155;
-            font-size: 13px;
-        }
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 36px !important;
-            right: 8px;
-        }
         .table-custom th,
         .table-custom td {
             white-space: nowrap;
@@ -120,7 +102,7 @@
                         <h6 class="fw-bold text-dark mb-0">
                             <i class="fe fe-disc text-primary me-2"></i>Steel Items & Coil Intake Grid
                         </h6>
-                        <small class="text-muted">Specify coil tags, thickness, size, size type, weight/quantity, and rate</small>
+                        <small class="text-muted">Specify coil quantity, thickness, size, per-coil weight, total weight, and unit rate</small>
                     </div>
                     <button type="button" class="btn btn-sm btn-primary rounded-3 px-3 shadow-sm d-inline-flex align-items-center gap-2" id="addRowBtn" onclick="addSteelRow()">
                         <i class="fe fe-plus"></i>
@@ -133,28 +115,29 @@
                         <table class="table table-hover table-custom align-middle mb-0" id="steelItemsTable">
                             <thead class="bg-light text-secondary fs-7 text-uppercase">
                                 <tr>
-                                    <th style="width: 40px;" class="ps-3 text-center">#</th>
-                                    <th style="min-width: 170px;">Coil No</th>
-                                    <th style="width: 130px;">Thickness</th>
-                                    <th style="width: 140px;">Size</th>
-                                    <th style="width: 120px;">Size Type</th>
-                                    <th style="width: 140px;">Weight / Qty (kg) <span class="text-danger">*</span></th>
-                                    <th style="width: 150px;">Rate (৳) <span class="text-danger">*</span></th>
-                                    <th style="width: 160px;">Sub Total (৳)</th>
-                                    <th style="width: 50px;" class="text-center pe-3">Action</th>
+                                    <th style="width: 35px;" class="ps-3 text-center">#</th>
+                                    <th style="width: 95px;">Coil No <span class="text-danger">*</span></th>
+                                    <th style="width: 115px;">Thickness</th>
+                                    <th style="width: 115px;">Size</th>
+                                    <th style="width: 110px;">Size Type</th>
+                                    <th style="min-width: 140px;">Per Coil Wt (kg) <span class="text-danger">*</span></th>
+                                    <th style="min-width: 140px;">Total Wt (kg)</th>
+                                    <th style="min-width: 135px;">Rate (৳) <span class="text-danger">*</span></th>
+                                    <th style="min-width: 150px;">Sub Total (৳)</th>
+                                    <th style="width: 45px;" class="text-center pe-3">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="steelRowsContainer">
                                 <tr class="steel-row" data-index="0">
                                     <td class="ps-3 text-center text-muted small fw-semibold row-number">1</td>
                                     <td>
-                                        <input type="text" name="items[0][coil_number]" class="form-control form-control-sm row-coil-number font-monospace">
+                                        <input oninput="calculateRow(this)" type="number" min="1" step="1" name="items[0][quantity]" class="form-control form-control-sm row-quantity text-center fw-bold" value="1" required>
                                     </td>
                                     <td>
-                                        <input type="text" name="items[0][thickness]" class="form-control form-control-sm row-thickness text-center">
+                                        <input type="text" name="items[0][thickness]" class="form-control form-control-sm row-thickness text-center" >
                                     </td>
                                     <td>
-                                        <input type="text" name="items[0][size]" class="form-control form-control-sm row-size text-center">
+                                        <input type="text" name="items[0][size]" class="form-control form-control-sm row-size text-center" >
                                     </td>
                                     <td>
                                         <select name="items[0][size_type]" class="form-select form-select-sm row-size-type">
@@ -167,8 +150,11 @@
                                         </select>
                                     </td>
                                     <td>
-                                        <input oninput="calculateRow(this)" type="number" step="0.001" min="0.001" name="items[0][quantity]" class="form-control form-control-sm row-quantity text-end fw-bold text-primary" placeholder="0.000" required>
+                                        <input oninput="calculateRow(this)" type="number" step="0.001" min="0.001" name="items[0][unit_weight]" class="form-control form-control-sm row-unit-weight text-end fw-bold text-primary" placeholder="0.000" required>
                                         <input type="hidden" name="items[0][net_weight]" class="row-net-weight" value="0">
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.001" name="items[0][total_weight]" class="form-control form-control-sm row-total-weight bg-light text-end fw-bold text-dark" readonly placeholder="0.000">
                                     </td>
                                     <td>
                                         <div class="input-group input-group-sm">
@@ -203,6 +189,14 @@
 
                     <!-- Metrics Row -->
                     <div class="row g-3 mb-3">
+                        <!-- Total Coils Metric -->
+                        <div class="col-lg-3 col-md-6 col-12">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <span class="text-muted small fw-medium d-block mb-1">Total Coils Intake</span>
+                                <h4 class="mb-0 fw-bold text-dark"><span id="displayTotalCoils">1</span> <small class="fs-7 text-muted">Pcs</small></h4>
+                            </div>
+                        </div>
+
                         <!-- Total Weight Metric -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <div class="p-3 bg-light rounded-3 border h-100">
@@ -220,7 +214,7 @@
                             </div>
                         </div>
 
-                        <!-- Payment Input -->
+                        <!-- Payment & Due Metrics -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <div class="p-3 bg-light rounded-3 border h-100 position-relative">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -243,15 +237,13 @@
                                 @enderror
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Outstanding Due -->
-                        <div class="col-lg-3 col-md-6 col-12">
-                            <div class="p-3 bg-light rounded-3 border h-100">
-                                <span class="text-muted small fw-medium d-block mb-1">Outstanding Due</span>
-                                <h4 class="mb-0 fw-bold text-danger" id="displayDueAmount">৳ 0.00</h4>
-                                <input type="hidden" name="due" id="due_hidden" value="0.00">
-                            </div>
-                        </div>
+                    <!-- Outstanding Due Banner -->
+                    <div class="p-3 bg-light-subtle rounded-3 border d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted fw-semibold">Outstanding Balance (Due):</span>
+                        <h4 class="mb-0 fw-bold text-danger" id="displayDueAmount">৳ 0.00</h4>
+                        <input type="hidden" name="due" id="due_hidden" value="0.00">
                     </div>
 
                     <div class="d-flex justify-content-end gap-3 pt-3 border-top">
@@ -297,7 +289,7 @@
                 <tr class="steel-row" data-index="${rowIndex}">
                     <td class="ps-3 text-center text-muted small fw-semibold row-number">${rowIndex + 1}</td>
                     <td>
-                        <input type="text" name="items[${rowIndex}][coil_number]" class="form-control form-control-sm row-coil-number font-monospace" placeholder="e.g. COIL-0${rowIndex + 1}">
+                        <input oninput="calculateRow(this)" type="number" min="1" step="1" name="items[${rowIndex}][quantity]" class="form-control form-control-sm row-quantity text-center fw-bold" value="1" required>
                     </td>
                     <td>
                         <input type="text" name="items[${rowIndex}][thickness]" class="form-control form-control-sm row-thickness text-center" placeholder="e.g. 16mm">
@@ -316,8 +308,11 @@
                         </select>
                     </td>
                     <td>
-                        <input oninput="calculateRow(this)" type="number" step="0.001" min="0.001" name="items[${rowIndex}][quantity]" class="form-control form-control-sm row-quantity text-end fw-bold text-primary" placeholder="0.000" required>
+                        <input oninput="calculateRow(this)" type="number" step="0.001" min="0.001" name="items[${rowIndex}][unit_weight]" class="form-control form-control-sm row-unit-weight text-end fw-bold text-primary" placeholder="0.000" required>
                         <input type="hidden" name="items[${rowIndex}][net_weight]" class="row-net-weight" value="0">
+                    </td>
+                    <td>
+                        <input type="number" step="0.001" name="items[${rowIndex}][total_weight]" class="form-control form-control-sm row-total-weight bg-light text-end fw-bold text-dark" readonly placeholder="0.000">
                     </td>
                     <td>
                         <div class="input-group input-group-sm">
@@ -363,28 +358,38 @@
 
         function calculateRow(inputEl) {
             const row = $(inputEl).closest('tr.steel-row');
-            const qty = parseFloat(row.find('.row-quantity').val()) || 0;
-            row.find('.row-net-weight').val(qty);
+            const qty = parseInt(row.find('.row-quantity').val()) || 1;
+            const unitWeight = parseFloat(row.find('.row-unit-weight').val()) || 0;
+            const totalWeight = qty * unitWeight;
+
+            row.find('.row-net-weight').val(unitWeight);
+            row.find('.row-total-weight').val(totalWeight > 0 ? totalWeight.toFixed(3) : '');
 
             const rate = parseFloat(row.find('.row-rate').val()) || 0;
-            const subTotal = qty * rate;
-            row.find('.row-sub-total').val(subTotal.toFixed(2));
+            const subTotal = totalWeight * rate;
+            row.find('.row-sub-total').val(subTotal > 0 ? subTotal.toFixed(2) : '');
 
             recalculateSummary();
         }
 
         function recalculateSummary() {
+            let totalCoils = 0;
             let totalWeight = 0;
             let grandTotal = 0;
 
             $('#steelRowsContainer tr.steel-row').each(function () {
-                const qty = parseFloat($(this).find('.row-quantity').val()) || 0;
+                const qty = parseInt($(this).find('.row-quantity').val()) || 0;
+                const unitWeight = parseFloat($(this).find('.row-unit-weight').val()) || 0;
+                const rowTotalWeight = qty * unitWeight;
                 const sub = parseFloat($(this).find('.row-sub-total').val()) || 0;
-                totalWeight += qty;
+
+                totalCoils += qty;
+                totalWeight += rowTotalWeight;
                 grandTotal += sub;
             });
 
             const formattedGrandTotal = grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            $('#displayTotalCoils').text(totalCoils);
             $('#displayTotalNetWeight').text(totalWeight.toFixed(3));
             $('#displayGrandTotal').text('৳ ' + formattedGrandTotal);
             $('#grand_total_hidden').val(grandTotal.toFixed(2));
@@ -419,7 +424,7 @@
 
             if (grandTotal <= 0) {
                 e.preventDefault();
-                alert('Please enter valid quantities and rates for your steel items.');
+                alert('Please enter valid quantities, weights, and rates for your steel items.');
                 return false;
             }
 

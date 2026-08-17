@@ -622,50 +622,138 @@
     <!-- Select2 CSS & JS -->
     <link rel="stylesheet" href="{{ asset('assets') }}/plugins/select2/css/select2.min.css">
     <script src="{{ asset('assets') }}/plugins/select2/js/select2.min.js"></script>
-    <!-- Select2 Global Styling & Arrow Fixes -->
+    <!-- Select2 Global Modern Styling & Arrow Fixes -->
     <style>
         select.select2, select.form-select.select2 {
             background-image: none !important;
         }
+        .select2-container {
+            width: 100% !important;
+        }
         .select2-container--default .select2-selection--single {
-            height: 38px !important;
+            height: 40px !important;
             border: 1px solid #dbe2ea !important;
             border-radius: 8px !important;
+            position: relative !important;
             display: flex !important;
             align-items: center !important;
             background-color: #ffffff !important;
+            padding-right: 30px !important;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .select2-container--default.select2-container--focus .select2-selection--single,
+        .select2-container--default.select2-container--open .select2-selection--single {
+            border-color: #fe3727 !important;
+            outline: 0 !important;
+            box-shadow: 0 0 0 0.2rem rgba(254, 55, 39, 0.18) !important;
         }
         .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 36px !important;
-            color: #2c3038 !important;
+            line-height: 38px !important;
+            color: #1e293b !important;
+            font-size: 13px !important;
             padding-left: 12px !important;
-            padding-right: 28px !important;
+            padding-right: 0 !important;
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
+            width: 100% !important;
         }
         .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 36px !important;
+            height: 100% !important;
             position: absolute !important;
-            top: 1px !important;
-            right: 8px !important;
-            width: 20px !important;
+            top: 0 !important;
+            right: 10px !important;
+            width: 18px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            pointer-events: none !important;
         }
         .select2-container--default .select2-selection--single .select2-selection__arrow b {
-            border-color: #6c757d transparent transparent transparent !important;
-            border-style: solid !important;
-            border-width: 5px 4px 0 4px !important;
-            height: 0 !important;
-            left: 50% !important;
-            margin-left: -4px !important;
-            margin-top: -2px !important;
-            position: absolute !important;
-            top: 50% !important;
-            width: 0 !important;
+            display: block !important;
+            width: 12px !important;
+            height: 12px !important;
+            border: none !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: center !important;
+            background-size: contain !important;
+            position: static !important;
+            margin: 0 !important;
+            transition: transform 0.2s ease !important;
         }
         .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
-            border-color: transparent transparent #6c757d transparent !important;
-            border-width: 0 4px 5px 4px !important;
+            transform: rotate(180deg) !important;
+            border: none !important;
+        }
+        .select2-dropdown {
+            z-index: 99999 !important;
+            border: 1px solid #dbe2ea !important;
+            border-radius: 8px !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08) !important;
+        }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #fe3727 !important;
+            color: #ffffff !important;
+        }
+
+        /* Global Primary Theme Palette (#fe3727) */
+        :root {
+            --bs-primary: #fe3727 !important;
+            --bs-primary-rgb: 254, 55, 39 !important;
+        }
+        .btn-primary {
+            background-color: #fe3727 !important;
+            border-color: #fe3727 !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 6px rgba(254, 55, 39, 0.22) !important;
+        }
+        .btn-primary:hover, 
+        .btn-primary:focus, 
+        .btn-primary:active, 
+        .btn-primary.active, 
+        .show > .btn-primary.dropdown-toggle {
+            background-color: #e02819 !important;
+            border-color: #e02819 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(254, 55, 39, 0.38) !important;
+        }
+        .btn-outline-primary {
+            color: #fe3727 !important;
+            border-color: #fe3727 !important;
+            background-color: transparent !important;
+        }
+        .btn-outline-primary:hover, 
+        .btn-outline-primary:focus, 
+        .btn-outline-primary:active {
+            background-color: #fe3727 !important;
+            border-color: #fe3727 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(254, 55, 39, 0.25) !important;
+        }
+        .text-primary {
+            color: #fe3727 !important;
+        }
+        .bg-primary {
+            background-color: #fe3727 !important;
+        }
+        .border-primary {
+            border-color: #fe3727 !important;
+        }
+        .badge-soft-primary {
+            background-color: rgba(254, 55, 39, 0.12) !important;
+            color: #fe3727 !important;
+            font-weight: 600;
+        }
+        .form-control:focus, 
+        .form-select:focus {
+            border-color: #fe3727 !important;
+            box-shadow: 0 0 0 0.2rem rgba(254, 55, 39, 0.18) !important;
+        }
+        .page-item.active .page-link {
+            background-color: #fe3727 !important;
+            border-color: #fe3727 !important;
+            color: #ffffff !important;
         }
 
         /* Global 3-Dot Action Dropdown & Table Stacking System */
@@ -692,9 +780,9 @@
             transition: all 0.2s ease !important;
         }
         .btn-action-icon:hover {
-            background-color: #7638ff !important;
+            background-color: #fe3727 !important;
             color: #ffffff !important;
-            border-color: #7638ff !important;
+            border-color: #fe3727 !important;
         }
     </style>
 
