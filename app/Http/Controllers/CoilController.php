@@ -48,11 +48,11 @@ class CoilController extends Controller
         $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
         $vendors = Vendor::where('status', '1')->orderBy('name')->get();
 
-        // Calculate summary metrics
-        $totalInStockWeight = Coil::where('status', 'in_stock')->sum('remaining_weight');
+        // Calculate summary metrics based on actual remaining weights
+        $totalInStockWeight = Coil::sum('remaining_weight');
         $totalCoilsCount = Coil::count();
-        $inStockCount = Coil::where('status', 'in_stock')->count();
-        $totalValuation = Coil::where('status', 'in_stock')->sum('total_price');
+        $inStockCount = Coil::where('remaining_weight', '>', 0)->count();
+        $totalValuation = Coil::where('remaining_weight', '>', 0)->sum('total_price');
 
         return view('frontend.pages.coils.index', compact(
             'coils', 
