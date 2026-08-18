@@ -199,6 +199,45 @@
                     </div>
                 </div>
 
+                <!-- Payment Method & Banking Details Section -->
+                <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 mt-3 mb-2" id="paymentMethodSection">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-lg-4 col-md-6 col-12">
+                            <label class="form-label small text-secondary fw-semibold mb-1">
+                                <i class="fe fe-credit-card me-1 text-primary"></i> Payment Method
+                            </label>
+                            <select name="payment_method" id="paymentMethodSelect" class="form-select border-light-subtle" onchange="handlePaymentMethodChange(this.value)">
+                                <option value="cash" {{ ($sales->payment_method ?? 'cash') === 'cash' ? 'selected' : '' }}>Cash in Hand</option>
+                                <option value="bank" {{ ($sales->payment_method ?? '') === 'bank' ? 'selected' : '' }}>Bank Transfer / Deposit</option>
+                                <option value="mobile_banking" {{ ($sales->payment_method ?? '') === 'mobile_banking' ? 'selected' : '' }}>Mobile Banking (bKash/Nagad)</option>
+                            </select>
+                        </div>
+
+                        <!-- Bank Account Selector -->
+                        <div class="col-lg-4 col-md-6 col-12" id="bankAccountContainer" style="{{ ($sales->payment_method ?? 'cash') === 'cash' ? 'display: none;' : '' }}">
+                            <label class="form-label small text-secondary fw-semibold mb-1">
+                                <i class="fe fe-layers me-1 text-info"></i> Deposit Bank Account
+                            </label>
+                            <select name="bank_detail_id" id="bankDetailSelect" class="form-select border-light-subtle">
+                                <option value="">Select Bank Account</option>
+                                @foreach($bankAccounts ?? [] as $bank)
+                                    <option value="{{ $bank->id }}" {{ ($sales->bank_detail_id == $bank->id || ($sales->bank_detail_id == null && $bank->is_default)) ? 'selected' : '' }}>
+                                        {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Transaction Reference -->
+                        <div class="col-lg-4 col-md-6 col-12" id="transactionRefContainer" style="{{ ($sales->payment_method ?? 'cash') === 'cash' ? 'display: none;' : '' }}">
+                            <label class="form-label small text-secondary fw-semibold mb-1">
+                                <i class="fe fe-file-text me-1 text-secondary"></i> Transaction Ref / TrxID
+                            </label>
+                            <input type="text" name="transaction_ref" id="transactionRefInput" class="form-control border-light-subtle bg-white" value="{{ $sales->transaction_ref }}" placeholder="e.g. Bank Trx # or Deposit Slip Ref">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="d-flex justify-content-end gap-2 pt-4 mt-3 border-top">
                     <a href="{{ route('sales.index') }}" class="btn btn-outline-secondary px-4 py-2 rounded-3">Cancel</a>
                     <button type="submit" class="btn btn-primary px-5 py-2 rounded-3 fw-semibold shadow-sm">
@@ -243,6 +282,20 @@
         const advanced = parseFloat(document.getElementById('advancedPayment')?.value) || 0;
         const due = Math.max(0, grandTotal - advanced);
         document.getElementById('duePayment').value = due.toFixed(2);
+    }
+
+    function handlePaymentMethodChange(method) {
+        const bankContainer = document.getElementById('bankAccountContainer');
+        const refContainer = document.getElementById('transactionRefContainer');
+        if (!bankContainer || !refContainer) return;
+
+        if (method === 'cash') {
+            bankContainer.style.display = 'none';
+            refContainer.style.display = 'none';
+        } else {
+            bankContainer.style.display = 'block';
+            refContainer.style.display = 'block';
+        }
     }
 </script>
 @endpush

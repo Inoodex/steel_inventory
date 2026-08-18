@@ -283,9 +283,23 @@
                                         </small>
                                     @endif
                                 </td>
-                                <td>৳{{ number_format($purchase->unit_price, 2) }}</td>
-                                <td class="fw-bold text-dark">৳{{ number_format($purchase->total_price, 2) }}</td>
-                                <td class="text-success fw-semibold">৳{{ number_format($purchase->payment, 2) }}</td>
+                                <td class="text-success fw-semibold">
+                                    ৳{{ number_format($purchase->payment, 2) }}
+                                    @if($purchase->payment > 0)
+                                        <small class="text-muted d-block fs-8">
+                                            @if($purchase->payment_method === 'bank')
+                                                Bank
+                                            @elseif($purchase->payment_method === 'mobile_banking')
+                                                Mobile Banking
+                                            @else
+                                                Cash
+                                            @endif
+                                            @if($purchase->bankDetail)
+                                                ({{ $purchase->bankDetail->bank_name }})
+                                            @endif
+                                        </small>
+                                    @endif
+                                </td>
                                 <td>
                                     @if($purchase->due > 0)
                                         <span class="badge badge-soft-danger px-3 py-1 rounded-pill fs-7">
@@ -303,6 +317,16 @@
                                             <i class="fas fa-ellipsis-v"></i>
                                         </a>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            @if($purchase->due > 0)
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="javascript:void(0)"
+                                                        onclick="openPurchaseDueModal('{{ $purchase->id }}', '{{ $purchase->vendor_id }}', '{{ addslashes($purchase->vendor->name ?? 'Vendor') }}', '{{ $purchase->due }}')">
+                                                        <i class="fe fe-dollar-sign text-success"></i>
+                                                        <span>Pay Due (৳{{ number_format($purchase->due, 2) }})</span>
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider opacity-50"></li>
+                                            @endif
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#edit-purchase-{{ $purchase->id }}">
                                                     <i class="fe fe-edit text-primary"></i>
@@ -650,6 +674,118 @@
             @endforeach
         }
     });
+
+    function openPurchaseDueModal(purchaseId, vendorId, vendorName, maxDue) {
+        document.getElementById('purchaseModalPurchaseId').value = purchaseId;
+        document.getElementById('purchaseModalVendorId').value = vendorId;
+        document.getElementById('purchaseModalVendorName').textContent = vendorName;
+        document.getElementById('purchaseModalPoNumber').textContent = '#PO-' + purchaseId;
+
+        const numMax = parseFloat(maxDue) || 0;
+        document.getElementById('purchaseModalMaxDueDisplay').textContent = '৳ ' + numMax.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        const amountInput = document.getElementById('purchaseModalAmount');
+        amountInput.value = numMax > 0 ? numMax.toFixed(2) : '';
+        amountInput.max = numMax > 0 ? numMax : '';
+
+        const modalEl = document.getElementById('purchaseDuePaymentModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    function togglePurchaseDueModalBank(method) {
+        const bankContainer = document.getElementById('purchaseModalBankContainer');
+        const refContainer = document.getElementById('purchaseModalRefContainer');
+        if (!bankContainer || !refContainer) return;
+
+        if (method === 'cash') {
+            bankContainer.style.display = 'none';
+            refContainer.style.display = 'none';
+        } else {
+            bankContainer.style.display = 'block';
+            refContainer.style.display = 'block';
+        }
+    }
 </script>
 @endpush
+
+<!-- Purchase Due Settlement Modal (outside table structure) -->
+<div class="modal fade" id="purchaseDuePaymentModal" tabindex="-1" aria-labelledby="purchaseDuePaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 border-0 shadow">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark" id="purchaseDuePaymentModalLabel">
+                    <i class="fe fe-dollar-sign me-2 text-success"></i>Pay Purchase Due
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('vendor-payments.store') }}" method="POST">
+                @csrf
+                <input type="hidden" name="vendor_id" id="purchaseModalVendorId" value="">
+                <input type="hidden" name="purchase_id" id="purchaseModalPurchaseId" value="">
+
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border rounded-3 mb-3 p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-secondary small fw-semibold">Vendor:</span>
+                            <span class="text-dark fw-bold" id="purchaseModalVendorName">Vendor</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <span class="text-secondary small fw-semibold">Purchase Order:</span>
+                            <span class="text-primary fw-bold font-monospace" id="purchaseModalPoNumber">#PO</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <span class="text-secondary small fw-semibold">Outstanding Due:</span>
+                            <span class="text-danger fw-bold fs-6" id="purchaseModalMaxDueDisplay">৳ 0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Payment Method <span class="text-danger">*</span></label>
+                        <select name="payment_method" id="purchaseModalPaymentMethod" class="form-select border-light-subtle" required onchange="togglePurchaseDueModalBank(this.value)">
+                            <option value="cash" selected>Cash in Hand</option>
+                            <option value="bank">Bank Transfer / Deposit</option>
+                            <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                        </select>
+                    </div>
+
+                    <!-- Bank Account Selector -->
+                    <div class="mb-3" id="purchaseModalBankContainer" style="display: none;">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Bank / Wallet Account <span class="text-danger">*</span></label>
+                        <select name="bank_detail_id" id="purchaseModalBankDetail" class="form-select border-light-subtle">
+                            <option value="">Select Bank / MFS Account</option>
+                            @foreach($bankAccounts ?? [] as $bank)
+                                <option value="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Transaction Ref -->
+                    <div class="mb-3" id="purchaseModalRefContainer" style="display: none;">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Transaction Ref / TrxID</label>
+                        <input type="text" name="transaction_ref" class="form-control border-light-subtle" placeholder="e.g. Bank Trx # or TrxID">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Payment Amount (৳) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" min="0.01" name="amount" id="purchaseModalAmount" class="form-control fw-bold text-success fs-5 border-light-subtle" placeholder="0.00" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Remarks / Note</label>
+                        <textarea name="remarks" class="form-control border-light-subtle" rows="2" placeholder="Optional payment note..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top p-3">
+                    <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4 py-2 rounded-3 fw-semibold text-white">
+                        <i class="fe fe-check-circle me-1"></i>Confirm Disbursement
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection

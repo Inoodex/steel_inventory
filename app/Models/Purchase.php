@@ -31,6 +31,9 @@ class Purchase extends Model
         'total_price',
         'payment',
         'due',
+        'payment_method',
+        'bank_detail_id',
+        'transaction_ref',
         'created_by',
         'updated_by',
     ];
@@ -75,5 +78,15 @@ class Purchase extends Model
     public function vendor()
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    public function bankDetail()
+    {
+        return $this->belongsTo(BankDetail::class, 'bank_detail_id');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'purchase_id');
     }
 }

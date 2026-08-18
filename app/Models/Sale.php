@@ -21,6 +21,9 @@ class Sale extends Model
         'bill',
         'advanced_payment',
         'due_payment',
+        'payment_method',
+        'bank_detail_id',
+        'transaction_ref',
         'discount',
         'sales_by',
         'status',
@@ -88,5 +91,10 @@ class Sale extends Model
     public function payoutUser()
     {
         return $this->belongsTo(User::class, 'charges_payout_by');
+    }
+
+    public function bankDetail()
+    {
+        return $this->belongsTo(BankDetail::class, 'bank_detail_id');
     }
 }

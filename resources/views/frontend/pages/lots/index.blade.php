@@ -153,9 +153,9 @@
                             <span id="lotSearchSpinner" class="spinner-border spinner-border-sm text-primary position-absolute top-50 end-0 translate-middle-y me-3 d-none" role="status"></span>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <select name="vendor_id" id="filterVendor" class="form-select rounded-3">
-                            <option value="">All Vendors</option>
+                            <option value="">Vendors</option>
                             @foreach($vendors as $vendor)
                                 <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>
                                     {{ $vendor->name }}
@@ -163,9 +163,9 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-1">
                         <select name="status" id="filterStatus" class="form-select rounded-3">
-                            <option value="">All Status</option>
+                            <option value="">Status</option>
                             <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
                             <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
                         </select>

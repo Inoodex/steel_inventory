@@ -19,10 +19,32 @@ class PurchaseService
     {
         return DB::transaction(function () use ($data) {
             $items = $data['items'] ?? [];
-            $lotId = $data['lot_id'] ?? null;
-            $vendorId = $data['vendor_id'];
             $warehouseId = $data['warehouse_id'] ?? null;
             $totalPayment = (float) ($data['payment'] ?? 0);
+
+            // 1. Resolve or create Lot on the fly
+            $lotType = $data['lot_type'] ?? 'existing';
+            if ($lotType === 'new' || empty($data['lot_id'])) {
+                $lotNumber = !empty($data['new_lot_number']) ? trim($data['new_lot_number']) : Lot::generateLotNumber();
+                $vendorId = $data['vendor_id'];
+                $lotDate = $data['purchase_date'] ?? date('Y-m-d');
+                
+                $lot = Lot::create([
+                    'lot_number'     => $lotNumber,
+                    'vendor_id'      => $vendorId,
+                    'lot_date'       => $lotDate,
+                    'total_quantity' => 0,
+                    'total_amount'   => 0,
+                    'notes'          => $data['lot_notes'] ?? null,
+                    'status'         => 'active',
+                    'created_by'     => Auth::id(),
+                ]);
+                $lotId = $lot->id;
+            } else {
+                $lotId = $data['lot_id'];
+                $lot = Lot::find($lotId);
+                $vendorId = $lot?->vendor_id ?? $data['vendor_id'];
+            }
 
             // Calculate total batch bill
             $batchSubTotal = 0;
@@ -89,21 +111,24 @@ class PurchaseService
 
                 // 1. Record Purchase Line
                 $purchase = Purchase::create([
-                    'lot_id'       => $lotId,
-                    'vendor_id'    => $vendorId,
-                    'warehouse_id' => $warehouseId,
-                    'thickness'    => $thickness,
-                    'size'         => $size,
-                    'size_type'    => $sizeType,
-                    'quantity'     => $coilQty,
-                    'unit_weight'  => $perCoilWeight,
-                    'total_weight' => $totalWeight,
-                    'unit_price'   => $rate,
-                    'sub_price'    => $itemSub,
-                    'total_price'  => $itemSub,
-                    'payment'      => $itemPayment,
-                    'due'          => $itemDue,
-                    'created_by'   => Auth::id(),
+                    'lot_id'          => $lotId,
+                    'vendor_id'       => $vendorId,
+                    'warehouse_id'    => $warehouseId,
+                    'thickness'       => $thickness,
+                    'size'            => $size,
+                    'size_type'       => $sizeType,
+                    'quantity'        => $coilQty,
+                    'unit_weight'     => $perCoilWeight,
+                    'total_weight'    => $totalWeight,
+                    'unit_price'      => $rate,
+                    'sub_price'       => $itemSub,
+                    'total_price'     => $itemSub,
+                    'payment'         => $itemPayment,
+                    'due'             => $itemDue,
+                    'payment_method'  => $data['payment_method'] ?? 'cash',
+                    'bank_detail_id'  => !empty($data['bank_detail_id']) ? $data['bank_detail_id'] : null,
+                    'transaction_ref' => $data['transaction_ref'] ?? null,
+                    'created_by'      => Auth::id(),
                 ]);
 
                 // 2. Register Single Batch Coil in Yard Stock
@@ -149,6 +174,23 @@ class PurchaseService
                 $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
                 $invAcc = \App\Models\ChartOfAccount::where('account_code', '1140')->first();
 
+                // Determine exact Cash or Bank Chart of Account for disbursement
+                $paymentMethod = $data['payment_method'] ?? 'cash';
+                $bankDetailId = !empty($data['bank_detail_id']) ? $data['bank_detail_id'] : null;
+                $transactionRef = $data['transaction_ref'] ?? null;
+
+                $disbursementAcc = $cashAcc;
+                if ($paymentMethod !== 'cash') {
+                    if (!empty($bankDetailId)) {
+                        $bank = \App\Models\BankDetail::find($bankDetailId);
+                        $disbursementAcc = $bank?->resolveChartOfAccount() 
+                            ?? \App\Models\ChartOfAccount::where('account_code', '1120')->first() 
+                            ?? $cashAcc;
+                    } else {
+                        $disbursementAcc = \App\Models\ChartOfAccount::where('account_code', '1120')->first() ?? $cashAcc;
+                    }
+                }
+
                 if ($apAcc && $invAcc) {
                     $items = [];
                     $items[] = [
@@ -158,16 +200,24 @@ class PurchaseService
                         'description' => 'Steel yard stock inventory intake for Purchase Batch (' . count($createdPurchases) . ' items)'
                     ];
 
-                    if ($totalPayment > 0 && $cashAcc) {
+                    $methodLabel = match($paymentMethod) {
+                        'bank' => 'Bank Transfer',
+                        'cheque' => 'Cheque',
+                        'mobile_banking' => 'Mobile Banking',
+                        default => 'Cash'
+                    };
+                    $refText = $transactionRef ? " [Ref/Cheque: {$transactionRef}]" : "";
+
+                    if ($totalPayment > 0 && $disbursementAcc) {
                         $items[] = [
-                            'account_id' => $cashAcc->id,
+                            'account_id' => $disbursementAcc->id,
                             'debit' => 0.00,
                             'credit' => $totalPayment,
-                            'description' => 'Cash/Bank disbursement for Purchase Batch'
+                            'description' => "{$methodLabel} disbursement for Purchase Batch{$refText}"
                         ];
                     }
 
-                    $totalBatchDue = max(0, $batchSubTotal - $totalPayment);
+                    $totalBatchDue = max(0, round($batchSubTotal - $totalPayment, 2));
                     if ($totalBatchDue > 0) {
                         $items[] = [
                             'account_id' => $apAcc->id,

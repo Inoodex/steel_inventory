@@ -32,33 +32,36 @@
                     </div>
 
                     <div class="col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Bank Name <span class="text-danger">*</span></label>
-                        <input type="text" name="bank_name" class="form-control border-light-subtle" value="{{ old('bank_name', $bankDetail->bank_name ?? '') }}" placeholder="Enter bank name" required>
+                        <label class="form-label small text-secondary fw-semibold mb-1">Bank / Provider Name <span class="text-danger">*</span></label>
+                        <input type="text" name="bank_name" class="form-control border-light-subtle" value="{{ old('bank_name', $bankDetail->bank_name ?? '') }}" placeholder="e.g. City Bank, bKash, Nagad" required>
                     </div>
 
                     <div class="col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Branch <span class="text-danger">*</span></label>
-                        <input type="text" name="branch" class="form-control border-light-subtle" value="{{ old('branch', $bankDetail->branch ?? '') }}" placeholder="Enter branch location" required>
+                        <label class="form-label small text-secondary fw-semibold mb-1">Branch / Location <span class="text-muted">(Optional for MFS)</span></label>
+                        <input type="text" name="branch" class="form-control border-light-subtle" value="{{ old('branch', $bankDetail->branch ?? '') }}" placeholder="e.g. Principal Branch or Digital / Head Office">
                     </div>
 
                     <div class="col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Account Number <span class="text-danger">*</span></label>
-                        <input type="text" name="account_number" class="form-control border-light-subtle font-monospace" value="{{ old('account_number', $bankDetail->account_number ?? '') }}" placeholder="Enter account number" required>
+                        <label class="form-label small text-secondary fw-semibold mb-1">Account / Wallet Number <span class="text-danger">*</span></label>
+                        <input type="text" name="account_number" class="form-control border-light-subtle font-monospace" value="{{ old('account_number', $bankDetail->account_number ?? '') }}" placeholder="e.g. 108-992-4410 or 017XXXXXXXX" required>
                     </div>
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Account Type <span class="text-danger">*</span></label>
                         <select name="account_type" class="form-select border-light-subtle" required>
                             <option value="">Select Account Type</option>
-                            <option value="Current" {{ old('account_type', $bankDetail->account_type ?? '') == 'Current' ? 'selected' : '' }}>Current</option>
-                            <option value="Savings" {{ old('account_type', $bankDetail->account_type ?? '') == 'Savings' ? 'selected' : '' }}>Savings</option>
-                            <option value="Salary" {{ old('account_type', $bankDetail->account_type ?? '') == 'Salary' ? 'selected' : '' }}>Salary</option>
+                            <option value="Current" {{ old('account_type', $bankDetail->account_type ?? '') == 'Current' ? 'selected' : '' }}>Current Account</option>
+                            <option value="Savings" {{ old('account_type', $bankDetail->account_type ?? '') == 'Savings' ? 'selected' : '' }}>Savings Account</option>
+                            <option value="MFS - bKash" {{ old('account_type', $bankDetail->account_type ?? '') == 'MFS - bKash' ? 'selected' : '' }}>MFS - bKash (Merchant / Personal)</option>
+                            <option value="MFS - Nagad" {{ old('account_type', $bankDetail->account_type ?? '') == 'MFS - Nagad' ? 'selected' : '' }}>MFS - Nagad (Merchant / Personal)</option>
+                            <option value="MFS - Rocket / Other" {{ old('account_type', $bankDetail->account_type ?? '') == 'MFS - Rocket / Other' ? 'selected' : '' }}>MFS - Rocket / Other Wallet</option>
+                            <option value="Salary" {{ old('account_type', $bankDetail->account_type ?? '') == 'Salary' ? 'selected' : '' }}>Salary Account</option>
                         </select>
                     </div>
 
                     <div class="col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Routing Number <span class="text-danger">*</span></label>
-                        <input type="text" name="routing_number" class="form-control border-light-subtle font-monospace" value="{{ old('routing_number', $bankDetail->routing_number ?? '') }}" placeholder="Enter routing number" required>
+                        <label class="form-label small text-secondary fw-semibold mb-1">Routing Number <span class="text-muted">(Optional)</span></label>
+                        <input type="text" name="routing_number" class="form-control border-light-subtle font-monospace" value="{{ old('routing_number', $bankDetail->routing_number ?? '') }}" placeholder="Enter 9-digit routing number (optional)">
                     </div>
 
                     <div class="col-12 mt-4">

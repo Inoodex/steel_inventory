@@ -342,7 +342,7 @@
                             <thead class="bg-light text-secondary fs-7 text-uppercase">
                                 <tr>
                                     <th class="ps-3">Coil Tag #</th>
-                                    <th>Specs (Thick / Size)</th>
+                                    <!-- <th>Specs (Thick / Size)</th> -->
                                     <th>Remaining (kg)</th>
                                     <!-- <th>Yard Location</th> -->
                                     <th class="pe-3 text-end">Status</th>
@@ -352,15 +352,15 @@
                                 @forelse ($recentCoils ?? [] as $coil)
                                     <tr>
                                         <td class="ps-3">
-                                            <span class="fw-bold text-dark fs-8">Coil No - {{ $coil->coil_number }}</span>
+                                            <span class="fw-bold text-dark fs-8">{{ $coil->coil_number }}</span>
                                             @if($coil->lot)
                                                 <small class="text-muted d-block">{{ $coil->lot->lot_number }}</small>
                                             @endif
                                         </td>
-                                        <td>
-                                            <span class="fw-semibold text-dark">Thickness - {{ $coil->thickness ?? '-' }}</span>
+                                        <!-- <td>
+                                            <span class="fw-semibold text-dark">Thic - {{ $coil->thickness ?? '-' }}</span>
                                             <small class="text-muted">[{{ $coil->width ?? '-' }} × {{ $coil->length ?? '-' }}]</small>
-                                        </td>
+                                        </td> -->
                                         <td>
                                             <span class="badge badge-soft-success px-2 py-1 rounded-2">
                                                 {{ number_format($coil->remaining_weight, 2) }} kg
@@ -403,8 +403,8 @@
                                 <tr>
                                     <th class="ps-3">Order / Customer</th>
                                     <th>Payable Amount</th>
-                                    <th>Status</th>
-                                    <th>Date</th>
+                                    <!-- <th>Status</th>
+                                    <th>Date</th> -->
                                     <th class="pe-3 text-end">Action</th>
                                 </tr>
                             </thead>
@@ -418,7 +418,7 @@
                                         <td>
                                             <span class="badge badge-soft-primary px-3 py-1 rounded-pill fs-7">৳{{ number_format($sale->payble ?? $sale->total, 2) }}</span>
                                         </td>
-                                        <td>
+                                        <!-- <td>
                                             @if($sale->status === 'paid')
                                                 <span class="badge badge-soft-success px-2 py-1 rounded-pill fs-8">Paid</span>
                                             @elseif($sale->status === 'partial')
@@ -429,7 +429,7 @@
                                         </td>
                                         <td>
                                             <span class="text-secondary small">{{ $sale->created_at ? $sale->created_at->format('d M, Y') : 'N/A' }}</span>
-                                        </td>
+                                        </td> -->
                                         <td class="pe-3 text-end">
                                             <a href="{{ route('sales.invoice', $sale->id) }}" class="btn btn-sm btn-outline-secondary rounded-2 px-2 py-1">
                                                 <i class="fe fe-file-text"></i> Invoice

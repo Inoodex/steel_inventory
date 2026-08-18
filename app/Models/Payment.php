@@ -11,9 +11,13 @@ class Payment extends Model
 
     protected $fillable = [
         'customer_id',
+        'vendor_id',
         'sale_id',
+        'purchase_id',
         'payment_for',
         'payment_method',
+        'bank_detail_id',
+        'transaction_ref',
         'amount',
         'remarks',
         'status',
@@ -26,8 +30,23 @@ class Payment extends Model
         return $this->belongsTo(Sale::class);
     }
 
+    public function purchase()
+    {
+        return $this->belongsTo(Purchase::class);
+    }
+
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'customer_id', 'id');
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class, 'vendor_id', 'id');
+    }
+
+    public function bankDetail()
+    {
+        return $this->belongsTo(BankDetail::class, 'bank_detail_id');
     }
 }

@@ -1,10 +1,34 @@
 @extends('frontend.layouts.app')
 
 @push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
-        .table-custom th,
+        .select2-container .select2-selection--single {
+            height: 38px !important;
+            border: 1px solid #ced4da !important;
+            border-radius: 6px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+        }
+        .table-custom th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            background-color: #f8fafc;
+        }
         .table-custom td {
-            white-space: nowrap;
+            vertical-align: middle;
+        }
+        .steel-row:hover {
+            background-color: #fafbfc;
+        }
+        .summary-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
         }
     </style>
 @endpush
@@ -16,17 +40,12 @@
         <div class="page-header mb-4">
             <div class="content-page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
                 <div>
-                    <h4 class="card-title fw-bold text-dark mb-1">Purchase</h4>
-                    <p class="text-muted small mb-0">Record steel procurement, coil tags, dimensions, weights, and yard intake</p>
+                    <h4 class="card-title fw-bold text-dark mb-1">Steel Purchase & Yard Intake</h4>
+                    <p class="text-muted small mb-0">Record raw ship steel scrap, coils, plates intake directly into yard inventory</p>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <a href="{{ route('coils.index') }}" class="btn btn-outline-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-1">
-                        <i class="fe fe-disc"></i>
-                        <span>Coils & Plates Registry</span>
-                    </a>
-                    <a href="{{ route('purchase.index') }}" class="btn btn-outline-secondary px-4 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
-                        <i class="fe fe-arrow-left"></i>
-                        <span>Back to Purchases</span>
+                <div>
+                    <a href="{{ route('purchase.index') }}" class="btn btn-outline-secondary px-4 py-2 rounded-3 shadow-sm">
+                        <i class="fe fe-arrow-left me-2"></i>Back to Purchases
                     </a>
                 </div>
             </div>
@@ -36,62 +55,144 @@
         <form action="{{ route('purchase.store') }}" method="POST" id="createPurchaseForm">
             @csrf
 
-            <!-- Section 1: Lot & Yard Information -->
+            <!-- Section 1: Lot & Yard Intake Details -->
             <div class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-body p-4">
-                    <h6 class="fw-bold text-dark mb-3">
-                       <i class="fe fe-anchor text-primary me-2"></i>Lot & Yard Intake Details
-                    </h6>
-
-                    <div class="row g-3">
-                        <div class="col-lg-3 col-md-6 col-12">
-                            <label for="purchase_lot_id" class="form-label fw-semibold small text-secondary mb-1">
-                                Purchase Lot <span class="text-danger">*</span>
-                            </label>
-                            <select id="purchase_lot_id" name="lot_id" class="form-select select2" required>
-                                <option value="">Select Purchase Lot</option>
-                                @foreach ($lots as $lot)
-                                    <option value="{{ $lot->id }}" 
-                                        data-vendor-id="{{ $lot->vendor_id }}"
-                                        data-vendor-name="{{ $lot->vendor ? $lot->vendor->name : 'No Vendor' }}"
-                                        {{ old('lot_id', request('lot_id')) == $lot->id ? 'selected' : '' }}>
-                                        {{ $lot->lot_number }} — {{ $lot->vendor ? $lot->vendor->name : 'Lot' }}
-                                    </option>
-                                @endforeach
-                            </select>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom gap-2">
+                        <div>
+                            <h6 class="fw-bold text-dark mb-1">
+                                <i class="fe fe-anchor text-primary me-2"></i>Lot & Yard Intake Details
+                            </h6>
+                            <p class="text-muted small mb-0">Create a new ship lot on the fly or assign to an existing vessel batch</p>
                         </div>
-
-                        <div class="col-lg-3 col-md-6 col-12">
-                            <label class="form-label fw-semibold small text-secondary mb-1">
-                                Vendor / Supplier <span class="text-danger">*</span>
+                        <div class="btn-group shadow-sm rounded-3 gap-2" role="group" aria-label="Lot Mode Selection">
+                            <input type="radio" class="btn-check" name="lot_type" id="lot_type_new" value="new" {{ old('lot_type', 'new') === 'new' ? 'checked' : '' }} onchange="toggleLotMode('new')">
+                            <label class="btn btn-outline-primary btn-sm px-3 py-2 fw-semibold" for="lot_type_new">
+                                <i class="fe fe-plus-circle me-1"></i> Create New Lot
                             </label>
-                            <input type="text" id="vendor_display" class="form-control bg-light" readonly
-                                placeholder="Auto-fills on Lot selection" style="cursor: not-allowed;">
-                            <input type="hidden" name="vendor_id" id="vendor_hidden" value="{{ old('vendor_id') }}">
-                        </div>
 
-                        <div class="col-lg-3 col-md-6 col-12">
-                            <label for="warehouse_id" class="form-label fw-semibold small text-secondary mb-1">
-                                Stockyard Location (Cutting) <span class="text-danger">*</span>
+                            <input type="radio" class="btn-check" name="lot_type" id="lot_type_existing" value="existing" {{ old('lot_type') === 'existing' ? 'checked' : '' }} onchange="toggleLotMode('existing')">
+                            <label class="btn btn-outline-primary btn-sm px-3 py-2 fw-semibold" for="lot_type_existing">
+                                <i class="fe fe-layers me-1"></i> Select Existing Lot
                             </label>
-                            <select id="warehouse_id" name="warehouse_id" class="form-select select2" required>
-                                <option value="">Select Stockyard Depot</option>
-                                @foreach ($warehouses as $wh)
-                                    <option value="{{ $wh->id }}" {{ $loop->first ? 'selected' : '' }}>
-                                        {{ $wh->name }} {{ $wh->code ? '('.$wh->code.')' : '' }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-lg-3 col-md-6 col-12">
-                            <label for="purchase_date" class="form-label fw-semibold small text-secondary mb-1">
-                                Date <span class="text-danger">*</span>
-                            </label>
-                            <input type="date" name="purchase_date" id="purchase_date" class="form-control"
-                                value="{{ date('Y-m-d') }}" required>
                         </div>
                     </div>
+
+                    <!-- NEW LOT FIELDS -->
+                    <div id="newLotContainer" style="{{ old('lot_type', 'new') === 'new' ? '' : 'display: none;' }}">
+                        <div class="row g-3">
+                            <div class="col-lg-3 col-md-6 col-12">
+                                <label for="new_lot_number" class="form-label fw-semibold small text-secondary mb-1">
+                                    New Lot Number <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-primary"><i class="fe fe-tag"></i></span>
+                                    <input type="text" name="new_lot_number" id="new_lot_number" class="form-control fw-bold text-dark font-monospace"
+                                        value="{{ old('new_lot_number', $suggestedLotNumber ?? '') }}" placeholder="e.g. LOT-20260818-0001">
+                                </div>
+                                <small class="text-muted fs-8">Auto-generated, editable</small>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 col-12">
+                                <label for="new_vendor_id" class="form-label fw-semibold small text-secondary mb-1">
+                                    Vendor / Ship Breaker <span class="text-danger">*</span>
+                                </label>
+                                <select id="new_vendor_id" name="new_vendor_id" class="form-select select2">
+                                    <option value="">Select Vendor / Supplier</option>
+                                    @foreach ($vendors as $vendor)
+                                        <option value="{{ $vendor->id }}" {{ old('vendor_id') == $vendor->id ? 'selected' : '' }}>
+                                            {{ $vendor->name }} ({{ $vendor->phone }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 col-12">
+                                <label for="warehouse_id" class="form-label fw-semibold small text-secondary mb-1">
+                                    Stockyard Location <span class="text-danger">*</span>
+                                </label>
+                                <select id="warehouse_id" name="warehouse_id" class="form-select select2" required>
+                                    <option value="">Select Stockyard Depot</option>
+                                    @foreach ($warehouses as $wh)
+                                        <option value="{{ $wh->id }}" {{ $loop->first ? 'selected' : '' }}>
+                                            {{ $wh->name }} {{ $wh->code ? '('.$wh->code.')' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 col-12">
+                                <label for="purchase_date" class="form-label fw-semibold small text-secondary mb-1">
+                                    Intake Date <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" name="purchase_date" id="purchase_date" class="form-control"
+                                    value="{{ old('purchase_date', date('Y-m-d')) }}" required>
+                            </div>
+
+                            <div class="col-12 mt-2">
+                                <label for="lot_notes" class="form-label fw-semibold small text-secondary mb-1">
+                                    Vessel / Shipment Notes <span class="text-muted">(Optional)</span>
+                                </label>
+                                <input type="text" name="lot_notes" id="lot_notes" class="form-control"
+                                    value="{{ old('lot_notes') }}" placeholder="e.g. Vessel: MT Ocean Pride, Scrap Plate cuttings from Chittagong Ship Breaking Yard">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EXISTING LOT FIELDS -->
+                    <div id="existingLotContainer" style="{{ old('lot_type') === 'existing' ? '' : 'display: none;' }}">
+                        <div class="row g-3">
+                            <div class="col-lg-3 col-md-6 col-12">
+                                <label for="purchase_lot_id" class="form-label fw-semibold small text-secondary mb-1">
+                                    Existing Purchase Lot <span class="text-danger">*</span>
+                                </label>
+                                <select id="purchase_lot_id" name="lot_id" class="form-select select2">
+                                    <option value="">Select Existing Purchase Lot</option>
+                                    @foreach ($lots as $lot)
+                                        <option value="{{ $lot->id }}" 
+                                            data-vendor-id="{{ $lot->vendor_id }}"
+                                            data-vendor-name="{{ $lot->vendor ? $lot->vendor->name : 'No Vendor' }}"
+                                            {{ old('lot_id', request('lot_id')) == $lot->id ? 'selected' : '' }}>
+                                            {{ $lot->lot_number }} — {{ $lot->vendor ? $lot->vendor->name : 'Lot' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 col-12">
+                                <label class="form-label fw-semibold small text-secondary mb-1">
+                                    Vendor / Supplier
+                                </label>
+                                <input type="text" id="vendor_display" class="form-control bg-light" readonly
+                                    placeholder="Auto-fills from selected Lot">
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 col-12">
+                                <label for="warehouse_id_existing" class="form-label fw-semibold small text-secondary mb-1">
+                                    Stockyard Location <span class="text-danger">*</span>
+                                </label>
+                                <select id="warehouse_id_existing" class="form-select select2" onchange="$('#warehouse_id').val($(this).val()).trigger('change')">
+                                    <option value="">Select Stockyard Depot</option>
+                                    @foreach ($warehouses as $wh)
+                                        <option value="{{ $wh->id }}" {{ $loop->first ? 'selected' : '' }}>
+                                            {{ $wh->name }} {{ $wh->code ? '('.$wh->code.')' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 col-12">
+                                <label for="purchase_date_existing" class="form-label fw-semibold small text-secondary mb-1">
+                                    Intake Date <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" id="purchase_date_existing" class="form-control"
+                                    value="{{ old('purchase_date', date('Y-m-d')) }}" onchange="$('#purchase_date').val($(this).val())">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden vendor id field for submission -->
+                    <input type="hidden" name="vendor_id" id="vendor_hidden" value="{{ old('vendor_id') }}">
                 </div>
             </div>
 
@@ -134,10 +235,10 @@
                                         <input oninput="calculateRow(this)" type="number" min="1" step="1" name="items[0][quantity]" class="form-control form-control-sm row-quantity text-center fw-bold" value="1" required>
                                     </td>
                                     <td>
-                                        <input type="text" name="items[0][thickness]" class="form-control form-control-sm row-thickness text-center" >
+                                        <input type="text" name="items[0][thickness]" class="form-control form-control-sm row-thickness text-center" placeholder="e.g. 16mm">
                                     </td>
                                     <td>
-                                        <input type="text" name="items[0][size]" class="form-control form-control-sm row-size text-center" >
+                                        <input type="text" name="items[0][size]" class="form-control form-control-sm row-size text-center" placeholder="e.g. 5x20">
                                     </td>
                                     <td>
                                         <select name="items[0][size_type]" class="form-select form-select-sm row-size-type">
@@ -180,77 +281,110 @@
                 </div>
             </div>
 
-            <!-- Section 3: Summary Breakdown & Payment Settlement -->
-            <div class="card border-0 shadow-sm rounded-3 mb-4">
-                <div class="card-body p-4">
-                    <h6 class="fw-bold text-dark mb-3">
-                        <i class="fe fe-dollar-sign text-primary me-2"></i>Valuation & Settlement
-                    </h6>
-
-                    <!-- Metrics Row -->
-                    <div class="row g-3 mb-3">
-                        <!-- Total Coils Metric -->
-                        <div class="col-lg-3 col-md-6 col-12">
-                            <div class="p-3 bg-light rounded-3 border h-100">
-                                <span class="text-muted small fw-medium d-block mb-1">Total Coils Intake</span>
-                                <h4 class="mb-0 fw-bold text-dark"><span id="displayTotalCoils">1</span> <small class="fs-7 text-muted">Pcs</small></h4>
-                            </div>
-                        </div>
-
-                        <!-- Total Weight Metric -->
-                        <div class="col-lg-3 col-md-6 col-12">
-                            <div class="p-3 bg-light rounded-3 border h-100">
-                                <span class="text-muted small fw-medium d-block mb-1">Total Batch Weight</span>
-                                <h4 class="mb-0 fw-bold text-primary"><span id="displayTotalNetWeight">0.000</span> <small class="fs-7 text-muted">Kg</small></h4>
-                            </div>
-                        </div>
-
-                        <!-- Grand Total Metric -->
-                        <div class="col-lg-3 col-md-6 col-12">
-                            <div class="p-3 bg-light rounded-3 border h-100">
-                                <span class="text-muted small fw-medium d-block mb-1">Total Purchase Bill</span>
-                                <h4 class="mb-0 fw-bold text-dark" id="displayGrandTotal">৳ 0.00</h4>
-                                <input type="hidden" name="grand_total" id="grand_total_hidden" value="0.00">
-                            </div>
-                        </div>
-
-                        <!-- Payment & Due Metrics -->
-                        <div class="col-lg-3 col-md-6 col-12">
-                            <div class="p-3 bg-light rounded-3 border h-100 position-relative">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <label class="form-label small text-muted fw-medium mb-0">Payment (৳) <span class="text-danger">*</span></label>
-                                    <a href="javascript:void(0)" onclick="setFullPayment()" class="text-primary small fw-semibold text-decoration-none">
-                                        <i class="fe fe-check-circle me-1"></i>Pay Full
-                                    </a>
-                                </div>
-                                <input oninput="recalculateSummary()" type="number" step="0.01" min="0" name="payment" id="paymentInput" 
-                                    class="form-control border-light-subtle fw-bold text-success bg-white @error('payment') is-invalid @enderror" 
-                                    value="{{ old('payment', 0) }}" required>
-                                
-                                <div id="paymentErrorMsg" class="text-danger small mt-2 fw-semibold" style="display: none;">
-                                    <i class="fe fe-alert-triangle me-1"></i> Payment cannot exceed total bill (<span id="maxBillFormatted">৳ 0.00</span>).
-                                </div>
-                                @error('payment')
-                                    <div class="text-danger small mt-1 fw-semibold">
-                                        <i class="fe fe-alert-circle me-1"></i> {{ $message }}
+            <!-- Section 3: Summary, Payment Settlement & Submission -->
+            <div class="row g-4 mb-4">
+                <!-- Left: Intake Batch Stats Summary -->
+                <div class="col-lg-7 col-12">
+                    <div class="card border-0 shadow-sm rounded-3 h-100 summary-card">
+                        <div class="card-body p-4">
+                            <h6 class="fw-bold text-dark mb-3">
+                                <i class="fe fe-check-square text-primary me-2"></i>Intake Batch Summary
+                            </h6>
+                            <div class="row g-3 text-center">
+                                <div class="col-sm-4 col-12">
+                                    <div class="bg-white p-3 rounded-3 shadow-sm border border-light-subtle">
+                                        <span class="text-secondary small d-block mb-1">Total Coils / Pieces</span>
+                                        <span class="fs-4 fw-bold text-dark" id="displayTotalCoils">1</span>
                                     </div>
-                                @enderror
+                                </div>
+                                <div class="col-sm-4 col-12">
+                                    <div class="bg-white p-3 rounded-3 shadow-sm border border-light-subtle">
+                                        <span class="text-secondary small d-block mb-1">Total Intake Weight</span>
+                                        <span class="fs-4 fw-bold text-primary"><span id="displayTotalNetWeight">0.000</span> <small class="fs-7 text-muted">kg</small></span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-4 col-12">
+                                    <div class="bg-white p-3 rounded-3 shadow-sm border border-light-subtle">
+                                        <span class="text-secondary small d-block mb-1">Grand Purchase Bill</span>
+                                        <span class="fs-4 fw-bold text-dark" id="displayGrandTotal">৳ 0.00</span>
+                                        <input type="hidden" name="grand_total" id="grand_total_hidden" value="0.00">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Outstanding Due Banner -->
-                    <div class="p-3 bg-light-subtle rounded-3 border d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted fw-semibold">Outstanding Balance (Due):</span>
-                        <h4 class="mb-0 fw-bold text-danger" id="displayDueAmount">৳ 0.00</h4>
-                        <input type="hidden" name="due" id="due_hidden" value="0.00">
-                    </div>
+                <!-- Right: Payment & Balance Settlement -->
+                <div class="col-lg-5 col-12">
+                    <div class="card border-0 shadow-sm rounded-3 h-100">
+                        <div class="card-body p-4">
+                            <h6 class="fw-bold text-dark mb-3">
+                                <i class="fe fe-dollar-sign text-success me-2"></i>Payment Settlement
+                            </h6>
 
-                    <div class="d-flex justify-content-end gap-3 pt-3 border-top">
-                        <a href="{{ route('purchase.index') }}" class="btn btn-outline-secondary px-4 py-2 rounded-3">Cancel</a>
-                        <button type="submit" class="btn btn-primary px-5 py-2 rounded-3 fw-semibold shadow-sm">
-                          Save Purchase
-                        </button>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label for="paymentInput" class="form-label fw-semibold small text-secondary mb-0">
+                                        Paid Amount (৳) <span class="text-danger">*</span>
+                                    </label>
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none fw-semibold fs-8" onclick="setFullPayment()">
+                                        Pay Full Bill
+                                    </button>
+                                </div>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-success fw-bold">৳</span>
+                                    <input type="number" step="0.01" min="0" name="payment" id="paymentInput"
+                                        class="form-control form-control-lg fw-bold text-success"
+                                        value="{{ old('payment', '0.00') }}" oninput="recalculateSummary()" required>
+                                </div>
+                                <div id="paymentErrorMsg" class="text-danger small mt-1 fw-semibold" style="display: none;">
+                                    <i class="fe fe-alert-triangle me-1"></i> Payment cannot exceed the total bill of <span id="maxBillFormatted">৳ 0.00</span>.
+                                </div>
+                            </div>
+
+                            <!-- Settlement Payment Method & Channel -->
+                            <div class="mb-3 p-3 bg-light rounded-3 border border-light-subtle">
+                                <label class="form-label fw-semibold small text-secondary mb-1">
+                                    <i class="fe fe-credit-card me-1 text-primary"></i> Settlement Payment Method
+                                </label>
+                                <select name="payment_method" id="purchasePaymentMethod" class="form-select border-light-subtle mb-2" onchange="handlePurchasePaymentMethodChange(this.value)">
+                                    <option value="cash" selected>Cash in Hand</option>
+                                    <option value="bank">Bank Transfer / Deposit</option>
+                                    <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                                </select>
+
+                                <!-- Bank Account Selector (conditional) -->
+                                <div id="purchaseBankAccountContainer" class="mb-2" style="display: none;">
+                                    <label class="form-label fw-semibold small text-secondary mb-1">Disbursement Bank Account</label>
+                                    <select name="bank_detail_id" id="purchaseBankDetail" class="form-select border-light-subtle">
+                                        <option value="">Select Bank Account</option>
+                                        @foreach($bankAccounts ?? [] as $bank)
+                                            <option value="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                                {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <!-- Transaction Ref (conditional) -->
+                                <div id="purchaseTransactionRefContainer" style="display: none;">
+                                    <label class="form-label fw-semibold small text-secondary mb-1">Transaction Ref / TrxID</label>
+                                    <input type="text" name="transaction_ref" class="form-control border-light-subtle bg-white" placeholder="e.g. Bank Trx # or Deposit Slip Ref">
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center mb-4">
+                                <span class="fw-semibold text-secondary">Outstanding Due:</span>
+                                <span class="fs-5 fw-bold text-danger" id="displayDueAmount">৳ 0.00</span>
+                                <input type="hidden" name="due" id="due_hidden" value="0.00">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-3 rounded-3 shadow-sm fw-bold fs-6 d-flex align-items-center justify-content-center gap-2" id="submitPurchaseBtn">
+                                <i class="fe fe-check-circle fs-5"></i>
+                                <span>Confirm Steel Intake & Save</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -264,23 +398,56 @@
     <script>
         let rowIndex = 1;
 
+        function toggleLotMode(mode) {
+            if (mode === 'new') {
+                $('#newLotContainer').fadeIn(150);
+                $('#existingLotContainer').hide();
+                $('#new_lot_number').attr('required', true);
+                $('#purchase_lot_id').removeAttr('required');
+
+                const newVendorId = $('#new_vendor_id').val();
+                $('#vendor_hidden').val(newVendorId);
+            } else {
+                $('#newLotContainer').hide();
+                $('#existingLotContainer').fadeIn(150);
+                $('#new_lot_number').removeAttr('required');
+                $('#purchase_lot_id').attr('required', true);
+
+                const selectedOption = $('#purchase_lot_id').find('option:selected');
+                const vendorId = selectedOption.data('vendor-id') || '';
+                const vendorName = selectedOption.data('vendor-name') || '';
+                $('#vendor_hidden').val(vendorId);
+                $('#vendor_display').val(vendorName || 'No Vendor Linked');
+            }
+        }
+
         $(document).ready(function () {
             $('.select2').select2({
                 width: '100%'
             });
 
-            $('#purchase_lot_id').on('change select2:select', function () {
-                const selectedOption = $(this).find('option:selected');
-                const vendorId = selectedOption.data('vendor-id') || '';
-                const vendorName = selectedOption.data('vendor-name') || '';
-
-                $('#vendor_hidden').val(vendorId);
-                $('#vendor_display').val(vendorName || 'No Vendor Linked');
+            $('#new_vendor_id').on('change select2:select', function () {
+                if ($('#lot_type_new').is(':checked')) {
+                    $('#vendor_hidden').val($(this).val());
+                }
             });
 
-            // Trigger on load if pre-selected
-            if ($('#purchase_lot_id').val()) {
-                $('#purchase_lot_id').trigger('change');
+            $('#purchase_lot_id').on('change select2:select', function () {
+                if ($('#lot_type_existing').is(':checked')) {
+                    const selectedOption = $(this).find('option:selected');
+                    const vendorId = selectedOption.data('vendor-id') || '';
+                    const vendorName = selectedOption.data('vendor-name') || '';
+
+                    $('#vendor_hidden').val(vendorId);
+                    $('#vendor_display').val(vendorName || 'No Vendor Linked');
+                }
+            });
+
+            // Initial mode trigger
+            if ($('#lot_type_existing').is(':checked')) {
+                toggleLotMode('existing');
+            } else {
+                toggleLotMode('new');
             }
         });
 
@@ -418,9 +585,42 @@
             recalculateSummary();
         }
 
+        function handlePurchasePaymentMethodChange(method) {
+            const bankContainer = document.getElementById('purchaseBankAccountContainer');
+            const refContainer = document.getElementById('purchaseTransactionRefContainer');
+            if (!bankContainer || !refContainer) return;
+
+            if (method === 'cash') {
+                bankContainer.style.display = 'none';
+                refContainer.style.display = 'none';
+            } else {
+                bankContainer.style.display = 'block';
+                refContainer.style.display = 'block';
+            }
+        }
+
         $('#createPurchaseForm').on('submit', function (e) {
             const grandTotal = parseFloat($('#grand_total_hidden').val()) || 0;
             const payment = parseFloat($('#paymentInput').val()) || 0;
+
+            if ($('#lot_type_new').is(':checked')) {
+                const newVendor = $('#new_vendor_id').val();
+                if (!newVendor) {
+                    e.preventDefault();
+                    alert('Please select a Vendor / Supplier for the new lot.');
+                    $('#new_vendor_id').select2('open');
+                    return false;
+                }
+                $('#vendor_hidden').val(newVendor);
+            } else {
+                const existingLot = $('#purchase_lot_id').val();
+                if (!existingLot) {
+                    e.preventDefault();
+                    alert('Please select an Existing Purchase Lot.');
+                    $('#purchase_lot_id').select2('open');
+                    return false;
+                }
+            }
 
             if (grandTotal <= 0) {
                 e.preventDefault();

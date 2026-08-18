@@ -14,13 +14,19 @@ class StorePurchaseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'lot_id'              => 'required|exists:lots,id',
+            'lot_type'            => 'nullable|string|in:existing,new',
+            'lot_id'              => 'nullable|required_if:lot_type,existing|exists:lots,id',
+            'new_lot_number'      => 'nullable|required_if:lot_type,new|string|max:100|unique:lots,lot_number',
             'vendor_id'           => 'required|exists:vendors,id',
+            'lot_notes'           => 'nullable|string|max:500',
             'warehouse_id'        => 'nullable|exists:warehouses,id',
             'purchase_date'       => 'nullable|date',
             'payment'             => 'required|numeric|min:0',
             'due'                 => 'nullable|numeric',
             'grand_total'         => 'nullable|numeric|min:0',
+            'payment_method'      => 'nullable|string|in:cash,bank,cheque,mobile_banking',
+            'bank_detail_id'      => 'nullable|exists:bank_details,id',
+            'transaction_ref'     => 'nullable|string|max:255',
             
             // Multi-row items / coils validation
             'items'                => 'required|array|min:1',
@@ -46,14 +52,16 @@ class StorePurchaseRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'lot_id.required'    => 'Please select a Vessel / Purchase Lot.',
-            'lot_id.exists'      => 'Selected Lot does not exist.',
-            'vendor_id.required' => 'Please select a vendor / ship breaker.',
-            'vendor_id.exists'   => 'Selected vendor does not exist.',
-            'items.required'     => 'At least one ship steel or coil item is required.',
-            'items.min'          => 'Please add at least one steel item row.',
-            'payment.required'   => 'Payment amount is required.',
-            'payment.min'        => 'Payment amount cannot be negative.',
+            'lot_id.required_if'         => 'Please select an existing Purchase Lot.',
+            'lot_id.exists'              => 'Selected Lot does not exist.',
+            'new_lot_number.required_if' => 'Lot Number is required when creating a new Lot.',
+            'new_lot_number.unique'      => 'This Lot Number already exists in the system. Please use a unique number.',
+            'vendor_id.required'         => 'Please select a vendor / ship breaker.',
+            'vendor_id.exists'           => 'Selected vendor does not exist.',
+            'items.required'             => 'At least one ship steel or coil item is required.',
+            'items.min'                  => 'Please add at least one steel item row.',
+            'payment.required'           => 'Payment amount is required.',
+            'payment.min'                => 'Payment amount cannot be negative.',
         ];
     }
 

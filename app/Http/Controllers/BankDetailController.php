@@ -23,7 +23,7 @@ class BankDetailController extends Controller
         $request->validate([
             'account_name' => 'required|string|max:255',
             'bank_name' => 'required|string|max:255',
-            'branch' => 'required|string|max:255',
+            'branch' => 'nullable|string|max:255',
             'account_number' => 'required|string|max:255',
             'account_type' => 'required|string|max:50',
             'routing_number' => 'nullable|string|max:255',
@@ -39,7 +39,7 @@ class BankDetailController extends Controller
         BankDetail::create($request->all());
 
         return redirect()->route('bank-details.index')
-            ->with('success', 'Bank details created successfully.');
+            ->with('success', 'Bank/MFS account details created successfully.');
     }
 
     public function edit(BankDetail $bankDetail)
@@ -52,7 +52,7 @@ class BankDetailController extends Controller
         $request->validate([
             'account_name' => 'required|string|max:255',
             'bank_name' => 'required|string|max:255',
-            'branch' => 'required|string|max:255',
+            'branch' => 'nullable|string|max:255',
             'account_number' => 'required|string|max:255',
             'account_type' => 'required|string|max:50',
             'is_default' => 'sometimes|boolean',

@@ -62,7 +62,10 @@ class VendorController extends Controller
         $vendor = Vendor::findOrFail($id);
         $customer = $vendor; // Alias for compatibility
         $purchases = Purchase::where('vendor_id', $id)->with(['lot', 'coils', 'warehouse'])->latest()->get();
-        return view('frontend.pages.vendor.show', compact('vendor', 'customer', 'purchases'));
+        $payments = \App\Models\Payment::with(['bankDetail', 'purchase'])->where('vendor_id', $id)->latest()->get();
+        $bankAccounts = \App\Models\BankDetail::where('is_active', true)->orderBy('bank_name')->get();
+
+        return view('frontend.pages.vendor.show', compact('vendor', 'customer', 'purchases', 'payments', 'bankAccounts'));
     }
 
     /**

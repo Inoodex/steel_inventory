@@ -38,6 +38,12 @@
                 <p class="text-muted small mb-0">Detailed supplier contact profile, steel procurement volume and purchase order history</p>
             </div>
             <div class="d-flex align-items-center gap-2">
+                @if($totalDue > 0)
+                    <button type="button" class="btn btn-success px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2 shadow-sm text-white" onclick="openVendorPaymentModal('', '{{ $totalDue }}')">
+                        <i class="fe fe-dollar-sign"></i>
+                        <span>Pay Vendor Due (৳{{ number_format($totalDue, 2) }})</span>
+                    </button>
+                @endif
                 <a href="{{ route('vendors.edit', $vData->id) }}" class="btn btn-primary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2 shadow-sm">
                     <i class="fe fe-edit"></i>
                     <span>Edit Vendor</span>
@@ -98,16 +104,16 @@
             </div>
 
             <!-- Address Row -->
-            <div class="row mt-4 pt-3 border-top border-light">
-                <div class="col-12">
-                    <span class="fw-semibold text-secondary small d-block mb-1">Office / Warehouse Address:</span>
-                    <p class="text-dark mb-0">{{ $vData->address }}</p>
+            <div class="mt-4 pt-3 border-top border-light">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fe fe-map-pin text-primary"></i>
+                    <span class="text-secondary small">{{ $vData->address }}</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Purchase Metrics Strip -->
+    <!-- Procurement Metric Cards -->
     <div class="row g-3 mb-4">
         <div class="col-xl-3 col-md-6 col-12">
             <div class="card stat-card border-0 shadow-sm rounded-3 bg-white h-100 mb-0">
@@ -116,8 +122,8 @@
                         <i class="fe fe-shopping-cart fs-5"></i>
                     </div>
                     <div>
-                        <small class="text-muted d-block">Purchase Items</small>
-                        <h5 class="fw-bold text-dark mb-0">{{ number_format($totalPurchases) }} <small class="text-muted fs-7 fw-normal">orders</small></h5>
+                        <small class="text-muted d-block">Total Purchase Orders</small>
+                        <h5 class="fw-bold text-dark mb-0">{{ number_format($totalPurchases) }} Orders</h5>
                     </div>
                 </div>
             </div>
@@ -127,11 +133,11 @@
             <div class="card stat-card border-0 shadow-sm rounded-3 bg-white h-100 mb-0">
                 <div class="card-body p-3 d-flex align-items-center">
                     <div class="avatar avatar-md bg-info-light text-info rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-package fs-5"></i>
+                        <i class="fe fe-layers fs-5"></i>
                     </div>
                     <div>
-                        <small class="text-muted d-block">Total Weight Supplied</small>
-                        <h5 class="fw-bold text-dark mb-0">{{ number_format($totalWeight, 2) }} <small class="text-muted fs-7 fw-normal">kg</small></h5>
+                        <small class="text-muted d-block">Total Steel Procured</small>
+                        <h5 class="fw-bold text-dark mb-0">{{ number_format($totalWeight, 2) }} kg</h5>
                     </div>
                 </div>
             </div>
@@ -144,8 +150,8 @@
                         <i class="fe fe-dollar-sign fs-5"></i>
                     </div>
                     <div>
-                        <small class="text-muted d-block">Total Purchased Value</small>
-                        <h5 class="fw-bold text-dark mb-0">৳{{ number_format($totalSpent, 2) }}</h5>
+                        <small class="text-muted d-block">Total Purchase Value</small>
+                        <h5 class="fw-bold text-success mb-0">৳{{ number_format($totalSpent, 2) }}</h5>
                     </div>
                 </div>
             </div>
@@ -167,7 +173,7 @@
     </div>
 
     <!-- Purchase Order History Table -->
-    <div class="card border-0 shadow-sm rounded-3">
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
         <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
             <h5 class="fw-bold text-dark mb-0">Vendor Purchase History</h5>
             <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">{{ $totalPurchases }} Procurement Orders</span>
@@ -183,7 +189,7 @@
                             <th>Rate</th>
                             <th>Total Price</th>
                             <th>Paid / Due</th>
-                            <th>Status</th>
+                            <th class="text-end pe-4">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -244,13 +250,20 @@
                                             </div>
                                         @else
                                             <div class="text-muted fs-8">
-                                                No Due
+                                                <i class="fe fe-check text-success me-1"></i>Fully Paid
                                             </div>
                                         @endif
                                     </div>
                                 </td>
-                                <td>
-                                    <span class="badge badge-soft-success px-3 py-1 rounded-pill">Completed</span>
+                                <td class="text-end pe-4">
+                                    @if($due > 0)
+                                        <button type="button" class="btn btn-sm btn-outline-success rounded-2 px-3 py-1 fw-semibold"
+                                            onclick="openVendorPaymentModal('{{ $purchase->id }}', '{{ $due }}')">
+                                            <i class="fe fe-credit-card me-1"></i>Pay Due
+                                        </button>
+                                    @else
+                                        <span class="badge badge-soft-success px-3 py-1 rounded-pill fs-7">Settled</span>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -266,5 +279,219 @@
             </div>
         </div>
     </div>
+
+    <!-- Vendor Payment & Disbursement History Table -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold text-dark mb-0">
+                <i class="fe fe-dollar-sign text-success me-1"></i> Disbursement & Payment History
+            </h5>
+            <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">{{ count($payments ?? []) }} Payments Made</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-secondary fs-7 text-uppercase">
+                        <tr>
+                            <th class="ps-4" style="width: 5%;">#</th>
+                            <th style="width: 15%;">Date</th>
+                            <th style="width: 25%;">Payment Method & Channel</th>
+                            <th style="width: 20%;">Transaction Ref / TrxID</th>
+                            <th style="width: 15%;">PO Reference</th>
+                            <th style="width: 15%;">Amount (৳)</th>
+                            <th class="text-end pe-4" style="width: 5%;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($payments ?? [] as $payment)
+                            @php
+                                $methodName = match($payment->payment_method) {
+                                    'bank', '2' => 'Bank Transfer',
+                                    'mobile_banking', '3' => 'Mobile Banking',
+                                    default => 'Cash in Hand'
+                                };
+                            @endphp
+                            <tr>
+                                <td class="ps-4 text-muted">{{ $loop->iteration }}</td>
+                                <td class="fw-medium text-dark">{{ $payment->created_at?->format('d M Y, h:i A') }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border me-1">
+                                        @if(in_array($payment->payment_method, ['bank', '2']))
+                                            🏦
+                                        @elseif(in_array($payment->payment_method, ['mobile_banking', '3']))
+                                            📱
+                                        @else
+                                            💵
+                                        @endif
+                                        {{ $methodName }}
+                                    </span>
+                                    @if($payment->bankDetail)
+                                        <small class="text-muted d-block mt-1">
+                                            <i class="fe fe-layers me-1 text-primary"></i>{{ $payment->bankDetail->bank_name }} ({{ $payment->bankDetail->account_number }})
+                                        </small>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($payment->transaction_ref)
+                                        <span class="badge bg-secondary-subtle text-secondary border font-monospace">{{ $payment->transaction_ref }}</span>
+                                    @else
+                                        <span class="text-muted small">—</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($payment->purchase_id)
+                                        <span class="badge bg-primary-light text-primary">#PO-{{ $payment->purchase_id }}</span>
+                                    @else
+                                        <span class="badge bg-light text-secondary border">General Due</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <strong class="text-success fs-6">৳ {{ number_format($payment->amount, 2) }}</strong>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <form action="{{ route('vendor-payments.destroy', $payment->id) }}" method="POST" class="d-inline"
+                                        onsubmit="return confirm('Are you sure you want to revert this payment of ৳{{ number_format($payment->amount, 2) }}? This will restore the purchase due balance.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-2 py-1 px-2" title="Delete Payment Record">
+                                            <i class="fe fe-trash-2"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    <i class="fe fe-inbox fs-2 d-block mb-1"></i>No payments recorded for this vendor yet.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Placed Outside Tables to Prevent Clipping Context Issues -->
+<div class="modal fade" id="vendorPaymentModal" tabindex="-1" aria-labelledby="vendorPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 border-0 shadow">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark" id="vendorPaymentModalLabel">
+                    <i class="fe fe-dollar-sign me-2 text-success"></i>Record Vendor Due Payment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('vendor-payments.store') }}" method="POST" id="vendorPaymentForm">
+                @csrf
+                <input type="hidden" name="vendor_id" value="{{ $vData->id }}">
+                <input type="hidden" name="purchase_id" id="modal_purchase_id" value="">
+
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border rounded-3 mb-3 p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-secondary small fw-semibold">Vendor:</span>
+                            <span class="text-dark fw-bold">{{ $vData->name }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-1" id="modalPoRow" style="display: none;">
+                            <span class="text-secondary small fw-semibold">Target Purchase Order:</span>
+                            <span class="text-primary fw-bold font-monospace" id="modalPoNumber">#PO</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <span class="text-secondary small fw-semibold">Max Settlable Due:</span>
+                            <span class="text-danger fw-bold fs-6" id="modalMaxDueDisplay">৳ 0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Payment Method <span class="text-danger">*</span></label>
+                        <select name="payment_method" id="vendorModalPaymentMethod" class="form-select border-light-subtle" required onchange="toggleVendorModalBank(this.value)">
+                            <option value="cash" selected>Cash in Hand</option>
+                            <option value="bank">Bank Transfer / Deposit</option>
+                            <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                        </select>
+                    </div>
+
+                    <!-- Bank Account Selector -->
+                    <div class="mb-3" id="vendorModalBankContainer" style="display: none;">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Bank / Wallet Account <span class="text-danger">*</span></label>
+                        <select name="bank_detail_id" id="vendorModalBankDetail" class="form-select border-light-subtle">
+                            <option value="">Select Bank / MFS Account</option>
+                            @foreach($bankAccounts ?? [] as $bank)
+                                <option value="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Transaction Ref -->
+                    <div class="mb-3" id="vendorModalRefContainer" style="display: none;">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Transaction Ref / TrxID</label>
+                        <input type="text" name="transaction_ref" class="form-control border-light-subtle" placeholder="e.g. Bank Trx # or TrxID">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Payment Amount (৳) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" min="0.01" name="amount" id="vendorModalAmount" class="form-control fw-bold text-success fs-5 border-light-subtle" placeholder="0.00" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Remarks / Note</label>
+                        <textarea name="remarks" class="form-control border-light-subtle" rows="2" placeholder="Optional payment note..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top p-3">
+                    <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4 py-2 rounded-3 fw-semibold text-white">
+                        <i class="fe fe-check-circle me-1"></i>Confirm Disbursement
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function openVendorPaymentModal(purchaseId, maxAmount) {
+    document.getElementById('modal_purchase_id').value = purchaseId || '';
+    const poRow = document.getElementById('modalPoRow');
+    const poNum = document.getElementById('modalPoNumber');
+    
+    if (purchaseId) {
+        poRow.style.display = 'flex';
+        poNum.textContent = '#PO-' + purchaseId;
+    } else {
+        poRow.style.display = 'none';
+    }
+
+    const numMax = parseFloat(maxAmount) || 0;
+    document.getElementById('modalMaxDueDisplay').textContent = '৳ ' + numMax.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const amountInput = document.getElementById('vendorModalAmount');
+    amountInput.value = numMax > 0 ? numMax.toFixed(2) : '';
+    amountInput.max = numMax > 0 ? numMax : '';
+
+    const modalEl = document.getElementById('vendorPaymentModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+function toggleVendorModalBank(method) {
+    const bankContainer = document.getElementById('vendorModalBankContainer');
+    const refContainer = document.getElementById('vendorModalRefContainer');
+    if (!bankContainer || !refContainer) return;
+
+    if (method === 'cash') {
+        bankContainer.style.display = 'none';
+        refContainer.style.display = 'none';
+    } else {
+        bankContainer.style.display = 'block';
+        refContainer.style.display = 'block';
+    }
+}
+</script>
+@endpush

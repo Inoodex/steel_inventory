@@ -44,6 +44,9 @@ class SaleService
                 'discount'         => $financials['discount'],
                 'advanced_payment' => $financials['advanced_payment'],
                 'due_payment'      => $financials['due_payment'],
+                'payment_method'   => $data['payment_method'] ?? 'cash',
+                'bank_detail_id'   => !empty($data['bank_detail_id']) ? $data['bank_detail_id'] : null,
+                'transaction_ref'  => $data['transaction_ref'] ?? null,
                 'sales_by'         => Auth::id(),
                 'status'           => $financials['status'],
                 'warehouse_id'     => $data['warehouse_id'] ?? null,
@@ -60,11 +63,41 @@ class SaleService
             // 5. Create line items and deduct inventory
             $this->createSaleItems($sale, $data);
 
-            // 6. Auto-post double-entry journal voucher for Sale
+            // 6. Record Initial Payment entry if paid > 0
+            $paid = (float) $sale->advanced_payment;
+            if ($paid > 0) {
+                Payment::create([
+                    'customer_id'    => $customer->id,
+                    'sale_id'        => $sale->id,
+                    'payment_for'    => 2,
+                    'payment_method' => $sale->payment_method ?? 'cash',
+                    'bank_detail_id' => $sale->bank_detail_id,
+                    'transaction_ref'=> $sale->transaction_ref,
+                    'amount'         => $paid,
+                    'remarks'        => 'Initial receipt for ' . $sale->order_no,
+                    'status'         => 1,
+                    'created_by'     => Auth::id(),
+                ]);
+            }
+
+            // 7. Auto-post double-entry journal voucher for Sale
             try {
                 $arAcc = \App\Models\ChartOfAccount::where('account_code', '1130')->first();
                 $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
                 $revAcc = \App\Models\ChartOfAccount::where('account_code', '4110')->first();
+
+                // Determine exact Cash or Bank Chart of Account based on Payment Method
+                $collectionAcc = $cashAcc;
+                if ($sale->payment_method !== 'cash') {
+                    if (!empty($sale->bank_detail_id)) {
+                        $bank = \App\Models\BankDetail::find($sale->bank_detail_id);
+                        $collectionAcc = $bank?->resolveChartOfAccount() 
+                            ?? \App\Models\ChartOfAccount::where('account_code', '1120')->first() 
+                            ?? $cashAcc;
+                    } else {
+                        $collectionAcc = \App\Models\ChartOfAccount::where('account_code', '1120')->first() ?? $cashAcc;
+                    }
+                }
 
                 // Pass-Through Charges Payable account (2140)
                 $chargesAcc = \App\Models\ChartOfAccount::firstOrCreate(
@@ -80,7 +113,6 @@ class SaleService
 
                 if ($arAcc && $revAcc) {
                     $items = [];
-                    $paid = (float) $sale->advanced_payment;
                     $due = (float) $sale->due_payment;
 
                     $subtotal = (float) ($sale->subtotal > 0 ? $sale->subtotal : $sale->items()->sum('total_price'));
@@ -101,9 +133,22 @@ class SaleService
                     $totalDebits = round($paid + $due, 2);
                     $netSalesRevenue = max(0, round($totalDebits - $extraCharges, 2));
 
-                    // 1. Debits: Cash / Receivable
-                    if ($paid > 0 && $cashAcc) {
-                        $items[] = ['account_id' => $cashAcc->id, 'debit' => $paid, 'credit' => 0.00, 'description' => 'Cash/Bank collected for Sale ' . $sale->order_no];
+                    $methodLabel = match($sale->payment_method) {
+                        'bank' => 'Bank Transfer',
+                        'cheque' => 'Cheque',
+                        'mobile_banking' => 'Mobile Banking',
+                        default => 'Cash'
+                    };
+                    $refText = $sale->transaction_ref ? " [Ref/Cheque: {$sale->transaction_ref}]" : "";
+
+                    // 1. Debits: Cash / Bank / Receivable
+                    if ($paid > 0 && $collectionAcc) {
+                        $items[] = [
+                            'account_id' => $collectionAcc->id,
+                            'debit' => $paid,
+                            'credit' => 0.00,
+                            'description' => "{$methodLabel} collected for Sale {$sale->order_no}{$refText}"
+                        ];
                     }
                     if ($due > 0) {
                         $items[] = ['account_id' => $arAcc->id, 'debit' => $due, 'credit' => 0.00, 'description' => 'Receivable due for Sale ' . $sale->order_no];
@@ -132,7 +177,7 @@ class SaleService
                 throw $e;
             }
 
-            // 7. Broadcast real-time Pusher event
+            // 8. Broadcast real-time Pusher event
             event(new \App\Events\SaleCreatedEvent($sale));
 
             return $sale;

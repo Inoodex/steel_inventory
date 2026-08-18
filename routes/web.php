@@ -96,9 +96,18 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('/revenues/export/{id}', [RevenueController::class, 'export'])->name('revenues.export');
     Route::get('/due-payments', [SalesController::class, 'duePayments'])->name('due-payments.index');
     Route::get('/due-payments/pdf', [SalesController::class, 'duePaymentsPdf'])->name('due-payments.pdf');
+    Route::get('/vendor-due-payments', [PurchaseController::class, 'duePayments'])->name('vendor-due-payments.index');
+    Route::get('/vendor-due-payments/pdf', [PurchaseController::class, 'duePaymentsPdf'])->name('vendor-due-payments.pdf');
 
+    // Customer Sale Payments
+    Route::post('/add-payment', [PaymentController::class, 'addPayment'])->name('add.payment');
+    Route::delete('/delete-payment/{id}', [PaymentController::class, 'deletePayment'])->name('delete.payment');
     Route::post('/sales/process-payment', [SalesController::class, 'processPayment'])->name('sales.process-payment');
     Route::get('/sales/search-orders', [SalesController::class, 'searchOrders'])->name('sales.search-orders');
+
+    // Vendor Due Payments & Disbursements
+    Route::post('/vendor-payments', [PaymentController::class, 'addVendorPayment'])->name('vendor-payments.store');
+    Route::delete('/vendor-payments/{id}', [PaymentController::class, 'deleteVendorPayment'])->name('vendor-payments.destroy');
 
     Route::resource('bank-details', BankDetailController::class);
     Route::post('bank-details/{bankDetail}/set-default', [BankDetailController::class, 'setDefault'])->name('bank-details.set-default');

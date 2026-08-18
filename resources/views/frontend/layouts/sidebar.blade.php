@@ -46,7 +46,7 @@
                                     <a href="{{ route('sales.create') }}"><i class="fe fe-plus-circle"></i> New Sale</a>
                                 </li>
                                 <li class="{{ $active(['sales.index','sales.show','sales.edit','sales.invoice']) ? 'active' : '' }}">
-                                    <a href="{{ route('sales.index') }}"><i class="fe fe-list"></i> Sales Orders</a>
+                                    <a href="{{ route('sales.index') }}"><i class="fe fe-list"></i> Sales List</a>
                                 </li>
                                 <li class="{{ $active(['returns.*']) ? 'active' : '' }}">
                                     <a href="{{ route('returns.index') }}"><i class="fe fe-refresh-cw"></i> Sales Returns</a>
@@ -63,11 +63,20 @@
                         </li>
                     @endif
 
-                    @if($canView('Payment Management'))
-                        <li class="{{ $active(['due-payments.*']) ? 'active' : '' }}">
-                            <a href="{{ route('due-payments.index') }}">
-                                <i class="fe fe-credit-card"></i><span> Due Payments</span>
+                    @if($canView('Payment Management') || $canView('Sales Management') || $canView('Purchase Management'))
+                        <li class="submenu {{ $active(['due-payments.*', 'vendor-due-payments.*']) ? 'active' : '' }}">
+                            <a href="javascript:void(0)">
+                                <i class="fe fe-dollar-sign"></i><span> Due Payments</span>
+                                <span class="menu-arrow"></span>
                             </a>
+                            <ul style="{{ $active(['due-payments.*', 'vendor-due-payments.*']) ? 'display:block' : '' }}">
+                                <li class="{{ $active(['due-payments.*']) ? 'active' : '' }}">
+                                    <a href="{{ route('due-payments.index') }}"><i class="fe fe-user-check"></i> Customer Dues</a>
+                                </li>
+                                <li class="{{ $active(['vendor-due-payments.*']) ? 'active' : '' }}">
+                                    <a href="{{ route('vendor-due-payments.index') }}"><i class="fe fe-truck"></i> Vendor Dues</a>
+                                </li>
+                            </ul>
                         </li>
                     @endif
                 @endif
@@ -85,7 +94,7 @@
                             </a>
                             <ul style="{{ $active(['lots.*','purchase.create','purchase.index','purchase.show','purchase.edit','coils.*']) ? 'display:block' : '' }}">
                                 <li class="{{ $active(['lots.*']) ? 'active' : '' }}">
-                                    <a href="{{ route('lots.index') }}"><i class="fe fe-layers"></i> Lots</a>
+                                    <a href="{{ route('lots.index') }}"><i class="fe fe-layers"></i> Lots List</a>
                                 </li>
                                 <li class="{{ $active(['purchase.create']) ? 'active' : '' }}">
                                     <a href="{{ route('purchase.create') }}"><i class="fe fe-plus-circle"></i> New Purchase</a>

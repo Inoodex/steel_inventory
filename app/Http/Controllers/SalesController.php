@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB, Log, Mail};
-use App\Models\{Customer, Inventory, Lot, Payment, Sale, SalesItem, User, Warehouse, Coil};
+use App\Models\{Customer, Inventory, Lot, Payment, Sale, SalesItem, User, Warehouse, Coil, BankDetail};
 use App\Mail\CreateSalesMail;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSaleRequest;
@@ -120,8 +120,9 @@ class SalesController extends Controller
             ->get();
         $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
         $lots = Lot::with(['vendor'])->where('status', 'active')->orderBy('id', 'desc')->get();
+        $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
 
-        return view('frontend.pages.sales.create', compact('products', 'coils', 'users', 'existingClients', 'warehouses', 'lots'));
+        return view('frontend.pages.sales.create', compact('products', 'coils', 'users', 'existingClients', 'warehouses', 'lots', 'bankAccounts'));
     }
 
     /**
@@ -170,15 +171,16 @@ class SalesController extends Controller
      */
     public function edit(string $id)
     {
-        $sales = Sale::with(['customer', 'items.lot.vendor'])->findOrFail($id);
+        $sales = Sale::with(['customer', 'items.lot.vendor', 'bankDetail'])->findOrFail($id);
         $users  = User::get();
         $products = collect();
         $customer = $sales->customer;
         $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
         $lots = Lot::with(['vendor'])->where('status', 'active')->orderBy('id', 'desc')->get();
+        $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
         $items = $sales->items;
 
-        return view('frontend.pages.sales.edit', compact('sales', 'products', 'items', 'customer', 'warehouses', 'lots', 'users'));
+        return view('frontend.pages.sales.edit', compact('sales', 'products', 'items', 'customer', 'warehouses', 'lots', 'users', 'bankAccounts'));
     }
 
     
@@ -203,6 +205,9 @@ class SalesController extends Controller
             'weight_scale_cost' => 'nullable|numeric|min:0',
             'other_charges' => 'nullable|numeric|min:0',
             'advanced_payment' => 'nullable|numeric|min:0',
+            'payment_method' => 'nullable|string|in:cash,bank,cheque,mobile_banking',
+            'bank_detail_id' => 'nullable|exists:bank_details,id',
+            'transaction_ref' => 'nullable|string|max:255',
         ]);
 
         DB::beginTransaction();
@@ -270,6 +275,9 @@ class SalesController extends Controller
                 'payble' => $payble,
                 'advanced_payment' => $advancedPayment,
                 'due_payment' => $duePayment,
+                'payment_method' => $validated['payment_method'] ?? $sale->payment_method ?? 'cash',
+                'bank_detail_id' => !empty($validated['bank_detail_id']) ? $validated['bank_detail_id'] : null,
+                'transaction_ref' => $validated['transaction_ref'] ?? null,
                 'customer_id' => $customer->id,
             ]);
 
@@ -618,9 +626,11 @@ public function duePaymentsPdf()
         'default_font' => 'Helvetica',
     ]);
     $mpdf->WriteHTML($html);
+    $filename = 'Due_Payments_Report_' . now()->format('Y_m_d_His') . '.pdf';
 
-    return response($mpdf->Output('Due_Payments_Report_' . now()->format('Y_m_d_His') . '.pdf', 'I'), 200, [
+    return response($mpdf->Output($filename, 'S'), 200, [
         'Content-Type' => 'application/pdf',
+        'Content-Disposition' => 'inline; filename="' . $filename . '"',
     ]);
 }
 

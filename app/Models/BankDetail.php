@@ -44,4 +44,30 @@ class BankDetail extends Model
     {
         return $this->hasOne(ChartOfAccount::class, 'bank_detail_id');
     }
+
+    /**
+     * Get or automatically initialize Chart of Account for this bank detail.
+     */
+    public function resolveChartOfAccount(): ChartOfAccount
+    {
+        if ($this->chartOfAccount) {
+            return $this->chartOfAccount;
+        }
+
+        $parent = ChartOfAccount::where('account_code', '1120')->first();
+        $code = '1120-' . str_pad((string) $this->id, 3, '0', STR_PAD_LEFT);
+
+        return ChartOfAccount::firstOrCreate(
+            ['bank_detail_id' => $this->id],
+            [
+                'account_code' => $code,
+                'account_name' => "{$this->bank_name} - {$this->account_name} ({$this->account_number})",
+                'account_type' => 'asset',
+                'parent_id' => $parent?->id,
+                'level' => 3,
+                'is_active' => true,
+                'is_system' => false,
+            ]
+        );
+    }
 }

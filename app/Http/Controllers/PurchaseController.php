@@ -7,6 +7,7 @@ use App\Models\Purchase;
 use App\Models\Lot;
 use App\Models\Warehouse;
 use App\Models\Coil;
+use App\Models\BankDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\StorePurchaseRequest;
@@ -67,8 +68,9 @@ class PurchaseController extends Controller
         $vendors    = Vendor::latest()->get();
         $lots       = Lot::where('status', 'active')->latest()->get();
         $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
+        $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
         
-        return view('frontend.pages.purchase.index', compact('purchases', 'products', 'vendors', 'lots', 'warehouses'));
+        return view('frontend.pages.purchase.index', compact('purchases', 'products', 'vendors', 'lots', 'warehouses', 'bankAccounts'));
     }
 
     /**
@@ -80,8 +82,10 @@ class PurchaseController extends Controller
         $vendors    = Vendor::where('status', '1')->latest()->get();
         $lots       = Lot::where('status', 'active')->latest()->get();
         $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
+        $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
+        $suggestedLotNumber = Lot::generateLotNumber();
 
-        return view('frontend.pages.purchase.create', compact('products', 'vendors', 'lots', 'warehouses'));
+        return view('frontend.pages.purchase.create', compact('products', 'vendors', 'lots', 'warehouses', 'bankAccounts', 'suggestedLotNumber'));
     }
 
     /**
@@ -289,5 +293,45 @@ class PurchaseController extends Controller
         }
 
         return $query;
+    }
+
+    /**
+     * Display listing of unpaid purchase orders with vendor dues
+     */
+    public function duePayments()
+    {
+        $purchases = Purchase::with(['vendor', 'lot', 'warehouse'])
+            ->where('due', '>', 0)
+            ->latest()
+            ->get();
+
+        $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
+
+        return view('frontend.pages.purchase.due-payments', compact('purchases', 'bankAccounts'));
+    }
+
+    /**
+     * Export Vendor Due Payments Report as PDF
+     */
+    public function duePaymentsPdf()
+    {
+        $purchases = Purchase::with(['vendor', 'lot', 'warehouse'])
+            ->where('due', '>', 0)
+            ->latest()
+            ->get();
+
+        $html = view('pdf.vendor_due_payments', compact('purchases'))->render();
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font' => 'Helvetica',
+        ]);
+        $mpdf->WriteHTML($html);
+        $filename = 'Vendor_Due_Payments_Report_' . now()->format('Y_m_d_His') . '.pdf';
+
+        return response($mpdf->Output($filename, 'S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
     }
 }
