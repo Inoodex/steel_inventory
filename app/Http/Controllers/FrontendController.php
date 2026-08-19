@@ -20,6 +20,11 @@ use Illuminate\Support\Facades\Auth;
 
 class FrontendController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
         /** @var User|null $user */

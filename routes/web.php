@@ -19,11 +19,14 @@ use Illuminate\Support\Facades\{Auth, Route};
 Auth::routes(['register' => false, 'reset' => false, 'verify' => false]);
 Route::get('/logout', [\App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout.get');
 
+Route::get('/', function () {
+    return Auth::check() ? redirect()->route('dashboard') : redirect()->route('login');
+})->name('index');
+
 // 1. DASHBOARD + EMPLOYEE-ONLY ROUTES → accessible by Super Admin AND Employee
 Route::middleware(['auth', 'role:Super Admin|Employee'])->group(function () {
 
-    // Dashboard - now accessible by both roles
-    Route::get('/', [FrontendController::class, 'index'])->name('index');
+    // Dashboard - accessible by both roles
     Route::get('/dashboard', [FrontendController::class, 'index'])->name('dashboard');
 
     // Employee TA/DA section (they need this too)
