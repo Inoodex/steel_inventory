@@ -39,9 +39,14 @@ class PermissionSeeder extends Seeder
             ]);
         }
 
-        // Create Super Admin role
+        // Create Super Admin & Employee roles
         $superAdminRole = Role::firstOrCreate([
             'name' => 'Super Admin',
+            'guard_name' => 'web'
+        ]);
+
+        $employeeRole = Role::firstOrCreate([
+            'name' => 'Employee',
             'guard_name' => 'web'
         ]);
 
