@@ -10,24 +10,24 @@ return new class extends Migration
     {
         Schema::create('permissions', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name');
-            $table->string('group_name')->nullable();
-            $table->string('guard_name');
+            $table->string('name', 125);
+            $table->string('group_name', 125)->nullable();
+            $table->string('guard_name', 125);
             $table->timestamps();
             $table->unique(['name', 'guard_name']);
         });
 
         Schema::create('roles', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name');
-            $table->string('guard_name');
+            $table->string('name', 125);
+            $table->string('guard_name', 125);
             $table->timestamps();
             $table->unique(['name', 'guard_name']);
         });
 
         Schema::create('model_has_permissions', function (Blueprint $table) {
             $table->unsignedBigInteger('permission_id');
-            $table->string('model_type');
+            $table->string('model_type', 191);
             $table->unsignedBigInteger('model_id');
             $table->index(['model_id', 'model_type'], 'model_has_permissions_model_id_model_type_index');
             $table->foreign('permission_id')->references('id')->on('permissions')->onDelete('cascade');
@@ -36,7 +36,7 @@ return new class extends Migration
 
         Schema::create('model_has_roles', function (Blueprint $table) {
             $table->unsignedBigInteger('role_id');
-            $table->string('model_type');
+            $table->string('model_type', 191);
             $table->unsignedBigInteger('model_id');
             $table->index(['model_id', 'model_type'], 'model_has_roles_model_id_model_type_index');
             $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
