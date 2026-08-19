@@ -23,6 +23,21 @@
     .dropdown-menu {
         z-index: 9999 !important;
     }
+    .badge-soft-success {
+        background-color: rgba(25, 135, 84, 0.12) !important;
+        color: #198754 !important;
+        font-weight: 600;
+    }
+    .badge-soft-secondary {
+        background-color: rgba(108, 117, 125, 0.12) !important;
+        color: #6c757d !important;
+        font-weight: 600;
+    }
+    .badge-soft-warning {
+        background-color: rgba(255, 193, 7, 0.15) !important;
+        color: #b58105 !important;
+        font-weight: 600;
+    }
 </style>
 @endpush
 
@@ -49,12 +64,12 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead style="background-color: #1e293b; color: #ffffff; font-size: 11px; text-transform: uppercase;">
                         <tr>
-                            <th class="ps-3">Fiscal Year Name</th>
+                            <th>Fiscal Year Name</th>
                             <th>Start Date</th>
                             <th>End Date</th>
-                            <th class="text-center">Status</th>
+                            <th>Status</th>
                             <th>Closed Info</th>
-                            <th class="text-end pe-4" style="width: 80px;">Action</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -63,13 +78,13 @@
                                 <td class="fw-bold text-dark fs-6 ps-3">{{ $fy->year_name }}</td>
                                 <td>{{ \Carbon\Carbon::parse($fy->start_date)->format('d M, Y') }}</td>
                                 <td>{{ \Carbon\Carbon::parse($fy->end_date)->format('d M, Y') }}</td>
-                                <td class="text-center">
+                                <td>
                                     @if($fy->is_active && !$fy->is_closed)
-                                        <span class="badge bg-success px-3 py-2">ACTIVE PERIOD</span>
+                                        <span class="badge badge-soft-success px-2 py-1 rounded-2">Active</span>
                                     @elseif($fy->is_closed)
-                                        <span class="badge bg-secondary px-3 py-2">CLOSED & LOCKED</span>
+                                        <span class="badge badge-soft-secondary px-2 py-1 rounded-2">Closed</span>
                                     @else
-                                        <span class="badge bg-light text-dark border">Inactive</span>
+                                        <span class="badge badge-soft-warning px-2 py-1 rounded-2">Inactive</span>
                                     @endif
                                 </td>
                                 <td>
@@ -79,7 +94,7 @@
                                         <span class="text-success"><i class="fas fa-unlock me-1"></i> Open for Transactions</span>
                                     @endif
                                 </td>
-                                <td class="text-end pe-4">
+                                <td>
                                     <div class="dropdown">
                                         <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
                                             <i class="fas fa-ellipsis-v"></i>

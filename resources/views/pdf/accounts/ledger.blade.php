@@ -88,9 +88,14 @@
     <table class="header-table">
         <tr>
             <td>
-                <div class="title">General Ledger Report</div>
+                <div class="title">{{ !empty($selectedParty) ? ucfirst($partyType ?? 'Sub') . ' Ledger Statement' : 'General Ledger Report' }}</div>
                 <div style="color: #64748b; font-size: 11px; margin-top: 3px;">
                     Account: <strong>[{{ $selectedAccount->account_code }}] {{ $selectedAccount->account_name }}</strong>
+                    @if(!empty($selectedParty))
+                        <span style="display: inline-block; margin-left: 8px; background: #e0e7ff; color: #3730a3; padding: 2px 6px; border-radius: 4px; font-weight: 700;">
+                            Party: {{ $selectedParty->name }} ({{ $selectedParty->phone ?? 'N/A' }})
+                        </span>
+                    @endif
                 </div>
             </td>
             <td class="text-right">
@@ -106,9 +111,9 @@
                 <th style="width: 13%;">Date</th>
                 <th style="width: 17%;">Voucher #</th>
                 <th style="width: 34%;">Narration</th>
-                <th style="width: 12%;" class="text-right">Debit ($)</th>
-                <th style="width: 12%;" class="text-right">Credit ($)</th>
-                <th style="width: 12%;" class="text-right">Balance ($)</th>
+                <th style="width: 12%;" class="text-right">Debit (৳)</th>
+                <th style="width: 12%;" class="text-right">Credit (৳)</th>
+                <th style="width: 12%;" class="text-right">Balance (৳)</th>
             </tr>
         </thead>
         <tbody>

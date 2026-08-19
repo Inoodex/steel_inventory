@@ -70,7 +70,7 @@ class JournalEntryController extends Controller
                 'reference_type' => $validated['reference_type'],
                 'description' => $validated['description'],
                 'status' => 'approved',
-                'created_by' => Auth::id() ?? 1,
+                'created_by' => Auth::id() ?? \App\Models\User::value('id'),
                 'items' => $validated['items'],
             ]);
 
@@ -129,8 +129,80 @@ class JournalEntryController extends Controller
 
         $mpdf->WriteHTML($html);
 
-        return response($mpdf->Output("Voucher-{$journalEntry->journal_no}.pdf", 'I'), 200, [
+        $pdfContent = $mpdf->Output("Voucher-{$journalEntry->journal_no}.pdf", 'S');
+        return response($pdfContent, 200, [
             'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "inline; filename=\"Voucher-{$journalEntry->journal_no}.pdf\"",
+        ]);
+    }
+
+    /**
+     * Export list of Journal Entries to CSV/Excel.
+     */
+    public function exportCsv(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $status = $request->query('status');
+        $from = $request->query('from');
+        $to = $request->query('to');
+        $refType = $request->query('reference_type');
+
+        $query = JournalEntry::with(['items.account', 'creator'])
+            ->orderBy('entry_date', 'desc')
+            ->orderBy('id', 'desc');
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+        if ($refType) {
+            $query->where('reference_type', $refType);
+        }
+        if ($from && $to) {
+            $query->whereBetween('entry_date', [$from, $to]);
+        }
+
+        $entries = $query->get();
+        $filename = "Journal_Entries_" . date('Ymd_His') . ".csv";
+
+        return response()->stream(function () use ($entries, $status, $from, $to, $refType) {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            fputcsv($handle, ['Journal Entries Registry Report']);
+            fputcsv($handle, ['Filter Date Range: ' . ($from && $to ? "{$from} to {$to}" : 'All Dates')]);
+            fputcsv($handle, ['Filter Status: ' . ($status ?: 'All Statuses')]);
+            fputcsv($handle, []);
+
+            fputcsv($handle, ['Journal / Voucher #', 'Date', 'Reference Type', 'Description / Narration', 'Total Debit (৳)', 'Total Credit (৳)', 'Status', 'Created By', 'Line Items Details']);
+
+            foreach ($entries as $entry) {
+                $lines = [];
+                foreach ($entry->items as $item) {
+                    $accName = $item->account ? "[{$item->account->account_code}] {$item->account->account_name}" : 'Account';
+                    if ($item->debit > 0) {
+                        $lines[] = "Dr: {$accName} (৳" . number_format($item->debit, 2) . ")";
+                    }
+                    if ($item->credit > 0) {
+                        $lines[] = "Cr: {$accName} (৳" . number_format($item->credit, 2) . ")";
+                    }
+                }
+
+                fputcsv($handle, [
+                    $entry->journal_no,
+                    date('Y-m-d', strtotime($entry->entry_date)),
+                    ucfirst(str_replace('_', ' ', $entry->reference_type)),
+                    $entry->description,
+                    number_format($entry->total_debit, 2, '.', ''),
+                    number_format($entry->total_credit, 2, '.', ''),
+                    ucfirst($entry->status),
+                    $entry->creator ? $entry->creator->name : 'System',
+                    implode(' | ', $lines)
+                ]);
+            }
+
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }
 }

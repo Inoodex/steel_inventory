@@ -104,22 +104,31 @@ class ChartOfAccount extends Model
     }
 
     /**
-     * Calculate running balance up to an optional date.
+     * Calculate running balance up to an optional date, with optional from-date for period movements.
      */
-    public function calculateBalance(?string $asOfDate = null): float
+    public function calculateBalance(?string $asOfDate = null, ?string $fromDate = null): float
     {
         $query = $this->journalItems()
-            ->whereHas('journalEntry', function ($q) use ($asOfDate) {
+            ->whereHas('journalEntry', function ($q) use ($asOfDate, $fromDate) {
                 $q->whereIn('status', ['posted', 'approved']);
                 if ($asOfDate) {
                     $q->where('entry_date', '<=', $asOfDate);
+                }
+                if ($fromDate) {
+                    $q->where('entry_date', '>=', $fromDate);
                 }
             });
 
         $totalDebit = (float) (clone $query)->sum('debit');
         $totalCredit = (float) (clone $query)->sum('credit');
 
-        $opening = (float) $this->opening_balance;
+        // Opening balance applies only to Balance Sheet accounts (Asset, Liability, Equity)
+        // when computing cumulative balance (i.e. when $fromDate is null).
+        // For period-based statements (like P&L or period movements), opening balance is not included.
+        $opening = 0.0;
+        if (!$fromDate && in_array($this->account_type, ['asset', 'liability', 'equity'])) {
+            $opening = (float) $this->opening_balance;
+        }
 
         if ($this->isDebitNormal()) {
             return $opening + ($totalDebit - $totalCredit);

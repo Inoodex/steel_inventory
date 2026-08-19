@@ -48,29 +48,6 @@ class PermissionSeeder extends Seeder
         // Assign ALL permissions to Super Admin
         $superAdminRole->syncPermissions(Permission::all());
 
-        // Assign Super Admin role to your user
-        // $user = User::where('email', 'superadmin@example.com')->first();
-        // if ($user) {
-        //     $user->assignRole('Super Admin');
-        // }
-
-        // // Optional: Create other roles with specific permissions
-        // $adminRole = Role::firstOrCreate([
-        //     'name' => 'Admin',
-        //     'guard_name' => 'web'
-        // ]);
-
-        // $adminRole->syncPermissions([
-        //     'Product Management',
-        //     'Sales Management',
-        //     'Customer Management',
-        //     'Vendor Management',
-        //     'Purchase Management',
-        //     'Inventory Management',
-        //     'Expense Management',
-        //     'Report Management'
-        // ]);
-
         $firstUser = User::first();
 
         if ($firstUser && !$firstUser->hasRole('Super Admin')) {

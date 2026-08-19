@@ -45,9 +45,15 @@
                 <div class="col">
                     <h3 class="page-title font-weight-bold" style="color: #1e293b;">Journal Vouchers</h3>
                 </div>
-                <div class="col-auto">
-                    <a href="{{ route('journal-entries.create') }}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus-circle me-1"></i> New Journal Voucher
+                <div class="col-auto d-flex align-items-center gap-2">
+                    <a href="{{ route('journal-entries.csv', request()->all()) }}"
+                        class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1">
+                        <i class="fas fa-file-excel"></i>
+                        <span>Export CSV</span>
+                    </a>
+                    <a href="{{ route('journal-entries.create') }}" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>New Journal Voucher</span>
                     </a>
                 </div>
             </div>

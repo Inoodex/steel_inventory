@@ -13,17 +13,17 @@ return new class extends Migration
     {
         Schema::table('sales', function (Blueprint $table) {
             if (!Schema::hasColumn('sales', 'charges_payout_status')) {
-                $table->string('charges_payout_status', 20)->default('unpaid')->after('other_charges');
+                $table->string('charges_payout_status', 20)->default('unpaid');
             }
             if (!Schema::hasColumn('sales', 'charges_payout_at')) {
-                $table->timestamp('charges_payout_at')->nullable()->after('charges_payout_status');
+                $table->timestamp('charges_payout_at')->nullable();
             }
             if (!Schema::hasColumn('sales', 'charges_payout_by')) {
-                $table->unsignedBigInteger('charges_payout_by')->nullable()->after('charges_payout_at');
+                $table->unsignedBigInteger('charges_payout_by')->nullable();
                 $table->foreign('charges_payout_by')->references('id')->on('users')->onDelete('set null');
             }
             if (!Schema::hasColumn('sales', 'charges_payout_note')) {
-                $table->text('charges_payout_note')->nullable()->after('charges_payout_by');
+                $table->text('charges_payout_note')->nullable();
             }
         });
     }

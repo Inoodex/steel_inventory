@@ -24,9 +24,17 @@ class DailyExpense extends Model
     }
 
     public function employee()
-{
-    return $this->belongsTo(Employee::class, 'employee_id');
-}
+    {
+        return $this->belongsTo(Employee::class, 'employee_id');
+    }
 
-    
+    public function category()
+    {
+        return $this->belongsTo(ExpenseCategory::class, 'expense_category_id');
+    }
+
+    public function expenseCategory()
+    {
+        return $this->belongsTo(ExpenseCategory::class, 'expense_category_id');
+    }
 }

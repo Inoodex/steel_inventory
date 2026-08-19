@@ -304,8 +304,8 @@ if (!function_exists('postJournalEntry')) {
                 'total_debit' => $totalDebit,
                 'total_credit' => $totalCredit,
                 'status' => $data['status'] ?? 'approved',
-                'created_by' => $data['created_by'] ?? \Illuminate\Support\Facades\Auth::id() ?? 1,
-                'approved_by' => ($data['status'] ?? 'approved') === 'approved' ? (\Illuminate\Support\Facades\Auth::id() ?? 1) : null,
+                'created_by' => $data['created_by'] ?? \Illuminate\Support\Facades\Auth::id() ?? \App\Models\User::value('id'),
+                'approved_by' => ($data['status'] ?? 'approved') === 'approved' ? (\Illuminate\Support\Facades\Auth::id() ?? $data['created_by'] ?? \App\Models\User::value('id')) : null,
                 'approved_at' => ($data['status'] ?? 'approved') === 'approved' ? now() : null,
             ]);
 
@@ -333,17 +333,17 @@ if (!function_exists('getAccountBalance')) {
     /**
      * Get real-time running balance for an account code or ID.
      */
-    function getAccountBalance(int|string $accountIdentifier, ?string $asOfDate = null): float
+    function getAccountBalance(int|string $accountIdentifier, ?string $asOfDate = null, ?string $fromDate = null): float
     {
         $account = is_numeric($accountIdentifier)
             ? \App\Models\ChartOfAccount::find($accountIdentifier)
-            : \App\Models\ChartOfAccount::where('code', $accountIdentifier)->orWhere('id', $accountIdentifier)->first();
+            : \App\Models\ChartOfAccount::where('account_code', $accountIdentifier)->orWhere('id', $accountIdentifier)->first();
 
         if (!$account) {
             return 0.00;
         }
 
-        return $account->calculateBalance($asOfDate);
+        return $account->calculateBalance($asOfDate, $fromDate);
     }
 }
 
@@ -376,7 +376,7 @@ if (!function_exists('reverseJournalEntry')) {
                 'reference_type' => 'manual',
                 'description' => "Reversal of {$original->journal_no}. Reason: {$reversalReason}",
                 'status' => 'approved',
-                'created_by' => \Illuminate\Support\Facades\Auth::id() ?? 1,
+                'created_by' => \Illuminate\Support\Facades\Auth::id() ?? \App\Models\User::value('id'),
                 'items' => $reversalItems,
             ]);
 

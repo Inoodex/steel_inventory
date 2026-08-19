@@ -39,9 +39,16 @@ class SalaryController extends Controller
             'note' => 'nullable|string|max:500',
         ]);
 
-        $request['net_salary'] = $request->basic_salary + $request->allowance - $request->deduction - $request->advance;
+        $data = $request->all();
+        $data['net_salary'] = (float)$request->basic_salary + (float)($request->allowance ?? 0) - (float)($request->deduction ?? 0) - (float)($request->advance ?? 0);
 
-        Salary::create($request->all());
+        $salary = Salary::create($data);
+
+        try {
+            $this->postSalaryJournal($salary);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning("Salary #{$salary->id} auto-journal notice: " . $e->getMessage());
+        }
 
         return redirect()->route('salary.index')->with('success', 'Salary record created successfully.');
     }
@@ -67,17 +74,138 @@ class SalaryController extends Controller
             'note' => 'nullable|string|max:500',
         ]);
 
-        $request['net_salary'] = $request->basic_salary + $request->allowance - $request->deduction;
+        $data = $request->all();
+        $data['net_salary'] = (float)$request->basic_salary + (float)($request->allowance ?? 0) - (float)($request->deduction ?? 0) - (float)($request->advance ?? 0);
 
-        Salary::findOrFail($id)->update($request->all());
+        $salary = Salary::findOrFail($id);
+        $salary->update($data);
+
+        try {
+            $this->postSalaryJournal($salary);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning("Salary #{$salary->id} update auto-journal notice: " . $e->getMessage());
+        }
 
         return redirect()->route('salary.index')->with('success', 'Salary record updated successfully.');
     }
 
     public function destroy($id)
     {
-        Salary::findOrFail($id)->delete();
+        $salary = Salary::findOrFail($id);
+
+        try {
+            $linkedJournals = \App\Models\JournalEntry::where('reference_type', 'salary')
+                ->where('reference_id', $salary->id)
+                ->get();
+            foreach ($linkedJournals as $j) {
+                $j->items()->delete();
+                $j->delete();
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning("Salary #{$id} delete journal cleanup notice: " . $e->getMessage());
+        }
+
+        $salary->delete();
         return redirect()->route('salary.index')->with('success', 'Salary record deleted successfully.');
+    }
+
+    /**
+     * Post or update GL journal entry for a paid salary record.
+     */
+    protected function postSalaryJournal(Salary $salary): void
+    {
+        if (!function_exists('postJournalEntry')) {
+            return;
+        }
+
+        // Delete any existing un-reversed journal for this salary to avoid duplicates on update
+        $existingJournals = \App\Models\JournalEntry::where('reference_type', 'salary')
+            ->where('reference_id', $salary->id)
+            ->where('status', '!=', 'reversed')
+            ->get();
+        foreach ($existingJournals as $ej) {
+            $ej->items()->delete();
+            $ej->delete();
+        }
+
+        // Only post journal if salary payment_status is 'paid'
+        if ($salary->payment_status !== 'paid') {
+            return;
+        }
+
+        $basic = (float) $salary->basic_salary;
+        $allowance = (float) ($salary->allowance ?? 0);
+        $deduction = (float) ($salary->deduction ?? 0);
+        $advance = (float) ($salary->advance ?? 0);
+        $netSalary = (float) $salary->net_salary;
+
+        // Gross salary expense to debit
+        $grossExpense = max(0, $basic + $allowance - $deduction);
+        if ($grossExpense <= 0 && $netSalary <= 0) {
+            return;
+        }
+
+        $salaryExpAcc = \App\Models\ChartOfAccount::where('account_code', '5210')->first();
+        $advanceAcc = \App\Models\ChartOfAccount::where('account_code', '1150')->first();
+        $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
+
+        if (!$salaryExpAcc) {
+            $salaryExpAcc = \App\Models\ChartOfAccount::where('account_type', 'expense')->first();
+        }
+        if (!$cashAcc) {
+            $cashAcc = \App\Models\ChartOfAccount::where('account_type', 'asset')->first();
+        }
+
+        $employee = $salary->employee;
+        $empName = $employee ? $employee->name : "Employee #{$salary->employee_id}";
+        $monthStr = $salary->month ? date('M Y', strtotime($salary->month . '-01')) : date('M Y');
+        $desc = "Salary Payment for {$empName} - {$monthStr}";
+
+        $journalItems = [];
+
+        // Debit: Salary Expense for the full gross expense incurred
+        $journalItems[] = [
+            'account_id' => $salaryExpAcc->id,
+            'debit' => $grossExpense,
+            'credit' => 0.00,
+            'description' => "Gross Salary Expense for {$empName} ({$monthStr})",
+        ];
+
+        // Credit: Employee Advance asset account for the deducted advance portion
+        if ($advance > 0 && $advanceAcc) {
+            $journalItems[] = [
+                'account_id' => $advanceAcc->id,
+                'debit' => 0.00,
+                'credit' => $advance,
+                'description' => "Advance recovery from {$empName}",
+            ];
+        }
+
+        // Credit: Cash in Hand for the actual net cash disbursed
+        if ($netSalary > 0 && $cashAcc) {
+            $journalItems[] = [
+                'account_id' => $cashAcc->id,
+                'debit' => 0.00,
+                'credit' => $netSalary,
+                'description' => "Net Salary Cash Payout to {$empName}",
+            ];
+        }
+
+        // Check if double-entry balancing is preserved
+        $totalDebit = array_sum(array_column($journalItems, 'debit'));
+        $totalCredit = array_sum(array_column($journalItems, 'credit'));
+
+        if (abs($totalDebit - $totalCredit) < 0.001 && $totalDebit > 0) {
+            postJournalEntry([
+                'entry_date' => $salary->payment_date ?? date('Y-m-d'),
+                'reference_type' => 'salary',
+                'reference_id' => $salary->id,
+                'description' => $desc,
+                'status' => 'approved',
+                'created_by' => \Illuminate\Support\Facades\Auth::id() ?? \App\Models\User::value('id'),
+                'items' => $journalItems,
+            ]);
+        }
     }
 
 public function getTaDaDataAjax(Request $request)

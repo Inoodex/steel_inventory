@@ -14,11 +14,14 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('users')->insert([
-            'name' => 'Super Admin',
-            'email' => 'info@quickphonefixandmore.com',
-            'role_id' => 1,
-            'password' => Hash::make('info@quickphonefixandmore.com'),
-        ]);
+        \App\Models\User::updateOrCreate(
+            ['email' => 'hello@inoodex.com'],
+            [
+                'name' => 'Super Admin',
+                'role' => 'Super Admin',
+                'status' => '1',
+                'password' => Hash::make('hello@inoodex.com'),
+            ]
+        );
     }
 }

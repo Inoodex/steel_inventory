@@ -148,33 +148,35 @@ class ExpenseController extends Controller
 
     // }
 
-  public function store(Request $request)
-{
-    $request->validate([
-        'employee_id' => 'required|exists:employees,id',
-        'date' => 'required|date',
-        'amount' => 'required|numeric',
-        'spend_method' => 'required|in:cash,card,bank_transfer',
-        'remarks' => 'nullable|string',
-        'expense_category_id' => 'required|exists:expense_categories,id',
-    ]);
+    public function store(Request $request)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'date' => 'required|date',
+            'amount' => 'required|numeric|min:0.01',
+            'spend_method' => 'required|in:cash,card,bank_transfer',
+            'remarks' => 'nullable|string',
+            'expense_category_id' => 'required|exists:expense_categories,id',
+        ]);
 
-    DailyExpense::create([
-        'user_id' => Auth::id(),
-        'employee_id' => $request->employee_id,
-        'date' => $request->date,
-        'expense_category_id' => $request->expense_category_id,
-        'amount' => $request->amount,
-        'spend_method' => $request->spend_method,
-        'remarks' => $request->remarks,
-    ]);
+        $expense = DailyExpense::create([
+            'user_id' => Auth::id(),
+            'employee_id' => $request->employee_id,
+            'date' => $request->date,
+            'expense_category_id' => $request->expense_category_id,
+            'amount' => $request->amount,
+            'spend_method' => $request->spend_method,
+            'remarks' => $request->remarks,
+        ]);
 
-    // return redirect()->back()->with('success', 'Advance salary request submitted.');
-    return redirect()->route('dailyExpenses.index')->with('success', 'Created successfully.');
-}
+        try {
+            $this->postExpenseJournal($expense);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning("Expense #{$expense->id} auto-journal notice: " . $e->getMessage());
+        }
 
-
-
+        return redirect()->route('dailyExpenses.index')->with('success', 'Created successfully.');
+    }
 
     /**
      * Display the specified resource.
@@ -234,10 +236,13 @@ class ExpenseController extends Controller
         $expense->remarks             = $request->remarks;
         $expense->save();
 
-        // return redirect()->route('dailyExpenses.index')
-        //     ->with(['success' => getNotify(2)]);
-        return redirect()->route('dailyExpenses.index')->with('success', 'Updated successfully.');
+        try {
+            $this->postExpenseJournal($expense);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning("Expense #{$expense->id} update auto-journal notice: " . $e->getMessage());
+        }
 
+        return redirect()->route('dailyExpenses.index')->with('success', 'Updated successfully.');
     }
 
     /**
@@ -246,8 +251,102 @@ class ExpenseController extends Controller
     public function destroy(string $id)
     {
         $expense = DailyExpense::findOrFail($id);
+
+        // Clean up linked journal entries
+        try {
+            $linkedJournals = \App\Models\JournalEntry::where('reference_type', 'expense')
+                ->where('reference_id', $expense->id)
+                ->get();
+            foreach ($linkedJournals as $j) {
+                $j->items()->delete();
+                $j->delete();
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning("Expense #{$id} delete journal cleanup notice: " . $e->getMessage());
+        }
+
         $expense->delete();
         return redirect()->back()->with(['success' => getNotify(3)]);
+    }
+
+    /**
+     * Post or update GL journal entry for an expense.
+     */
+    protected function postExpenseJournal(DailyExpense $expense): void
+    {
+        if (!function_exists('postJournalEntry')) {
+            return;
+        }
+
+        // Delete any existing un-reversed journal for this expense to avoid duplicates on update
+        $existingJournals = \App\Models\JournalEntry::where('reference_type', 'expense')
+            ->where('reference_id', $expense->id)
+            ->where('status', '!=', 'reversed')
+            ->get();
+        foreach ($existingJournals as $ej) {
+            $ej->items()->delete();
+            $ej->delete();
+        }
+
+        $category = ExpenseCategory::find($expense->expense_category_id);
+        $categoryName = $category ? strtolower(trim($category->name)) : '';
+
+        // Determine Debit Account (Expense Account)
+        if (str_contains($categoryName, 'advance') || str_contains($categoryName, 'loan')) {
+            $expenseAcc = \App\Models\ChartOfAccount::where('account_code', '1150')->first();
+        } elseif (str_contains($categoryName, 'travel') || str_contains($categoryName, 'ta') || str_contains($categoryName, 'da')) {
+            $expenseAcc = \App\Models\ChartOfAccount::where('account_code', '5220')->first();
+        } elseif (str_contains($categoryName, 'salary') || str_contains($categoryName, 'wages')) {
+            $expenseAcc = \App\Models\ChartOfAccount::where('account_code', '5210')->first();
+        } else {
+            $expenseAcc = \App\Models\ChartOfAccount::where('account_code', '5230')->first();
+        }
+
+        if (!$expenseAcc) {
+            $expenseAcc = \App\Models\ChartOfAccount::where('account_type', 'expense')->whereNotNull('parent_id')->first();
+        }
+
+        // Determine Credit Account (Payment Source Asset)
+        if ($expense->spend_method === 'cash') {
+            $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
+        } else {
+            $cashAcc = \App\Models\ChartOfAccount::where('account_code', 'like', '1120-%')
+                ->where('is_active', true)
+                ->first() ?? \App\Models\ChartOfAccount::where('account_code', '1120')->first();
+        }
+
+        if (!$cashAcc) {
+            $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
+        }
+
+        if ($expenseAcc && $cashAcc && (float)$expense->amount > 0) {
+            $catTitle = $category ? $category->name : 'Expense';
+            $employeeName = $expense->employee ? $expense->employee->name : '';
+            $desc = "Daily Expense #{$expense->id}: {$catTitle}" . ($employeeName ? " ({$employeeName})" : '') . ($expense->remarks ? " - {$expense->remarks}" : '');
+
+            postJournalEntry([
+                'entry_date' => $expense->date ?? date('Y-m-d'),
+                'reference_type' => 'expense',
+                'reference_id' => $expense->id,
+                'description' => $desc,
+                'status' => 'approved',
+                'created_by' => Auth::id() ?? \App\Models\User::value('id'),
+                'items' => [
+                    [
+                        'account_id' => $expenseAcc->id,
+                        'debit' => (float) $expense->amount,
+                        'credit' => 0.00,
+                        'description' => $desc,
+                    ],
+                    [
+                        'account_id' => $cashAcc->id,
+                        'debit' => 0.00,
+                        'credit' => (float) $expense->amount,
+                        'description' => "Paid via " . ucfirst(str_replace('_', ' ', $expense->spend_method)),
+                    ],
+                ],
+            ]);
+        }
     }
 
     public function getAdvanceSum($employeeId)

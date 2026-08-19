@@ -9,7 +9,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE `bank_details` MODIFY `branch` VARCHAR(255) NULL");
+        if (Schema::hasColumn('bank_details', 'branch')) {
+            DB::statement("ALTER TABLE `bank_details` MODIFY `branch` VARCHAR(255) NULL");
+        }
     }
 
     public function down(): void

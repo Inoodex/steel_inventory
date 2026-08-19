@@ -31,16 +31,22 @@
 @section('content')
     <div class="content container-fluid">
 
-        <div class="page-header">
+        <div class="page-header mb-3">
             <div class="row align-items-center">
                 <div class="col">
-                    <h3 class="page-title font-weight-bold" style="color: #1e293b;">General Ledger</h3>
+                    <h3 class="page-title font-weight-bold" style="color: #1e293b;">General Ledger &amp; Sub-Ledgers</h3>
                 </div>
                 @if($selectedAccount)
-                    <div class="col-auto">
-                        <a href="{{ route('ledger.pdf', ['account_id' => $accountId, 'from_date' => $fromDate, 'to_date' => $toDate]) }}"
-                            class="btn btn-outline-danger btn-sm">
-                            <i class="fas fa-file-pdf me-1"></i> Export Ledger PDF
+                    <div class="col-auto d-flex align-items-center gap-2">
+                        <a href="{{ route('ledger.csv', request()->all()) }}"
+                            class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1">
+                            <i class="fas fa-file-excel"></i>
+                            <span>Export CSV</span>
+                        </a>
+                        <a href="{{ route('ledger.pdf', request()->all()) }}"
+                            class="btn btn-outline-danger btn-sm d-inline-flex align-items-center gap-1" target="_blank">
+                            <i class="fas fa-file-pdf"></i>
+                            <span>Export PDF</span>
                         </a>
                     </div>
                 @endif
@@ -50,10 +56,11 @@
         <!-- Filter Form -->
         <div class="card shadow-sm border-0 mb-4" style="border-radius: 10px;">
             <div class="card-body py-3">
-                <form method="GET" action="{{ route('ledger.index') }}" class="row g-2 align-items-center">
-                    <div class="col-md-5">
-                        <select name="account_id" class="form-select form-select-sm" required>
-                            <option value="">-- Select Master Account --</option>
+                <form method="GET" action="{{ route('ledger.index') }}" class="row g-2 align-items-end" id="ledgerFilterForm">
+                    <div class="col-lg-3 col-md-6 col-12">
+                        <label class="form-label small fw-bold text-secondary mb-1">Master Account:</label>
+                        <select name="account_id" id="accountSelect" class="form-select form-select-sm">
+                            <option value="">-- All Accounts / Auto --</option>
                             @foreach($accounts as $acc)
                                 <option value="{{ $acc->id }}" {{ $accountId == $acc->id ? 'selected' : '' }}>
                                     [{{ $acc->account_code }}] {{ $acc->account_name }} ({{ strtoupper($acc->account_type) }})
@@ -61,18 +68,44 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-lg-2 col-md-3 col-6">
+                        <label class="form-label small fw-bold text-secondary mb-1">Sub-Ledger Party:</label>
+                        <select name="party_type" id="partyTypeSelect" class="form-select form-select-sm" onchange="togglePartySelect()">
+                            <option value="">-- None (All Parties) --</option>
+                            <option value="customer" {{ $partyType === 'customer' ? 'selected' : '' }}>Customer (Debtor)</option>
+                            <option value="vendor" {{ $partyType === 'vendor' ? 'selected' : '' }}>Vendor (Creditor)</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-3 col-md-3 col-6" id="partyIdWrapper" style="{{ $partyType ? '' : 'display: none;' }}">
+                        <label class="form-label small fw-bold text-secondary mb-1" id="partyIdLabel">Select Party:</label>
+                        <select name="party_id" id="partyIdSelect" class="form-select form-select-sm">
+                            <option value="">-- Choose Party --</option>
+                            @if($partyType === 'customer')
+                                @foreach($customers as $c)
+                                    <option value="{{ $c->id }}" {{ $partyId == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->phone }})</option>
+                                @endforeach
+                            @elseif($partyType === 'vendor')
+                                @foreach($vendors as $v)
+                                    <option value="{{ $v->id }}" {{ $partyId == $v->id ? 'selected' : '' }}>{{ $v->name }} ({{ $v->phone }})</option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <label class="form-label small fw-bold text-secondary mb-1">From Date:</label>
                         <input type="date" name="from_date" class="form-control form-control-sm" value="{{ $fromDate }}">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <label class="form-label small fw-bold text-secondary mb-1">To Date:</label>
                         <input type="date" name="to_date" class="form-control form-control-sm" value="{{ $toDate }}">
                     </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary btn-sm w-100"> View
-                            Ledger</button>
-                    </div>
-                    <div class="col-md-1 text-end">
-                        <a href="{{ route('ledger.index') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+                    <div class="col-lg-2 col-md-4 col-12 d-flex gap-1 ms-auto">
+                        <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                            <i class="fas fa-search me-1"></i> View
+                        </button>
+                        <a href="{{ route('ledger.index') }}" class="btn btn-outline-secondary btn-sm px-2" title="Reset">
+                            <i class="fas fa-undo"></i>
+                        </a>
                     </div>
                 </form>
             </div>
@@ -84,8 +117,15 @@
                 <div class="card-body p-4">
                     <div class="row align-items-center">
                         <div class="col-md-6">
-                            <span class="badge bg-secondary text-uppercase mb-2">{{ $selectedAccount->account_type }}</span>
-                            <h4 class="text-white fw-bold mb-1">[{{ $selectedAccount->account_code }}]
+                            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                <span class="badge bg-secondary text-uppercase">{{ $selectedAccount->account_type }}</span>
+                                @if($selectedParty)
+                                    <span class="badge bg-primary px-2 py-1">
+                                        <i class="fe fe-user me-1"></i>{{ ucfirst($partyType) }}: {{ $selectedParty->name }}
+                                    </span>
+                                @endif
+                            </div>
+                            <h4 class="text-white fs-5 fw-bold mb-1">[{{ $selectedAccount->account_code }}]
                                 {{ $selectedAccount->account_name }}</h4>
                             <p class="text-white-50 mb-0 font-monospace" style="font-size: 12px;">Period:
                                 {{ \Carbon\Carbon::parse($fromDate)->format('d M, Y') }} —
@@ -233,3 +273,61 @@
 
     </div>
 @endsection
+
+@push('scripts')
+<script>
+const customerOptions = @json($customers->map(fn($c) => ['id' => $c->id, 'text' => $c->name . ($c->phone ? ' (' . $c->phone . ')' : '')]));
+const vendorOptions = @json($vendors->map(fn($v) => ['id' => $v->id, 'text' => $v->name . ($v->phone ? ' (' . $v->phone . ')' : '')]));
+const currentPartyId = '{{ $partyId }}';
+
+function togglePartySelect() {
+    const type = document.getElementById('partyTypeSelect').value;
+    const wrapper = document.getElementById('partyIdWrapper');
+    const select = document.getElementById('partyIdSelect');
+    const label = document.getElementById('partyIdLabel');
+    const accSelect = document.getElementById('accountSelect');
+
+    select.innerHTML = '<option value="">-- Choose Party --</option>';
+
+    if (type === 'customer') {
+        wrapper.style.display = 'block';
+        label.textContent = 'Select Customer:';
+        customerOptions.forEach(opt => {
+            const el = document.createElement('option');
+            el.value = opt.id;
+            el.textContent = opt.text;
+            if (opt.id == currentPartyId) el.selected = true;
+            select.appendChild(el);
+        });
+        if (!accSelect.value) {
+            for (let opt of accSelect.options) {
+                if (opt.text.includes('1130')) {
+                    accSelect.value = opt.value;
+                    break;
+                }
+            }
+        }
+    } else if (type === 'vendor') {
+        wrapper.style.display = 'block';
+        label.textContent = 'Select Vendor:';
+        vendorOptions.forEach(opt => {
+            const el = document.createElement('option');
+            el.value = opt.id;
+            el.textContent = opt.text;
+            if (opt.id == currentPartyId) el.selected = true;
+            select.appendChild(el);
+        });
+        if (!accSelect.value) {
+            for (let opt of accSelect.options) {
+                if (opt.text.includes('2110')) {
+                    accSelect.value = opt.value;
+                    break;
+                }
+            }
+        }
+    } else {
+        wrapper.style.display = 'none';
+    }
+}
+</script>
+@endpush

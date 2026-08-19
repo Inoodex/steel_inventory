@@ -36,17 +36,18 @@ return new class extends Migration
 
         Schema::create('daily_expenses', function (Blueprint $table) {
             $table->id();
+            $table->date('date');
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedBigInteger('employee_id')->nullable();
             $table->unsignedBigInteger('expense_category_id')->nullable();
-            $table->date('expense_date');
             $table->decimal('amount', 12, 2);
-            $table->string('spent_by')->nullable();
-            $table->string('payment_method')->default('cash');
-            $table->string('receipt_no')->nullable();
-            $table->text('description')->nullable();
-            $table->unsignedBigInteger('created_by')->nullable();
+            $table->string('spend_method')->default('cash');
+            $table->text('remarks')->nullable();
             $table->timestamps();
 
             $table->foreign('expense_category_id')->references('id')->on('expense_categories')->onDelete('set null');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
+            $table->foreign('employee_id')->references('id')->on('employees')->onDelete('set null');
         });
 
         Schema::create('salaries', function (Blueprint $table) {
@@ -90,6 +91,17 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
+        });
+
+        Schema::create('revenues', function (Blueprint $table) {
+            $table->id();
+            $table->integer('year');
+            $table->integer('month');
+            $table->decimal('total_sales', 15, 2)->default(0.00);
+            $table->decimal('total_purchases', 15, 2)->default(0.00);
+            $table->decimal('total_expenses', 15, 2)->default(0.00);
+            $table->decimal('net_profit', 15, 2)->default(0.00);
+            $table->timestamps();
         });
     }
 

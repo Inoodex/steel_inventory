@@ -132,7 +132,7 @@ class FiscalYearController extends Controller
                     'reference_type' => 'manual',
                     'description' => "Year-End Closing Voucher for Fiscal Year {$fiscalYear->year_name}",
                     'status' => 'approved',
-                    'created_by' => Auth::id() ?? 1,
+                    'created_by' => Auth::id() ?? \App\Models\User::value('id'),
                     'items' => $closingItems,
                 ]);
             }
@@ -142,7 +142,7 @@ class FiscalYearController extends Controller
                 'is_active' => false,
                 'is_closed' => true,
                 'closed_at' => now(),
-                'closed_by' => Auth::id() ?? 1,
+                'closed_by' => Auth::id() ?? \App\Models\User::value('id'),
             ]);
 
             return redirect()->route('fiscal-years.index')

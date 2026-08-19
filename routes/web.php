@@ -138,6 +138,7 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
             Route::resource('chart-of-accounts', ChartOfAccountController::class);
 
             // Journal Entries & Vouchers
+            Route::get('journal-entries/csv', [JournalEntryController::class, 'exportCsv'])->name('journal-entries.csv');
             Route::get('journal-entries/{journalEntry}/pdf', [JournalEntryController::class, 'downloadPdf'])->name('journal-entries.pdf');
             Route::post('journal-entries/{journalEntry}/reverse', [JournalEntryController::class, 'reverse'])->name('journal-entries.reverse');
             Route::resource('journal-entries', JournalEntryController::class)->except(['edit', 'update', 'destroy']);
@@ -145,16 +146,20 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
             // General Ledger
             Route::get('ledger', [LedgerController::class, 'index'])->name('ledger.index');
             Route::get('ledger/pdf', [LedgerController::class, 'downloadPdf'])->name('ledger.pdf');
+            Route::get('ledger/csv', [LedgerController::class, 'exportCsv'])->name('ledger.csv');
 
             // Trial Balance
             Route::get('trial-balance', [TrialBalanceController::class, 'index'])->name('trial-balance.index');
             Route::get('trial-balance/pdf', [TrialBalanceController::class, 'downloadPdf'])->name('trial-balance.pdf');
+            Route::get('trial-balance/csv', [TrialBalanceController::class, 'exportCsv'])->name('trial-balance.csv');
 
             // Financial Statements & Reports
             Route::get('reports/profit-loss', [FinancialStatementController::class, 'profitLoss'])->name('reports.profit-loss');
             Route::get('reports/profit-loss/pdf', [FinancialStatementController::class, 'profitLossPdf'])->name('reports.profit-loss.pdf');
+            Route::get('reports/profit-loss/csv', [FinancialStatementController::class, 'profitLossCsv'])->name('reports.profit-loss.csv');
             Route::get('reports/balance-sheet', [FinancialStatementController::class, 'balanceSheet'])->name('reports.balance-sheet');
             Route::get('reports/balance-sheet/pdf', [FinancialStatementController::class, 'balanceSheetPdf'])->name('reports.balance-sheet.pdf');
+            Route::get('reports/balance-sheet/csv', [FinancialStatementController::class, 'balanceSheetCsv'])->name('reports.balance-sheet.csv');
             Route::get('reports/cash-flow', [FinancialStatementController::class, 'cashFlow'])->name('reports.cash-flow');
 
             // Fiscal Years & Year-End Close

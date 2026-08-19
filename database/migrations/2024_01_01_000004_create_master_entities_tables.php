@@ -43,7 +43,7 @@ return new class extends Migration
             $table->string('bank_name');
             $table->string('account_name');
             $table->string('account_number');
-            $table->string('branch_name')->nullable();
+            $table->string('branch')->nullable();
             $table->string('routing_number')->nullable();
             $table->string('swift_code')->nullable();
             $table->string('account_type')->default('current');
@@ -51,6 +51,7 @@ return new class extends Migration
             $table->decimal('current_balance', 15, 2)->default(0.00);
             $table->string('currency')->default('BDT');
             $table->boolean('is_default')->default(false);
+            $table->boolean('is_active')->default(true);
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->text('notes')->nullable();
             $table->timestamps();
@@ -61,7 +62,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
+            $table->string('status')->default('1');
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('vendors', function (Blueprint $table) {
@@ -74,6 +77,7 @@ return new class extends Migration
             $table->string('bin_number')->nullable();
             $table->string('tin_number')->nullable();
             $table->decimal('opening_balance', 15, 2)->default(0.00);
+            $table->string('status')->default('1');
             $table->timestamps();
             $table->softDeletes();
         });
