@@ -98,26 +98,21 @@ return new class extends Migration
 
         Schema::create('lots', function (Blueprint $table) {
             $table->id();
-            $table->string('lot_number')->unique();
-            $table->string('name')->nullable();
-            $table->string('vessel_name')->nullable();
-            $table->string('imo_number')->nullable();
-            $table->string('flag')->nullable();
-            $table->decimal('lightweight_tonnage', 12, 3)->nullable();
-            $table->date('purchase_date')->nullable();
-            $table->date('be_date')->nullable();
-            $table->string('yard_location')->nullable();
+            $table->string('lot_number', 100)->unique();
             $table->unsignedBigInteger('vendor_id')->nullable();
-            $table->decimal('total_cost', 15, 2)->default(0.00);
-            $table->decimal('estimated_yield_ton', 12, 3)->nullable();
-            $table->decimal('actual_yield_ton', 12, 3)->nullable();
-            $table->enum('status', ['procured', 'be_filed', 'be_approved', 'be_completed', 'cutting_in_progress', 'completed'])->default('procured');
+            $table->date('lot_date')->nullable();
+            $table->decimal('total_quantity', 12, 3)->default(0.000);
+            $table->decimal('total_amount', 15, 2)->default(0.00);
+            $table->string('status', 50)->default('active');
             $table->text('notes')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
             $table->foreign('vendor_id')->references('id')->on('vendors')->onDelete('set null');
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
         });
     }
 

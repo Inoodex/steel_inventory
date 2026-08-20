@@ -16,13 +16,21 @@ class BankDetail extends Model
         'account_number',
         'account_type',
         'routing_number',
+        'swift_code',
+        'opening_balance',
+        'current_balance',
+        'currency',
         'is_default',
-        'is_active'
+        'is_active',
+        'status',
+        'notes',
     ];
 
     protected $casts = [
         'is_default' => 'boolean',
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
+        'opening_balance' => 'decimal:2',
+        'current_balance' => 'decimal:2',
     ];
 
     // Scope for active bank details

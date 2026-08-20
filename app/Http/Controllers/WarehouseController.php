@@ -22,7 +22,7 @@ class WarehouseController extends Controller
                   ->orWhere('code', 'like', "%{$search}%")
                   ->orWhere('location', 'like', "%{$search}%")
                   ->orWhere('contact_person', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                  ->orWhere('contact_phone', 'like', "%{$search}%");
             });
         }
 
@@ -52,9 +52,15 @@ class WarehouseController extends Controller
             'code'           => 'nullable|string|max:50|unique:warehouses,code',
             'location'       => 'nullable|string|max:255',
             'contact_person' => 'nullable|string|max:255',
-            'phone'          => 'nullable|string|max:50',
+            'contact_phone'  => 'nullable|string|max:50',
+            'capacity_ton'   => 'nullable|numeric|min:0',
             'status'         => 'required|in:active,inactive',
+            'notes'          => 'nullable|string',
         ]);
+
+        if (empty($validated['contact_phone']) && $request->filled('phone')) {
+            $validated['contact_phone'] = $request->input('phone');
+        }
 
         if (empty($validated['code'])) {
             $count = Warehouse::count() + 1;
@@ -78,9 +84,15 @@ class WarehouseController extends Controller
             'code'           => 'nullable|string|max:50|unique:warehouses,code,' . $warehouse->id,
             'location'       => 'nullable|string|max:255',
             'contact_person' => 'nullable|string|max:255',
-            'phone'          => 'nullable|string|max:50',
+            'contact_phone'  => 'nullable|string|max:50',
+            'capacity_ton'   => 'nullable|numeric|min:0',
             'status'         => 'required|in:active,inactive',
+            'notes'          => 'nullable|string',
         ]);
+
+        if (empty($validated['contact_phone']) && $request->filled('phone')) {
+            $validated['contact_phone'] = $request->input('phone');
+        }
 
         $warehouse->update($validated);
 

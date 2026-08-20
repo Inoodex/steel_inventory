@@ -85,43 +85,43 @@
 
     <!-- Summary Stats Bar -->
     <div class="row g-3 mb-4">
-        <div class="col-xl-4 col-md-4 col-12">
+        <div class="col-xl-3 col-md-6 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
                     <div class="avatar avatar-lg bg-primary-light text-primary rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
                         <i class="fe fe-credit-card fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Bank Accounts</h6>
+                        <h6 class="text-muted fw-normal mb-1">Bank & MFS Accounts</h6>
                         <h4 class="mb-0 fw-bold text-dark">{{ number_format($banks->count()) }}</h4>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-4 col-md-4 col-12">
+        <div class="col-xl-4 col-md-6 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
                     <div class="avatar avatar-lg bg-success-light text-success rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-check-circle fs-4"></i>
+                        <i class="fe fe-dollar-sign fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Active Accounts</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($banks->where('is_active', true)->count()) }}</h4>
+                        <h6 class="text-muted fw-normal mb-1">Total Liquid Balance</h6>
+                        <h4 class="mb-0 fw-bold text-success">৳ {{ number_format($banks->sum('current_balance'), 2) }}</h4>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-4 col-md-4 col-12">
+        <div class="col-xl-3 col-md-6 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
                     <div class="avatar avatar-lg bg-info-light text-info rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-award fs-4"></i>
+                        <i class="fe fe-check-circle fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Default Account</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ $banks->where('is_default', true)->first()->bank_name ?? 'None' }}</h4>
+                        <h6 class="text-muted fw-normal mb-1">Active Accounts</h6>
+                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($banks->where('is_active', true)->count()) }}</h4>
                     </div>
                 </div>
             </div>
@@ -153,9 +153,10 @@
                             <th class="ps-4">#</th>
                             <th>Account Name</th>
                             <th>Bank Name</th>
-                            <th>Branch</th>
                             <th>Account Number</th>
                             <th>Type</th>
+                            <th>Opening Balance</th>
+                            <th>Current Balance</th>
                             <th>Status</th>
                             <th>Default</th>
                             <th class="pe-4 text-end">Action</th>
@@ -166,19 +167,23 @@
                             <tr class="bank-row" data-search="{{ strtolower($bank->account_name . ' ' . $bank->bank_name . ' ' . $bank->branch . ' ' . $bank->account_number . ' ' . $bank->account_type) }}">
                                 <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
                                 <td>
-                                    <span class="fw-bold text-dark d-block">{{ $bank->account_name }}</span>
+                                    <span class="fw-bold text-dark d-block">{{ Str::limit($bank->account_name, 20) }}</span>
                                 </td>
                                 <td>
-                                    <span class="fw-bold text-primary">{{ $bank->bank_name }}</span>
-                                </td>
-                                <td>
-                                    <span class="text-muted small">{{ $bank->branch }}</span>
+                                    <span class="fw-bold text-primary">{{ Str::limit($bank->bank_name, 20) }}</span>
+                                    <p class="text-muted small">{{ Str::limit($bank->branch, 20) ?: 'N/A' }}</p>
                                 </td>
                                 <td>
                                     <span class="font-monospace fw-bold text-dark">{{ $bank->account_number }}</span>
                                 </td>
                                 <td>
                                     <span class="badge badge-soft-info px-3 py-1 rounded-pill fs-7 text-capitalize">{{ $bank->account_type }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-secondary fw-semibold">৳{{ number_format($bank->opening_balance ?? 0, 2) }}</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">৳{{ number_format($bank->current_balance ?? 0, 2) }}</span>
                                 </td>
                                 <td>
                                     @if($bank->is_active)
@@ -238,7 +243,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center py-5">
+                                <td colspan="11" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
                                         <div class="avatar avatar-xl bg-primary-light text-primary rounded-circle mb-3 d-flex align-items-center justify-content-center">
                                             <i class="fe fe-credit-card fs-1"></i>

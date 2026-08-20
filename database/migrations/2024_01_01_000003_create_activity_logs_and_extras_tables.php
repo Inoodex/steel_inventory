@@ -9,23 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('activity_logs', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id')->nullable();
-            $table->string('action');
-            $table->string('module')->nullable();
-            $table->string('model_type')->nullable();
-            $table->unsignedBigInteger('model_id')->nullable();
-            $table->json('before_state')->nullable();
-            $table->json('after_state')->nullable();
-            $table->string('ip_address')->nullable();
-            $table->string('user_agent')->nullable();
-            $table->string('session_id')->nullable();
-            $table->text('description')->nullable();
+            $table->bigIncrements('id');
+            $table->string('log_name')->nullable();
+            $table->text('description');
+            $table->nullableMorphs('subject', 'subject');
+            $table->nullableMorphs('causer', 'causer');
+            $table->json('properties')->nullable();
+            $table->string('event')->nullable();
+            $table->uuid('batch_uuid')->nullable();
             $table->timestamps();
-
-            $table->index(['model_type', 'model_id']);
-            $table->index('user_id');
-            $table->index('created_at');
+            $table->index('log_name');
         });
 
         Schema::create('extras', function (Blueprint $table) {

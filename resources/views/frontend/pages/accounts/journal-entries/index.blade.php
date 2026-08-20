@@ -177,15 +177,10 @@
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger"
                                                             href="javascript:void(0)"
-                                                            onclick="if(confirm('Are you sure you want to reverse this journal entry? A counter-balancing voucher will be posted.')) { document.getElementById('reverseVoucher{{ $entry->id }}').submit(); }">
+                                                            onclick="openReverseJournalModal('{{ $entry->id }}', '{{ $entry->journal_no }}')">
                                                             <i class="fe fe-rotate-ccw text-danger"></i>
                                                             <span>Reverse Entry</span>
                                                         </a>
-                                                        <form id="reverseVoucher{{ $entry->id }}" method="POST"
-                                                            action="{{ route('journal-entries.reverse', $entry->id) }}"
-                                                            class="d-none">
-                                                            @csrf
-                                                        </form>
                                                     </li>
                                                 @endif
                                             </ul>
@@ -210,4 +205,52 @@
         </div>
 
     </div>
+
+    <!-- Reversal Modal (outside table structure as per AGENTS.md rules) -->
+    <div class="modal fade" id="reverseJournalModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 border-0 shadow-lg">
+                <form id="reverseJournalForm" method="POST" action="">
+                    @csrf
+                    <div class="modal-header bg-light py-3 border-bottom">
+                        <h5 class="modal-title fw-bold text-dark">
+                            <i class="fe fe-rotate-ccw text-danger me-2"></i>Storno Reversal: <span id="reverseVoucherNo"></span>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="alert alert-warning border-0 rounded-3 mb-3 p-3">
+                            <small class="d-block text-dark">
+                                In double-entry bookkeeping, posted vouchers are immutable. Reversing this voucher will post an offsetting Storno transaction swapping all debits and credits.
+                            </small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Reason for Reversal <span class="text-danger">*</span></label>
+                            <textarea name="reason" id="reverseReasonInput" class="form-control border-light-subtle" rows="3" placeholder="e.g. Accounting error correction, duplicate entry..." required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top bg-light">
+                        <button type="button" class="btn btn-light px-4 rounded-3 text-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger px-4 rounded-3 shadow-sm fw-semibold">
+                            <i class="fe fe-rotate-ccw me-1"></i>Confirm & Post Reversal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+@push('scripts')
+<script>
+    function openReverseJournalModal(entryId, journalNo) {
+        const form = document.getElementById('reverseJournalForm');
+        form.action = "{{ url('accounts/journal-entries') }}/" + entryId + "/reverse";
+        document.getElementById('reverseVoucherNo').textContent = journalNo;
+        document.getElementById('reverseReasonInput').value = "Correction / Reversal of Voucher " + journalNo;
+        
+        const modal = new bootstrap.Modal(document.getElementById('reverseJournalModal'));
+        modal.show();
+    }
+</script>
+@endpush
 @endsection

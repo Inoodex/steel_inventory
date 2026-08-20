@@ -9,19 +9,7 @@ class CompanyDetail extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-        'signatory_name',
-        'signatory_designation',
-        'signature_image',
-        'seal_image',
-        'phone',
-        'email',
-        'website',
-        'address',
-        'is_default',
-        'is_active'
-    ];
+    protected $guarded = [];
 
     protected $casts = [
         'is_default' => 'boolean',

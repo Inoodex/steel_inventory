@@ -16,8 +16,10 @@ class Warehouse extends Model
         'code',
         'location',
         'contact_person',
-        'phone',
+        'contact_phone',
+        'capacity_ton',
         'status',
+        'notes',
     ];
 
     public function sales()

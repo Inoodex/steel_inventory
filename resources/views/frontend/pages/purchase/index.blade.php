@@ -72,7 +72,7 @@
     }
 
     .dropdown-menu {
-        z-index: 1050 !important;
+        z-index: 1060 !important;
     }
 </style>
 @endpush
@@ -165,7 +165,7 @@
                 <div class="row align-items-center g-2">
                     <div class="col-12 col-md-3">
                         <div class="search-box-custom">
-                            <input type="text" name="search" class="form-control border-light-subtle" placeholder="Search product, vendor, lot..." value="{{ request('search') }}">
+                            <input type="text" name="search" class="form-control border-light-subtle" placeholder="Search lot, vendor, thickness, size..." value="{{ request('search') }}">
                         </div>
                     </div>
                     <div class="col-12 col-md-3">
@@ -179,11 +179,11 @@
                         </select>
                     </div>
                     <div class="col-12 col-md-2">
-                        <select name="product_id" class="form-select border-light-subtle select2" onchange="document.getElementById('purchaseFilterForm').submit()">
-                            <option value="">All Products</option>
-                            @foreach ($products as $product)
-                                <option value="{{ $product->id }}" {{ request('product_id') == $product->id ? 'selected' : '' }}>
-                                    {{ $product->name }}
+                        <select name="warehouse_id" class="form-select border-light-subtle select2" onchange="document.getElementById('purchaseFilterForm').submit()">
+                            <option value="">All Stockyards</option>
+                            @foreach ($warehouses as $wh)
+                                <option value="{{ $wh->id }}" {{ request('warehouse_id') == $wh->id ? 'selected' : '' }}>
+                                    {{ $wh->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -199,7 +199,7 @@
                         </select>
                     </div>
                     <div class="col-12 col-md-2 text-md-end text-muted small">
-                        Showing <span class="fw-bold text-dark">{{ $purchases->count() }}</span> entries
+                        Showing <span class="fw-bold text-dark">{{ $purchases->count() }}</span> of {{ $purchases->total() }} entries
                     </div>
                 </div>
             </form>
@@ -214,20 +214,18 @@
                             <th class="ps-4">#</th>
                             <th>Date</th>
                             <th>Lot Number</th>
-                            <!-- <th>Product & Model</th> -->
                             <th>Vendor</th>
-                            <th>Qty</th>
-                            <th>Unit Price</th>
+                            <th>Weight / Qty</th>
+                            <th>Unit Rate</th>
                             <th>Total Price</th>
-                            <th>Payment</th>
                             <th>Due</th>
-                            <th>Action</th>
+                            <th class="text-end pe-4">Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
                         @forelse ($purchases as $purchase)
                             <tr>
-                                <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
+                                <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration + ($purchases->currentPage() - 1) * $purchases->perPage() }}</td>
                                 <td>
                                     <span class="text-secondary small">
                                         {{ $purchase->created_at ? $purchase->created_at->format('d M Y') : 'N/A' }}
@@ -235,35 +233,21 @@
                                 </td>
                                 <td>
                                     @if($purchase->lot)
-                                        <a href="{{ route('lots.show', $purchase->lot->id) }}">
-                                            <i class="fe fe-package me-1"></i> {{ $purchase->lot->lot_number }}
+                                        <a href="{{ route('lots.show', $purchase->lot->id) }}" class="fw-bold text-primary text-decoration-none d-inline-flex align-items-center gap-1">
+                                            <i class="fe fe-package"></i>
+                                            <span>{{ $purchase->lot->lot_number }}</span>
                                         </a>
                                     @else
-                                        <span class="text-muted small">No Lot</span>
+                                        <span class="badge bg-light text-muted border">Direct Stock</span>
                                     @endif
                                 </td>
-                                <!-- <td>
-                                    <div>
-                                        <span class="fw-bold text-dark d-block" title="{{ $purchase->product->name ?? '' }}">
-                                            {{ Str::limit($purchase->product->name ?? 'N/A', 25) }}
-                                        </span>
-                                        @php
-                                            $pThickness = $purchase->thickness ?: ($purchase->product->thickness ?? null);
-                                            $pSize = $purchase->size ?: ($purchase->product->size ?? null);
-                                        @endphp
-                                        @if($pThickness || $pSize)
-                                            <small class="text-secondary d-block">
-                                                <i class="fe fe-layers me-1 text-primary"></i>{{ $pThickness ? $pThickness . ' | ' : '' }}{{ $pSize }}
-                                            </small>
-                                        @else
-                                            <small class="text-muted fs-7">Model: {{ $purchase->product->model ?? 'N/A' }}</small>
-                                        @endif
-                                    </div>
-                                </td> -->
                                 <td>
-                                    <span class="fw-semibold text-dark">
-                                        {{ Str::limit($purchase->vendor->name ?? 'N/A', 20) }}
+                                    <span class="fw-semibold text-dark d-block">
+                                        {{ Str::limit($purchase->vendor->name ?? 'N/A', 22) }}
                                     </span>
+                                    @if($purchase->vendor && $purchase->vendor->phone)
+                                        <small class="text-muted fs-8">{{ $purchase->vendor->phone }}</small>
+                                    @endif
                                 </td>
                                 <td>
                                     @php
@@ -275,30 +259,20 @@
                                         {{ $coilPcs > 0 ? $coilPcs : 1 }} {{ Str::plural('Coil', $coilPcs > 0 ? $coilPcs : 1) }}
                                     </span>
                                     @if($totW > 0)
-                                        <small class="text-secondary d-block mt-1">
-                                            <strong>{{ number_format($totW, 2) }} kg</strong>
-                                            @if($unitW > 0 && $coilPcs > 1)
-                                                <span class="text-muted">({{ number_format($unitW, 2) }} kg/ea)</span>
+                                        <small class="text-dark fw-bold d-block mt-1">
+                                            {{ number_format($totW, 2) }} kg
+                                            @if($totW >= 1000)
+                                                <span class="text-muted fw-normal">({{ number_format($totW / 1000, 3) }} MT)</span>
                                             @endif
                                         </small>
                                     @endif
                                 </td>
-                                <td class="text-success fw-semibold">
-                                    ৳{{ number_format($purchase->payment, 2) }}
-                                    @if($purchase->payment > 0)
-                                        <small class="text-muted d-block fs-8">
-                                            @if($purchase->payment_method === 'bank')
-                                                Bank
-                                            @elseif($purchase->payment_method === 'mobile_banking')
-                                                Mobile Banking
-                                            @else
-                                                Cash
-                                            @endif
-                                            @if($purchase->bankDetail)
-                                                ({{ $purchase->bankDetail->bank_name }})
-                                            @endif
-                                        </small>
-                                    @endif
+                                <td>
+                                    <span class="fw-medium text-dark">৳{{ number_format($purchase->unit_price, 2) }}</span>
+                                    <small class="text-muted d-block fs-8">per ton/unit</small>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-dark">৳{{ number_format($purchase->total_price, 2) }}</span>
                                 </td>
                                 <td>
                                     @if($purchase->due > 0)
@@ -311,29 +285,24 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td>
+                                <td class="text-end pe-4">
                                     <div class="dropdown">
                                         <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
                                             <i class="fas fa-ellipsis-v"></i>
                                         </a>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
-                                            @if($purchase->due > 0)
-                                                <li>
-                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="javascript:void(0)"
-                                                        onclick="openPurchaseDueModal('{{ $purchase->id }}', '{{ $purchase->vendor_id }}', '{{ addslashes($purchase->vendor->name ?? 'Vendor') }}', '{{ $purchase->due }}')">
-                                                        <i class="fe fe-dollar-sign text-success"></i>
-                                                        <span>Pay Due (৳{{ number_format($purchase->due, 2) }})</span>
-                                                    </a>
-                                                </li>
-                                                <li><hr class="dropdown-divider opacity-50"></li>
-                                            @endif
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $purchase->id) }}">
+                                                    <i class="fe fe-eye text-info"></i>
+                                                    <span>View Details</span>
+                                                </a>
+                                            </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#edit-purchase-{{ $purchase->id }}">
                                                     <i class="fe fe-edit text-primary"></i>
                                                     <span>Edit Purchase</span>
                                                 </a>
                                             </li>
-                                            <li><hr class="dropdown-divider opacity-50"></li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
                                                     onclick="if (confirm('Are you sure you want to delete this purchase record?')) { document.getElementById('deletePurchase{{ $purchase->id }}').submit(); }">
@@ -351,13 +320,13 @@
                             </tr>
                         @empty
                             <tr id="emptyStateRow">
-                                <td colspan="10" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
                                         <div class="avatar avatar-xl bg-primary-light text-primary rounded-circle mb-3 d-flex align-items-center justify-content-center">
                                             <i class="fe fe-shopping-cart fs-1"></i>
                                         </div>
                                         <h5 class="fw-bold text-dark mb-1">No Purchase Records Found</h5>
-                                        <p class="text-muted small mb-3">Add a new purchase to update product inventory and vendor bills</p>
+                                        <p class="text-muted small mb-3">Add a new steel purchase intake to register coils, stockyards, and vendor payables</p>
                                         <a href="{{ route('purchase.create') }}" class="btn btn-primary btn-sm px-3 rounded-2">
                                             Add Purchase
                                         </a>
@@ -370,7 +339,7 @@
             </div>
 
             @if($purchases->hasPages())
-                <div class="p-3 border-top">
+                <div class="p-3 border-top d-flex justify-content-end">
                     {{ $purchases->links() }}
                 </div>
             @endif

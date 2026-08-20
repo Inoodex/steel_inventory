@@ -118,7 +118,10 @@ class PurchaseController extends Controller
      */
     public function show(Purchase $purchase)
     {
-        return redirect()->route('purchase.index');
+        $purchase->load(['vendor', 'lot', 'warehouse', 'bankDetail', 'coils', 'payments', 'creator', 'updater']);
+        $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
+
+        return view('frontend.pages.purchase.show', compact('purchase', 'bankAccounts'));
     }
 
     /**

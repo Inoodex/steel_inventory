@@ -14,10 +14,9 @@
                         <i class="fas fa-file-pdf me-1"></i> Print / PDF
                     </a>
                     @if($journalEntry->status !== 'reversed')
-                        <a href="{{ route('journal-entries.reverse', $journalEntry->id) }}"
-                            class="btn btn-outline-warning btn-sm">
+                        <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#reverseModal">
                             <i class="fas fa-undo me-1"></i> Reversal Entry
-                        </a>
+                        </button>
                     @endif
                     <a href="{{ route('journal-entries.index') }}" class="btn btn-sm btn-outline-primary ms-2">
                         <i class="fas fa-arrow-left me-1"></i> Back

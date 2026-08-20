@@ -222,7 +222,7 @@
                                     <span class="fw-medium text-dark small">{{ $wh->contact_person ?? 'Yard Manager' }}</span>
                                 </td>
                                 <td>
-                                    <span class="text-muted small">{{ $wh->phone ?? 'N/A' }}</span>
+                                    <span class="text-muted small">{{ $wh->contact_phone ?? 'N/A' }}</span>
                                 </td>
                                 <td class="text-center">
                                     <span class="badge badge-soft-primary px-3 py-2 rounded-pill fs-7">
@@ -338,7 +338,7 @@
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label small fw-semibold text-secondary mb-1">Phone Number</label>
-                                    <input type="text" name="phone" class="form-control border-light-subtle" value="{{ $wh->phone }}">
+                                    <input type="text" name="contact_phone" class="form-control border-light-subtle" value="{{ $wh->contact_phone }}">
                                 </div>
                             </div>
                             <div class="mb-0">
@@ -346,7 +346,7 @@
                                 <input type="number" step="0.001" name="capacity_ton" class="form-control border-light-subtle" value="{{ $wh->capacity_ton }}" placeholder="e.g. 5000">
                             </div>
                         </div>
-                        <div class="modal-footer border-top bg-light">
+                        <div class="modal-footer border-top bg-light gap-2">
                             <button type="button" class="btn btn-light px-4 rounded-3 text-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="submit" class="btn btn-primary px-4 rounded-3 shadow-sm">Update Stockyard</button>
                         </div>
@@ -395,7 +395,7 @@
                             </div>
                             <div class="col-6">
                                 <label class="form-label small fw-semibold text-secondary mb-1">Phone Number</label>
-                                <input type="text" name="phone" class="form-control border-light-subtle" placeholder="017XXXXXXXX">
+                                <input type="text" name="contact_phone" class="form-control border-light-subtle" placeholder="017XXXXXXXX">
                             </div>
                         </div>
                         <div class="mb-0">
@@ -403,7 +403,7 @@
                             <input type="number" step="0.001" name="capacity_ton" class="form-control border-light-subtle" placeholder="e.g. 5000">
                         </div>
                     </div>
-                    <div class="modal-footer border-top bg-light">
+                    <div class="modal-footer border-top bg-light gap-2">
                         <button type="button" class="btn btn-light px-4 rounded-3 text-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary px-4 rounded-3 shadow-sm">Save Stockyard</button>
                     </div>

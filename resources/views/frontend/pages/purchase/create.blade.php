@@ -350,8 +350,8 @@
                                 </label>
                                 <select name="payment_method" id="purchasePaymentMethod" class="form-select border-light-subtle mb-2" onchange="handlePurchasePaymentMethodChange(this.value)">
                                     <option value="cash" selected>Cash in Hand</option>
-                                    <option value="bank">Bank Transfer / Deposit</option>
-                                    <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                                    <option value="bank">Bank Transfer / MFS</option>
+                                    <!-- <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option> -->
                                 </select>
 
                                 <!-- Bank Account Selector (conditional) -->
@@ -381,7 +381,6 @@
                             </div>
 
                             <button type="submit" class="btn btn-primary w-100 py-3 rounded-3 shadow-sm fw-bold fs-6 d-flex align-items-center justify-content-center gap-2" id="submitPurchaseBtn">
-                                <i class="fe fe-check-circle fs-5"></i>
                                 <span>Confirm Steel Intake & Save</span>
                             </button>
                         </div>

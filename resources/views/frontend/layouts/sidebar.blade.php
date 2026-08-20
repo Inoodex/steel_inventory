@@ -86,10 +86,10 @@
                                     <a href="{{ route('purchase.create') }}"><i class="fe fe-plus-circle"></i> New Purchase</a>
                                 </li>
                                 <li class="{{ $active(['purchase.index','purchase.show','purchase.edit']) ? 'active' : '' }}">
-                                    <a href="{{ route('purchase.index') }}"><i class="fe fe-list"></i> Purchase Orders</a>
+                                    <a href="{{ route('purchase.index') }}"><i class="fe fe-list"></i> Purchase List</a>
                                 </li>
                                 <li class="{{ $active(['lots.*']) ? 'active' : '' }}">
-                                    <a href="{{ route('lots.index') }}"><i class="fe fe-layers"></i> Ship Lots Registry</a>
+                                    <a href="{{ route('lots.index') }}"><i class="fe fe-layers"></i> Lots List</a>
                                 </li>
                             </ul>
                         </li>
