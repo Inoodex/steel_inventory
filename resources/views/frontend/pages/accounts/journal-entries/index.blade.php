@@ -22,16 +22,8 @@
             border-color: #7638ff !important;
         }
 
-        .card, .card-body, .table-responsive {
-            overflow: visible !important;
-        }
-
-        .dropdown {
-            position: relative;
-        }
-
-        .dropdown-menu {
-            z-index: 9999 !important;
+        .table-custom th, .table-custom td {
+            white-space: nowrap;
         }
     </style>
 @endpush
@@ -103,21 +95,21 @@
         </div>
 
         <!-- Vouchers Table -->
-        <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: visible !important;">
-            <div class="card-body p-0" style="overflow: visible !important;">
-                <div class="table-responsive" style="overflow: visible !important;">
+        <div class="card shadow-sm border-0" style="border-radius: 12px;">
+            <div class="card-body p-0">
+                <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead
                             style="background-color: #1e293b; color: #ffffff; font-size: 11px; text-transform: uppercase;">
                             <tr>
-                                <th style="width: 140px;" class="ps-3">Voucher #</th>
-                                <th style="width: 110px;">Date</th>
-                                <th style="width: 120px;">Source Type</th>
+                                <th class="ps-3">Voucher #</th>
+                                <th>Date</th>
+                                <th>Source Type</th>
                                 <th>Narration / Description</th>
-                                <th class="text-end" style="width: 120px;">Debit</th>
-                                <th class="text-end" style="width: 120px;">Credit</th>
-                                <th class="text-center" style="width: 100px;">Status</th>
-                                <th class="text-end pe-4" style="width: 80px;">Action</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                                <th>Status</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -135,7 +127,7 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="text-dark">{{ Str::limit($entry->description, 50) ?? 'No description' }}</div>
+                                        <div class="text-dark">{{ Str::limit($entry->description, 40) ?? 'No description' }}</div>
                                         <small class="text-muted">{{ $entry->items->count() }} split line(s)</small>
                                     </td>
                                     <td class="text-end fw-bold text-dark">{{ number_format($entry->total_debit, 2) }}</td>

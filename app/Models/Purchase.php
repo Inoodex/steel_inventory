@@ -34,9 +34,22 @@ class Purchase extends Model
         'payment_method',
         'bank_detail_id',
         'transaction_ref',
+        'status',
+        'notes',
+        'note',
         'created_by',
         'updated_by',
     ];
+
+    public function getNoteAttribute()
+    {
+        return $this->attributes['notes'] ?? $this->attributes['note'] ?? null;
+    }
+
+    public function setNoteAttribute($value)
+    {
+        $this->attributes['notes'] = $value;
+    }
 
     protected $casts = [
         'unit_weight' => 'decimal:3',

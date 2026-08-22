@@ -734,7 +734,22 @@
 
         /* Global 3-Dot Action Dropdown & Table Stacking System */
         .table-responsive {
-            overflow: visible !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+        }
+        .table-responsive::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+        .table-responsive::-webkit-scrollbar-track {
+            background-color: #f1f5f9;
         }
         .table-custom th, .table-custom td {
             white-space: nowrap !important;
@@ -759,6 +774,57 @@
             background-color: #fe3727 !important;
             color: #ffffff !important;
             border-color: #fe3727 !important;
+        }
+
+        /* Summary / Stat Card Icons (Sleek, Compact Size) */
+        .stat-card .avatar, 
+        .stat-card .avatar-lg, 
+        .stat-card .avatar-md,
+        .stat-card .avatar-xl,
+        .card-body > .avatar,
+        .card-body > .avatar-lg {
+            width: 38px !important;
+            height: 38px !important;
+            min-width: 38px !important;
+            min-height: 38px !important;
+        }
+        .stat-card .avatar i, 
+        .stat-card .avatar-lg i, 
+        .stat-card .avatar-md i,
+        .stat-card .avatar-xl i,
+        .card-body > .avatar i,
+        .card-body > .avatar-lg i {
+            font-size: 1.1rem !important;
+        }
+
+        /* Responsive Laptop & Screen Optimization */
+        @media (max-width: 1440px) {
+            .card-title {
+                font-size: 1.15rem;
+            }
+            .content-page-header {
+                gap: 0.75rem !important;
+            }
+            .stat-card .card-body {
+                padding: 1rem !important;
+            }
+            .stat-card h4 {
+                font-size: 1.15rem !important;
+            }
+            .stat-card h6 {
+                font-size: 0.75rem !important;
+            }
+        }
+
+        @media (max-height: 850px) {
+            .modal-dialog-centered {
+                margin-top: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            .modal-body {
+                max-height: calc(85vh - 120px);
+                overflow-y: auto;
+            }
         }
     </style>
 

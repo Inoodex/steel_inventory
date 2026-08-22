@@ -54,7 +54,7 @@
             <div class="col-12">
                 <div class="card border-0 shadow-sm rounded-3">
                     <div class="card-body p-0">
-                        <div class="table-responsive" style="overflow: visible !important;">
+                        <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="bg-light text-secondary fs-7 text-uppercase">
                                     <tr>

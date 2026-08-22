@@ -49,12 +49,6 @@
     .table-custom th, .table-custom td {
         white-space: nowrap;
     }
-    .table-responsive {
-        overflow: visible !important;
-    }
-    .dropdown-menu {
-        z-index: 1060 !important;
-    }
 </style>
 @endpush
 
@@ -139,7 +133,7 @@
     <!-- /Summary Stats Bar -->
 
     <!-- Returns Table Card -->
-    <div class="card border-0 shadow-sm rounded-3" style="overflow: visible;">
+    <div class="card border-0 shadow-sm rounded-3">
         <!-- Filter & Search Controls -->
         <div class="card-header bg-white py-3 border-bottom border-light">
             <div class="row align-items-center g-3">
@@ -163,8 +157,8 @@
         </div>
 
         <!-- Table Body -->
-        <div class="card-body p-0" style="overflow: visible;">
-            <div class="table-responsive" style="overflow: visible !important;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
                 <table class="table table-hover table-custom align-middle mb-0" id="returnsTable">
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>

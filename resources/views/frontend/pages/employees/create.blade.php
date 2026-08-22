@@ -28,27 +28,27 @@
                 <div class="row g-3">
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Employee ID <span class="text-danger">*</span></label>
-                        <input type="text" name="employee_id" class="form-control border-light-subtle" placeholder="e.g. EMP-1001" required>
+                        <input type="text" name="employee_id" class="form-control border-light-subtle" required>
                     </div>
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Full Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control border-light-subtle" placeholder="Enter employee full name" required>
+                        <input type="text" name="name" class="form-control border-light-subtle" required>
                     </div>
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Email Address</label>
-                        <input type="email" name="email" class="form-control border-light-subtle" placeholder="employee@company.com">
+                        <input type="email" name="email" class="form-control border-light-subtle">
                     </div>
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Phone Number</label>
-                        <input type="text" name="phone" class="form-control border-light-subtle" placeholder="01xxxxxxxxx">
+                        <input type="text" name="phone" class="form-control border-light-subtle">
                     </div>
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Designation</label>
-                        <input type="text" name="designation" class="form-control border-light-subtle" placeholder="e.g. Manager / Accountant / Supervisor">
+                        <input type="text" name="designation" class="form-control border-light-subtle">
                     </div>
 
                     <div class="col-md-6 col-12">
@@ -57,8 +57,16 @@
                     </div>
 
                     <div class="col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Basic Monthly Salary (৳)</label>
-                        <input type="number" step="0.01" name="salary" class="form-control border-light-subtle" placeholder="0.00">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Basic Monthly Salary (৳) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" name="salary" class="form-control border-light-subtle" value="{{ old('salary') }}" required>
+                    </div>
+
+                    <div class="col-md-6 col-12">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Status <span class="text-danger">*</span></label>
+                        <select name="status" class="form-select border-light-subtle" required>
+                            <option value="active" {{ old('status', 'active') == 'active' ? 'selected' : '' }}>Active</option>
+                            <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                        </select>
                     </div>
 
                     <div class="col-md-6 col-12">

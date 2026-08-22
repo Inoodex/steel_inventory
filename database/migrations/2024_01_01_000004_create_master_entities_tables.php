@@ -60,8 +60,13 @@ return new class extends Migration
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('company')->nullable();
             $table->string('phone')->nullable();
+            $table->string('email')->nullable();
             $table->text('address')->nullable();
+            $table->string('bin_number')->nullable();
+            $table->string('tin_number')->nullable();
+            $table->decimal('opening_balance', 15, 2)->default(0.00);
             $table->string('status')->default('1');
             $table->timestamps();
             $table->softDeletes();

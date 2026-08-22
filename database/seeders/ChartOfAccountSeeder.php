@@ -30,10 +30,9 @@ class ChartOfAccountSeeder extends Seeder
                 ]
             );
 
-            // Set any other fiscal year active to false if exists
             FiscalYear::where('id', '!=', $fiscalYear->id)->update(['is_active' => false]);
 
-            // 2. Essential Minimal Chart of Accounts for Steel Inventory
+            // 2. Essential & Practical Chart of Accounts for Steel Inventory
             $accounts = [
                 // ==================== ASSETS (1000) ====================
                 [
@@ -73,40 +72,17 @@ class ChartOfAccountSeeder extends Seeder
                                 ],
                                 [
                                     'code' => '1140',
-                                    'name' => 'Steel Inventory Asset (Coils & Sheets)',
+                                    'name' => 'Steel Inventory Asset',
                                     'type' => 'asset',
                                     'level' => 3,
                                     'is_system' => true,
                                 ],
                                 [
                                     'code' => '1150',
-                                    'name' => 'Employee Advance & Loans',
+                                    'name' => 'Employee Advances & Loans',
                                     'type' => 'asset',
                                     'level' => 3,
                                     'is_system' => true,
-                                ],
-                            ],
-                        ],
-                        [
-                            'code' => '1200',
-                            'name' => 'Fixed Assets',
-                            'type' => 'asset',
-                            'level' => 2,
-                            'is_system' => true,
-                            'children' => [
-                                [
-                                    'code' => '1210',
-                                    'name' => 'Machinery & Processing Equipment',
-                                    'type' => 'asset',
-                                    'level' => 3,
-                                    'is_system' => false,
-                                ],
-                                [
-                                    'code' => '1220',
-                                    'name' => 'Office Furniture & Fixtures',
-                                    'type' => 'asset',
-                                    'level' => 3,
-                                    'is_system' => false,
                                 ],
                             ],
                         ],
@@ -130,7 +106,7 @@ class ChartOfAccountSeeder extends Seeder
                             'children' => [
                                 [
                                     'code' => '2110',
-                                    'name' => 'Accounts Payable (Vendors / Suppliers)',
+                                    'name' => 'Accounts Payable (Vendors)',
                                     'type' => 'liability',
                                     'level' => 3,
                                     'is_system' => true,
@@ -143,34 +119,11 @@ class ChartOfAccountSeeder extends Seeder
                                     'is_system' => true,
                                 ],
                                 [
-                                    'code' => '2130',
-                                    'name' => 'VAT & Tax Payable',
-                                    'type' => 'liability',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                                [
                                     'code' => '2140',
-                                    'name' => 'Pass-Through / Extra Charges Payable',
+                                    'name' => 'Pass-Through Extra Charges Payable',
                                     'type' => 'liability',
                                     'level' => 3,
                                     'is_system' => true,
-                                ],
-                            ],
-                        ],
-                        [
-                            'code' => '2200',
-                            'name' => 'Long-Term Liabilities',
-                            'type' => 'liability',
-                            'level' => 2,
-                            'is_system' => true,
-                            'children' => [
-                                [
-                                    'code' => '2210',
-                                    'name' => 'Bank Loans & Financing',
-                                    'type' => 'liability',
-                                    'level' => 3,
-                                    'is_system' => false,
                                 ],
                             ],
                         ],
@@ -224,29 +177,6 @@ class ChartOfAccountSeeder extends Seeder
                                     'level' => 3,
                                     'is_system' => true,
                                 ],
-                                [
-                                    'code' => '4140',
-                                    'name' => 'Delivery & Transport Income',
-                                    'type' => 'revenue',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                            ],
-                        ],
-                        [
-                            'code' => '4200',
-                            'name' => 'Other Income',
-                            'type' => 'revenue',
-                            'level' => 2,
-                            'is_system' => false,
-                            'children' => [
-                                [
-                                    'code' => '4210',
-                                    'name' => 'Miscellaneous Income',
-                                    'type' => 'revenue',
-                                    'level' => 3,
-                                    'is_system' => false,
-                                ],
                             ],
                         ],
                     ],
@@ -281,13 +211,6 @@ class ChartOfAccountSeeder extends Seeder
                                     'level' => 3,
                                     'is_system' => true,
                                 ],
-                                [
-                                    'code' => '5130',
-                                    'name' => 'Sales Discounts Given',
-                                    'type' => 'expense',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
                             ],
                         ],
                         [
@@ -317,13 +240,6 @@ class ChartOfAccountSeeder extends Seeder
                                     'type' => 'expense',
                                     'level' => 3,
                                     'is_system' => true,
-                                ],
-                                [
-                                    'code' => '5240',
-                                    'name' => 'Utility & Factory Overhead',
-                                    'type' => 'expense',
-                                    'level' => 3,
-                                    'is_system' => false,
                                 ],
                             ],
                         ],

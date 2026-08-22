@@ -22,8 +22,8 @@
             border-color: #7638ff !important;
         }
 
-        .table-responsive {
-            overflow: visible !important;
+        .table-custom th, .table-custom td {
+            white-space: nowrap;
         }
 
         .account-row {
@@ -164,9 +164,9 @@
         </div>
 
         <!-- Tree View Table -->
-        <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: visible !important;">
-            <div class="card-body p-0" style="overflow: visible !important;">
-                <div class="table-responsive" style="overflow: visible !important; min-height: 220px;">
+        <div class="card shadow-sm border-0" style="border-radius: 12px;">
+            <div class="card-body p-0">
+                <div class="table-responsive" style="min-height: 220px;">
                     <table class="table table-hover align-middle mb-0" id="coaTable">
                         <thead
                             style="background-color: #1e293b; color: #ffffff; font-size: 11px; text-transform: uppercase;">

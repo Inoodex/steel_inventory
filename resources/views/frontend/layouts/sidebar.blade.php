@@ -17,7 +17,7 @@
     };
 @endphp
 
-<!-- Sidebar -->
+<!-- Sidebar — Standard Modern ERP Workflow Hierarchy -->
 <div class="sidebar" id="sidebar">
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">
@@ -30,7 +30,68 @@
                     </a>
                 </li>
 
-                {{-- ===== 2. SALES & COMMERCIAL ===== --}}
+                {{-- ===== 2. PROCUREMENT & PURCHASES (Intake & Vendors) ===== --}}
+                @if($canView('Purchase Management') || $canView('Vendor Management'))
+                    <li class="menu-title"><span>Procurement &amp; Purchases</span></li>
+
+                    @if($canView('Purchase Management'))
+                        <li class="submenu {{ $active(['purchase.create','purchase.index','purchase.show','purchase.edit','lots.*']) ? 'active' : '' }}">
+                            <a href="javascript:void(0)">
+                                <i class="fe fe-shopping-cart"></i><span> Purchases</span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <ul style="{{ $active(['purchase.create','purchase.index','purchase.show','purchase.edit','lots.*']) ? 'display:block' : '' }}">
+                                <li class="{{ $active(['purchase.create']) ? 'active' : '' }}">
+                                    <a href="{{ route('purchase.create') }}"><i class="fe fe-plus-circle"></i> New Purchase Order</a>
+                                </li>
+                                <li class="{{ $active(['purchase.index','purchase.show','purchase.edit']) ? 'active' : '' }}">
+                                    <a href="{{ route('purchase.index') }}"><i class="fe fe-list"></i> Purchase Orders List</a>
+                                </li>
+                                <li class="{{ $active(['lots.*']) ? 'active' : '' }}">
+                                    <a href="{{ route('lots.index') }}"><i class="fe fe-layers"></i> Lots &amp; Consignments</a>
+                                </li>
+                            </ul>
+                        </li>
+                    @endif
+
+                    @if($canView('Vendor Management'))
+                        <li class="{{ $active(['vendors.*']) ? 'active' : '' }}">
+                            <a href="{{ route('vendors.index') }}">
+                                <i class="fe fe-truck"></i><span> Vendors / Suppliers</span>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if($canView('Payment Management') || $canView('Purchase Management') || $canView('Vendor Management'))
+                        <li class="{{ $active(['vendor-due-payments.*']) ? 'active' : '' }}">
+                            <a href="{{ route('vendor-due-payments.index') }}">
+                                <i class="fe fe-dollar-sign"></i><span> Vendor Dues &amp; Settlements</span>
+                            </a>
+                        </li>
+                    @endif
+                @endif
+
+                {{-- ===== 3. INVENTORY & WAREHOUSE (Direct 1-Click Access) ===== --}}
+                @if($canView('Inventory Management'))
+                    <li class="menu-title"><span>Inventory &amp; Warehouse</span></li>
+                    <li class="{{ $active(['inventory.*']) ? 'active' : '' }}">
+                        <a href="{{ route('inventory.index') }}">
+                            <i class="fe fe-database"></i><span> Stock Overview</span>
+                        </a>
+                    </li>
+                    <li class="{{ $active(['coils.*']) ? 'active' : '' }}">
+                        <a href="{{ route('coils.index') }}">
+                            <i class="fe fe-disc"></i><span> Steel Coils Registry</span>
+                        </a>
+                    </li>
+                    <li class="{{ $active(['warehouses.*']) ? 'active' : '' }}">
+                        <a href="{{ route('warehouses.index') }}">
+                            <i class="fe fe-map-pin"></i><span> Warehouses &amp; Yards</span>
+                        </a>
+                    </li>
+                @endif
+
+                {{-- ===== 4. COMMERCIAL & SALES (Outflow & Customers) ===== --}}
                 @if($canView('Sales Management') || $canView('Customer Management') || $canView('Payment Management'))
                     <li class="menu-title"><span>Commercial &amp; Sales</span></li>
 
@@ -65,84 +126,30 @@
                     @if($canView('Payment Management') || $canView('Sales Management') || $canView('Customer Management'))
                         <li class="{{ $active(['due-payments.*']) ? 'active' : '' }}">
                             <a href="{{ route('due-payments.index') }}">
-                                <i class="fe fe-user-check"></i><span> Customer Dues</span>
+                                <i class="fe fe-user-check"></i><span> Customer Dues &amp; Receipts</span>
                             </a>
                         </li>
                     @endif
-                @endif
-
-                {{-- ===== 3. PROCUREMENT & PURCHASING ===== --}}
-                @if($canView('Purchase Management') || $canView('Vendor Management'))
-                    <li class="menu-title"><span>Procurement &amp; Purchases</span></li>
-
-                    @if($canView('Purchase Management'))
-                        <li class="submenu {{ $active(['purchase.create','purchase.index','purchase.show','purchase.edit','lots.*']) ? 'active' : '' }}">
-                            <a href="javascript:void(0)">
-                                <i class="fe fe-shopping-cart"></i><span> Purchases</span>
-                                <span class="menu-arrow"></span>
-                            </a>
-                            <ul style="{{ $active(['purchase.create','purchase.index','purchase.show','purchase.edit','lots.*']) ? 'display:block' : '' }}">
-                                <li class="{{ $active(['purchase.create']) ? 'active' : '' }}">
-                                    <a href="{{ route('purchase.create') }}"><i class="fe fe-plus-circle"></i> New Purchase</a>
-                                </li>
-                                <li class="{{ $active(['purchase.index','purchase.show','purchase.edit']) ? 'active' : '' }}">
-                                    <a href="{{ route('purchase.index') }}"><i class="fe fe-list"></i> Purchase List</a>
-                                </li>
-                                <li class="{{ $active(['lots.*']) ? 'active' : '' }}">
-                                    <a href="{{ route('lots.index') }}"><i class="fe fe-layers"></i> Lots List</a>
-                                </li>
-                            </ul>
-                        </li>
-                    @endif
-
-                    @if($canView('Vendor Management'))
-                        <li class="{{ $active(['vendors.*']) ? 'active' : '' }}">
-                            <a href="{{ route('vendors.index') }}">
-                                <i class="fe fe-truck"></i><span> Vendors / Suppliers</span>
-                            </a>
-                        </li>
-                    @endif
-
-                    @if($canView('Payment Management') || $canView('Purchase Management') || $canView('Vendor Management'))
-                        <li class="{{ $active(['vendor-due-payments.*']) ? 'active' : '' }}">
-                            <a href="{{ route('vendor-due-payments.index') }}">
-                                <i class="fe fe-dollar-sign"></i><span> Vendor Dues</span>
-                            </a>
-                        </li>
-                    @endif
-                @endif
-
-                {{-- ===== 4. INVENTORY & STOCK ===== --}}
-                @if($canView('Inventory Management'))
-                    <li class="menu-title"><span>Inventory &amp; Stock</span></li>
-                    <li class="submenu {{ $active(['inventory.*','coils.*','warehouses.*']) ? 'active' : '' }}">
-                        <a href="javascript:void(0)">
-                            <i class="fe fe-database"></i><span> Stock Management</span>
-                            <span class="menu-arrow"></span>
-                        </a>
-                        <ul style="{{ $active(['inventory.*','coils.*','warehouses.*']) ? 'display:block' : '' }}">
-                            <li class="{{ $active(['inventory.*']) ? 'active' : '' }}">
-                                <a href="{{ route('inventory.index') }}"><i class="fe fe-bar-chart-2"></i> Stock Overview</a>
-                            </li>
-                            <li class="{{ $active(['coils.*']) ? 'active' : '' }}">
-                                <a href="{{ route('coils.index') }}"><i class="fe fe-disc"></i> Steel Coils Registry</a>
-                            </li>
-                            <li class="{{ $active(['warehouses.*']) ? 'active' : '' }}">
-                                <a href="{{ route('warehouses.index') }}"><i class="fe fe-map-pin"></i> Warehouses &amp; Yards</a>
-                            </li>
-                        </ul>
-                    </li>
                 @endif
 
                 {{-- ===== 5. ACCOUNTS & FINANCE ===== --}}
                 @if($canView('Accounts Management') || $isAdmin)
                     <li class="menu-title"><span>Accounts &amp; Finance</span></li>
 
-                    {{-- Bookkeeping --}}
+                    {{-- Primary Banking / Cash Accounts --}}
+                    @if($canView('Accounts Management'))
+                        <li class="{{ $active(['bank-details.*']) ? 'active' : '' }}">
+                            <a href="{{ route('bank-details.index') }}">
+                                <i class="fe fe-credit-card"></i><span> Bank &amp; MFS Accounts</span>
+                            </a>
+                        </li>
+                    @endif
+
+                    {{-- Bookkeeping & Ledger --}}
                     @if($isAdmin)
                         <li class="submenu {{ $active(['chart-of-accounts.*','journal-entries.*','ledger.*','fiscal-years.*']) ? 'active' : '' }}">
                             <a href="javascript:void(0)">
-                                <i class="fe fe-book"></i><span> Bookkeeping</span>
+                                <i class="fe fe-book"></i><span> Bookkeeping &amp; Ledger</span>
                                 <span class="menu-arrow"></span>
                             </a>
                             <ul style="{{ $active(['chart-of-accounts.*','journal-entries.*','ledger.*','fiscal-years.*']) ? 'display:block' : '' }}">
@@ -178,7 +185,7 @@
                                     <a href="{{ route('reports.balance-sheet') }}"><i class="fe fe-bar-chart-2"></i> Balance Sheet</a>
                                 </li>
                                 <li class="{{ $active(['reports.cash-flow*']) ? 'active' : '' }}">
-                                    <a href="{{ route('reports.cash-flow') }}"><i class="fe fe-dollar-sign"></i> Cash Flow</a>
+                                    <a href="{{ route('reports.cash-flow') }}"><i class="fe fe-dollar-sign"></i> Cash Flow Statement</a>
                                 </li>
                             </ul>
                         </li>
@@ -188,31 +195,24 @@
                     @if($canView('Accounts Management'))
                         <li class="submenu {{ $active(['dailyExpenses.*','expense-categories.*']) ? 'active' : '' }}">
                             <a href="javascript:void(0)">
-                                <i class="fe fe-credit-card"></i><span> Daily Expenses</span>
+                                <i class="fe fe-tag"></i><span> Expense Tracking</span>
                                 <span class="menu-arrow"></span>
                             </a>
                             <ul style="{{ $active(['dailyExpenses.*','expense-categories.*']) ? 'display:block' : '' }}">
                                 <li class="{{ $active(['dailyExpenses.*']) ? 'active' : '' }}">
-                                    <a href="{{ route('dailyExpenses.index') }}"><i class="fe fe-list"></i> Expense Records</a>
+                                    <a href="{{ route('dailyExpenses.index') }}"><i class="fe fe-list"></i> Daily Expenses</a>
                                 </li>
                                 <li class="{{ $active(['expense-categories.*']) ? 'active' : '' }}">
-                                    <a href="{{ route('expense-categories.index') }}"><i class="fe fe-tag"></i> Expense Categories</a>
+                                    <a href="{{ route('expense-categories.index') }}"><i class="fe fe-layers"></i> Expense Categories</a>
                                 </li>
                             </ul>
-                        </li>
-
-                        {{-- Bank & Cash Accounts --}}
-                        <li class="{{ $active(['bank-details.*']) ? 'active' : '' }}">
-                            <a href="{{ route('bank-details.index') }}">
-                                <i class="fe fe-layers"></i><span> Bank &amp; MFS Accounts</span>
-                            </a>
                         </li>
                     @endif
                 @endif
 
                 {{-- ===== 6. HR & PAYROLL ===== --}}
                 @if($canView('Employee Management') || $isAdmin)
-                    <li class="menu-title"><span>HR &amp; Staff</span></li>
+                    <li class="menu-title"><span>HR &amp; Personnel</span></li>
                     <li class="{{ $active(['employees.*']) ? 'active' : '' }}">
                         <a href="{{ route('employees.index') }}">
                             <i class="fe fe-users"></i><span> Employees</span>
@@ -225,9 +225,9 @@
                     </li>
                 @endif
 
-                {{-- ===== EMPLOYEE PORTAL (For Employee role / linked staff) ===== --}}
+                {{-- ===== EMPLOYEE SELF-SERVICE (Conditional for Staff) ===== --}}
                 @if(auth()->check() && (auth()->user()->hasRole('Employee') || auth()->user()->employee))
-                    <li class="menu-title"><span>Employee Self-Service</span></li>
+                    <li class="menu-title"><span>Self-Service</span></li>
                     <li class="submenu {{ $active(['employee.tada.*']) ? 'active' : '' }}">
                         <a href="javascript:void(0)">
                             <i class="fe fe-briefcase"></i><span> My TA/DA Portal</span>
@@ -244,28 +244,28 @@
                     </li>
                 @endif
 
-                {{-- ===== 7. REPORTS & ANALYTICS ===== --}}
+                {{-- ===== 7. REPORTS & ANALYTICS (Direct 1-Click Access) ===== --}}
                 @if($canView('Report Management'))
                     <li class="menu-title"><span>Reports &amp; Analytics</span></li>
-                    <li class="submenu {{ $active(['sales.report','purchase.report','revenues.*','sales.extra-charges-report*']) ? 'active' : '' }}">
-                        <a href="javascript:void(0)">
-                            <i class="fe fe-pie-chart"></i><span> Reports</span>
-                            <span class="menu-arrow"></span>
+                    <li class="{{ $active(['sales.report']) ? 'active' : '' }}">
+                        <a href="{{ route('sales.report') }}">
+                            <i class="fe fe-shopping-bag"></i><span> Sales Analytics</span>
                         </a>
-                        <ul style="{{ $active(['sales.report','purchase.report','revenues.*','sales.extra-charges-report*']) ? 'display:block' : '' }}">
-                            <li class="{{ $active(['sales.report']) ? 'active' : '' }}">
-                                <a href="{{ route('sales.report') }}"><i class="fe fe-shopping-bag"></i> Sales Report</a>
-                            </li>
-                            <li class="{{ $active(['purchase.report']) ? 'active' : '' }}">
-                                <a href="{{ route('purchase.report') }}"><i class="fe fe-shopping-cart"></i> Purchase Report</a>
-                            </li>
-                            <li class="{{ $active(['revenues.*']) ? 'active' : '' }}">
-                                <a href="{{ route('revenues.index') }}"><i class="fe fe-bar-chart-2"></i> Revenue Report</a>
-                            </li>
-                            <li class="{{ $active(['sales.extra-charges-report*']) ? 'active' : '' }}">
-                                <a href="{{ route('sales.extra-charges-report') }}"><i class="fe fe-truck"></i> Extra Charges</a>
-                            </li>
-                        </ul>
+                    </li>
+                    <li class="{{ $active(['purchase.report']) ? 'active' : '' }}">
+                        <a href="{{ route('purchase.report') }}">
+                            <i class="fe fe-shopping-cart"></i><span> Purchase Analytics</span>
+                        </a>
+                    </li>
+                    <li class="{{ $active(['revenues.*']) ? 'active' : '' }}">
+                        <a href="{{ route('revenues.index') }}">
+                            <i class="fe fe-trending-up"></i><span> Revenue &amp; Margins</span>
+                        </a>
+                    </li>
+                    <li class="{{ $active(['sales.extra-charges-report*']) ? 'active' : '' }}">
+                        <a href="{{ route('sales.extra-charges-report') }}">
+                            <i class="fe fe-truck"></i><span> Freight &amp; Extra Charges</span>
+                        </a>
                     </li>
                 @endif
 
@@ -284,7 +284,7 @@
                     @if($canView('Administration'))
                         <li class="submenu {{ $active(['users.*','role.*','permission.*']) ? 'active' : '' }}">
                             <a href="javascript:void(0)">
-                                <i class="fe fe-shield"></i><span> Access Control</span>
+                                <i class="fe fe-shield"></i><span> Access &amp; Security</span>
                                 <span class="menu-arrow"></span>
                             </a>
                             <ul style="{{ $active(['users.*','role.*','permission.*']) ? 'display:block' : '' }}">

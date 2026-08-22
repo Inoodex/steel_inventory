@@ -20,10 +20,22 @@ class Payment extends Model
         'transaction_ref',
         'amount',
         'remarks',
+        'notes',
+        'note',
         'status',
         'created_by',
         'updated_by'
     ];
+
+    public function getNoteAttribute()
+    {
+        return $this->attributes['notes'] ?? $this->attributes['remarks'] ?? null;
+    }
+
+    public function setNoteAttribute($value)
+    {
+        $this->attributes['notes'] = $value;
+    }
 
     public function sale()
     {

@@ -66,14 +66,6 @@
     .table-custom th, .table-custom td {
         white-space: nowrap;
     }
-
-    .table-responsive {
-        overflow: visible !important;
-    }
-
-    .dropdown-menu {
-        z-index: 1060 !important;
-    }
 </style>
 @endpush
 
@@ -99,57 +91,49 @@
 
     <!-- Summary Stats Bar -->
     <div class="row g-3 mb-4">
-        <div class="col-xl-3 col-md-6 col-12">
+        <div class="col-xl-2 col-md-3 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
-                <div class="card-body d-flex align-items-center">
-                    <div class="avatar avatar-lg bg-primary-light text-primary rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-shopping-cart fs-4"></i>
+                <div class="card-body d-flex align-items-center p-3">
+                    <div class="avatar avatar-md bg-primary-light text-primary rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                        <i class="fe fe-shopping-cart fs-5"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Orders</h6>
+                        <span class="text-muted small fw-medium d-block mb-1">Total Purchases</span>
                         <h4 class="mb-0 fw-bold text-dark">{{ number_format($purchases->total()) }}</h4>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 col-12">
+        <div class="col-xl-4 col-md-4 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
-                <div class="card-body d-flex align-items-center">
-                    <div class="avatar avatar-lg bg-info-light text-info rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-dollar-sign fs-4"></i>
+                <div class="card-body d-flex align-items-center p-3">
+                    <div class="avatar avatar-md bg-info-light text-info rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                        <i class="fe fe-dollar-sign fs-5"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Amount</h6>
+                        <span class="text-muted small fw-medium d-block mb-1">Total Order Value</span>
                         <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($purchases->sum('total_price'), 2) }}</h4>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 col-12">
+        <div class="col-xl-6 col-md-5 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
-                <div class="card-body d-flex align-items-center">
-                    <div class="avatar avatar-lg bg-success-light text-success rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-check-circle fs-4"></i>
+                <div class="card-body d-flex align-items-center p-3">
+                    <div class="avatar avatar-md bg-success-light text-success rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                        <i class="fe fe-credit-card fs-5"></i>
                     </div>
-                    <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Paid</h6>
-                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($purchases->sum('payment'), 2) }}</h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 col-12">
-            <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
-                <div class="card-body d-flex align-items-center">
-                    <div class="avatar avatar-lg bg-danger-light text-danger rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-alert-circle fs-4"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-muted fw-normal mb-1">Outstanding Due</h6>
-                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($purchases->sum('due'), 2) }}</h4>
+                    <div class="flex-grow-1 row g-0 align-items-center">
+                        <div class="col-6 pe-3">
+                            <span class="text-muted small fw-medium d-block mb-1">Total Paid</span>
+                            <h4 class="mb-0 fw-bold text-success">৳{{ number_format($purchases->sum('payment'), 2) }}</h4>
+                        </div>
+                        <div class="col-6 ps-3 border-start">
+                            <span class="text-muted small fw-medium d-block mb-1">Total Due</span>
+                            <h4 class="mb-0 fw-bold text-danger">৳{{ number_format($purchases->sum('due'), 2) }}</h4>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -206,8 +190,8 @@
         </div>
 
         <!-- Table Body -->
-        <div class="card-body p-0" style="overflow: visible;">
-            <div class="table-responsive" style="overflow: visible !important;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
                 <table class="table table-hover table-custom align-middle mb-0" id="purchaseTable">
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>

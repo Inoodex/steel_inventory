@@ -57,8 +57,12 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::post('coils/{id}/status', [CoilController::class, 'updateStatus'])->name('coils.update_status');
 
     Route::get('/customers/pdf', [CustomerController::class, 'downloadPdf'])->name('customers.pdf');
+    Route::get('/customers/{id}/ledger', [CustomerController::class, 'ledger'])->name('customers.ledger');
+    Route::get('/customers/{id}/ledger/pdf', [CustomerController::class, 'ledgerPdf'])->name('customers.ledger.pdf');
     Route::resource('customers', CustomerController::class);
     Route::get('/vendors/pdf', [VendorController::class, 'downloadPdf'])->name('vendors.pdf');
+    Route::get('/vendors/{id}/ledger', [VendorController::class, 'ledger'])->name('vendors.ledger');
+    Route::get('/vendors/{id}/ledger/pdf', [VendorController::class, 'ledgerPdf'])->name('vendors.ledger.pdf');
     Route::resource('vendors', VendorController::class);
 
     Route::post('lots/quick-store', [LotController::class, 'quickStore'])->name('lots.quick_store');

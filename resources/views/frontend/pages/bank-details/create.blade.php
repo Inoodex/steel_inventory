@@ -30,22 +30,22 @@
                 <div class="row g-3 mb-4">
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Account Name <span class="text-danger">*</span></label>
-                        <input type="text" name="account_name" class="form-control border-light-subtle" value="{{ old('account_name', $bankDetail->account_name ?? '') }}" placeholder="Enter account holder name" required>
+                        <input type="text" name="account_name" class="form-control border-light-subtle" value="{{ old('account_name', $bankDetail->account_name ?? '') }}" required>
                     </div>
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Bank / Provider Name <span class="text-danger">*</span></label>
-                        <input type="text" name="bank_name" class="form-control border-light-subtle" value="{{ old('bank_name', $bankDetail->bank_name ?? '') }}" placeholder="e.g. City Bank, bKash, Nagad" required>
+                        <input type="text" name="bank_name" class="form-control border-light-subtle" value="{{ old('bank_name', $bankDetail->bank_name ?? '') }}" required>
                     </div>
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Branch / Location <span class="text-muted">(Optional for MFS)</span></label>
-                        <input type="text" name="branch" class="form-control border-light-subtle" value="{{ old('branch', $bankDetail->branch ?? '') }}" placeholder="e.g. Principal Branch or Digital / Head Office">
+                        <input type="text" name="branch" class="form-control border-light-subtle" value="{{ old('branch', $bankDetail->branch ?? '') }}">
                     </div>
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Account / Wallet Number <span class="text-danger">*</span></label>
-                        <input type="text" name="account_number" class="form-control border-light-subtle font-monospace" value="{{ old('account_number', $bankDetail->account_number ?? '') }}" placeholder="e.g. 108-992-4410 or 017XXXXXXXX" required>
+                        <input type="text" name="account_number" class="form-control border-light-subtle font-monospace" value="{{ old('account_number', $bankDetail->account_number ?? '') }}" required>
                     </div>
 
                     <div class="col-md-6 col-12">
@@ -65,23 +65,23 @@
                         <label class="form-label small text-secondary fw-semibold mb-1">Opening Balance (৳) <span class="text-muted">(Initial Ledger Balance)</span></label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-light-subtle text-muted">৳</span>
-                            <input type="number" step="0.01" min="0" name="opening_balance" class="form-control border-light-subtle fw-semibold text-dark" value="{{ old('opening_balance', '0.00') }}" placeholder="0.00">
+                            <input type="number" step="0.01" min="0" name="opening_balance" class="form-control border-light-subtle fw-semibold text-dark" value="{{ old('opening_balance', '0.00') }}">
                         </div>
                     </div>
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Routing Number <span class="text-muted">(Optional)</span></label>
-                        <input type="text" name="routing_number" class="form-control border-light-subtle font-monospace" value="{{ old('routing_number', '') }}" placeholder="Enter 9-digit routing number (optional)">
+                        <input type="text" name="routing_number" class="form-control border-light-subtle font-monospace" value="{{ old('routing_number', '') }}">
                     </div>
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">SWIFT / BIC Code <span class="text-muted">(Optional for International)</span></label>
-                        <input type="text" name="swift_code" class="form-control border-light-subtle font-monospace" value="{{ old('swift_code', '') }}" placeholder="e.g. CIBLBDDH">
+                        <input type="text" name="swift_code" class="form-control border-light-subtle font-monospace" value="{{ old('swift_code', '') }}">
                     </div>
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Account Notes / Remarks</label>
-                        <input type="text" name="notes" class="form-control border-light-subtle" value="{{ old('notes', '') }}" placeholder="e.g. Operational expenses, wire disbursements">
+                        <input type="text" name="notes" class="form-control border-light-subtle" value="{{ old('notes', '') }}">
                     </div>
 
                     <div class="col-12 mt-4">

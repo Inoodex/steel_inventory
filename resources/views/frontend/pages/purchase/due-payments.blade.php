@@ -39,9 +39,6 @@
     .table-custom th, .table-custom td {
         white-space: nowrap;
     }
-    .table-responsive {
-        overflow: visible !important;
-    }
 </style>
 @endpush
 
@@ -146,8 +143,8 @@
         </div>
 
         <!-- Table Body -->
-        <div class="card-body p-0" style="overflow: visible;">
-            <div class="table-responsive" style="overflow: visible !important;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
                 <table class="table table-hover table-custom align-middle mb-0" id="duePaymentsTable">
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
@@ -158,7 +155,7 @@
                             <th>Total Amount</th>
                             <th>Paid Amount</th>
                             <th>Outstanding Due</th>
-                            <th class="text-end pe-4">Action</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
@@ -202,7 +199,7 @@
                                         ৳{{ number_format($purchase->due, 2) }}
                                     </span>
                                 </td>
-                                <td class="text-end pe-4">
+                                <td>
                                     <button type="button" class="btn btn-sm btn-outline-success rounded-2 px-3 py-1 fw-semibold"
                                         onclick="openVendorDueModal('{{ $purchase->id }}', '{{ $purchase->vendor_id }}', '{{ addslashes($vendorName) }}', '{{ $purchase->due }}')">
                                         <i class="fe fe-dollar-sign me-1"></i>Pay Due
@@ -299,10 +296,10 @@
                     </div>
                 </div>
 
-                <div class="modal-footer border-top p-3">
+                <div class="modal-footer border-top p-3 gap-2">
                     <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-3" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success px-4 py-2 rounded-3 fw-semibold text-white">
-                        <i class="fe fe-check-circle me-1"></i>Confirm Disbursement
+                        Confirm Disbursement
                     </button>
                 </div>
             </form>

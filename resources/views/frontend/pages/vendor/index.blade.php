@@ -48,12 +48,6 @@
         border-color: #7638ff !important;
     }
 
-    .table-responsive {
-        overflow: visible !important;
-    }
-    .dropdown-menu {
-        z-index: 1060 !important;
-    }
     .table-custom th, .table-custom td {
         white-space: nowrap;
         vertical-align: middle;
@@ -175,17 +169,17 @@
         </div>
 
         <!-- Table Body -->
-        <div class="card-body p-0" style="overflow: visible;">
-            <div class="table-responsive" style="overflow: visible !important;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
                 <table class="table table-hover table-custom align-middle mb-0 w-100" id="vendorsTable">
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
-                            <th class="ps-4">#</th>
+                            <th>#</th>
                             <th>Vendor Details</th>
                             <th>Contact Information</th>
                             <th>Address</th>
                             <th>Status</th>
-                            <th class="text-end pe-4">Action</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
@@ -233,7 +227,7 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="text-end pe-4">
+                                <td>
                                     <div class="dropdown">
                                         <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
                                             <i class="fas fa-ellipsis-v"></i>
@@ -246,8 +240,20 @@
                                                 </a>
                                             </li>
                                             <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('vendors.ledger', $vendor->id) }}">
+                                                    <i class="fe fe-book-open text-primary"></i>
+                                                    <span>Account Ledger</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('vendors.ledger.pdf', $vendor->id) }}" target="_blank">
+                                                    <i class="fe fe-download text-danger"></i>
+                                                    <span>Statement PDF</span>
+                                                </a>
+                                            </li>
+                                            <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('vendors.edit', $vendor->id) }}">
-                                                    <i class="fe fe-edit text-primary"></i>
+                                                    <i class="fe fe-edit text-secondary"></i>
                                                     <span>Edit Profile</span>
                                                 </a>
                                             </li>

@@ -49,12 +49,6 @@
     .table-custom th, .table-custom td {
         white-space: nowrap;
     }
-    .table-responsive {
-        overflow: visible !important;
-    }
-    .dropdown-menu {
-        z-index: 1060 !important;
-    }
 </style>
 @endpush
 

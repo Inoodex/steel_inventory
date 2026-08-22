@@ -62,12 +62,6 @@
         color: #ffffff !important;
         border-color: #7638ff !important;
     }
-    .table-responsive {
-        overflow: visible !important;
-    }
-    .dropdown-menu {
-        z-index: 1060 !important;
-    }
     .table-custom th, .table-custom td {
         white-space: nowrap;
     }
@@ -162,8 +156,7 @@
                 <div class="col-12 col-md-6 col-lg-5">
                     <form action="{{ route('warehouses.index') }}" method="GET" class="search-box-custom d-flex gap-2">
                         <div class="input-group">
-                            <input type="text" name="search" class="form-control border-light-subtle" 
-                                placeholder="Search yard name, code, location, contact..." value="{{ request('search') }}">
+                            <input type="text" name="search" class="form-control border-light-subtle" value="{{ request('search') }}">
                             <button type="submit" class="btn btn-primary px-3">
                                 <i class="fe fe-search"></i>
                             </button>
@@ -343,7 +336,7 @@
                             </div>
                             <div class="mb-0">
                                 <label class="form-label small fw-semibold text-secondary mb-1">Capacity (Metric Tons)</label>
-                                <input type="number" step="0.001" name="capacity_ton" class="form-control border-light-subtle" value="{{ $wh->capacity_ton }}" placeholder="e.g. 5000">
+                                <input type="number" step="0.001" name="capacity_ton" class="form-control border-light-subtle" value="{{ $wh->capacity_ton }}">
                             </div>
                         </div>
                         <div class="modal-footer border-top bg-light gap-2">
@@ -369,12 +362,12 @@
                     <div class="modal-body p-4">
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-secondary mb-1">Yard / Depot Name <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control border-light-subtle" placeholder="e.g. Main Steel Yard, Sitakunda Plot 14" required>
+                            <input type="text" name="name" class="form-control border-light-subtle" required>
                         </div>
                         <div class="row g-3 mb-3">
                             <div class="col-6">
                                 <label class="form-label small fw-semibold text-secondary mb-1">Yard Code</label>
-                                <input type="text" name="code" class="form-control border-light-subtle" placeholder="e.g. WH-YARD1">
+                                <input type="text" name="code" class="form-control border-light-subtle">
                             </div>
                             <div class="col-6">
                                 <label class="form-label small fw-semibold text-secondary mb-1">Status <span class="text-danger">*</span></label>
@@ -386,21 +379,21 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-secondary mb-1">Location / Address</label>
-                            <input type="text" name="location" class="form-control border-light-subtle" placeholder="e.g. Sitakunda, Chittagong">
+                            <input type="text" name="location" class="form-control border-light-subtle">
                         </div>
                         <div class="row g-3 mb-3">
                             <div class="col-6">
                                 <label class="form-label small fw-semibold text-secondary mb-1">Contact Person</label>
-                                <input type="text" name="contact_person" class="form-control border-light-subtle" placeholder="Yard Manager">
+                                <input type="text" name="contact_person" class="form-control border-light-subtle">
                             </div>
                             <div class="col-6">
                                 <label class="form-label small fw-semibold text-secondary mb-1">Phone Number</label>
-                                <input type="text" name="contact_phone" class="form-control border-light-subtle" placeholder="017XXXXXXXX">
+                                <input type="text" name="contact_phone" class="form-control border-light-subtle">
                             </div>
                         </div>
                         <div class="mb-0">
                             <label class="form-label small fw-semibold text-secondary mb-1">Capacity (Metric Tons)</label>
-                            <input type="number" step="0.001" name="capacity_ton" class="form-control border-light-subtle" placeholder="e.g. 5000">
+                            <input type="number" step="0.001" name="capacity_ton" class="form-control border-light-subtle">
                         </div>
                     </div>
                     <div class="modal-footer border-top bg-light gap-2">

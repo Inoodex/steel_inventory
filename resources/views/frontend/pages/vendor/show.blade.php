@@ -44,7 +44,11 @@
                         <span>Pay Vendor Due (৳{{ number_format($totalDue, 2) }})</span>
                     </button>
                 @endif
-                <a href="{{ route('ledger.index', ['party_type' => 'vendor', 'party_id' => $vData->id]) }}" class="btn btn-outline-primary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2">
+                <a href="{{ route('vendors.ledger.pdf', $vData->id) }}" target="_blank" class="btn btn-outline-danger px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2">
+                    <i class="fe fe-download"></i>
+                    <span>Statement PDF</span>
+                </a>
+                <a href="{{ route('vendors.ledger', $vData->id) }}" class="btn btn-outline-primary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2">
                     <i class="fe fe-book-open"></i>
                     <span>Account Ledger</span>
                 </a>

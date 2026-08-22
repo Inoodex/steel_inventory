@@ -88,7 +88,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text bg-light text-primary"><i class="fe fe-tag"></i></span>
                                     <input type="text" name="new_lot_number" id="new_lot_number" class="form-control fw-bold text-dark font-monospace"
-                                        value="{{ old('new_lot_number', $suggestedLotNumber ?? '') }}" placeholder="e.g. LOT-20260818-0001">
+                                        value="{{ old('new_lot_number', $suggestedLotNumber ?? '') }}">
                                 </div>
                                 <small class="text-muted fs-8">Auto-generated, editable</small>
                             </div>
@@ -131,10 +131,10 @@
 
                             <div class="col-12 mt-2">
                                 <label for="lot_notes" class="form-label fw-semibold small text-secondary mb-1">
-                                    Vessel / Shipment Notes <span class="text-muted">(Optional)</span>
+                                    Shipment Notes <span class="text-muted">(Optional)</span>
                                 </label>
                                 <input type="text" name="lot_notes" id="lot_notes" class="form-control"
-                                    value="{{ old('lot_notes') }}" placeholder="e.g. Vessel: MT Ocean Pride, Scrap Plate cuttings from Chittagong Ship Breaking Yard">
+                                    value="{{ old('lot_notes') }}">
                             </div>
                         </div>
                     </div>
@@ -163,8 +163,7 @@
                                 <label class="form-label fw-semibold small text-secondary mb-1">
                                     Vendor / Supplier
                                 </label>
-                                <input type="text" id="vendor_display" class="form-control bg-light" readonly
-                                    placeholder="Auto-fills from selected Lot">
+                                <input type="text" id="vendor_display" class="form-control bg-light" readonly>
                             </div>
 
                             <div class="col-lg-3 col-md-6 col-12">
@@ -235,10 +234,10 @@
                                         <input oninput="calculateRow(this)" type="number" min="1" step="1" name="items[0][quantity]" class="form-control form-control-sm row-quantity text-center fw-bold" value="1" required>
                                     </td>
                                     <td>
-                                        <input type="text" name="items[0][thickness]" class="form-control form-control-sm row-thickness text-center" placeholder="e.g. 16mm">
+                                        <input type="text" name="items[0][thickness]" class="form-control form-control-sm row-thickness text-center">
                                     </td>
                                     <td>
-                                        <input type="text" name="items[0][size]" class="form-control form-control-sm row-size text-center" placeholder="e.g. 5x20">
+                                        <input type="text" name="items[0][size]" class="form-control form-control-sm row-size text-center">
                                     </td>
                                     <td>
                                         <select name="items[0][size_type]" class="form-select form-select-sm row-size-type">
@@ -251,22 +250,22 @@
                                         </select>
                                     </td>
                                     <td>
-                                        <input oninput="calculateRow(this)" type="number" step="0.001" min="0.001" name="items[0][unit_weight]" class="form-control form-control-sm row-unit-weight text-end fw-bold text-primary" placeholder="0.000" required>
+                                        <input oninput="calculateRow(this)" type="number" step="0.001" min="0.001" name="items[0][unit_weight]" class="form-control form-control-sm row-unit-weight text-end fw-bold text-primary" required>
                                         <input type="hidden" name="items[0][net_weight]" class="row-net-weight" value="0">
                                     </td>
                                     <td>
-                                        <input type="number" step="0.001" name="items[0][total_weight]" class="form-control form-control-sm row-total-weight bg-light text-end fw-bold text-dark" readonly placeholder="0.000">
+                                        <input type="number" step="0.001" name="items[0][total_weight]" class="form-control form-control-sm row-total-weight bg-light text-end fw-bold text-dark" readonly>
                                     </td>
                                     <td>
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text bg-light text-muted">৳</span>
-                                            <input oninput="calculateRow(this)" type="number" step="0.01" min="0" name="items[0][unit_price]" class="form-control row-rate text-end fw-semibold" placeholder="0.00" required>
+                                            <input oninput="calculateRow(this)" type="number" step="0.01" min="0" name="items[0][unit_price]" class="form-control row-rate text-end fw-semibold" required>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text bg-light text-muted">৳</span>
-                                            <input type="number" step="0.01" name="items[0][sub_price]" class="form-control row-sub-total bg-light text-end fw-bold text-dark" readonly placeholder="0.00">
+                                            <input type="number" step="0.01" name="items[0][sub_price]" class="form-control row-sub-total bg-light text-end fw-bold text-dark" readonly>
                                         </div>
                                     </td>
                                     <td class="text-center pe-3">
@@ -370,7 +369,7 @@
                                 <!-- Transaction Ref (conditional) -->
                                 <div id="purchaseTransactionRefContainer" style="display: none;">
                                     <label class="form-label fw-semibold small text-secondary mb-1">Transaction Ref / TrxID</label>
-                                    <input type="text" name="transaction_ref" class="form-control border-light-subtle bg-white" placeholder="e.g. Bank Trx # or Deposit Slip Ref">
+                                    <input type="text" name="transaction_ref" class="form-control border-light-subtle bg-white">
                                 </div>
                             </div>
 
@@ -458,10 +457,10 @@
                         <input oninput="calculateRow(this)" type="number" min="1" step="1" name="items[${rowIndex}][quantity]" class="form-control form-control-sm row-quantity text-center fw-bold" value="1" required>
                     </td>
                     <td>
-                        <input type="text" name="items[${rowIndex}][thickness]" class="form-control form-control-sm row-thickness text-center" placeholder="e.g. 16mm">
+                        <input type="text" name="items[${rowIndex}][thickness]" class="form-control form-control-sm row-thickness text-center">
                     </td>
                     <td>
-                        <input type="text" name="items[${rowIndex}][size]" class="form-control form-control-sm row-size text-center" placeholder="e.g. 5x20">
+                        <input type="text" name="items[${rowIndex}][size]" class="form-control form-control-sm row-size text-center">
                     </td>
                     <td>
                         <select name="items[${rowIndex}][size_type]" class="form-select form-select-sm row-size-type">
@@ -474,22 +473,22 @@
                         </select>
                     </td>
                     <td>
-                        <input oninput="calculateRow(this)" type="number" step="0.001" min="0.001" name="items[${rowIndex}][unit_weight]" class="form-control form-control-sm row-unit-weight text-end fw-bold text-primary" placeholder="0.000" required>
+                        <input oninput="calculateRow(this)" type="number" step="0.001" min="0.001" name="items[${rowIndex}][unit_weight]" class="form-control form-control-sm row-unit-weight text-end fw-bold text-primary" required>
                         <input type="hidden" name="items[${rowIndex}][net_weight]" class="row-net-weight" value="0">
                     </td>
                     <td>
-                        <input type="number" step="0.001" name="items[${rowIndex}][total_weight]" class="form-control form-control-sm row-total-weight bg-light text-end fw-bold text-dark" readonly placeholder="0.000">
+                        <input type="number" step="0.001" name="items[${rowIndex}][total_weight]" class="form-control form-control-sm row-total-weight bg-light text-end fw-bold text-dark" readonly>
                     </td>
                     <td>
                         <div class="input-group input-group-sm">
                             <span class="input-group-text bg-light text-muted">৳</span>
-                            <input oninput="calculateRow(this)" type="number" step="0.01" min="0" name="items[${rowIndex}][unit_price]" class="form-control row-rate text-end fw-semibold" placeholder="0.00" required>
+                            <input oninput="calculateRow(this)" type="number" step="0.01" min="0" name="items[${rowIndex}][unit_price]" class="form-control row-rate text-end fw-semibold" required>
                         </div>
                     </td>
                     <td>
                         <div class="input-group input-group-sm">
                             <span class="input-group-text bg-light text-muted">৳</span>
-                            <input type="number" step="0.01" name="items[${rowIndex}][sub_price]" class="form-control row-sub-total bg-light text-end fw-bold text-dark" readonly placeholder="0.00">
+                            <input type="number" step="0.01" name="items[${rowIndex}][sub_price]" class="form-control row-sub-total bg-light text-end fw-bold text-dark" readonly>
                         </div>
                     </td>
                     <td class="text-center pe-3">

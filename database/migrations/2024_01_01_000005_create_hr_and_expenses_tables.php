@@ -10,15 +10,17 @@ return new class extends Migration
     {
         Schema::create('employees', function (Blueprint $table) {
             $table->id();
+            $table->string('employee_id')->nullable()->unique();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('name');
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->string('designation')->nullable();
             $table->string('department')->nullable();
-            $table->date('joining_date')->nullable();
-            $table->decimal('base_salary', 12, 2)->default(0.00);
+            $table->date('join_date')->nullable();
+            $table->decimal('salary', 12, 2)->default(0.00);
             $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->string('image')->nullable();
             $table->text('address')->nullable();
             $table->timestamps();
             $table->softDeletes();
@@ -107,6 +109,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        Schema::dropIfExists('revenues');
         Schema::dropIfExists('ta_das');
         Schema::dropIfExists('salary_advances');
         Schema::dropIfExists('salaries');

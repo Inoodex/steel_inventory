@@ -174,12 +174,12 @@
                 <table class="table table-hover table-custom align-middle mb-0" id="customersTable">
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
-                            <th class="ps-4" style="width: 50px;">#</th>
-                            <th style="min-width: 180px;">Customer Name</th>
-                            <th style="min-width: 160px;">Phone & Email</th>
-                            <th style="min-width: 180px;">Address</th>
-                            <th style="width: 100px;">Status</th>
-                            <th class="text-end pe-4" style="width: 70px;">Action</th>
+                            <th>#</th>
+                            <th>Customer Name</th>
+                            <th>Phone & Email</th>
+                            <th>Address</th>
+                            <th>Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
@@ -226,7 +226,7 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="text-end pe-4">
+                                <td>
                                     <div class="dropdown">
                                         <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
                                             <i class="fas fa-ellipsis-v"></i>
@@ -239,8 +239,20 @@
                                                 </a>
                                             </li>
                                             <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.ledger', $customer->id) }}">
+                                                    <i class="fe fe-book-open text-primary"></i>
+                                                    <span>Account Ledger</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.ledger.pdf', $customer->id) }}" target="_blank">
+                                                    <i class="fe fe-download text-danger"></i>
+                                                    <span>Statement PDF</span>
+                                                </a>
+                                            </li>
+                                            <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.edit', $customer->id) }}">
-                                                    <i class="fe fe-edit text-primary"></i>
+                                                    <i class="fe fe-edit text-secondary"></i>
                                                     <span>Edit Profile</span>
                                                 </a>
                                             </li>

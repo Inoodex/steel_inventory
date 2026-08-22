@@ -19,12 +19,6 @@
     .table-custom th, .table-custom td {
         white-space: nowrap;
     }
-    .table-responsive {
-        overflow: visible !important;
-    }
-    .dropdown-menu {
-        z-index: 1050 !important;
-    }
     .badge-soft-success {
         background-color: rgba(25, 135, 84, 0.12) !important;
         color: #198754 !important;
@@ -80,41 +74,31 @@
 
     <!-- Summary Stats Bar -->
     <div class="row g-3 mb-4">
-        <div class="col-xl-3 col-md-6 col-12">
+        <div class="col-xl-4 col-md-4 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0" style="border-left: 4px solid #fe3727 !important;">
                 <div class="card-body d-flex align-items-center p-3">
-                    <div class="avatar avatar-lg rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(254, 55, 39, 0.12); color: #fe3727; width: 48px; height: 48px;">
-                        <i class="fe fe-layers fs-4"></i>
+                    <div class="avatar avatar-md rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(254, 55, 39, 0.12); color: #fe3727; width: 38px; height: 38px;">
+                        <i class="fe fe-layers fs-5"></i>
                     </div>
-                    <div>
-                        <span class="text-muted small fw-medium d-block mb-1">Total Vessel Lots</span>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($totalLots ?? $lots->total()) }} <span class="fs-7 fw-normal text-muted">Lots</span></h4>
+                    <div class="flex-grow-1">
+                        <span class="text-muted small fw-medium d-block mb-1">Total Lots</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <h4 class="mb-0 fw-bold text-dark">{{ number_format($totalLots ?? $lots->total()) }} <span class="fs-7 fw-normal text-muted">Lots</span></h4>
+                            <span class="badge badge-soft-success px-2 py-1 rounded-pill fs-8">
+                                <i class="fe fe-check-circle me-1"></i>{{ number_format($activeLots ?? 0) }} Active
+                            </span>
+                        </div>
                         <small class="text-muted fs-8">All registered consignments</small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 col-12">
-            <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0" style="border-left: 4px solid #16a34a !important;">
-                <div class="card-body d-flex align-items-center p-3">
-                    <div class="avatar avatar-lg rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(22, 163, 74, 0.12); color: #16a34a; width: 48px; height: 48px;">
-                        <i class="fe fe-check-circle fs-4"></i>
-                    </div>
-                    <div>
-                        <span class="text-muted small fw-medium d-block mb-1">Active Intake Lots</span>
-                        <h4 class="mb-0 fw-bold text-success">{{ number_format($activeLots ?? 0) }} <span class="fs-7 fw-normal text-muted">Active</span></h4>
-                        <small class="text-muted fs-8">Open for procurement intake</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 col-12">
+        <div class="col-xl-4 col-md-4 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0" style="border-left: 4px solid #0ea5e9 !important;">
                 <div class="card-body d-flex align-items-center p-3">
-                    <div class="avatar avatar-lg rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(14, 165, 233, 0.12); color: #0ea5e9; width: 48px; height: 48px;">
-                        <i class="fe fe-database fs-4"></i>
+                    <div class="avatar avatar-md rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(14, 165, 233, 0.12); color: #0ea5e9; width: 38px; height: 38px;">
+                        <i class="fe fe-database fs-5"></i>
                     </div>
                     <div>
                         <span class="text-muted small fw-medium d-block mb-1">Consignment Intake Wt</span>
@@ -125,11 +109,11 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 col-12">
+        <div class="col-xl-4 col-md-4 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0" style="border-left: 4px solid #f59e0b !important;">
                 <div class="card-body d-flex align-items-center p-3">
-                    <div class="avatar avatar-lg rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(245, 158, 11, 0.12); color: #f59e0b; width: 48px; height: 48px;">
-                        <i class="fe fe-dollar-sign fs-4"></i>
+                    <div class="avatar avatar-md rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(245, 158, 11, 0.12); color: #f59e0b; width: 38px; height: 38px;">
+                        <i class="fe fe-dollar-sign fs-5"></i>
                     </div>
                     <div>
                         <span class="text-muted small fw-medium d-block mb-1">Total Lot Valuation</span>
@@ -187,8 +171,8 @@
     <!-- Lots Table & Modals Container (AJAX Target) -->
     <div id="lotTableContainer">
         <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-body p-0" style="overflow: visible;">
-                <div class="table-responsive" style="overflow: visible !important;">
+            <div class="card-body p-0">
+                <div class="table-responsive">
                     <table class="table table-custom align-middle mb-0">
                         <thead class="table-light">
                             <tr>
@@ -196,7 +180,7 @@
                                 <th>Vendor</th>
                                 <th>Lot Date</th>
                                 <th class="text-center">Purchases Count</th>
-                                <th class="text-end">Total Quantity / Weight</th>
+                                <th class="text-end">Total Weight</th>
                                 <th class="text-end">Total Amount</th>
                                 <th class="text-center">Status</th>
                                 <th>Actions</th>
@@ -218,7 +202,7 @@
                                         </span>
                                     </td>
                                     <td class="text-end fw-semibold text-dark">
-                                        {{ number_format($lot->total_quantity, 2) }}
+                                        {{ number_format($lot->total_quantity, 2) }} Kg
                                     </td>
                                     <td class="text-end fw-bold text-dark">
                                         ৳{{ number_format($lot->total_amount, 2) }}

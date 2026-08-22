@@ -16,9 +16,6 @@
     .table-custom th, .table-custom td {
         white-space: nowrap;
     }
-    .table-responsive {
-        overflow: visible !important;
-    }
     .badge-soft-success {
         background-color: rgba(25, 135, 84, 0.12) !important;
         color: #198754 !important;

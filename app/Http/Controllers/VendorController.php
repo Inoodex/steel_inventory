@@ -129,4 +129,156 @@ class VendorController extends Controller
             'Content-Type' => 'application/pdf',
         ]);
     }
+
+    /**
+     * Display Vendor Party Ledger Statement
+     */
+    public function ledger(Request $request, string $id)
+    {
+        $vendor = Vendor::findOrFail($id);
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+
+        $ledgerData = $this->getVendorLedgerData($vendor, $fromDate, $toDate);
+
+        return view('frontend.pages.vendor.ledger', $ledgerData);
+    }
+
+    /**
+     * Download Vendor Party Ledger as mPDF
+     */
+    public function ledgerPdf(Request $request, string $id)
+    {
+        ini_set('memory_limit', '512M');
+        $vendor = Vendor::findOrFail($id);
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+
+        $ledgerData = $this->getVendorLedgerData($vendor, $fromDate, $toDate);
+
+        $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
+        $padBase64 = file_exists($padPath) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($padPath)) : (function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '');
+        $ledgerData['padBase64'] = $padBase64;
+
+        $html = view('pdf.vendor_ledger', $ledgerData)->render();
+
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font' => 'Helvetica',
+            'margin_top' => 45,
+            'margin_bottom' => 25,
+            'margin_left' => 15,
+            'margin_right' => 15,
+        ]);
+
+        $mpdf->WriteHTML($html);
+
+        $safeName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $vendor->name);
+        $filename = "Vendor_Ledger_{$safeName}_" . date('Ymd') . '.pdf';
+        $pdfContent = $mpdf->Output($filename, 'S');
+
+        return response($pdfContent, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "inline; filename=\"{$filename}\"",
+        ]);
+    }
+
+    /**
+     * Helper to compute vendor ledger transactions & running balance
+     */
+    private function getVendorLedgerData(Vendor $vendor, ?string $fromDate = null, ?string $toDate = null): array
+    {
+        $openingBalance = (float)($vendor->opening_balance ?? 0.00);
+
+        if ($fromDate) {
+            $priorPurchases = \App\Models\Purchase::where('vendor_id', $vendor->id)
+                ->whereDate('created_at', '<', $fromDate)
+                ->sum('total_price');
+
+            $priorPayments = \App\Models\Payment::where('vendor_id', $vendor->id)
+                ->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(payment_date, created_at)'), '<', $fromDate)
+                ->sum('amount');
+
+            $openingBalance += ($priorPurchases - $priorPayments);
+        }
+
+        $purchasesQuery = \App\Models\Purchase::where('vendor_id', $vendor->id);
+        $paymentsQuery = \App\Models\Payment::where('vendor_id', $vendor->id);
+
+        if ($fromDate) {
+            $purchasesQuery->whereDate('created_at', '>=', $fromDate);
+            $paymentsQuery->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(payment_date, created_at)'), '>=', $fromDate);
+        }
+        if ($toDate) {
+            $purchasesQuery->whereDate('created_at', '<=', $toDate);
+            $paymentsQuery->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(payment_date, created_at)'), '<=', $toDate);
+        }
+
+        $purchases = $purchasesQuery->get();
+        $payments = $paymentsQuery->get();
+
+        $transactions = collect();
+
+        foreach ($purchases as $p) {
+            $lotStr = $p->lot ? " (Lot: {$p->lot->lot_number})" : "";
+            $transactions->push([
+                'date' => $p->created_at->format('Y-m-d'),
+                'created_at' => $p->created_at,
+                'type' => 'Purchase Bill',
+                'badge' => 'primary',
+                'ref' => "PO #{$p->id}",
+                'url' => route('purchase.show', $p->id),
+                'description' => "Purchase intake {$p->quantity} qty ({$p->total_weight} tons)" . $lotStr,
+                'debit' => 0.00,
+                'credit' => (float)$p->total_price, // Credit increases vendor payable
+            ]);
+        }
+
+        foreach ($payments as $pay) {
+            $methodLabel = ucfirst($pay->payment_method ?? 'cash');
+            $refStr = $pay->transaction_ref ? " [Ref: {$pay->transaction_ref}]" : "";
+            $transactions->push([
+                'date' => $pay->payment_date ? $pay->payment_date : $pay->created_at->format('Y-m-d'),
+                'created_at' => $pay->created_at,
+                'type' => 'Disbursement',
+                'badge' => 'success',
+                'ref' => "DISB-{$pay->id}" . $refStr,
+                'url' => null,
+                'description' => ($pay->remarks ?: "Disbursement via {$methodLabel}") . $refStr,
+                'debit' => (float)$pay->amount, // Debit reduces vendor payable
+                'credit' => 0.00,
+            ]);
+        }
+
+        $sortedTransactions = $transactions->sortBy(function ($item) {
+            return $item['date'] . ' ' . $item['created_at'];
+        })->values();
+
+        $runningBalance = $openingBalance;
+        $totalDebit = 0.00;
+        $totalCredit = 0.00;
+
+        $ledgerRows = $sortedTransactions->map(function ($item) use (&$runningBalance, &$totalDebit, &$totalCredit) {
+            // For Vendor: Net Payable = Opening + Credit (Purchases) - Debit (Disbursements)
+            $runningBalance += ($item['credit'] - $item['debit']);
+            $totalDebit += $item['debit'];
+            $totalCredit += $item['credit'];
+            $item['balance'] = $runningBalance;
+            return $item;
+        });
+
+        $closingBalance = $runningBalance;
+
+        return compact(
+            'vendor',
+            'fromDate',
+            'toDate',
+            'openingBalance',
+            'ledgerRows',
+            'totalDebit',
+            'totalCredit',
+            'closingBalance'
+        );
+    }
 }

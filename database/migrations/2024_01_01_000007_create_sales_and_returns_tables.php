@@ -13,9 +13,6 @@ return new class extends Migration
             $table->unsignedBigInteger('customer_id')->nullable();
             $table->unsignedBigInteger('sales_by')->nullable();
             $table->unsignedBigInteger('warehouse_id')->nullable();
-            $table->unsignedBigInteger('product_id')->nullable();
-            $table->unsignedBigInteger('client_id')->nullable();
-            $table->unsignedBigInteger('project_id')->nullable();
             $table->string('order_no')->unique();
             $table->date('order_date')->nullable();
             $table->decimal('subtotal', 15, 2)->default(0.00);
@@ -40,15 +37,15 @@ return new class extends Migration
             $table->timestamp('charges_payout_at')->nullable();
             $table->unsignedBigInteger('charges_payout_by')->nullable();
             $table->text('charges_payout_note')->nullable();
-            $table->string('sale_type')->default('retail');
             $table->enum('status', ['paid', 'partial', 'credit', 'cancelled'])->default('credit');
-            $table->text('notes')->nullable();
+            $table->text('note')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
             $table->foreign('customer_id')->references('id')->on('customers')->onDelete('set null');
             $table->foreign('sales_by')->references('id')->on('users')->onDelete('set null');
             $table->foreign('warehouse_id')->references('id')->on('warehouses')->onDelete('set null');
+            $table->foreign('bank_detail_id')->references('id')->on('bank_details')->onDelete('set null');
             $table->foreign('charges_payout_by')->references('id')->on('users')->onDelete('set null');
         });
 
@@ -56,7 +53,6 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('order_id');
             $table->unsignedBigInteger('coil_id')->nullable();
-            $table->unsignedBigInteger('product_id')->nullable();
             $table->unsignedBigInteger('lot_id')->nullable();
             $table->string('thickness')->nullable();
             $table->string('size')->nullable();
@@ -66,7 +62,6 @@ return new class extends Migration
             $table->decimal('total_price', 15, 2);
             $table->decimal('purchase_price', 15, 2)->default(0.00);
             $table->decimal('profit', 15, 2)->default(0.00);
-            $table->integer('warranty')->default(0);
             $table->decimal('returned_qty', 12, 3)->default(0.000);
             $table->timestamps();
 
@@ -78,18 +73,32 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('sale_id')->nullable();
+            $table->unsignedBigInteger('purchase_id')->nullable();
             $table->unsignedBigInteger('customer_id')->nullable();
+            $table->unsignedBigInteger('vendor_id')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
-            $table->integer('payment_for')->default(2); // 2: Sales
+            $table->integer('payment_for')->default(2); // 2: Sales, 3: Purchases
             $table->string('payment_method')->default('cash');
+            $table->unsignedBigInteger('bank_detail_id')->nullable();
+            $table->string('transaction_ref')->nullable();
             $table->decimal('amount', 15, 2);
             $table->date('payment_date')->nullable();
             $table->string('transaction_id')->nullable();
             $table->text('remarks')->nullable();
+            $table->text('notes')->nullable();
+            $table->string('status')->default('1');
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
             $table->foreign('sale_id')->references('id')->on('sales')->onDelete('cascade');
+            $table->foreign('purchase_id')->references('id')->on('purchases')->onDelete('set null');
             $table->foreign('customer_id')->references('id')->on('customers')->onDelete('set null');
+            $table->foreign('vendor_id')->references('id')->on('vendors')->onDelete('set null');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
+            $table->foreign('bank_detail_id')->references('id')->on('bank_details')->onDelete('set null');
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
         });
 
         Schema::create('returns', function (Blueprint $table) {
@@ -114,7 +123,6 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('return_id');
             $table->unsignedBigInteger('sales_item_id')->nullable();
-            $table->unsignedBigInteger('product_id')->nullable();
             $table->decimal('quantity', 12, 3);
             $table->decimal('unit_price', 15, 2);
             $table->decimal('total_price', 15, 2);

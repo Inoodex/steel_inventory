@@ -14,6 +14,7 @@ class Sale extends Model
 
     protected $fillable = [
         'order_no',
+        'order_date',
         'customer_id',
         'qty',
         'total',
@@ -40,7 +41,18 @@ class Sale extends Model
         'charges_payout_by',
         'charges_payout_note',
         'note',
+        'notes',
     ];
+
+    public function getNotesAttribute()
+    {
+        return $this->attributes['note'] ?? $this->attributes['notes'] ?? null;
+    }
+
+    public function setNotesAttribute($value)
+    {
+        $this->attributes['note'] = $value;
+    }
 
     protected $casts = [
         'charges_payout_at' => 'datetime',
