@@ -602,7 +602,7 @@ function selectCoil(selectEl) {
     if (perCoilEl) {
         perCoilEl.value = unitWeight > 0 ? (unitWeight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg') : '—';
     }
-    document.getElementById('stock1').value = remaining.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ` kg (${remainingCoils} Coils | ${remainingPct}%)`;
+    document.getElementById('stock1').value = remaining.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ` kg`;
     document.getElementById('purchase_price1').value = rate.toFixed(2);
     document.getElementById('unit_price1').value = rate > 0 ? rate.toFixed(2) : '';
     document.getElementById('qty1').value = '';

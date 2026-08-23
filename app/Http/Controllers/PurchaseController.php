@@ -272,7 +272,7 @@ class PurchaseController extends Controller
             'default_font' => 'Helvetica',
         ]);
         $mpdf->WriteHTML($html);
-        return response($mpdf->Output('purchase-report-' . now()->format('Y-m-d') . '.pdf', 'I'), 200, [
+        return response($mpdf->Output('purchase-report-' . now()->format('Y-m-d') . '.pdf', 'S'), 200, [
             'Content-Type' => 'application/pdf',
         ]);
     }

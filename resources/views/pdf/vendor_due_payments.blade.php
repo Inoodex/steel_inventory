@@ -4,8 +4,7 @@
     <meta charset="UTF-8" />
     <title>Vendor Due Payments Report</title>
     @php
-        $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
-        $padBase64 = file_exists($padPath) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($padPath)) : (function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '');
+        $padBase64 = function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '';
         $totalPrice = $purchases->sum('total_price');
         $totalPaid = $purchases->sum('payment');
         $totalDue = $purchases->sum('due');

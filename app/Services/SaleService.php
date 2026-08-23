@@ -287,7 +287,6 @@ class SaleService
             SalesItem::create([
                 'order_id'       => $sale->id,
                 'coil_id'        => $coilId,
-                'product_id'     => $productId,
                 'lot_id'         => $lotId,
                 'thickness'      => $thickness,
                 'size'           => $size,
@@ -295,7 +294,6 @@ class SaleService
                 'unit_price'     => $unitPrice,
                 'qty'            => $qty,
                 'total_price'    => $total,
-                'warranty'       => 0,
                 'purchase_price' => $purchasePrice,
                 'profit'         => $itemProfit,
             ]);

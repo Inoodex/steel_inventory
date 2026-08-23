@@ -12,7 +12,6 @@ class SalesItem extends Model
     protected $fillable = [
         'order_id',
         'coil_id',
-        'product_id',
         'lot_id',
         'thickness',
         'size',
@@ -20,7 +19,6 @@ class SalesItem extends Model
         'unit_price',
         'qty',
         'total_price',
-        'warranty',
         'returned_qty',
         'purchase_price',
         'profit',

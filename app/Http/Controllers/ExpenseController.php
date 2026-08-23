@@ -81,7 +81,7 @@ class ExpenseController extends Controller
                 'default_font' => 'Helvetica',
             ]);
             $mpdf->WriteHTML($html);
-            return response($mpdf->Output('daily_expense.pdf', 'I'), 200, [
+            return response($mpdf->Output('daily_expense.pdf', 'S'), 200, [
                 'Content-Type' => 'application/pdf',
             ]);
         }

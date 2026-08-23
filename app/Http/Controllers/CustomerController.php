@@ -31,7 +31,7 @@ class CustomerController extends Controller
             'default_font' => 'Helvetica',
         ]);
         $mpdf->WriteHTML($html);
-        return response($mpdf->Output('Customer_List_' . now()->format('Y_m_d_His') . '.pdf', 'I'), 200, [
+        return response($mpdf->Output('Customer_List_' . now()->format('Y_m_d_His') . '.pdf', 'S'), 200, [
             'Content-Type' => 'application/pdf',
         ]);
     }
@@ -157,9 +157,7 @@ class CustomerController extends Controller
 
         $ledgerData = $this->getCustomerLedgerData($customer, $fromDate, $toDate);
 
-        $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
-        $padBase64 = file_exists($padPath) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($padPath)) : (function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '');
-        $ledgerData['padBase64'] = $padBase64;
+        $ledgerData['padBase64'] = function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '';
 
         $html = view('pdf.customer_ledger', $ledgerData)->render();
 

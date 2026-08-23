@@ -28,7 +28,7 @@ class RevenueController extends Controller
             'default_font' => 'Helvetica',
         ]);
         $mpdf->WriteHTML($html);
-        return response($mpdf->Output('Monthly_Revenue_Report_' . now()->format('Y_m_d_His') . '.pdf', 'I'), 200, [
+        return response($mpdf->Output('Monthly_Revenue_Report_' . now()->format('Y_m_d_His') . '.pdf', 'S'), 200, [
             'Content-Type' => 'application/pdf',
         ]);
     }
@@ -69,7 +69,7 @@ class RevenueController extends Controller
         $mpdf->WriteHTML($html);
         $filename = "Revenue_Report_{$revenue->month_name}_{$revenue->year}.pdf";
 
-        return response($mpdf->Output($filename, 'I'), 200, [
+        return response($mpdf->Output($filename, 'S'), 200, [
             'Content-Type' => 'application/pdf',
         ]);
     }

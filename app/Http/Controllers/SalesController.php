@@ -60,7 +60,7 @@ class SalesController extends Controller
                 'default_font' => 'Helvetica',
             ]);
             $mpdf->WriteHTML($html);
-            return response($mpdf->Output('Sales_List_Report_' . now()->format('Y_m_d_His') . '.pdf', 'I'), 200, [
+            return response($mpdf->Output('Sales_List_Report_' . now()->format('Y_m_d_His') . '.pdf', 'S'), 200, [
                 'Content-Type' => 'application/pdf',
             ]);
         }
@@ -243,7 +243,6 @@ class SalesController extends Controller
                     'unit_price' => $unitPrice,
                     'qty' => $qty,
                     'total_price' => $total,
-                    'warranty' => 0,
                 ]);
             }
 
@@ -346,7 +345,9 @@ class SalesController extends Controller
             $html = view('frontend.pages.sales.invoice_pdf', compact('sales', 'items', 'customer', 'returns'))->render();
             $mpdf->WriteHTML($html);
 
-            return response($mpdf->Output(($sales->order_no ?? $sales->id) . '.pdf', \Mpdf\Output\Destination::INLINE), 200, [
+            $pdfContent = $mpdf->Output(($sales->order_no ?? $sales->id) . '.pdf', \Mpdf\Output\Destination::STRING_RETURN);
+
+            return response($pdfContent, 200, [
                 'Content-Type' => 'application/pdf',
                 'Content-Disposition' => 'inline; filename="' . ($sales->order_no ?? $sales->id) . '.pdf"',
             ]);
@@ -486,7 +487,7 @@ class SalesController extends Controller
             'default_font' => 'Helvetica',
         ]);
         $mpdf->WriteHTML($html);
-        return response($mpdf->Output('sales-report.pdf', 'I'), 200, [
+        return response($mpdf->Output('sales-report.pdf', 'S'), 200, [
             'Content-Type' => 'application/pdf',
         ]);
     }
@@ -820,7 +821,7 @@ public function extraChargesReportPdf(Request $request)
     ]);
     $mpdf->WriteHTML($html);
 
-    return response($mpdf->Output('Extra_Charges_Report_' . now()->format('Y_m_d_His') . '.pdf', 'I'), 200, [
+    return response($mpdf->Output('Extra_Charges_Report_' . now()->format('Y_m_d_His') . '.pdf', 'S'), 200, [
         'Content-Type' => 'application/pdf',
     ]);
 }

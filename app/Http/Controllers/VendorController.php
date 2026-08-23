@@ -125,7 +125,7 @@ class VendorController extends Controller
             'default_font' => 'Helvetica',
         ]);
         $mpdf->WriteHTML($html);
-        return response($mpdf->Output('vendor-list.pdf', 'I'), 200, [
+        return response($mpdf->Output('vendor-list.pdf', 'S'), 200, [
             'Content-Type' => 'application/pdf',
         ]);
     }
@@ -156,9 +156,7 @@ class VendorController extends Controller
 
         $ledgerData = $this->getVendorLedgerData($vendor, $fromDate, $toDate);
 
-        $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
-        $padBase64 = file_exists($padPath) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($padPath)) : (function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '');
-        $ledgerData['padBase64'] = $padBase64;
+        $ledgerData['padBase64'] = function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '';
 
         $html = view('pdf.vendor_ledger', $ledgerData)->render();
 

@@ -98,15 +98,15 @@
                     @if($canView('Sales Management'))
                         <li class="submenu {{ $active(['sales.create','sales.index','sales.show','sales.edit','sales.invoice','returns.*']) ? 'active' : '' }}">
                             <a href="javascript:void(0)">
-                                <i class="fe fe-shopping-bag"></i><span> Sales Orders</span>
+                                <i class="fe fe-shopping-bag"></i><span> Sales</span>
                                 <span class="menu-arrow"></span>
                             </a>
                             <ul style="{{ $active(['sales.create','sales.index','sales.show','sales.edit','sales.invoice','returns.*']) ? 'display:block' : '' }}">
                                 <li class="{{ $active(['sales.create']) ? 'active' : '' }}">
-                                    <a href="{{ route('sales.create') }}"><i class="fe fe-plus-circle"></i> New Sale Order</a>
+                                    <a href="{{ route('sales.create') }}"><i class="fe fe-plus-circle"></i> New Sale</a>
                                 </li>
                                 <li class="{{ $active(['sales.index','sales.show','sales.edit','sales.invoice']) ? 'active' : '' }}">
-                                    <a href="{{ route('sales.index') }}"><i class="fe fe-list"></i> Sales Orders List</a>
+                                    <a href="{{ route('sales.index') }}"><i class="fe fe-list"></i> Sales List</a>
                                 </li>
                                 <li class="{{ $active(['returns.*']) ? 'active' : '' }}">
                                     <a href="{{ route('returns.index') }}"><i class="fe fe-refresh-cw"></i> Sales Returns</a>

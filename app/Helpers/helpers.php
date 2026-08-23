@@ -414,15 +414,19 @@ if (!function_exists('getInvoicePadBase64')) {
      */
     function getInvoicePadBase64(): string
     {
-        $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
-        if (!file_exists($padPath)) {
-            $padPath = public_path('assets/invoice/final_pad.png');
+        $candidates = [
+            public_path('assets/invoice/pad.png'),
+            public_path('assets/invoice/inoodex_invoice.jpg'),
+            public_path('assets/invoice/final_pad.png'),
+        ];
+        foreach ($candidates as $padPath) {
+            if (file_exists($padPath)) {
+                $ext = strtolower(pathinfo($padPath, PATHINFO_EXTENSION));
+                $mime = ($ext === 'png') ? 'image/png' : 'image/jpeg';
+                return "data:{$mime};base64," . base64_encode(file_get_contents($padPath));
+            }
         }
-        if (!file_exists($padPath)) {
-            return '';
-        }
-        $mime = (pathinfo($padPath, PATHINFO_EXTENSION) === 'png') ? 'image/png' : 'image/jpeg';
-        return "data:{$mime};base64," . base64_encode(file_get_contents($padPath));
+        return '';
     }
 }
 
