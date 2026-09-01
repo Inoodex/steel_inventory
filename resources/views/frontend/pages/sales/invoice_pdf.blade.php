@@ -167,6 +167,155 @@
                     </tr>
                 @endif
             @endfor
+            @php
+                $totalQty = $itemCollection->sum('qty') ?: ($sales->qty ?? 0);
+                $subTotal = (float)($sales->total ?? $sales->bill ?? $itemCollection->sum('total_price'));
+                $discount = (float)($sales->discount ?? 0);
+                $vatRate = (float)($sales->vat ?? 0);
+                $vatAmount = $vatRate > 0 ? ($subTotal * $vatRate) / 100 : 0;
+                $taxRate = (float)($sales->tax ?? 0);
+                $taxAmount = $taxRate > 0 ? ($subTotal * $taxRate) / 100 : 0;
+                $weightScale = (float)($sales->weight_scale_cost ?? 0);
+                $labourCost = (float)($sales->labour_cost ?? 0);
+                $deliveryCharge = (float)($sales->delivery_charge ?? 0);
+                $otherCharges = (float)($sales->other_charges ?? 0);
+                $prevDue = (float)($sales->previous_due ?? 0);
+                $grandPayable = (float)($sales->payble ?? ($subTotal - $discount + $vatAmount + $taxAmount + $weightScale + $labourCost + $deliveryCharge + $otherCharges)) + $prevDue;
+                $paidAmount = (float)($sales->advanced_payment ?? 0);
+                $finalDue = (float)($sales->due_payment ?? ($grandPayable - $prevDue - $paidAmount)) + $prevDue;
+            @endphp
+            <!-- Total (Items Sum) -->
+            <tr>
+                <td colspan="2" style="border: 1px solid #334155; padding: 3px 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; text-align: right; background-color: #f1f5f9; color: #0f172a; height: 20px;">
+                    <strong>TOTAL</strong>
+                </td>
+                <td style="border: 1px solid #334155; padding: 3px 6px; font-size: 11px; font-weight: 800; color: #0f172a; text-align: center; background-color: #f1f5f9; height: 20px;">
+                    <strong>{{ number_format($totalQty) }}</strong>
+                </td>
+                <td style="border: 1px solid #334155; padding: 3px 6px; font-size: 11px; color: #0f172a; text-align: right; background-color: #f1f5f9; height: 20px;">&nbsp;</td>
+                <td style="border: 1px solid #334155; padding: 3px 8px; font-size: 11px; font-weight: 800; color: #0f172a; text-align: right; background-color: #f1f5f9; height: 20px;">
+                    <strong>{{ number_format($subTotal, 2) }}</strong>
+                </td>
+            </tr>
+
+            @if($discount > 0)
+            <tr>
+                <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
+                <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 700; text-align: right; color: #dc2626; height: 20px;">
+                    DISCOUNT
+                </td>
+                <td style="border: 1px solid #334155; padding: 3px 8px; font-size: 11px; font-weight: 700; color: #dc2626; text-align: right; height: 20px;">
+                    - {{ number_format($discount, 2) }}
+                </td>
+            </tr>
+            @endif
+
+            @if($vatAmount > 0)
+            <tr>
+                <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
+                <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">
+                    VAT ({{ number_format($vatRate, 2) }}%)
+                </td>
+                <td style="border: 1px solid #334155; padding: 3px 8px; font-size: 11px; font-weight: 600; color: #0f172a; text-align: right; height: 20px;">
+                    {{ number_format($vatAmount, 2) }}
+                </td>
+            </tr>
+            @endif
+
+            @if($taxAmount > 0)
+            <tr>
+                <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
+                <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">
+                    TAX ({{ number_format($taxRate, 2) }}%)
+                </td>
+                <td style="border: 1px solid #334155; padding: 3px 8px; font-size: 11px; font-weight: 600; color: #0f172a; text-align: right; height: 20px;">
+                    {{ number_format($taxAmount, 2) }}
+                </td>
+            </tr>
+            @endif
+
+            <tr>
+                <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
+                <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">
+                    SCALE & LABOUR CHARGE
+                </td>
+                <td style="border: 1px solid #334155; padding: 3px 8px; font-size: 11px; font-weight: 600; color: #0f172a; text-align: right; height: 20px;">
+                    {{ number_format($weightScale, 2) }}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
+                <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">
+                    CUTTING & LABOUR LOAD-UNLOAD
+                </td>
+                <td style="border: 1px solid #334155; padding: 3px 8px; font-size: 11px; font-weight: 600; color: #0f172a; text-align: right; height: 20px;">
+                    {{ number_format($labourCost, 2) }}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
+                <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">
+                    TRANSPORT BILL
+                </td>
+                <td style="border: 1px solid #334155; padding: 3px 8px; font-size: 11px; font-weight: 600; color: #0f172a; text-align: right; height: 20px;">
+                    {{ number_format($deliveryCharge, 2) }}
+                </td>
+            </tr>
+            @if($otherCharges > 0)
+            <tr>
+                <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
+                <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">
+                    OTHER CHARGES
+                </td>
+                <td style="border: 1px solid #334155; padding: 3px 8px; font-size: 11px; font-weight: 600; color: #0f172a; text-align: right; height: 20px;">
+                    {{ number_format($otherCharges, 2) }}
+                </td>
+            </tr>
+            @endif
+            @if($prevDue > 0)
+            <tr>
+                <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
+                <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 700; text-align: right; color: #003df4; background-color: #f8fafc; height: 20px;">
+                    PREVIOUS DUE
+                </td>
+                <td style="border: 1px solid #334155; padding: 3px 8px; font-size: 11px; font-weight: 700; color: #003df4; text-align: right; background-color: #f8fafc; height: 20px;">
+                    {{ number_format($prevDue, 2) }}
+                </td>
+            </tr>
+            @endif
+
+            <!-- Total Amount (Grand Payable) -->
+            <tr>
+                <td colspan="2" style="border: none; background: transparent; height: 21px;"></td>
+                <td colspan="2" style="border: 1px solid #334155; padding: 4px 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; text-align: right; background-color: #f1f5f9; color: #f97316; height: 21px;">
+                    <strong>TOTAL AMOUNT</strong>
+                </td>
+                <td style="border: 1px solid #334155; padding: 4px 8px; font-size: 11px; font-weight: 800; color: #f97316; text-align: right; background-color: #f1f5f9; height: 21px;">
+                    <strong>{{ number_format($grandPayable, 2) }}</strong>
+                </td>
+            </tr>
+
+            <!-- Paid Amount -->
+            <tr>
+                <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
+                <td colspan="2" style="border: 1px solid #334155; padding: 3px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: right; color: #16a34a; background-color: #f8fafc; height: 20px;">
+                    PAID AMOUNT
+                </td>
+                <td style="border: 1px solid #334155; padding: 3px 8px; font-size: 11px; font-weight: 700; color: #16a34a; text-align: right; background-color: #f8fafc; height: 20px;">
+                    {{ number_format($paidAmount, 2) }}
+                </td>
+            </tr>
+
+            <!-- Final Amount -->
+            <tr>
+                <td colspan="2" style="border: none; background: transparent; height: 21px;"></td>
+                <td colspan="2" style="border: 1px solid #334155; padding: 4px 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; text-align: right; background-color: #f1f5f9; color: {{ $finalDue > 0 ? '#dc2626' : '#16a34a' }}; height: 21px;">
+                    <strong>FINAL AMOUNT</strong>
+                </td>
+                <td style="border: 1px solid #334155; padding: 4px 8px; font-size: 11px; font-weight: 800; color: {{ $finalDue > 0 ? '#dc2626' : '#16a34a' }}; text-align: right; background-color: #f1f5f9; height: 21px;">
+                    <strong>{{ number_format($finalDue, 2) }}</strong>
+                </td>
+            </tr>
         </tbody>
     </table>
 
@@ -204,96 +353,6 @@
     </table>
     @endif
 
-    <!-- Summary & Financials Grid -->
-    <table style="width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 16px;">
-        <tr>
-            <td style="width: 48%; vertical-align: top; padding-right: 10px;">
-                <!-- Left column placeholder -->
-            </td>
-            <td style="width: 52%; vertical-align: top; padding-left: 10px;">
-                <table style="width: 100%; border-collapse: separate; border-spacing: 0; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
-                    <tr>
-                        <td style="padding: 10px 12px;">
-                            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-                                <tr>
-                                    <td style="padding: 2px 0; color: #475569;">Sub Total:</td>
-                                    <td style="padding: 2px 0; text-align: right; font-weight: 600; color: #0f172a;">{{ number_format($sales->total ?? $sales->bill, 2) }}</td>
-                                </tr>
-                                @if(($sales->discount ?? 0) > 0)
-                                <tr>
-                                    <td style="padding: 2px 0; color: #dc2626;">Discount:</td>
-                                    <td style="padding: 2px 0; text-align: right; font-weight: 600; color: #dc2626;">- {{ number_format($sales->discount, 2) }}</td>
-                                </tr>
-                                @endif
-                                @if(($sales->vat ?? 0) > 0)
-                                @php $vatAmount = (($sales->total ?? $sales->bill) * $sales->vat) / 100; @endphp
-                                <tr>
-                                    <td style="padding: 2px 0; color: #475569;">VAT ({{ number_format($sales->vat, 2) }}%):</td>
-                                    <td style="padding: 2px 0; text-align: right; font-weight: 600; color: #0f172a;">{{ number_format($vatAmount, 2) }}</td>
-                                </tr>
-                                @endif
-                                @if(($sales->tax ?? 0) > 0)
-                                @php $taxAmount = (($sales->total ?? $sales->bill) * $sales->tax) / 100; @endphp
-                                <tr>
-                                    <td style="padding: 2px 0; color: #475569;">Tax ({{ number_format($sales->tax, 2) }}%):</td>
-                                    <td style="padding: 2px 0; text-align: right; font-weight: 600; color: #0f172a;">{{ number_format($taxAmount, 2) }}</td>
-                                </tr>
-                                @endif
-                                @if(($sales->weight_scale_cost ?? 0) > 0)
-                                <tr>
-                                    <td style="padding: 2px 0; color: #475569;">Scale & Labour Charge:</td>
-                                    <td style="padding: 2px 0; text-align: right; font-weight: 600; color: #0f172a;">{{ number_format($sales->weight_scale_cost, 2) }}</td>
-                                </tr>
-                                @endif
-                                @if(($sales->labour_cost ?? 0) > 0)
-                                <tr>
-                                    <td style="padding: 2px 0; color: #475569;">Cutting & Labour Load-Unload:</td>
-                                    <td style="padding: 2px 0; text-align: right; font-weight: 600; color: #0f172a;">{{ number_format($sales->labour_cost, 2) }}</td>
-                                </tr>
-                                @endif
-                                @if(($sales->delivery_charge ?? 0) > 0)
-                                <tr>
-                                    <td style="padding: 2px 0; color: #475569;">Transport Bill:</td>
-                                    <td style="padding: 2px 0; text-align: right; font-weight: 600; color: #0f172a;">{{ number_format($sales->delivery_charge, 2) }}</td>
-                                </tr>
-                                @endif
-                                @if(($sales->other_charges ?? 0) > 0)
-                                <tr>
-                                    <td style="padding: 2px 0; color: #475569;">Other Charges:</td>
-                                    <td style="padding: 2px 0; text-align: right; font-weight: 600; color: #0f172a;">{{ number_format($sales->other_charges, 2) }}</td>
-                                </tr>
-                                @endif
-                                @php
-                                    $prevDue = (float)($sales->previous_due ?? 0);
-                                    $grandPayable = (float)($sales->payble ?? 0) + $prevDue;
-                                    $finalDue = (float)($sales->due_payment ?? 0) + $prevDue;
-                                @endphp
-                                @if($prevDue > 0)
-                                <tr>
-                                    <td style="padding: 2px 0; color: #003df4ff; font-weight: 600;">Previous Due:</td>
-                                    <td style="padding: 2px 0; text-align: right; font-weight: 700; color: #003df4ff;">{{ number_format($prevDue, 2) }}</td>
-                                </tr>
-                                @endif
-                                <tr>
-                                    <td style="padding: 4px 0; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; font-size: 12px; font-weight: 800; color: #f97316;">Total Amount:</td>
-                                    <td style="padding: 4px 0; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; text-align: right; font-size: 12px; font-weight: 800; color: #f97316;">{{ number_format($grandPayable, 2) }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 2px 0; color: #16a34a; font-weight: 600;">Paid Amount:</td>
-                                    <td style="padding: 2px 0; text-align: right; font-weight: 700; color: #16a34a;">{{ number_format($sales->advanced_payment ?? 0, 2) }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 2px 0; font-size:12px; font-weight: 800; color: #dc2626;">Final Amount:</td>
-                                    <td style="padding: 2px 0; text-align: right; font-size: 12px; font-weight: 800; color: {{ $finalDue > 0 ? '#dc2626' : '#16a34a' }};">{{ number_format($finalDue, 2) }}</td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-
     <!-- Amount In Words Card -->
     <table style="width: 100%; border-collapse: separate; border-spacing: 0; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
         <tr>
@@ -303,6 +362,78 @@
             </td>
         </tr>
     </table>
+
+    <!-- Signature Section -->
+    <!-- <table style="width: 100%; border-collapse: collapse; margin-top: 350px;">
+        <tr>
+            <td style="width: 50%; vertical-align: bottom; text-align: left;">
+                <span style="border-top: 1px dotted #475569; padding-top: 5px; font-size: 11px; font-weight: 600; color: #334155; display: inline-block; line-height: 1;">Customer Signature</span>
+            </td>
+            <td style="width: 50%; vertical-align: bottom; text-align: right;">
+                <span style="border-top: 1px dotted #475569; padding-top: 5px; font-size: 11px; font-weight: 600; color: #334155; display: inline-block; line-height: 1;">Authorized Signature</span>
+            </td>
+        </tr>
+    </table> -->
+
+<table style="width:100%; border-collapse:collapse; margin-top:350px;">
+    <tr>
+        <td style="width:50%; text-align:left;">
+            <table style="border-collapse:collapse; width:100px;">
+                <tr>
+                    <td style="
+                        border-top:1px dotted #475569;
+                        height:1px;
+                        padding:0;
+                        font-size:0;
+                        line-height:0;
+                    ">&nbsp;</td>
+                </tr>
+
+                <tr>
+                    <td style="
+                        padding-top:8px;
+                        padding-left:0;
+                        padding-right:0;
+                        font-size:11px;
+                        font-weight:600;
+                        color:#334155;
+                        text-align:center;
+                    ">
+                        Customer Signature
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td style="width:50%; text-align:right;">
+    <table style="border-collapse:collapse; width:100px; margin-left:auto;">
+        <tr>
+            <td style="
+                border-top:1px dotted #475569;
+                height:1px;
+                padding:0;
+                font-size:0;
+                line-height:0;
+            ">&nbsp;</td>
+        </tr>
+
+        <tr>
+            <td style="
+                padding-top:8px;
+                padding-left:0;
+                padding-right:0;
+                font-size:11px;
+                font-weight:600;
+                color:#334155;
+                text-align:center;
+            ">
+                Authorized Signature
+            </td>
+        </tr>
+    </table>
+</td>
+
+    </tr>
+</table>
 
 </body>
 </html>
