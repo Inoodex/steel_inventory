@@ -263,10 +263,10 @@
                         <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" id="vat" name="vat" class="form-control border-light-subtle" value="0" min="0" step="0.01">
                     </div>
 
-                    <div class="col-lg-2 col-md-4 col-6">
+                    <!-- <div class="col-lg-2 col-md-4 col-6">
                         <label class="form-label small text-secondary fw-semibold mb-1">Tax (%)</label>
                         <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" id="tax" name="tax" class="form-control border-light-subtle" value="0" min="0" step="0.01">
-                    </div>
+                    </div> -->
 
                     <div class="col-lg-2 col-md-4 col-6">
                         <label class="form-label small text-secondary fw-semibold mb-1">Delivery / Transport (৳)</label>
@@ -274,12 +274,12 @@
                     </div>
 
                     <div class="col-lg-2 col-md-4 col-6">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Labour / Loading (৳)</label>
+                        <label class="form-label small text-secondary fw-semibold mb-1">Cutting & Labour Load-Unload (৳)</label>
                         <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" id="labour_cost" name="labour_cost" class="form-control border-light-subtle" value="0" min="0" step="0.01">
                     </div>
 
                     <div class="col-lg-2 col-md-4 col-6">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Weight Scale (৳)</label>
+                        <label class="form-label small text-secondary fw-semibold mb-1">Scale & Labour Charge (৳)</label>
                         <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" id="weight_scale_cost" name="weight_scale_cost" class="form-control border-light-subtle" value="0" min="0" step="0.01">
                     </div>
 

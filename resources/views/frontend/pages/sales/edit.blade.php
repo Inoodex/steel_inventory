@@ -96,27 +96,39 @@
                     <table class="table table-hover align-middle mb-0" id="salesItemsTable">
                         <thead class="bg-light text-secondary fs-7 text-uppercase">
                             <tr>
-                                <th style="width: 35%;">Product Name</th>
+                                <th style="width: 35%;">Coil / Product</th>
                                 <th style="width: 25%;">Mill Lot Source</th>
                                 <th style="width: 15%;">Unit Price</th>
-                                <th style="width: 10%;">Quantity</th>
+                                <th style="width: 10%;">Quantity (kg)</th>
                                 <th style="width: 15%;">Total Price</th>
                             </tr>
                         </thead>
                         <tbody id="item_container">
                             @foreach ($items as $index => $item)
-                                <tr class="group-item item{{ $item->product_id }}" data-itemnumber="{{ $index + 1 }}" id="form-group-item{{ $index + 1 }}">
+                                @php
+                                    $coil = $item->coil ?? $item->product;
+                                    $coilNumber = $coil ? $coil->coil_number : ($item->name ?? 'Steel Coil');
+                                    $thickness = $item->thickness ?: ($coil ? $coil->thickness : '');
+                                    $size = $item->size ?: ($coil ? $coil->width : '');
+                                    $sizeType = $item->size_type ?: ($coil ? ($coil->length ?: $coil->size_type) : 'ft');
+                                @endphp
+                                <tr class="group-item item{{ $item->coil_id ?? $item->id }}" data-itemnumber="{{ $index + 1 }}" id="form-group-item{{ $index + 1 }}">
                                     <td>
-                                        <input type="hidden" name="product[]" value="{{ $item->product_id }}">
+                                        <input type="hidden" name="coil_id[]" value="{{ $item->coil_id }}">
                                         <span class="fw-bold text-dark d-block">
-                                            {{ $item->product->name ?? 'Steel Item' }} {{ $item->product->model ? '('.$item->product->model.')' : '' }}
+                                            #{{ $coilNumber }}
                                         </span>
+                                        @if($thickness || $size)
+                                            <small class="text-muted d-block">
+                                                {{ $thickness ? 'Thick: '.$thickness : '' }}{{ ($thickness && $size) ? ' | ' : '' }}{{ $size ? 'Size: '.$size.' '.$sizeType : '' }}
+                                            </small>
+                                        @endif
                                     </td>
                                     <td>
                                         <select name="lot_id[]" class="form-select form-select-sm border-light-subtle">
                                             <option value="">Standard Stock (No Lot)</option>
                                             @foreach ($lots as $lot)
-                                                <option value="{{ $lot->id }}" {{ $item->lot_id == $lot->id ? 'selected' : '' }}>
+                                                <option value="{{ $lot->id }}" {{ ($item->lot_id ?? ($coil->lot_id ?? '')) == $lot->id ? 'selected' : '' }}>
                                                     {{ $lot->lot_number }} ({{ $lot->vendor->name ?? 'Mill' }})
                                                 </option>
                                             @endforeach
@@ -126,7 +138,7 @@
                                         <input type="number" step="0.01" name="unit_price[]" class="form-control border-light-subtle unit-price" id="unit_price{{ $index + 1 }}" value="{{ $item->unit_price }}" oninput="calculateTotal()" onchange="calculateTotal()">
                                     </td>
                                     <td>
-                                        <input type="number" name="qty[]" class="form-control border-light-subtle qty qty{{ $item->product_id }}" id="qty{{ $index + 1 }}" value="{{ $item->qty }}" min="1" oninput="calculateTotal()" onchange="calculateTotal()">
+                                        <input type="number" step="any" name="qty[]" class="form-control border-light-subtle qty qty{{ $item->coil_id ?? $item->id }}" id="qty{{ $index + 1 }}" value="{{ $item->qty }}" min="0.01" oninput="calculateTotal()" onchange="calculateTotal()">
                                     </td>
                                     <td>
                                         <input type="number" step="0.01" name="total[]" class="form-control border-light-subtle bg-light total" id="total{{ $index + 1 }}" value="{{ $item->total_price }}" readonly>
@@ -156,17 +168,22 @@
                     </div>
 
                     <div class="col-lg-2 col-md-4 col-6">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Delivery Charge</label>
+                        <label class="form-label small text-secondary fw-semibold mb-1">VAT (%)</label>
+                        <input type="number" step="any" id="vat" class="form-control border-light-subtle" name="vat" value="{{ $sales->vat }}" min="0" oninput="calculateTotal()" onchange="calculateTotal()">
+                    </div>
+
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Delivery / Transport</label>
                         <input type="number" step="any" id="delivery_charge" class="form-control border-light-subtle" name="delivery_charge" value="{{ $sales->delivery_charge }}" oninput="calculateTotal()" onchange="calculateTotal()">
                     </div>
 
                     <div class="col-lg-2 col-md-4 col-6">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Labour / Loading</label>
+                        <label class="form-label small text-secondary fw-semibold mb-1">Cutting & Labour Load-Unload</label>
                         <input type="number" step="any" id="labour_cost" class="form-control border-light-subtle" name="labour_cost" value="{{ $sales->labour_cost }}" oninput="calculateTotal()" onchange="calculateTotal()">
                     </div>
 
                     <div class="col-lg-2 col-md-4 col-6">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Weight Scale Charge</label>
+                        <label class="form-label small text-secondary fw-semibold mb-1">Scale & Labour Charge</label>
                         <input type="number" step="any" id="weight_scale_cost" class="form-control border-light-subtle" name="weight_scale_cost" value="{{ $sales->weight_scale_cost }}" oninput="calculateTotal()" onchange="calculateTotal()">
                     </div>
 
@@ -241,7 +258,7 @@
                 <div class="d-flex justify-content-end gap-2 pt-4 mt-3 border-top">
                     <a href="{{ route('sales.index') }}" class="btn btn-outline-secondary px-4 py-2 rounded-3">Cancel</a>
                     <button type="submit" class="btn btn-primary px-5 py-2 rounded-3 fw-semibold shadow-sm">
-                        <i class="fe fe-check-circle me-1"></i> Update Sale Order
+                         Update Sale Order
                     </button>
                 </div>
             </div>
@@ -270,12 +287,14 @@
         });
 
         const discount = parseFloat(document.getElementById('discount')?.value) || 0;
+        const vatPercent = parseFloat(document.getElementById('vat')?.value) || 0;
+        const vatAmount = (subTotal * vatPercent) / 100;
         const deliveryCharge = parseFloat(document.getElementById('delivery_charge')?.value) || 0;
         const labourCost = parseFloat(document.getElementById('labour_cost')?.value) || 0;
         const weightScaleCost = parseFloat(document.getElementById('weight_scale_cost')?.value) || 0;
         const otherCharges = parseFloat(document.getElementById('other_charges')?.value) || 0;
 
-        const grandTotal = Math.max(0, subTotal - discount + deliveryCharge + labourCost + weightScaleCost + otherCharges);
+        const grandTotal = Math.max(0, subTotal - discount + vatAmount + deliveryCharge + labourCost + weightScaleCost + otherCharges);
         document.getElementById('subTotal').value = subTotal.toFixed(2);
         document.getElementById('grandTotal').value = grandTotal.toFixed(2);
 

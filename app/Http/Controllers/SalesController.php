@@ -171,7 +171,7 @@ class SalesController extends Controller
      */
     public function edit(string $id)
     {
-        $sales = Sale::with(['customer', 'items.lot.vendor', 'bankDetail'])->findOrFail($id);
+        $sales = Sale::with(['customer', 'items.lot.vendor', 'items.coil', 'bankDetail'])->findOrFail($id);
         $users  = User::get();
         $products = collect();
         $customer = $sales->customer;
@@ -200,6 +200,7 @@ class SalesController extends Controller
             'unit_price' => 'required|array',
             'unit_price.*' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
+            'vat' => 'nullable|numeric|min:0',
             'delivery_charge' => 'nullable|numeric|min:0',
             'labour_cost' => 'nullable|numeric|min:0',
             'weight_scale_cost' => 'nullable|numeric|min:0',
@@ -250,12 +251,15 @@ class SalesController extends Controller
             $discount = $validated['discount'] ?? 0;
             if ($discount > $totalBill) $discount = $totalBill;
 
+            $vatPercent = $validated['vat'] ?? 0;
+            $vatAmount = round(($totalBill * $vatPercent) / 100, 2);
+
             $deliveryCharge = $validated['delivery_charge'] ?? 0;
             $labourCost = $validated['labour_cost'] ?? 0;
             $weightScaleCost = $validated['weight_scale_cost'] ?? 0;
             $otherCharges = $validated['other_charges'] ?? 0;
 
-            $payble = max(0, $totalBill - $discount + $deliveryCharge + $labourCost + $weightScaleCost + $otherCharges);
+            $payble = max(0, $totalBill - $discount + $vatAmount + $deliveryCharge + $labourCost + $weightScaleCost + $otherCharges);
             $advancedPayment = min($request->advanced_payment ?? 0, $payble);
             $duePayment = max(0, $payble - $advancedPayment);
 
@@ -264,6 +268,7 @@ class SalesController extends Controller
                 'bill' => $totalBill,
                 'total' => $totalBill,
                 'discount' => $discount,
+                'vat' => $vatPercent,
                 'delivery_charge' => $deliveryCharge,
                 'labour_cost' => $labourCost,
                 'weight_scale_cost' => $weightScaleCost,
@@ -322,6 +327,19 @@ class SalesController extends Controller
                 'address' => 'N/A',
             ];
         }
+
+        // Calculate customer previous due prior to this sale
+        $previousDue = 0.00;
+        if ($sales->customer_id) {
+            $priorSalesDues = (float) Sale::where('customer_id', $sales->customer_id)
+                ->where('id', '<', $sales->id)
+                ->whereNull('deleted_at')
+                ->sum('due_payment');
+
+            $custOpeningBalance = (float) ($sales->customer->opening_balance ?? 0.00);
+            $previousDue = max(0.00, $priorSalesDues + $custOpeningBalance);
+        }
+        $sales->previous_due = $previousDue;
 
         $items = SalesItem::with(['product', 'lot.vendor'])
             ->where('order_id', $sales->id)
