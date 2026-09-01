@@ -88,7 +88,7 @@
                 <table style="width: 100%; border-collapse: collapse;">
                     <tr>
                         <td style="border: 1px solid #334155; padding: 5px 8px; width: 85px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #0f172a; background-color: #f8fafc;">
-                            DATE :
+                            DATE
                         </td>
                         <td style="border: 1px solid #334155; padding: 5px 8px; font-size: 11px; font-weight: 700; color: #0f172a;">
                             {{ $sales->created_at ? $sales->created_at->format('d.m.Y') : date('d.m.Y') }}
@@ -96,7 +96,7 @@
                     </tr>
                     <tr>
                         <td style="border: 1px solid #334155; padding: 5px 8px; width: 85px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #0f172a; background-color: #f8fafc;">
-                            MEMO NO :
+                            MEMO NO
                         </td>
                         <td style="border: 1px solid #334155; padding: 5px 8px; font-size: 11px; font-weight: 800; color: #0f172a;">
                             {{ $sales->order_no }}
@@ -129,29 +129,44 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($items as $item)
-                @php
-                    $coil = $item->coil ?? $item->product;
-                    $coilNumber = $coil ? $coil->coil_number : ($item->name ?? 'Steel Coil');
-                    $thickness = $item->thickness ?: ($coil ? $coil->thickness : '');
-                    $size = $item->size ?: ($coil ? $coil->width : '');
-                    $sizeType = $item->size_type ?: ($coil ? ($coil->length ?: $coil->size_type) : 'ft');
-                @endphp
-                <tr>
-                    <td style="border: 1px solid #334155; padding: 7px 6px; font-size: 11px; color: #0f172a; text-align: center;">{{ $loop->index + 1 }}</td>
-                    <td style="border: 1px solid #334155; padding: 7px 8px; font-size: 11px; color: #0f172a;">
-                        <strong>#{{ $coilNumber }}</strong>
-                        @if($thickness || $size)
-                            <span style="font-size: 10px; color: #475569; margin-left: 6px;">
-                                ({{ $thickness ? 'Thick: '.$thickness : '' }}{{ ($thickness && $size) ? ' | ' : '' }}{{ $size ? 'Size: '.$size.' '.$sizeType : '' }})
-                            </span>
-                        @endif
-                    </td>
-                    <td style="border: 1px solid #334155; padding: 7px 6px; font-size: 11px; color: #0f172a; text-align: center;">{{ number_format($item->qty ?? 0) }}</td>
-                    <td style="border: 1px solid #334155; padding: 7px 6px; font-size: 11px; color: #0f172a; text-align: right;">{{ $item->unit_price ? number_format($item->unit_price, 2) : '0.00' }}</td>
-                    <td style="border: 1px solid #334155; padding: 7px 8px; font-size: 11px; font-weight: 700; color: #0f172a; text-align: right;">{{ $item->total_price ? number_format($item->total_price, 2) : '0.00' }}</td>
-                </tr>
-            @endforeach
+            @php
+                $itemCollection = is_array($items) ? collect($items) : $items;
+                $totalRows = min(15, max(10, $itemCollection->count()));
+            @endphp
+            @for ($i = 0; $i < $totalRows; $i++)
+                @if(isset($itemCollection[$i]))
+                    @php
+                        $item = $itemCollection[$i];
+                        $coil = $item->coil ?? $item->product;
+                        $coilNumber = $coil ? $coil->coil_number : ($item->name ?? 'Steel Coil');
+                        $thickness = $item->thickness ?: ($coil ? $coil->thickness : '');
+                        $size = $item->size ?: ($coil ? $coil->width : '');
+                        $sizeType = $item->size_type ?: ($coil ? ($coil->length ?: $coil->size_type) : 'ft');
+                    @endphp
+                    <tr>
+                        <td style="border: 1px solid #334155; padding: 4px 6px; font-size: 11px; color: #0f172a; text-align: center; height: 21px;">{{ $i + 1 }}</td>
+                        <td style="border: 1px solid #334155; padding: 4px 8px; font-size: 11px; color: #0f172a; height: 21px;">
+                            <strong>{{ $coilNumber }}</strong>
+                            @if($thickness || $size)
+                                <span style="font-size: 10px; color: #475569; margin-left: 6px;">
+                                    ({{ $thickness ? 'Thick: '.$thickness : '' }}{{ ($thickness && $size) ? ' | ' : '' }}{{ $size ? 'Size: '.$size.' '.$sizeType : '' }})
+                                </span>
+                            @endif
+                        </td>
+                        <td style="border: 1px solid #334155; padding: 4px 6px; font-size: 11px; color: #0f172a; text-align: center; height: 21px;">{{ number_format($item->qty ?? 0) }}</td>
+                        <td style="border: 1px solid #334155; padding: 4px 6px; font-size: 11px; color: #0f172a; text-align: right; height: 21px;">{{ $item->unit_price ? number_format($item->unit_price, 2) : '0.00' }}</td>
+                        <td style="border: 1px solid #334155; padding: 4px 8px; font-size: 11px; font-weight: 700; color: #0f172a; text-align: right; height: 21px;">{{ $item->total_price ? number_format($item->total_price, 2) : '0.00' }}</td>
+                    </tr>
+                @else
+                    <tr>
+                        <td style="border: 1px solid #334155; padding: 4px 6px; font-size: 11px; color: #94a3b8; text-align: center; height: 21px;">{{ $i + 1 }}</td>
+                        <td style="border: 1px solid #334155; padding: 4px 8px; font-size: 11px; color: #0f172a; height: 21px;">&nbsp;</td>
+                        <td style="border: 1px solid #334155; padding: 4px 6px; font-size: 11px; color: #0f172a; text-align: center; height: 21px;">&nbsp;</td>
+                        <td style="border: 1px solid #334155; padding: 4px 6px; font-size: 11px; color: #0f172a; text-align: right; height: 21px;">&nbsp;</td>
+                        <td style="border: 1px solid #334155; padding: 4px 8px; font-size: 11px; color: #0f172a; text-align: right; height: 21px;">&nbsp;</td>
+                    </tr>
+                @endif
+            @endfor
         </tbody>
     </table>
 

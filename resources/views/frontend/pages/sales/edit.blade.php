@@ -97,7 +97,7 @@
                         <thead class="bg-light text-secondary fs-7 text-uppercase">
                             <tr>
                                 <th style="width: 35%;">Coil / Product</th>
-                                <th style="width: 25%;">Mill Lot Source</th>
+                                <th style="width: 25%;">Lot Source</th>
                                 <th style="width: 15%;">Unit Price</th>
                                 <th style="width: 10%;">Quantity (kg)</th>
                                 <th style="width: 15%;">Total Price</th>
