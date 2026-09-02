@@ -221,7 +221,6 @@
                 </td>
             </tr>
             @endif
-
             @if($taxAmount > 0)
             <tr>
                 <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
@@ -233,9 +232,8 @@
                 </td>
             </tr>
             @endif
-
+            @if ($weightScale > 0)
             <tr>
-                @if ($weightScale > 0)
                 <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
                 <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">
                     SCALE & LABOUR CHARGE
@@ -244,8 +242,9 @@
                     {{ number_format($weightScale, 2) }}
                 </td>
             </tr>
+            @endif
+            @if ($labourCost > 0)
             <tr>
-                @if ($labourCost > 0)
                 <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
                 <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">
                     CUTTING & LABOUR LOAD-UNLOAD
@@ -254,9 +253,9 @@
                     {{ number_format($labourCost, 2) }}
                 </td>
             </tr>
-                @endif
-            <tr>
+            @endif
             @if($deliveryCharge > 0)
+            <tr>
                 <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
                 <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">
                     TRANSPORT BILL
