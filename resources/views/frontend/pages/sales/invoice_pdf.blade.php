@@ -235,6 +235,7 @@
             @endif
 
             <tr>
+                @if ($weightScale > 0)
                 <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
                 <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">
                     SCALE & LABOUR CHARGE
@@ -244,6 +245,7 @@
                 </td>
             </tr>
             <tr>
+                @if ($labourCost > 0)
                 <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
                 <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">
                     CUTTING & LABOUR LOAD-UNLOAD
@@ -252,7 +254,9 @@
                     {{ number_format($labourCost, 2) }}
                 </td>
             </tr>
+                @endif
             <tr>
+            @if($deliveryCharge > 0)
                 <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
                 <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">
                     TRANSPORT BILL
@@ -261,6 +265,7 @@
                     {{ number_format($deliveryCharge, 2) }}
                 </td>
             </tr>
+            @endif()
             @if($otherCharges > 0)
             <tr>
                 <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
@@ -283,7 +288,7 @@
                 </td>
             </tr>
             @endif
-
+        
             <!-- Total Amount (Grand Payable) -->
             <tr>
                 <td colspan="2" style="border: none; background: transparent; height: 21px;"></td>
