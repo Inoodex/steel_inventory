@@ -184,7 +184,6 @@
                             <th>Stockyard / Depot Name</th>
                             <th>Location / Address</th>
                             <th>Contact Person</th>
-                            <th>Phone</th>
                             <th class="text-center">Stored Coils</th>
                             <th>Status</th>
                             <th class="text-end pe-4">Action</th>
@@ -200,7 +199,9 @@
                                 </td>
                                 <td>
                                     <div>
-                                        <span class="fw-bold text-dark d-block">{{ $wh->name }}</span>
+                                        <a href="{{ route('warehouses.show', $wh->id) }}" class="fw-bold text-dark d-block text-decoration-none">
+                                            {{ $wh->name }}
+                                        </a>
                                         @if($wh->capacity_ton)
                                             <small class="text-muted fs-7">Capacity: {{ number_format($wh->capacity_ton, 1) }} MT</small>
                                         @endif
@@ -208,14 +209,12 @@
                                 </td>
                                 <td>
                                     <span class="text-muted small">
-                                        <i class="fe fe-map-pin text-secondary me-1"></i>{{ $wh->location ?? 'Sitakunda Yard' }}
+                                        <i class="fe fe-map-pin text-secondary me-1"></i>{{ Str::limit ($wh->location, 20) ?? 'N/A' }}
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="fw-medium text-dark small">{{ $wh->contact_person ?? 'Yard Manager' }}</span>
-                                </td>
-                                <td>
-                                    <span class="text-muted small">{{ $wh->contact_phone ?? 'N/A' }}</span>
+                                    <span class="fw-medium text-dark small">{{ Str::limit ($wh->contact_person, 25) ?? 'N/A' }}</span>
+                                    <p class="text-muted small">{{ $wh->contact_phone ?? 'N/A' }}</p>
                                 </td>
                                 <td class="text-center">
                                     <span class="badge badge-soft-primary px-3 py-2 rounded-pill fs-7">
@@ -242,6 +241,12 @@
                                             <i class="fas fa-ellipsis-v"></i>
                                         </a>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('warehouses.show', $wh->id) }}">
+                                                    <i class="fe fe-eye text-info"></i>
+                                                    <span>View Details</span>
+                                                </a>
+                                            </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#editWarehouseModal{{ $wh->id }}">
                                                     <i class="fe fe-edit text-primary"></i>

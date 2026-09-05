@@ -31,6 +31,11 @@ class Purchase extends Model
         'total_price',
         'payment',
         'due',
+        'delivery_charge',
+        'labour_cost',
+        'weight_scale_cost',
+        'other_charges',
+        'discount',
         'payment_method',
         'bank_detail_id',
         'transaction_ref',
@@ -51,15 +56,28 @@ class Purchase extends Model
         $this->attributes['notes'] = $value;
     }
 
+    public function getTotalExtraChargesAttribute(): float
+    {
+        return (float)($this->delivery_charge ?? 0)
+             + (float)($this->labour_cost ?? 0)
+             + (float)($this->weight_scale_cost ?? 0)
+             + (float)($this->other_charges ?? 0);
+    }
+
     protected $casts = [
-        'unit_weight' => 'decimal:3',
-        'total_weight' => 'decimal:3',
-        'quantity' => 'decimal:2',
-        'unit_price' => 'decimal:2',
-        'sub_price' => 'decimal:2',
-        'total_price' => 'decimal:2',
-        'payment' => 'decimal:2',
-        'due' => 'decimal:2',
+        'unit_weight'         => 'decimal:3',
+        'total_weight'        => 'decimal:3',
+        'quantity'            => 'decimal:2',
+        'unit_price'          => 'decimal:2',
+        'sub_price'           => 'decimal:2',
+        'total_price'         => 'decimal:2',
+        'payment'             => 'decimal:2',
+        'due'                 => 'decimal:2',
+        'delivery_charge'     => 'decimal:2',
+        'labour_cost'         => 'decimal:2',
+        'weight_scale_cost'   => 'decimal:2',
+        'other_charges'       => 'decimal:2',
+        'discount'            => 'decimal:2',
     ];
 
     // Relationships

@@ -20,30 +20,35 @@ class PurchaseController extends Controller
 
     /**
      * Display a listing of the resource.
+     * Consolidates purchases by Lot into 1 row with expandable item details.
      */
     public function index(Request $request)
     {
-        $query = Purchase::with(['vendor', 'lot', 'warehouse', 'coils']);
+        $query = Lot::with(['vendor', 'purchases' => function ($q) {
+            $q->with(['warehouse', 'coils'])->latest();
+        }])->whereHas('purchases');
 
         // Filter by search term
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('thickness', 'like', "%{$search}%")
-                  ->orWhere('size', 'like', "%{$search}%")
+                $q->where('lot_number', 'like', "%{$search}%")
                   ->orWhereHas('vendor', function ($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%");
-                  })->orWhereHas('lot', function ($q) use ($search) {
-                      $q->where('lot_number', 'like', "%{$search}%");
-                  })->orWhereHas('coils', function ($q) use ($search) {
-                      $q->where('coil_number', 'like', "%{$search}%");
+                  })->orWhereHas('purchases', function ($q) use ($search) {
+                      $q->where('thickness', 'like', "%{$search}%")
+                        ->orWhere('size', 'like', "%{$search}%")
+                        ->orWhere('notes', 'like', "%{$search}%")
+                        ->orWhereHas('coils', function ($q) use ($search) {
+                            $q->where('coil_number', 'like', "%{$search}%");
+                        });
                   });
             });
         }
 
         // Filter by lot
         if ($request->filled('lot_id')) {
-            $query->where('lot_id', $request->lot_id);
+            $query->where('id', $request->lot_id);
         }
 
         // Filter by vendor
@@ -53,24 +58,49 @@ class PurchaseController extends Controller
 
         // Filter by warehouse
         if ($request->filled('warehouse_id')) {
-            $query->where('warehouse_id', $request->warehouse_id);
+            $query->whereHas('purchases', function ($q) use ($request) {
+                $q->where('warehouse_id', $request->warehouse_id);
+            });
         }
 
         // Filter by date range
         if ($request->filled('from') && $request->filled('to')) {
             $from = date('Y-m-d 00:00:00', strtotime($request->from));
             $to = date('Y-m-d 23:59:59', strtotime($request->to));
-            $query->whereBetween('created_at', [$from, $to]);
+            $query->where(function ($q) use ($from, $to) {
+                $q->whereBetween('lot_date', [$from, $to])
+                  ->orWhereBetween('created_at', [$from, $to]);
+            });
         }
 
-        $purchases  = $query->latest()->paginate(15)->withQueryString();
-        $products   = collect();
-        $vendors    = Vendor::latest()->get();
-        $lots       = Lot::where('status', 'active')->latest()->get();
-        $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
+        $lots = $query->latest()->paginate(15)->withQueryString();
+        $purchases = $lots; // Alias for backward compatibility
+
+        // Overall summary statistics
+        $totalLotsCount  = Lot::whereHas('purchases')->count();
+        $totalOrderValue = (float) Purchase::sum('total_price');
+        $totalPaid       = (float) Purchase::sum('payment');
+        $totalDue        = (float) Purchase::sum('due');
+        $totalWeight     = (float) Purchase::sum('total_weight');
+
+        $vendors      = Vendor::where('status', '1')->latest()->get();
+        $allLots      = Lot::where('status', 'active')->latest()->get();
+        $warehouses   = Warehouse::where('status', 'active')->orderBy('name')->get();
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
-        
-        return view('frontend.pages.purchase.index', compact('purchases', 'products', 'vendors', 'lots', 'warehouses', 'bankAccounts'));
+
+        return view('frontend.pages.purchase.index', compact(
+            'lots',
+            'purchases',
+            'vendors',
+            'allLots',
+            'warehouses',
+            'bankAccounts',
+            'totalLotsCount',
+            'totalOrderValue',
+            'totalPaid',
+            'totalDue',
+            'totalWeight'
+        ));
     }
 
     /**
@@ -129,7 +159,13 @@ class PurchaseController extends Controller
      */
     public function edit(Purchase $purchase)
     {
-        return redirect()->route('purchase.index');
+        $purchase->load(['vendor', 'lot', 'warehouse', 'coils', 'bankDetail', 'creator']);
+        $vendors = Vendor::where('status', '1')->latest()->get();
+        $lots = Lot::where('status', 'active')->latest()->get();
+        $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
+        $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
+
+        return view('frontend.pages.purchase.edit', compact('purchase', 'vendors', 'lots', 'warehouses', 'bankAccounts'));
     }
 
     /**
@@ -138,54 +174,129 @@ class PurchaseController extends Controller
     public function update(Request $request, Purchase $purchase)
     {
         $request->validate([
-            'lot_id'       => 'nullable|exists:lots,id',
-            'warehouse_id' => 'nullable|exists:warehouses,id',
-            'thickness'    => 'nullable|string|max:100',
-            'size'         => 'nullable|string|max:100',
-            'size_type'    => 'nullable|string|max:50',
-            'unit_weight'  => 'nullable|numeric|min:0',
-            'total_weight' => 'nullable|numeric|min:0',
-            'quantity'     => 'required|numeric|min:0.01',
-            'unit_price'   => 'required|numeric|min:0',
-            'sub_price'    => 'nullable|numeric',
-            'total_price'  => 'required|numeric|min:0',
-            'payment'      => 'nullable|numeric|min:0',
-            'due'          => 'nullable|numeric|min:0',
-            'vendor_id'    => 'required|exists:vendors,id',
+            'lot_id'          => 'required|exists:lots,id',
+            'warehouse_id'    => 'required|exists:warehouses,id',
+            'vendor_id'       => 'required|exists:vendors,id',
+            'thickness'       => 'nullable|string|max:100',
+            'size'            => 'nullable|string|max:100',
+            'size_type'       => 'nullable|string|max:50',
+            'unit_weight'     => 'required|numeric|min:0.001',
+            'total_weight'    => 'nullable|numeric|min:0',
+            'quantity'        => 'required|numeric|min:1',
+            'unit_price'        => 'required|numeric|min:0',
+            'sub_price'         => 'nullable|numeric',
+            'delivery_charge'   => 'nullable|numeric|min:0',
+            'labour_cost'       => 'nullable|numeric|min:0',
+            'weight_scale_cost' => 'nullable|numeric|min:0',
+            'other_charges'     => 'nullable|numeric|min:0',
+            'discount'          => 'nullable|numeric|min:0',
+            'total_price'       => 'nullable|numeric|min:0',
+            'payment'           => 'required|numeric|min:0',
+            'due'               => 'nullable|numeric|min:0',
+            'payment_method'    => 'nullable|string|in:cash,bank,cheque,mobile_banking',
+            'bank_detail_id'    => 'nullable|exists:bank_details,id',
+            'transaction_ref'   => 'nullable|string|max:255',
+            'notes'             => 'nullable|string|max:500',
+            'coil_notes'        => 'nullable|string|max:500',
         ]);
 
-        $purchase = Purchase::findOrFail($purchase->id);
+        $purchase = Purchase::with('coils')->findOrFail($purchase->id);
         $oldLotId = $purchase->lot_id;
+        $coil = $purchase->coils->first();
 
-        $purchase->lot_id       = $request->lot_id;
-        $purchase->warehouse_id = $request->warehouse_id;
-        $purchase->thickness    = $request->thickness;
-        $purchase->size         = $request->size;
-        $purchase->size_type    = $request->size_type;
-        $purchase->unit_weight  = $request->unit_weight;
-        $purchase->total_weight = $request->total_weight ?? ($request->unit_weight ? ((float)$request->unit_weight * (float)$request->quantity) : null);
-        $purchase->quantity     = $request->quantity;
-        $purchase->unit_price   = $request->unit_price;
-        $purchase->sub_price    = $request->sub_price ?? ($request->quantity * $request->unit_price);
-        $purchase->total_price  = $request->total_price;
-        $purchase->payment      = $request->payment ?? 0;
-        $purchase->due          = $request->due ?? max(0, $purchase->total_price - ($request->payment ?? 0));
-        $purchase->vendor_id    = $request->vendor_id;    
-        $purchase->updated_by   = Auth::id();
+        $coilQty = max(1, (int) $request->quantity);
+        $perCoilWeight = (float) $request->unit_weight;
+        $calculatedTotalWeight = $coilQty * $perCoilWeight;
+        $totalWeight = (float) ($request->total_weight ?: $calculatedTotalWeight);
+        if ($totalWeight <= 0 && $calculatedTotalWeight > 0) {
+            $totalWeight = $calculatedTotalWeight;
+        }
 
-        $purchase->update();
+        // Sold weight protection check
+        if ($coil) {
+            $soldWeight = max(0, (float)$coil->net_weight - (float)$coil->remaining_weight);
+            if ($soldWeight > 0 && $totalWeight < $soldWeight) {
+                return redirect()->back()->withInput()->with('error', "Cannot reduce total intake weight below " . number_format($soldWeight, 2) . " kg because this amount has already been sold and dispatched.");
+            }
+        }
+
+        $rate = (float) $request->unit_price;
+        $subPrice = (float) ($request->sub_price ?: ($totalWeight * $rate));
+
+        $deliveryCharge  = (float) ($request->delivery_charge ?? 0);
+        $labourCost      = (float) ($request->labour_cost ?? 0);
+        $weightScaleCost = (float) ($request->weight_scale_cost ?? 0);
+        $otherCharges    = (float) ($request->other_charges ?? 0);
+        $discount        = (float) ($request->discount ?? 0);
+        $netExtraCharges = ($deliveryCharge + $labourCost + $weightScaleCost + $otherCharges) - $discount;
+
+        $totalPrice = max(0, round($subPrice + $netExtraCharges, 2));
+        $payment = (float) $request->payment;
+        $due = max(0, round($totalPrice - $payment, 2));
+
+        $purchase->lot_id            = $request->lot_id;
+        $purchase->warehouse_id      = $request->warehouse_id;
+        $purchase->vendor_id         = $request->vendor_id;
+        $purchase->thickness         = $request->thickness;
+        $purchase->size              = $request->size;
+        $purchase->size_type         = $request->size_type ?: 'ft';
+        $purchase->unit_weight       = $perCoilWeight;
+        $purchase->total_weight      = $totalWeight;
+        $purchase->quantity          = $coilQty;
+        $purchase->unit_price        = $rate;
+        $purchase->sub_price         = $subPrice;
+        $purchase->delivery_charge   = $deliveryCharge;
+        $purchase->labour_cost       = $labourCost;
+        $purchase->weight_scale_cost = $weightScaleCost;
+        $purchase->other_charges     = $otherCharges;
+        $purchase->discount          = $discount;
+        $purchase->total_price       = $totalPrice;
+        $purchase->payment           = $payment;
+        $purchase->due               = $due;
+        $purchase->payment_method    = $request->payment_method ?? 'cash';
+        $purchase->bank_detail_id    = ($request->payment_method === 'bank') ? $request->bank_detail_id : null;
+        $purchase->transaction_ref   = ($request->payment_method === 'bank') ? $request->transaction_ref : null;
+        $purchase->notes             = $request->notes;
+        $purchase->updated_by        = Auth::id();
+        $purchase->save();
+
+        // Synchronize linked Coil record in yard stock
+        if ($coil) {
+            $prevNetWeight = (float) $coil->net_weight;
+            $soldWeight = max(0, $prevNetWeight - (float) $coil->remaining_weight);
+            $newRemainingWeight = max(0, $totalWeight - $soldWeight);
+
+            $coil->update([
+                'lot_id'           => $request->lot_id,
+                'vendor_id'        => $request->vendor_id,
+                'warehouse_id'     => $request->warehouse_id,
+                'thickness'        => $request->thickness,
+                'width'            => $request->size,
+                'length'           => $request->size_type ?: 'ft',
+                'piece_count'      => $coilQty,
+                'gross_weight'     => $totalWeight,
+                'net_weight'       => $totalWeight,
+                'remaining_weight' => $newRemainingWeight,
+                'rate_per_ton'     => $rate,
+                'total_price'      => $totalPrice,
+                'status'           => ($newRemainingWeight <= 0) ? 'exhausted' : 'in_stock',
+                'notes'            => $request->coil_notes ?? $coil->notes,
+                'updated_by'       => Auth::id(),
+            ]);
+        }
 
         // Update affected lots totals
-        foreach (array_filter([$oldLotId, $request->lot_id]) as $lId) {
+        foreach (array_unique(array_filter([$oldLotId, $request->lot_id])) as $lId) {
             $lot = Lot::find($lId);
             if ($lot) {
-                $lot->total_quantity = $lot->purchases()->sum('quantity');
+                $lot->total_quantity = $lot->purchases()->sum('total_weight');
                 $lot->total_amount   = $lot->purchases()->sum('total_price');
                 $lot->save();
             }
         }
 
-        return redirect()->back()->with('success', 'Purchase updated successfully.');
+        return redirect()->route('purchase.show', $purchase->id)
+            ->with('success', 'Purchase order #PO-' . $purchase->id . ' and physical coil specifications updated successfully.');
     }
 
     /**

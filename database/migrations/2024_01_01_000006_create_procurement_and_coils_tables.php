@@ -24,6 +24,11 @@ return new class extends Migration
             $table->decimal('total_price', 15, 2);
             $table->decimal('payment', 15, 2)->default(0.00);
             $table->decimal('due', 15, 2)->default(0.00);
+            $table->decimal('delivery_charge', 15, 2)->default(0.00);
+            $table->decimal('labour_cost', 15, 2)->default(0.00);
+            $table->decimal('weight_scale_cost', 15, 2)->default(0.00);
+            $table->decimal('other_charges', 15, 2)->default(0.00);
+            $table->decimal('discount', 15, 2)->default(0.00);
             $table->string('payment_method')->default('cash');
             $table->unsignedBigInteger('bank_detail_id')->nullable();
             $table->string('transaction_ref')->nullable();

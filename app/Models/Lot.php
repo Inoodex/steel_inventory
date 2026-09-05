@@ -44,6 +44,14 @@ class Lot extends Model
         return $this->hasMany(Coil::class);
     }
 
+    /**
+     * Get the primary warehouse for this lot from its purchases
+     */
+    public function getWarehouseAttribute()
+    {
+        return $this->purchases->first()?->warehouse;
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');

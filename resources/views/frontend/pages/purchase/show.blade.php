@@ -66,10 +66,6 @@
                 </p>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <a href="{{ route('purchase.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2">
-                    <i class="fe fe-arrow-left"></i>
-                    <span>Back to Purchases</span>
-                </a>
 
                 @if($purchase->due > 0)
                     <button type="button" class="btn btn-success px-4 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2 text-white fw-semibold"
@@ -79,10 +75,10 @@
                     </button>
                 @endif
 
-                <button type="button" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#edit-purchase-modal">
-                    <i class="fe fe-edit"></i>
-                    <span>Edit Purchase</span>
-                </button>
+                <a href="{{ route('purchase.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2">
+                    <i class="fe fe-arrow-left"></i>
+                    <span>Back to Purchases</span>
+                </a>
             </div>
         </div>
     </div>
@@ -114,9 +110,6 @@
                         <h6 class="text-muted fw-normal mb-1">Total Weight</h6>
                         <h4 class="mb-0 fw-bold text-dark">
                             {{ number_format($purchase->total_weight ?? 0, 2) }} kg
-                            @if(($purchase->total_weight ?? 0) >= 1000)
-                                <small class="fs-7 text-muted fw-normal">({{ number_format($purchase->total_weight / 1000, 3) }} MT)</small>
-                            @endif
                         </h4>
                     </div>
                 </div>
@@ -326,7 +319,7 @@
                         </div>
                         <div class="col-md-4">
                             <div class="p-3 bg-light rounded-3 text-center">
-                                <span class="text-muted small d-block">Sub Total</span>
+                                <span class="text-muted small d-block">Base Steel Sub Total</span>
                                 <span class="fs-6 fw-bold text-dark">৳ {{ number_format($purchase->sub_price ?: $purchase->total_price, 2) }}</span>
                             </div>
                         </div>
@@ -337,6 +330,54 @@
                             </div>
                         </div>
                     </div>
+
+                    @php
+                        $hasCharges = ($purchase->delivery_charge > 0 || $purchase->labour_cost > 0 || $purchase->weight_scale_cost > 0 || $purchase->other_charges > 0 || $purchase->discount > 0);
+                    @endphp
+                    @if($hasCharges)
+                        <div class="mt-3 p-3 bg-light rounded-3 border border-light-subtle">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                                <span class="fw-bold text-dark small">
+                                    <i class="fe fe-dollar-sign text-primary me-1"></i>Procurement Charges & Financial Adjustments
+                                </span>
+                                <span class="badge bg-white text-dark border px-2 py-0.5 fs-8">
+                                    Extra Charges: <strong class="text-primary">৳ {{ number_format($purchase->total_extra_charges, 2) }}</strong>
+                                </span>
+                            </div>
+                            <div class="row g-2 small text-secondary">
+                                @if($purchase->delivery_charge > 0)
+                                    <div class="col-sm-6 col-12 d-flex justify-content-between">
+                                        <span><i class="fe fe-truck text-muted me-1"></i>Delivery / Freight:</span>
+                                        <strong class="text-dark">৳ {{ number_format($purchase->delivery_charge, 2) }}</strong>
+                                    </div>
+                                @endif
+                                @if($purchase->labour_cost > 0)
+                                    <div class="col-sm-6 col-12 d-flex justify-content-between">
+                                        <span><i class="fe fe-user-check text-muted me-1"></i>Cutting & Labour:</span>
+                                        <strong class="text-dark">৳ {{ number_format($purchase->labour_cost, 2) }}</strong>
+                                    </div>
+                                @endif
+                                @if($purchase->weight_scale_cost > 0)
+                                    <div class="col-sm-6 col-12 d-flex justify-content-between">
+                                        <span><i class="fe fe-activity text-muted me-1"></i>Scale Slip:</span>
+                                        <strong class="text-dark">৳ {{ number_format($purchase->weight_scale_cost, 2) }}</strong>
+                                    </div>
+                                @endif
+                                @if($purchase->other_charges > 0)
+                                    <div class="col-sm-6 col-12 d-flex justify-content-between">
+                                        <span><i class="fe fe-plus-circle text-muted me-1"></i>Other Charges:</span>
+                                        <strong class="text-dark">৳ {{ number_format($purchase->other_charges, 2) }}</strong>
+                                    </div>
+                                @endif
+                                @if($purchase->discount > 0)
+                                    <div class="col-sm-6 col-12 d-flex justify-content-between">
+                                        <span class="text-danger"><i class="fe fe-tag text-danger me-1"></i>Supplier Discount:</span>
+                                        <strong class="text-danger">- ৳ {{ number_format($purchase->discount, 2) }}</strong>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -444,11 +485,11 @@
                                     </td>
                                     <td>
                                         <span class="fw-semibold text-dark">{{ $coil->thickness }}</span>
-                                        @if($coil->size)
-                                            <span class="text-muted">| {{ $coil->size }}</span>
+                                        @if($coil->width || $coil->length)
+                                            <span class="text-muted">| {{ $coil->width }} {{ $coil->length }}</span>
                                         @endif
                                     </td>
-                                    <td class="text-secondary fw-medium">{{ number_format($coil->weight, 2) }} kg</td>
+                                    <td class="text-secondary fw-medium">{{ number_format($coil->net_weight ?? $coil->gross_weight, 2) }} kg</td>
                                     <td class="fw-bold text-primary">{{ number_format($coil->remaining_weight, 2) }} kg</td>
                                     <td>
                                         <span class="text-muted small">
@@ -457,13 +498,17 @@
                                     </td>
                                     <td class="text-end pe-4">
                                         @if($coil->status === 'in_stock')
-                                            <span class="badge badge-soft-success px-3 py-1 rounded-pill">In Stock</span>
-                                        @elseif($coil->status === 'cutting')
-                                            <span class="badge badge-soft-warning px-3 py-1 rounded-pill">Cutting</span>
-                                        @elseif($coil->status === 'sold')
-                                            <span class="badge badge-soft-info px-3 py-1 rounded-pill">Sold</span>
+                                            <span class="badge badge-soft-success px-3 py-1 rounded-pill"><i class="fe fe-check-circle me-1"></i>In Stock</span>
+                                        @elseif($coil->status === 'processing')
+                                            <span class="badge badge-soft-warning px-3 py-1 rounded-pill"><i class="fe fe-activity me-1"></i>Processing</span>
+                                        @elseif($coil->status === 'reserved')
+                                            <span class="badge badge-soft-info px-3 py-1 rounded-pill"><i class="fe fe-bookmark me-1"></i>Reserved</span>
+                                        @elseif($coil->status === 'exhausted')
+                                            <span class="badge badge-soft-secondary px-3 py-1 rounded-pill"><i class="fe fe-archive me-1"></i>Exhausted</span>
+                                        @elseif($coil->status === 'scrapped')
+                                            <span class="badge badge-soft-danger px-3 py-1 rounded-pill"><i class="fe fe-trash-2 me-1"></i>Scrapped</span>
                                         @else
-                                            <span class="badge bg-light text-muted border px-3 py-1 rounded-pill">{{ ucfirst($coil->status) }}</span>
+                                            <span class="badge bg-light text-muted border px-3 py-1 rounded-pill">{{ ucfirst(str_replace('_', ' ', $coil->status)) }}</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -475,95 +520,107 @@
         </div>
     @endif
 
-</div>
-
-<!-- Edit Purchase Modal (Outside tables as per AGENTS.md rules) -->
-<div class="modal fade" id="edit-purchase-modal" aria-hidden="true" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-3">
-            <div class="modal-header bg-light py-3 border-bottom">
-                <h5 class="modal-title fw-bold text-dark">Edit Purchase #PO-{{ $purchase->id }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="POST" action="{{ route('purchase.update', $purchase->id) }}">
-                @csrf
-                @method('PUT')
-                <div class="modal-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="edit-lot_id" class="form-label fw-semibold small text-secondary">Purchase Lot <span class="text-danger">*</span></label>
-                            <select id="edit-lot_id" name="lot_id" class="form-select select2" required>
-                                <option value="">Select Purchase Lot</option>
-                                @foreach (\App\Models\Lot::where('status', 'active')->get() as $lot)
-                                    <option value="{{ $lot->id }}" data-vendor-id="{{ $lot->vendor_id }}" {{ $lot->id == $purchase->lot_id ? 'selected' : '' }}>
-                                        {{ $lot->lot_number }} — {{ $lot->vendor ? $lot->vendor->name : '' }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label for="edit-warehouse_id" class="form-label fw-semibold small text-secondary">Stockyard / Warehouse</label>
-                            <select id="edit-warehouse_id" name="warehouse_id" class="form-select select2">
-                                <option value="">Select Stockyard / Warehouse</option>
-                                @foreach (\App\Models\Warehouse::where('status', 'active')->orderBy('name')->get() as $wh)
-                                    <option value="{{ $wh->id }}" {{ $wh->id == $purchase->warehouse_id ? 'selected' : '' }}>
-                                        {{ $wh->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-secondary">Vendor <span class="text-danger">*</span></label>
-                            <input type="text" id="edit-vendor-display" class="form-control bg-light" readonly value="{{ $purchase->vendor ? $purchase->vendor->name : '' }}">
-                            <input type="hidden" name="vendor_id" id="edit-vendor-hidden" value="{{ $purchase->vendor_id }}">
-                        </div>
-
-                        <div class="col-md-3">
-                            <label for="edit-thickness" class="form-label fw-semibold small text-secondary">Thickness</label>
-                            <input id="edit-thickness" name="thickness" value="{{ $purchase->thickness }}" class="form-control" placeholder="e.g. 16mm" />
-                        </div>
-                        <div class="col-md-3">
-                            <label for="edit-size" class="form-label fw-semibold small text-secondary">Size / Length</label>
-                            <input id="edit-size" name="size" value="{{ $purchase->size }}" class="form-control" placeholder="e.g. 12m" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="edit-unit_weight" class="form-label fw-semibold small text-secondary">Unit Weight (kg)</label>
-                            <input type="number" step="0.001" id="edit-unit_weight" name="unit_weight" value="{{ $purchase->unit_weight }}" class="form-control" placeholder="0.000" />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="edit-quantity" class="form-label fw-semibold small text-secondary">Quantity (Coils)</label>
-                            <input id="edit-quantity" name="quantity" value="{{ $purchase->quantity }}" class="form-control" placeholder="Quantity" />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="edit-unit_price" class="form-label fw-semibold small text-secondary">Unit Cost Rate (৳)</label>
-                            <input id="edit-unit_price" name="unit_price" value="{{ $purchase->unit_price }}" class="form-control" placeholder="Unit Price" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="edit-sub_price" class="form-label fw-semibold small text-secondary">Sub Price (৳)</label>
-                            <input id="edit-sub_price" name="sub_price" value="{{ $purchase->sub_price }}" class="form-control bg-light" readonly />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="edit-total_price" class="form-label fw-semibold small text-secondary">Payable Total Price (৳)</label>
-                            <input id="edit-total_price" name="total_price" value="{{ $purchase->total_price }}" class="form-control" />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="edit-payment" class="form-label fw-semibold small text-secondary">Payment (৳)</label>
-                            <input id="edit-payment" name="payment" value="{{ $purchase->payment }}" class="form-control" />
-                        </div>
+    <!-- Payment & Disbursement History Table -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
+            <h5 class="card-title fw-bold text-dark mb-0">
+                <i class="fe fe-dollar-sign text-success me-2"></i>Payment & Disbursement History
+                <span class="badge badge-soft-primary ms-2">{{ $purchase->payments->count() }}</span>
+            </h5>
+            @if($purchase->due > 0)
+                <button type="button" class="btn btn-sm btn-success rounded-pill px-3 shadow-none fw-semibold"
+                    onclick="openPurchaseDueModal('{{ $purchase->id }}', '{{ $purchase->vendor_id }}', '{{ addslashes($purchase->vendor->name ?? 'Vendor') }}', '{{ $purchase->due }}')">
+                    <i class="fe fe-plus me-1"></i>Add Disbursement
+                </button>
+            @endif
+        </div>
+        <div class="card-body p-0">
+            @if($purchase->payments->count() > 0)
+                <div class="table-responsive">
+                    <table class="table table-hover table-custom align-middle mb-0">
+                        <thead class="bg-light text-secondary fs-7 text-uppercase">
+                            <tr>
+                                <th class="ps-4">Voucher / Ref</th>
+                                <th>Date</th>
+                                <th>Channel</th>
+                                <th>Account / Bank</th>
+                                <th>Transaction Ref</th>
+                                <th class="text-end">Amount Disbursed</th>
+                                <th>Recorded By</th>
+                                <th class="text-end pe-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($purchase->payments as $pmt)
+                                <tr>
+                                    <td class="ps-4">
+                                        <span class="fw-bold font-monospace text-primary">#PAY-{{ $pmt->id }}</span>
+                                    </td>
+                                    <td class="text-dark fw-medium">
+                                        {{ $pmt->payment_date ? \Carbon\Carbon::parse($pmt->payment_date)->format('d M, Y') : $pmt->created_at->format('d M, Y') }}
+                                    </td>
+                                    <td>
+                                        @if($pmt->payment_method === 'bank')
+                                            <span class="badge badge-soft-primary px-2 py-1 rounded-pill">Bank Transfer</span>
+                                        @elseif($pmt->payment_method === 'mobile_banking')
+                                            <span class="badge badge-soft-info px-2 py-1 rounded-pill">MFS</span>
+                                        @elseif($pmt->payment_method === 'cheque')
+                                            <span class="badge badge-soft-warning px-2 py-1 rounded-pill">Cheque</span>
+                                        @else
+                                            <span class="badge badge-soft-success px-2 py-1 rounded-pill">Cash</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-secondary small">
+                                        @if($pmt->bankDetail)
+                                            <span class="fw-semibold text-dark">{{ $pmt->bankDetail->bank_name }}</span>
+                                            <div class="text-muted fs-8">{{ $pmt->bankDetail->account_number }}</div>
+                                        @else
+                                            <span class="text-muted">Cash in Hand</span>
+                                        @endif
+                                    </td>
+                                    <td class="font-monospace small text-muted">
+                                        {{ $pmt->transaction_ref ?: '—' }}
+                                    </td>
+                                    <td class="text-end fw-bold text-success fs-6">
+                                        ৳ {{ number_format($pmt->amount, 2) }}
+                                    </td>
+                                    <td class="text-secondary small">
+                                        {{ $pmt->creator?->name ?? 'System' }}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <span class="badge badge-soft-success px-3 py-1 rounded-pill">
+                                            <i class="fe fe-check me-1"></i>Settled
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot class="bg-light-subtle">
+                            <tr class="fw-bold">
+                                <td colspan="5" class="ps-4 text-dark">Total Disbursements Recorded</td>
+                                <td class="text-end text-success fs-6">৳ {{ number_format($purchase->payments->sum('amount'), 2) }}</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            @else
+                <div class="p-4 text-center">
+                    <div class="avatar avatar-lg bg-light-warning text-warning rounded-circle mb-2 mx-auto d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="fe fe-info fs-4"></i>
                     </div>
+                    <p class="text-muted mb-1">No payment vouchers recorded for this purchase yet.</p>
+                    @if($purchase->due > 0)
+                        <span class="text-danger fw-semibold small">Outstanding Due: ৳ {{ number_format($purchase->due, 2) }}</span>
+                    @endif
                 </div>
-                <div class="modal-footer border-top bg-light">
-                    <button type="button" class="btn btn-light px-4 rounded-3 text-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary px-4 rounded-3 shadow-sm">Update Purchase</button>
-                </div>
-            </form>
+            @endif
         </div>
     </div>
+
 </div>
+
+
 
 <!-- Purchase Due Settlement Modal (outside table structure) -->
 <div class="modal fade" id="purchaseDuePaymentModal" tabindex="-1" aria-labelledby="purchaseDuePaymentModalLabel" aria-hidden="true">

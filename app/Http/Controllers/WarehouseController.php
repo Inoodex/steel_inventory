@@ -73,6 +73,54 @@ class WarehouseController extends Controller
     }
 
     /**
+     * Display the specified resource.
+     */
+    public function show(Request $request, $id)
+    {
+        $warehouse = Warehouse::withCount(['purchases', 'sales', 'coils'])->findOrFail($id);
+
+        // Coils currently located at this warehouse
+        $coilsQuery = $warehouse->coils()->with(['vendor', 'lot', 'purchase'])->latest();
+
+        if ($request->filled('coil_status')) {
+            $coilsQuery->where('status', $request->coil_status);
+        }
+
+        $coils = $coilsQuery->paginate(15, ['*'], 'coils_page')->withQueryString();
+
+        // Key yard inventory analytics
+        $inStockCoilsCount = $warehouse->coils()->where('status', 'in_stock')->count();
+        $inProcessingCoilsCount = $warehouse->coils()->where('status', 'processing')->count();
+        $totalStockTonnageKg = (float) $warehouse->coils()->whereIn('status', ['in_stock', 'processing'])->sum('remaining_weight');
+        $totalStockTonnageMT = $totalStockTonnageKg / 1000;
+        
+        $totalStockValuation = (float) $warehouse->coils()->whereIn('status', ['in_stock', 'processing'])->sum('total_price');
+
+        $capacityTon = (float) ($warehouse->capacity_ton ?? 0);
+        $utilizationPercent = $capacityTon > 0 ? min(100, round(($totalStockTonnageMT / $capacityTon) * 100, 1)) : 0;
+
+        // Recent purchases received at this warehouse
+        $recentPurchases = $warehouse->purchases()->with(['vendor', 'lot'])->latest()->take(10)->get();
+
+        // Recent sales dispatched from this warehouse
+        $recentSales = $warehouse->sales()->with('customer')->latest()->take(10)->get();
+
+        return view('frontend.pages.warehouses.show', compact(
+            'warehouse',
+            'coils',
+            'inStockCoilsCount',
+            'inProcessingCoilsCount',
+            'totalStockTonnageMT',
+            'totalStockTonnageKg',
+            'totalStockValuation',
+            'capacityTon',
+            'utilizationPercent',
+            'recentPurchases',
+            'recentSales'
+        ));
+    }
+
+    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, $id)
@@ -96,7 +144,7 @@ class WarehouseController extends Controller
 
         $warehouse->update($validated);
 
-        return redirect()->route('warehouses.index')->with('success', 'Stockyard / Warehouse updated successfully.');
+        return redirect()->back()->with('success', 'Stockyard / Warehouse updated successfully.');
     }
 
     /**

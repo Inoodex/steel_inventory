@@ -2,12 +2,7 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-
-use App\Models\LeadGenaration;
 use Illuminate\Database\Seeder;
-use Database\Seeders\ProductsSeeder;
-use Database\Factories\LeadGenarationFactory;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,8 +11,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(UserSeeder::class);
-        $this->call(PermissionSeeder::class);
-        $this->call(ChartOfAccountSeeder::class);
+        $this->call([
+            UserSeeder::class,
+            PermissionSeeder::class,
+            CompanyDetailSeeder::class,
+            WarehouseSeeder::class,
+            VendorSeeder::class,
+            CustomerSeeder::class,
+            ChartOfAccountSeeder::class,
+            BankDetailSeeder::class,
+        ]);
     }
 }

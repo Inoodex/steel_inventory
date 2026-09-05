@@ -10,11 +10,25 @@
         transform: translateY(-3px);
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08) !important;
     }
-    .table-custom tbody tr {
+    .table-custom tbody tr.lot-row {
+        cursor: pointer;
         transition: background-color 0.15s ease;
     }
-    .table-custom tbody tr:hover {
-        background-color: #fcfbff !important;
+    .table-custom tbody tr.lot-row:hover {
+        background-color: #f8fafc !important;
+    }
+    .lot-details-row {
+        transition: all 0.2s ease-in-out;
+    }
+    .expand-icon {
+        transition: transform 0.2s ease-in-out;
+        display: inline-block;
+    }
+    .rotate-90 {
+        transform: rotate(90deg);
+    }
+    .shadow-inner {
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.03);
     }
     .badge-soft-success {
         background-color: rgba(25, 135, 84, 0.12) !important;
@@ -62,9 +76,17 @@
         color: #ffffff !important;
         border-color: #7638ff !important;
     }
-
+    .table-responsive {
+        overflow: visible !important;
+    }
+    .dropdown-menu {
+        z-index: 1060 !important;
+    }
     .table-custom th, .table-custom td {
         white-space: nowrap;
+    }
+    .fs-8 {
+        font-size: 0.8rem;
     }
 </style>
 @endpush
@@ -77,9 +99,9 @@
         <div class="content-page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
                 <h4 class="card-title fw-bold text-dark mb-1">Purchase List</h4>
-                <p class="text-muted small mb-0">Manage stock purchases, vendor payments, unit costs, and serial numbers</p>
+                <p class="text-muted small mb-0">Purchases grouped by Lot intake batch. Click any row to expand coil specifications.</p>
             </div>
-            <div>
+            <div class="d-flex align-items-center gap-2">
                 <a href="{{ route('purchase.create') }}" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
                     <i class="fe fe-plus-circle fs-6"></i>
                     <span>Add Purchase</span>
@@ -95,11 +117,11 @@
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center p-3">
                     <div class="avatar avatar-md bg-primary-light text-primary rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-shopping-cart fs-5"></i>
+                        <i class="fe fe-package fs-5"></i>
                     </div>
                     <div>
-                        <span class="text-muted small fw-medium d-block mb-1">Total Purchases</span>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($purchases->total()) }}</h4>
+                        <span class="text-muted small fw-medium d-block mb-1">Total Lots / Intakes</span>
+                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($totalLotsCount ?? $lots->total()) }}</h4>
                     </div>
                 </div>
             </div>
@@ -113,7 +135,7 @@
                     </div>
                     <div>
                         <span class="text-muted small fw-medium d-block mb-1">Total Order Value</span>
-                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($purchases->sum('total_price'), 2) }}</h4>
+                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($totalOrderValue, 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -128,11 +150,11 @@
                     <div class="flex-grow-1 row g-0 align-items-center">
                         <div class="col-6 pe-3">
                             <span class="text-muted small fw-medium d-block mb-1">Total Paid</span>
-                            <h4 class="mb-0 fw-bold text-success">৳{{ number_format($purchases->sum('payment'), 2) }}</h4>
+                            <h4 class="mb-0 fw-bold text-success">৳{{ number_format($totalPaid, 2) }}</h4>
                         </div>
                         <div class="col-6 ps-3 border-start">
                             <span class="text-muted small fw-medium d-block mb-1">Total Due</span>
-                            <h4 class="mb-0 fw-bold text-danger">৳{{ number_format($purchases->sum('due'), 2) }}</h4>
+                            <h4 class="mb-0 fw-bold text-danger">৳{{ number_format($totalDue, 2) }}</h4>
                         </div>
                     </div>
                 </div>
@@ -155,9 +177,9 @@
                     <div class="col-12 col-md-3">
                         <select name="lot_id" class="form-select border-light-subtle select2" onchange="document.getElementById('purchaseFilterForm').submit()">
                             <option value="">All Lots</option>
-                            @foreach ($lots as $lot)
-                                <option value="{{ $lot->id }}" {{ request('lot_id') == $lot->id ? 'selected' : '' }}>
-                                    {{ $lot->lot_number }} ({{ $lot->vendor ? $lot->vendor->name : 'N/A' }})
+                            @foreach ($allLots ?? $lots as $l)
+                                <option value="{{ $l->id }}" {{ request('lot_id') == $l->id ? 'selected' : '' }}>
+                                    {{ $l->lot_number }} ({{ $l->vendor ? $l->vendor->name : 'N/A' }})
                                 </option>
                             @endforeach
                         </select>
@@ -182,8 +204,13 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-12 col-md-2 text-md-end text-muted small">
-                        Showing <span class="fw-bold text-dark">{{ $purchases->count() }}</span> of {{ $purchases->total() }} entries
+                    <div class="col-12 col-md-2 text-md-end d-flex align-items-center justify-content-md-end justify-content-between gap-2">
+                        <span class="text-muted small">
+                            <span class="fw-bold text-dark">{{ $lots->count() }}</span> of {{ $lots->total() }} Lots
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline-primary rounded-3 px-2 py-1 shadow-none" id="toggleAllLotsBtn" onclick="toggleAllLots()" title="Expand or collapse all lot items">
+                            <i class="fe fe-maximize-2 me-1" id="toggleAllIcon"></i><span id="toggleAllText">Expand All</span>
+                        </button>
                     </div>
                 </div>
             </form>
@@ -195,116 +222,264 @@
                 <table class="table table-hover table-custom align-middle mb-0" id="purchaseTable">
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
-                            <th class="ps-4">#</th>
+                            <th class="ps-3" style="width: 70px;">#</th>
                             <th>Date</th>
                             <th>Lot Number</th>
                             <th>Vendor</th>
-                            <th>Weight / Qty</th>
-                            <th>Unit Rate</th>
-                            <th>Total Price</th>
-                            <th>Due</th>
+                            <th>Stockyard</th>
+                            <th class="text-center">Steel Items / Coils</th>
+                            <th class="text-end">Total Weight</th>
+                            <th class="text-end">Total Bill</th>
+                            <th class="text-center">Status / Due</th>
                             <th class="text-end pe-4">Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
-                        @forelse ($purchases as $purchase)
-                            <tr>
-                                <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration + ($purchases->currentPage() - 1) * $purchases->perPage() }}</td>
-                                <td>
-                                    <span class="text-secondary small">
-                                        {{ $purchase->created_at ? $purchase->created_at->format('d M Y') : 'N/A' }}
-                                    </span>
+                        @forelse ($lots as $lot)
+                            @php
+                                $lotPurchases = $lot->purchases ?? collect();
+                                $lotItemCount = $lotPurchases->count();
+                                $lotCoilCount = (int) $lotPurchases->sum('quantity');
+                                $lotTotalWeight = (float) $lotPurchases->sum('total_weight');
+                                $lotTotalPrice = (float) $lotPurchases->sum('total_price');
+                                $lotDue = (float) $lotPurchases->sum('due');
+                                $warehousesInLot = $lotPurchases->pluck('warehouse.name')->filter()->unique();
+                            @endphp
+
+                            <!-- Main Lot Row (Clickable to Expand) -->
+                            <tr class="lot-row" data-lot-id="{{ $lot->id }}" onclick="toggleLotDetails({{ $lot->id }}, event)" title="Click to view coils in this lot">
+                                <td class="ps-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="text-muted fw-semibold small">{{ $loop->iteration + ($lots->currentPage() - 1) * $lots->perPage() }}</span>
+                                    </div>
                                 </td>
                                 <td>
-                                    @if($purchase->lot)
-                                        <a href="{{ route('lots.show', $purchase->lot->id) }}" class="fw-bold text-primary text-decoration-none d-inline-flex align-items-center gap-1">
-                                            <i class="fe fe-package"></i>
-                                            <span>{{ $purchase->lot->lot_number }}</span>
-                                        </a>
-                                    @else
-                                        <span class="badge bg-light text-muted border">Direct Stock</span>
-                                    @endif
+                                    <span class="text-dark fw-semibold small d-block">
+                                        {{ $lot->lot_date ? $lot->lot_date->format('d M Y') : ($lot->created_at ? $lot->created_at->format('d M Y') : 'N/A') }}
+                                    </span>
+                                    <small class="text-muted fs-8">{{ $lot->created_at ? $lot->created_at->diffForHumans() : '' }}</small>
+                                </td>
+                                <td>
+                                    <a href="{{ route('lots.show', $lot->id) }}" class="fw-bold text-primary text-decoration-none d-inline-flex align-items-center gap-1" onclick="event.stopPropagation()">
+                                        <i class="fe fe-package"></i>
+                                        <span>{{ $lot->lot_number }}</span>
+                                    </a>
                                 </td>
                                 <td>
                                     <span class="fw-semibold text-dark d-block">
-                                        {{ Str::limit($purchase->vendor->name ?? 'N/A', 22) }}
+                                        {{ Str::limit($lot->vendor->name ?? 'N/A', 22) }}
                                     </span>
-                                    @if($purchase->vendor && $purchase->vendor->phone)
-                                        <small class="text-muted fs-8">{{ $purchase->vendor->phone }}</small>
+                                    @if($lot->vendor && $lot->vendor->phone)
+                                        <small class="text-muted fs-8">{{ $lot->vendor->phone }}</small>
                                     @endif
                                 </td>
                                 <td>
                                     @php
-                                        $coilPcs = (int) $purchase->quantity;
-                                        $unitW = (float) $purchase->unit_weight;
-                                        $totW = (float) ($purchase->total_weight ?: ($unitW ? ($unitW * $purchase->quantity) : 0));
+                                        $primaryWhName = $warehousesInLot->first() ?? 'Main Yard';
                                     @endphp
-                                    <span class="badge bg-light text-dark border px-2 py-1 fs-8">
-                                        {{ $coilPcs > 0 ? $coilPcs : 1 }} {{ Str::plural('Coil', $coilPcs > 0 ? $coilPcs : 1) }}
-                                    </span>
-                                    @if($totW > 0)
-                                        <small class="text-dark fw-bold d-block mt-1">
-                                            {{ number_format($totW, 2) }} kg
-                                            @if($totW >= 1000)
-                                                <span class="text-muted fw-normal">({{ number_format($totW / 1000, 3) }} MT)</span>
-                                            @endif
-                                        </small>
-                                    @endif
-                                </td>
-                                <td>
-                                    <span class="fw-medium text-dark">৳{{ number_format($purchase->unit_price, 2) }}</span>
-                                    <small class="text-muted d-block fs-8">per ton/unit</small>
-                                </td>
-                                <td>
-                                    <span class="fw-bold text-dark">৳{{ number_format($purchase->total_price, 2) }}</span>
-                                </td>
-                                <td>
-                                    @if($purchase->due > 0)
-                                        <span class="badge badge-soft-danger px-3 py-1 rounded-pill fs-7">
-                                            ৳{{ number_format($purchase->due, 2) }}
+                                    @if($warehousesInLot->count() > 1)
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" title="{{ $warehousesInLot->implode(', ') }}">
+                                            <i class="fe fe-map-pin me-1 text-primary"></i>{{ Str::limit($primaryWhName, 18) }}
+                                            <span class="badge bg-dark rounded-pill ms-1">+{{ $warehousesInLot->count() - 1 }}</span>
+                                        </span>
+                                    @elseif($warehousesInLot->count() === 1)
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" title="{{ $primaryWhName }}">
+                                            <i class="fe fe-map-pin me-1 text-primary"></i>{{ Str::limit($primaryWhName, 20) }}
                                         </span>
                                     @else
-                                        <span class="badge badge-soft-success px-3 py-1 rounded-pill fs-7">
+                                        <span class="badge bg-light text-muted border">
+                                            <i class="fe fe-map-pin me-1"></i>Main Yard
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-dark rounded-pill px-2.5 py-1 fs-8">
+                                        {{ $lotItemCount }} {{ Str::plural('Item', $lotItemCount) }}
+                                    </span>
+                                    <small class="text-muted d-block fs-8 mt-0.5">
+                                        {{ $lotCoilCount }} {{ Str::plural('Coil', $lotCoilCount) }}
+                                    </small>
+                                </td>
+                                <td class="text-end">
+                                    <span class="fw-bold text-dark font-monospace d-block">
+                                        {{ number_format($lotTotalWeight, 2) }} kg
+                                    </span>
+                                    @if($lotTotalWeight >= 1000)
+                                        <small class="text-muted fs-8">({{ number_format($lotTotalWeight / 1000, 2) }} MT)</small>
+                                    @endif
+                                </td>
+                                <td class="text-end">
+                                    <span class="fw-bold text-dark font-monospace">
+                                        ৳{{ number_format($lotTotalPrice, 2) }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if($lotDue > 0)
+                                        <span class="badge badge-soft-danger px-2.5 py-1 rounded-pill fs-8">
+                                            Due: ৳{{ number_format($lotDue, 2) }}
+                                        </span>
+                                    @else
+                                        <span class="badge badge-soft-success px-2.5 py-1 rounded-pill fs-8">
                                             Paid
                                         </span>
                                     @endif
                                 </td>
-                                <td class="text-end pe-4">
+                                <td class="text-end pe-4" onclick="event.stopPropagation()">
                                     <div class="dropdown">
                                         <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
                                             <i class="fas fa-ellipsis-v"></i>
                                         </a>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
-                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $purchase->id) }}">
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" onclick="toggleLotDetails({{ $lot->id }}, event)">
+                                                    <i class="fe fe-list text-primary"></i>
+                                                    <span>Expand Items ({{ $lotItemCount }})</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $lot->id) }}">
                                                     <i class="fe fe-eye text-info"></i>
-                                                    <span>View Details</span>
+                                                    <span>View Lot Profile</span>
                                                 </a>
                                             </li>
                                             <li>
-                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#edit-purchase-{{ $purchase->id }}">
-                                                    <i class="fe fe-edit text-primary"></i>
-                                                    <span>Edit Purchase</span>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.create') }}?lot_id={{ $lot->id }}">
+                                                    <i class="fe fe-plus text-success"></i>
+                                                    <span>Add Coils to Lot</span>
                                                 </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
-                                                    onclick="if (confirm('Are you sure you want to delete this purchase record?')) { document.getElementById('deletePurchase{{ $purchase->id }}').submit(); }">
-                                                    <i class="fe fe-trash-2 text-danger"></i>
-                                                    <span>Delete Purchase</span>
-                                                </a>
-                                                <form id="deletePurchase{{ $purchase->id }}" action="{{ route('purchase.destroy', $purchase->id) }}" method="POST" class="d-none">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                </form>
                                             </li>
                                         </ul>
                                     </div>
                                 </td>
                             </tr>
+
+                            <!-- Collapsible Details Row (Shows all steel items/coils for this lot) -->
+                            <tr class="lot-details-row" id="lot-details-{{ $lot->id }}" style="display: none; background-color: #f8fafc;">
+                                <td colspan="10" class="p-0 border-0">
+                                    <div class="p-3 bg-light-subtle border-start border-4 border-primary shadow-inner">
+                                        <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-primary rounded-pill px-2.5 py-1 fs-8">
+                                                    <i class="fe fe-layers me-1"></i>Lot Items Breakdown
+                                                </span>
+                                                <span class="fw-bold text-dark fs-7">
+                                                    Coils & Plates Intake Details for {{ $lot->lot_number }}
+                                                </span>
+                                            </div>
+                                            <div class="text-muted small">
+                                                Total: {{ $lotItemCount }} {{ Str::plural('item', $lotItemCount) }} | {{ number_format($lotTotalWeight, 2) }} kg
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive bg-white rounded-3 border shadow-sm">
+                                            <table class="table table-sm table-hover table-custom align-middle mb-0">
+                                                <thead class="bg-light fs-8 text-uppercase text-secondary">
+                                                    <tr>
+                                                        <th class="ps-3" style="width: 40px;">#</th>
+                                                        <th>Specifications & Dimensions</th>
+                                                        <th>Coil Tag / ID</th>
+                                                        <th class="text-center">Qty</th>
+                                                        <th class="text-end">Per Coil Wt</th>
+                                                        <th class="text-end">Total Wt</th>
+                                                        <th class="text-end">Unit Rate</th>
+                                                        <th class="text-end">Sub Total</th>
+                                                        <th class="text-end pe-4">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($lotPurchases as $item)
+                                                        <tr>
+                                                            <td class="ps-3 text-muted fw-semibold fs-8">{{ $loop->iteration }}</td>
+                                                            <td>
+                                                                <div class="d-flex flex-wrap align-items-center gap-1">
+                                                                    @if($item->thickness)
+                                                                        <span class="badge bg-light text-dark border"><i class="fe fe-layers me-1 text-primary"></i>Thickness: {{ $item->thickness }}</span>
+                                                                    @endif
+                                                                    @if($item->size)
+                                                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><i class="fe fe-maximize-2 me-1"></i>{{ $item->size }} ({{ $item->size_type ?: 'ft' }})</span>
+                                                                    @else
+                                                                        <span class="badge bg-light text-muted border">{{ $item->size_type ?: 'ft' }}</span>
+                                                                    @endif
+                                                                </div>
+                                                                @if($item->notes)
+                                                                    <div class="small text-muted mt-0.5"><i class="fe fe-tag me-1 text-info"></i>{{ $item->notes }}</div>
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                @if($item->coils && $item->coils->count() > 0)
+                                                                    @foreach($item->coils as $coil)
+                                                                        <span class="badge bg-white text-dark border font-monospace me-1">{{ $coil->coil_number }}</span>
+                                                                    @endforeach
+                                                                @else
+                                                                    <span class="text-muted fs-8">-</span>
+                                                                @endif
+                                                            </td>
+                                                            <td class="text-center fw-bold">{{ (int) $item->quantity }}</td>
+                                                            <td class="text-end font-monospace">{{ number_format($item->unit_weight, 2) }} kg</td>
+                                                            <td class="text-end font-monospace fw-bold text-primary">
+                                                                {{ number_format($item->total_weight, 2) }} kg
+                                                                @if($item->total_weight >= 1000)
+                                                                    <small class="text-muted fw-normal d-block">({{ number_format($item->total_weight / 1000, 2) }} MT)</small>
+                                                                @endif
+                                                            </td>
+                                                            <td class="text-end font-monospace">৳{{ number_format($item->unit_price, 2) }}</td>
+                                                            <td class="text-end font-monospace">
+                                                                <span class="fw-bold text-success">৳{{ number_format($item->sub_price ?: $item->total_price, 2) }}</span>
+                                                                @if(abs($item->total_price - ($item->sub_price ?: $item->total_price)) > 0.01)
+                                                                    <small class="text-muted d-block fs-8">Bill: ৳{{ number_format($item->total_price, 2) }}</small>
+                                                                @endif
+                                                            </td>
+                                                            <td class="text-end pe-4" onclick="event.stopPropagation()">
+                                                                <div class="dropdown">
+                                                                    <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                                                                        <i class="fas fa-ellipsis-v"></i>
+                                                                    </a>
+                                                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                                                        <li>
+                                                                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $item->id) }}">
+                                                                                <i class="fe fe-eye text-info"></i>
+                                                                                <span>View Item Details</span>
+                                                                            </a>
+                                                                        </li>
+                                                                        <li>
+                                                                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.edit', $item->id) }}">
+                                                                                <i class="fe fe-edit text-primary"></i>
+                                                                                <span>Edit Specifications</span>
+                                                                            </a>
+                                                                        </li>
+                                                                        @if($item->coils && $item->coils->count() > 0)
+                                                                            <li>
+                                                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('coils.index') }}?search={{ $item->coils->first()->coil_number }}">
+                                                                                    <i class="fe fe-disc text-secondary"></i>
+                                                                                    <span>Track Coil in Yard</span>
+                                                                                </a>
+                                                                            </li>
+                                                                        @endif
+                                                                        <li><hr class="dropdown-divider my-1"></li>
+                                                                        <li>
+                                                                            <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" onclick="if (confirm('Are you sure you want to delete purchase item #PO-{{ $item->id }}?')) { document.getElementById('deleteItem{{ $item->id }}').submit(); }">
+                                                                                <i class="fe fe-trash-2"></i>
+                                                                                <span>Delete Item</span>
+                                                                            </a>
+                                                                        </li>
+                                                                    </ul>
+                                                                </div>
+                                                                <form id="deleteItem{{ $item->id }}" action="{{ route('purchase.destroy', $item->id) }}" method="POST" class="d-none">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                </form>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
                         @empty
                             <tr id="emptyStateRow">
-                                <td colspan="9" class="text-center py-5">
+                                <td colspan="10" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
                                         <div class="avatar avatar-xl bg-primary-light text-primary rounded-circle mb-3 d-flex align-items-center justify-content-center">
                                             <i class="fe fe-shopping-cart fs-1"></i>
@@ -322,311 +497,99 @@
                 </table>
             </div>
 
-            @if($purchases->hasPages())
+            @if($lots->hasPages())
                 <div class="p-3 border-top d-flex justify-content-end">
-                    {{ $purchases->links() }}
+                    {{ $lots->links() }}
                 </div>
             @endif
         </div>
     </div>
 </div>
 
-
-<!-- Edit Purchase Modals -->
-@foreach ($purchases as $purchase)
-<div class="modal fade" id="edit-purchase-{{ $purchase->id }}" aria-hidden="true" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-3">
-            <div class="modal-header bg-light py-3 border-bottom">
-                <h5 class="modal-title fw-bold text-dark">Edit Purchase</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="POST" action="{{ route('purchase.update', $purchase->id) }}">
-                @csrf
-                @method('PUT')
-                <div class="modal-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="edit-lot_id-{{ $purchase->id }}" class="form-label fw-semibold small text-secondary">Purchase Lot <span class="text-danger">*</span></label>
-                            <select id="edit-lot_id-{{ $purchase->id }}" name="lot_id" class="form-select select2" required>
-                                <option value="">Select Purchase Lot</option>
-                                @foreach ($lots as $lot)
-                                    <option value="{{ $lot->id }}" data-vendor-id="{{ $lot->vendor_id }}" {{ $lot->id == $purchase->lot_id ? 'selected' : '' }}>
-                                        {{ $lot->lot_number }} — {{ $lot->vendor ? $lot->vendor->name : '' }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label for="edit-warehouse_id-{{ $purchase->id }}" class="form-label fw-semibold small text-secondary">Stockyard / Warehouse</label>
-                            <select id="edit-warehouse_id-{{ $purchase->id }}" name="warehouse_id" class="form-select select2">
-                                <option value="">Select Stockyard / Warehouse</option>
-                                @foreach ($warehouses as $wh)
-                                    <option value="{{ $wh->id }}" {{ $wh->id == $purchase->warehouse_id ? 'selected' : '' }}>
-                                        {{ $wh->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-secondary">
-                                Vendor <span class="text-danger">*</span>
-                                <span class="ms-1 text-muted" style="font-size:10px; font-weight:400;"></span>
-                            </label>
-                            <input type="text" id="edit-vendor-display-{{ $purchase->id }}" class="form-control" readonly
-                                value="{{ $purchase->vendor ? $purchase->vendor->name : '' }}"
-                                style="background-color:#f1f5f9; cursor:not-allowed;">
-                            <input type="hidden" name="vendor_id" id="edit-vendor-hidden-{{ $purchase->id }}" value="{{ $purchase->vendor_id }}">
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="edit-thickness-{{ $purchase->id }}" class="form-label fw-semibold small text-secondary">Thickness</label>
-                            <input id="edit-thickness-{{ $purchase->id }}" name="thickness" value="{{ old('thickness', $purchase->thickness ?? ($purchase->product->thickness ?? '')) }}" class="form-control" placeholder="e.g. 16mm" />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="edit-size-{{ $purchase->id }}" class="form-label fw-semibold small text-secondary">Size / Length</label>
-                            <input id="edit-size-{{ $purchase->id }}" name="size" value="{{ old('size', $purchase->size ?? ($purchase->product->size ?? '')) }}" class="form-control" placeholder="e.g. 12m" />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="edit-unit_weight-{{ $purchase->id }}" class="form-label fw-semibold small text-secondary">Unit Weight (kg)</label>
-                            <input type="number" step="0.001" id="edit-unit_weight-{{ $purchase->id }}" name="unit_weight" value="{{ old('unit_weight', $purchase->unit_weight ?? ($purchase->product->weight ?? '')) }}" class="form-control" placeholder="0.000" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="edit-quantity-{{ $purchase->id }}" class="form-label fw-semibold small text-secondary">Quantity</label>
-                            <input id="edit-quantity-{{ $purchase->id }}" name="quantity" value="{{ $purchase->quantity }}" class="form-control" placeholder="Quantity" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="edit-unit_price-{{ $purchase->id }}" class="form-label fw-semibold small text-secondary">Unit Cost Price</label>
-                            <input id="edit-unit_price-{{ $purchase->id }}" name="unit_price" value="{{ $purchase->unit_price }}" class="form-control" placeholder="Unit Price" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="edit-sub_price-{{ $purchase->id }}" class="form-label fw-semibold small text-secondary">Sub Price</label>
-                            <input id="edit-sub_price-{{ $purchase->id }}" name="sub_price" value="{{ $purchase->sub_price }}" class="form-control bg-light" readonly placeholder="Sub Price" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="edit-total_price-{{ $purchase->id }}" class="form-label fw-semibold small text-secondary">Payable Total Price</label>
-                            <input id="edit-total_price-{{ $purchase->id }}" name="total_price" value="{{ $purchase->total_price }}" class="form-control" placeholder="Total Price" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="edit-payment-{{ $purchase->id }}" class="form-label fw-semibold small text-secondary">Payment</label>
-                            <input id="edit-payment-{{ $purchase->id }}" name="payment" value="{{ $purchase->payment }}" class="form-control" placeholder="Payment" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="edit-due-{{ $purchase->id }}" class="form-label fw-semibold small text-secondary">Outstanding Due</label>
-                            <input id="edit-due-{{ $purchase->id }}" name="due" value="{{ $purchase->due }}" class="form-control bg-light" readonly placeholder="Due" />
-                        </div>
-                    </div>
-                </div>
-                <div class="d-flex justify-content-end gap-2 p-3 border-top bg-light">
-                    <button type="button" class="btn btn-light px-4 rounded-3 text-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary px-4 rounded-3 shadow-sm">Update Purchase</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-@endforeach
-
-<!-- Quick Add Lot Modal -->
-<div class="modal fade" id="quickAddLotModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <form id="quickAddLotForm">
-                @csrf
-                <div class="modal-header border-bottom-0 pb-0">
-                    <h5 class="modal-title fw-bold text-dark">
-                        <i class="fe fe-package text-primary me-2"></i> Quick Create Lot
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body py-3">
-                    <div id="quickLotAlert" class="alert d-none rounded-3 mb-3"></div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small text-secondary">Vendor <span class="text-danger">*</span></label>
-                        <select name="vendor_id" id="quick_lot_vendor_id" class="form-select rounded-3" required>
-                            <option value="">Select Vendor</option>
-                            @foreach ($vendors as $vendor)
-                                <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small text-secondary">Lot Number (Leave blank to auto-generate)</label>
-                        <input type="text" name="lot_number" id="quick_lot_number" class="form-control rounded-3">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small text-secondary">Lot Date <span class="text-danger">*</span></label>
-                        <input type="date" name="lot_date" id="quick_lot_date" class="form-control rounded-3" value="{{ date('Y-m-d') }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small text-secondary">Notes / Mill Specs</label>
-                        <textarea name="notes" id="quick_lot_notes" class="form-control rounded-3" rows="2"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-top-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" id="btnSaveQuickLot" class="btn btn-primary rounded-3">
-                       Save & Select Lot
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 @push('scripts')
 <script>
-    // Handle Quick Lot Creation AJAX
-    document.addEventListener('DOMContentLoaded', function() {
-        const quickLotForm = document.getElementById('quickAddLotForm');
-        if (quickLotForm) {
-            quickLotForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const alertDiv = document.getElementById('quickLotAlert');
-                const btn = document.getElementById('btnSaveQuickLot');
-                btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
-
-                const formData = new FormData(quickLotForm);
-
-                fetch("{{ route('lots.quick_store') }}", {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: formData
-                })
-                .then(res => res.json())
-                .then(data => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fe fe-check me-1"></i> Save & Select Lot';
-
-                    if (data.success && data.lot) {
-                        // Append option to purchase_lot_id select dropdown
-                        const lotSelect = document.getElementById('purchase_lot_id');
-                        if (lotSelect) {
-                            const newOption = new Option(`${data.lot.lot_number} — ${data.lot.vendor_name}`, data.lot.id, true, true);
-                            newOption.setAttribute('data-vendor-id', data.lot.vendor_id);
-                            $(newOption).data('vendor-id', data.lot.vendor_id);
-                            lotSelect.add(newOption);
-                            $(lotSelect).trigger('change');
-                        }
-                        
-                        // Also auto select vendor display & hidden
-                        if (data.lot.vendor_id) {
-                            if (typeof window.vendorMap !== 'undefined') {
-                                window.vendorMap[data.lot.vendor_id] = data.lot.vendor_name;
-                            }
-                            var vDisp = document.getElementById('vendor_display');
-                            var vHidd = document.getElementById('vendor_hidden');
-                            if (vDisp) vDisp.value = data.lot.vendor_name;
-                            if (vHidd) vHidd.value = data.lot.vendor_id;
-                        }
-
-                        // Close modal & reset form
-                        const modalEl = document.getElementById('quickAddLotModal');
-                        const modal = bootstrap.Modal.getInstance(modalEl);
-                        if (modal) modal.hide();
-                        quickLotForm.reset();
-                    } else {
-                        alertDiv.className = 'alert alert-danger rounded-3 mb-3';
-                        alertDiv.textContent = data.message || 'Error creating Lot. Please check inputs.';
-                    }
-                })
-                .catch(err => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fe fe-check me-1"></i> Save & Select Lot';
-                    alertDiv.className = 'alert alert-danger rounded-3 mb-3';
-                    alertDiv.textContent = 'Server error. Please try again.';
-                });
-            });
-        }
-    });
-</script>
-
-
-
-
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        @foreach ($purchases as $purchase)
-            const qInput_{{ $purchase->id }} = document.getElementById('edit-quantity-{{ $purchase->id }}');
-            const uInput_{{ $purchase->id }} = document.getElementById('edit-unit_price-{{ $purchase->id }}');
-            const sInput_{{ $purchase->id }} = document.getElementById('edit-sub_price-{{ $purchase->id }}');
-            const tInput_{{ $purchase->id }} = document.getElementById('edit-total_price-{{ $purchase->id }}');
-            const pInput_{{ $purchase->id }} = document.getElementById('edit-payment-{{ $purchase->id }}');
-            const dInput_{{ $purchase->id }} = document.getElementById('edit-due-{{ $purchase->id }}');
-
-            function calcEditSub_{{ $purchase->id }}() {
-                if (!qInput_{{ $purchase->id }} || !uInput_{{ $purchase->id }}) return;
-                const q = parseFloat(qInput_{{ $purchase->id }}.value) || 0;
-                const u = parseFloat(uInput_{{ $purchase->id }}.value) || 0;
-                if (sInput_{{ $purchase->id }}) sInput_{{ $purchase->id }}.value = (q * u).toFixed(2);
+    // Expand / Collapse Lot Details
+    function toggleLotDetails(lotId, event) {
+        if (event) {
+            const target = event.target;
+            if (target.closest('a') || target.closest('button:not(.expand-btn)') || target.closest('.dropdown') || target.closest('input') || target.closest('select')) {
+                return;
             }
-
-            function calcEditDue_{{ $purchase->id }}() {
-                if (!tInput_{{ $purchase->id }} || !pInput_{{ $purchase->id }}) return;
-                const t = parseFloat(tInput_{{ $purchase->id }}.value) || 0;
-                const p = parseFloat(pInput_{{ $purchase->id }}.value) || 0;
-                if (dInput_{{ $purchase->id }}) dInput_{{ $purchase->id }}.value = (t - p).toFixed(2);
-            }
-
-            if (qInput_{{ $purchase->id }}) qInput_{{ $purchase->id }}.addEventListener('input', calcEditSub_{{ $purchase->id }});
-            if (uInput_{{ $purchase->id }}) uInput_{{ $purchase->id }}.addEventListener('input', calcEditSub_{{ $purchase->id }});
-            if (tInput_{{ $purchase->id }}) tInput_{{ $purchase->id }}.addEventListener('input', calcEditDue_{{ $purchase->id }});
-            if (pInput_{{ $purchase->id }}) pInput_{{ $purchase->id }}.addEventListener('input', calcEditDue_{{ $purchase->id }});
-        @endforeach
-
-        // Vendor auto-fill from Lot (always read-only, driven by Lot selection)
-        if (typeof $ !== 'undefined') {
-
-            // Build a vendor map from PHP: { id: name }
-            var vendorMap = {
-                @foreach ($vendors as $vendor)
-                    {{ $vendor->id }}: "{{ addslashes($vendor->name) }}",
-                @endforeach
-            };
-
-            // --- Add Purchase modal ---
-            $('#purchase_lot_id').on('change', function() {
-                var selectedOpt = $(this).find('option:selected');
-                var vendorId = selectedOpt.data('vendor-id');
-                if (vendorId && vendorMap[vendorId]) {
-                    $('#vendor_display').val(vendorMap[vendorId]);
-                    $('#vendor_hidden').val(vendorId);
-                } else {
-                    $('#vendor_display').val('');
-                    $('#vendor_hidden').val('');
-                }
-            });
-
-            // --- Edit Purchase modals ---
-            @foreach ($purchases as $purchase)
-                $('#edit-lot_id-{{ $purchase->id }}').on('change', function() {
-                    var selectedOpt = $(this).find('option:selected');
-                    var vendorId = selectedOpt.data('vendor-id');
-                    if (vendorId && vendorMap[vendorId]) {
-                        $('#edit-vendor-display-{{ $purchase->id }}').val(vendorMap[vendorId]);
-                        $('#edit-vendor-hidden-{{ $purchase->id }}').val(vendorId);
-                    } else {
-                        $('#edit-vendor-display-{{ $purchase->id }}').val('');
-                        $('#edit-vendor-hidden-{{ $purchase->id }}').val('');
-                    }
-                });
-            @endforeach
         }
-    });
+
+        const detailsRow = document.getElementById('lot-details-' + lotId);
+        const chevron = document.getElementById('chevron-' + lotId);
+        if (!detailsRow) return;
+
+        const isHidden = detailsRow.style.display === 'none' || getComputedStyle(detailsRow).display === 'none';
+
+        if (isHidden) {
+            detailsRow.style.display = 'table-row';
+            if (chevron) {
+                chevron.classList.add('rotate-90');
+            }
+        } else {
+            detailsRow.style.display = 'none';
+            if (chevron) {
+                chevron.classList.remove('rotate-90');
+            }
+        }
+
+        updateToggleAllBtn();
+    }
+
+    // Expand or Collapse All Lots
+    function toggleAllLots() {
+        const detailRows = document.querySelectorAll('.lot-details-row');
+        const chevrons = document.querySelectorAll('.expand-icon');
+        const toggleIcon = document.getElementById('toggleAllIcon');
+        const toggleText = document.getElementById('toggleAllText');
+
+        if (!detailRows.length) return;
+
+        let hasHidden = false;
+        detailRows.forEach(row => {
+            if (row.style.display === 'none' || getComputedStyle(row).display === 'none') {
+                hasHidden = true;
+            }
+        });
+
+        if (hasHidden) {
+            // Expand all
+            detailRows.forEach(row => row.style.display = 'table-row');
+            chevrons.forEach(icon => icon.classList.add('rotate-90'));
+            if (toggleIcon) toggleIcon.className = 'fe fe-minimize-2 me-1';
+            if (toggleText) toggleText.textContent = 'Collapse All';
+        } else {
+            // Collapse all
+            detailRows.forEach(row => row.style.display = 'none');
+            chevrons.forEach(icon => icon.classList.remove('rotate-90'));
+            if (toggleIcon) toggleIcon.className = 'fe fe-maximize-2 me-1';
+            if (toggleText) toggleText.textContent = 'Expand All';
+        }
+    }
+
+    function updateToggleAllBtn() {
+        const detailRows = document.querySelectorAll('.lot-details-row');
+        const toggleIcon = document.getElementById('toggleAllIcon');
+        const toggleText = document.getElementById('toggleAllText');
+        if (!detailRows.length || !toggleText) return;
+
+        let hasHidden = false;
+        detailRows.forEach(row => {
+            if (row.style.display === 'none' || getComputedStyle(row).display === 'none') {
+                hasHidden = true;
+            }
+        });
+
+        if (hasHidden) {
+            if (toggleIcon) toggleIcon.className = 'fe fe-maximize-2 me-1';
+            if (toggleText) toggleText.textContent = 'Expand All';
+        } else {
+            if (toggleIcon) toggleIcon.className = 'fe fe-minimize-2 me-1';
+            if (toggleText) toggleText.textContent = 'Collapse All';
+        }
+    }
 
     function openPurchaseDueModal(purchaseId, vendorId, vendorName, maxDue) {
         document.getElementById('purchaseModalPurchaseId').value = purchaseId;

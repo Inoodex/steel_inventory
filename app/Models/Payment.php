@@ -19,6 +19,8 @@ class Payment extends Model
         'bank_detail_id',
         'transaction_ref',
         'amount',
+        'payment_date',
+        'transaction_id',
         'remarks',
         'notes',
         'note',
@@ -60,5 +62,10 @@ class Payment extends Model
     public function bankDetail()
     {
         return $this->belongsTo(BankDetail::class, 'bank_detail_id');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

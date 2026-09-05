@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\ChartOfAccount;
+use App\Models\Coil;
 use App\Models\Inventory;
 use App\Models\JournalEntry;
 use App\Models\Purchase;
@@ -24,7 +25,7 @@ class InitAccountBalances extends Command
      *
      * @var string
      */
-    protected $description = 'Bootstrap and calculate initial opening balances for AR, Inventory, and AP from existing operational tables.';
+    protected $description = 'Calculate dynamic opening balances from uncollected Sales AR, Inventory, and Purchase AP and post opening balance journal voucher';
 
     /**
      * Execute the console command.
@@ -37,10 +38,8 @@ class InitAccountBalances extends Command
             // 1. Calculate live Accounts Receivable (Uncollected Sale Dues)
             $totalAR = (float) Sale::where('status', '!=', 'cancelled')->sum('due_payment');
 
-            // 2. Calculate Inventory Asset Valuation (Stock * Unit Purchase Price)
-            $totalInventory = (float) (Inventory::join('purchases', 'purchases.product_id', '=', 'inventories.product_id')
-                ->selectRaw('SUM(inventories.current_stock * purchases.unit_price) as valuation')
-                ->value('valuation') ?? 0.00);
+            // 2. Calculate Inventory Asset Valuation (Live yard steel coils in stock)
+            $totalInventory = (float) (Coil::where('status', 'in_stock')->sum('total_price') ?? 0.00);
 
             // 3. Calculate Accounts Payable (Unpaid Purchase Dues)
             $totalAP = (float) Purchase::sum('due');
