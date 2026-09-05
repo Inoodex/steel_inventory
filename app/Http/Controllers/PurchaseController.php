@@ -148,10 +148,52 @@ class PurchaseController extends Controller
      */
     public function show(Purchase $purchase)
     {
-        $purchase->load(['vendor', 'lot', 'warehouse', 'bankDetail', 'coils', 'payments', 'creator', 'updater']);
+        $purchase->load(['vendor', 'lot.purchases.coils', 'lot.purchases.warehouse', 'warehouse', 'bankDetail', 'coils', 'payments', 'creator', 'updater']);
+
+        // Consignment purchases: all purchases under the same Lot, or just this purchase if standalone
+        if ($purchase->lot && $purchase->lot->purchases->isNotEmpty()) {
+            $consignmentPurchases = $purchase->lot->purchases;
+        } else {
+            $consignmentPurchases = collect([$purchase]);
+        }
+
+        // Flatten all coils in this consignment
+        $allCoils = $consignmentPurchases->flatMap->coils;
+
+        // Consignment aggregate calculations
+        $consignmentSubTotal    = (float) $consignmentPurchases->sum(fn($p) => (float)($p->sub_price ?: $p->total_price));
+        $consignmentDelivery    = (float) $consignmentPurchases->sum('delivery_charge');
+        $consignmentLabour      = (float) $consignmentPurchases->sum('labour_cost');
+        $consignmentScale       = (float) $consignmentPurchases->sum('weight_scale_cost');
+        $consignmentOther       = (float) $consignmentPurchases->sum('other_charges');
+        $consignmentDiscount    = (float) $consignmentPurchases->sum('discount');
+        $consignmentExtra       = $consignmentDelivery + $consignmentLabour + $consignmentScale + $consignmentOther;
+        $consignmentGrandTotal  = max(0, round($consignmentSubTotal + $consignmentExtra - $consignmentDiscount, 2));
+        $consignmentPayment     = (float) $consignmentPurchases->sum('payment');
+        $consignmentDue         = max(0, round($consignmentGrandTotal - $consignmentPayment, 2));
+        $consignmentTotalWeight = (float) $consignmentPurchases->sum('total_weight');
+        $consignmentTotalQty    = (int) $consignmentPurchases->sum('quantity');
+
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
 
-        return view('frontend.pages.purchase.show', compact('purchase', 'bankAccounts'));
+        return view('frontend.pages.purchase.show', compact(
+            'purchase',
+            'consignmentPurchases',
+            'allCoils',
+            'consignmentSubTotal',
+            'consignmentDelivery',
+            'consignmentLabour',
+            'consignmentScale',
+            'consignmentOther',
+            'consignmentDiscount',
+            'consignmentExtra',
+            'consignmentGrandTotal',
+            'consignmentPayment',
+            'consignmentDue',
+            'consignmentTotalWeight',
+            'consignmentTotalQty',
+            'bankAccounts'
+        ));
     }
 
     /**

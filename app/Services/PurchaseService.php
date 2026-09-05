@@ -178,24 +178,7 @@ class PurchaseService
                     'created_by'        => Auth::id(),
                 ]);
 
-                // 2. Record Payment entry if initial payment was allocated
-                if ($itemPayment > 0) {
-                    Payment::create([
-                        'vendor_id'       => $vendorId,
-                        'purchase_id'     => $purchase->id,
-                        'amount'          => $itemPayment,
-                        'payment_for'     => 3, // 3: Purchases / Vendor payment
-                        'payment_method'  => $data['payment_method'] ?? 'cash',
-                        'bank_detail_id'  => !empty($data['bank_detail_id']) ? $data['bank_detail_id'] : null,
-                        'transaction_ref' => $data['transaction_ref'] ?? null,
-                        'payment_date'    => $data['purchase_date'] ?? date('Y-m-d'),
-                        'remarks'         => 'Initial disbursement for Purchase Order #PO-' . $purchase->id,
-                        'status'          => '1',
-                        'created_by'      => Auth::id(),
-                    ]);
-                }
-
-                // 3. Register Single Batch Coil in Yard Stock
+                // 2. Register Single Batch Coil in Yard Stock
                 $coilNumber = Coil::generateCoilNumber();
 
                 Coil::create([
@@ -220,6 +203,24 @@ class PurchaseService
                 ]);
 
                 $createdPurchases[] = $purchase;
+            }
+
+            // 3. Record ONE consolidated Payment entry for the whole consignment batch
+            if ($totalPayment > 0 && !empty($createdPurchases)) {
+                $primaryPurchase = $createdPurchases[0];
+                Payment::create([
+                    'vendor_id'       => $vendorId,
+                    'purchase_id'     => $primaryPurchase->id,
+                    'amount'          => $totalPayment,
+                    'payment_for'     => 3, // 3: Purchases / Vendor payment
+                    'payment_method'  => $data['payment_method'] ?? 'cash',
+                    'bank_detail_id'  => !empty($data['bank_detail_id']) ? $data['bank_detail_id'] : null,
+                    'transaction_ref' => $data['transaction_ref'] ?? null,
+                    'payment_date'    => $data['purchase_date'] ?? date('Y-m-d'),
+                    'remarks'         => 'Initial disbursement for ' . (!empty($lotId) ? 'Consignment Lot #' . ($lot->lot_number ?? $lotId) : 'Purchase Order #PO-' . $primaryPurchase->id),
+                    'status'          => '1',
+                    'created_by'      => Auth::id(),
+                ]);
             }
 
             // Recalculate Lot totals if linked

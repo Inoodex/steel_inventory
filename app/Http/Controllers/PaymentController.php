@@ -175,9 +175,33 @@ class PaymentController extends Controller
             if ($request->filled('purchase_id')) {
                 $purchase = \App\Models\Purchase::where('id', $request->purchase_id)->where('vendor_id', $vendor->id)->first();
                 if ($purchase) {
-                    $purchase->payment = (float)$purchase->payment + $totalAmount;
-                    $purchase->due = max(0, (float)$purchase->total_price - (float)$purchase->payment);
-                    $purchase->save();
+                    if ($purchase->lot_id) {
+                        // Settle across unpaid items in this consignment / lot
+                        $consignmentPurchases = \App\Models\Purchase::where('lot_id', $purchase->lot_id)
+                            ->where('due', '>', 0)
+                            ->orderBy('id', 'asc')
+                            ->get();
+
+                        foreach ($consignmentPurchases as $p) {
+                            if ($remainingToAllocate <= 0) break;
+                            $dueOnThis = (float) $p->due;
+                            $allocation = min($remainingToAllocate, $dueOnThis);
+                            $p->payment = (float)$p->payment + $allocation;
+                            $p->due = max(0, (float)$p->total_price - (float)$p->payment);
+                            $p->save();
+                            $remainingToAllocate -= $allocation;
+                        }
+
+                        if ($remainingToAllocate > 0) {
+                            $purchase->payment = (float)$purchase->payment + $remainingToAllocate;
+                            $purchase->due = max(0, (float)$purchase->total_price - (float)$purchase->payment);
+                            $purchase->save();
+                        }
+                    } else {
+                        $purchase->payment = (float)$purchase->payment + $totalAmount;
+                        $purchase->due = max(0, (float)$purchase->total_price - (float)$purchase->payment);
+                        $purchase->save();
+                    }
                 }
             } else {
                 // Settle against oldest unpaid purchases of this vendor

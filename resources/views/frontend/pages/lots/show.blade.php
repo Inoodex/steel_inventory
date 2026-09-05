@@ -98,31 +98,40 @@
         <!-- Metrics Cards -->
         <div class="col-md-8">
             <div class="row g-3">
-                <div class="col-sm-6 col-md-3">
+                <div class="col-sm-6 col-md">
                     <div class="card stat-card border-0 shadow-sm rounded-3 bg-white p-3 text-center">
                         <div class="text-muted small fw-semibold mb-1">Purchases</div>
                         <h4 class="fw-bold text-primary m-0">{{ $totalPurchases }}</h4>
                         <div class="text-muted extra-small">Line Items</div>
                     </div>
                 </div>
-                <div class="col-sm-6 col-md-3">
+                <div class="col-sm-6 col-md">
                     <div class="card stat-card border-0 shadow-sm rounded-3 bg-white p-3 text-center">
-                        <div class="text-muted small fw-semibold mb-1">Total Quantity/Weight</div>
+                        <div class="text-muted small fw-semibold mb-1">Total Weight</div>
                         <h4 class="fw-bold text-dark m-0">{{ number_format($totalQuantity, 2) }}</h4>
-                        <div class="text-muted extra-small">Units / Kg / Ton</div>
+                        <div class="text-muted extra-small">kg @if($totalQuantity >= 1000)({{ number_format($totalQuantity / 1000, 2) }} MT)@endif</div>
                     </div>
                 </div>
-                <div class="col-sm-6 col-md-3">
+                <div class="col-sm-6 col-md">
                     <div class="card stat-card border-0 shadow-sm rounded-3 bg-white p-3 text-center">
-                        <div class="text-muted small fw-semibold mb-1">Total Lot Amount</div>
-                        <h4 class="fw-bold text-success m-0">{{ number_format($totalAmount, 2) }}</h4>
-                        <div class="text-muted extra-small">Total Cost</div>
+                        <div class="text-muted small fw-semibold mb-1">Total Lot Bill</div>
+                        <h4 class="fw-bold text-dark m-0">৳{{ number_format($totalAmount, 2) }}</h4>
+                        <div class="text-muted extra-small">Consignment Cost</div>
                     </div>
                 </div>
-                <div class="col-sm-6 col-md-3">
+                <div class="col-sm-6 col-md">
+                    <div class="card stat-card border-0 shadow-sm rounded-3 bg-white p-3 text-center">
+                        <div class="text-muted small fw-semibold mb-1">Paid Amount</div>
+                        <h4 class="fw-bold text-success m-0">৳{{ number_format($totalPaid, 2) }}</h4>
+                        <div class="text-muted extra-small">Disbursed</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md">
                     <div class="card stat-card border-0 shadow-sm rounded-3 bg-white p-3 text-center">
                         <div class="text-muted small fw-semibold mb-1">Outstanding Due</div>
-                        <h4 class="fw-bold text-danger m-0">{{ number_format($totalDue, 2) }}</h4>
+                        <h4 class="fw-bold {{ $totalDue > 0 ? 'text-danger' : 'text-success' }} m-0">
+                            {{ $totalDue > 0 ? '৳' . number_format($totalDue, 2) : 'Settled' }}
+                        </h4>
                         <div class="text-muted extra-small">Due to Vendor</div>
                     </div>
                 </div>
@@ -130,45 +139,91 @@
 
             <!-- Purchases Attached Table Card -->
             <div class="card border-0 shadow-sm rounded-3 mt-3">
-                <div class="card-header bg-transparent border-bottom border-light">
+                <div class="card-header bg-transparent border-bottom border-light d-flex justify-content-between align-items-center">
                     <h6 class="fw-bold m-0 text-dark">Purchases Attached to this Lot</h6>
+                    @if($lot->purchases->isNotEmpty())
+                        <a href="{{ route('purchase.show', $lot->purchases->first()->id) }}" class="btn btn-sm btn-primary rounded-pill px-3 shadow-none fw-semibold">
+                            <i class="fe fe-shopping-cart me-1"></i>View Full Consignment Order
+                        </a>
+                    @endif
                 </div>
+                @php
+                    $lotDelivery = (float) $lot->purchases->sum('delivery_charge');
+                    $lotLabour   = (float) $lot->purchases->sum('labour_cost');
+                    $lotScale    = (float) $lot->purchases->sum('weight_scale_cost');
+                    $lotOther    = (float) $lot->purchases->sum('other_charges');
+                    $lotDiscount = (float) $lot->purchases->sum('discount');
+                    $lotTotalExtra = $lotDelivery + $lotLabour + $lotScale + $lotOther;
+                @endphp
+                @if($lotTotalExtra > 0 || $lotDiscount > 0)
+                    <div class="card-header bg-light border-bottom border-light-subtle py-2">
+                        <div class="d-flex flex-wrap align-items-center gap-2 small">
+                            <span class="text-dark fw-semibold">
+                                <i class="fe fe-dollar-sign text-primary me-1"></i>Consignment Extra Charges:
+                            </span>
+                            @if($lotDelivery > 0)
+                                <span class="badge bg-white text-dark border">Delivery: <strong>৳{{ number_format($lotDelivery, 2) }}</strong></span>
+                            @endif
+                            @if($lotLabour > 0)
+                                <span class="badge bg-white text-dark border">Labour: <strong>৳{{ number_format($lotLabour, 2) }}</strong></span>
+                            @endif
+                            @if($lotScale > 0)
+                                <span class="badge bg-white text-dark border">Scale: <strong>৳{{ number_format($lotScale, 2) }}</strong></span>
+                            @endif
+                            @if($lotOther > 0)
+                                <span class="badge bg-white text-dark border">Other: <strong>৳{{ number_format($lotOther, 2) }}</strong></span>
+                            @endif
+                            @if($lotDiscount > 0)
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Discount: <strong>-৳{{ number_format($lotDiscount, 2) }}</strong></span>
+                            @endif
+                        </div>
+                    </div>
+                @endif
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="ps-3">Date</th>
-                                    <th>Product</th>
-                                    <th class="text-end">Qty / Weight</th>
-                                    <th class="text-end">Unit Price</th>
-                                    <th class="text-end">Total Price</th>
-                                    <th class="text-end pe-3">Paid / Due</th>
+                                    <th class="ps-3">#</th>
+                                    <th>Date</th>
+                                    <th>Product / Steel Spec</th>
+                                    <th>Stockyard</th>
+                                    <th class="text-end">Net Weight</th>
+                                    <th class="text-end">Unit Rate</th>
+                                    <th class="text-end">Sub Total</th>
+                                    <th class="text-end pe-3">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($lot->purchases as $purchase)
                                     <tr>
-                                        <td class="ps-3">{{ $purchase->created_at ? $purchase->created_at->format('d M Y') : 'N/A' }}</td>
+                                        <td class="ps-3 text-muted small fw-semibold">{{ $loop->iteration }}</td>
+                                        <td class="small text-muted">{{ $purchase->created_at ? $purchase->created_at->format('d M Y') : 'N/A' }}</td>
                                         <td class="fw-semibold">
-                                            <span class="text-dark">Steel Spec: {{ $purchase->thickness ? $purchase->thickness . 'mm' : 'Standard' }} {{ $purchase->size ? ' | ' . $purchase->size : '' }} {{ $purchase->size_type ? '(' . $purchase->size_type . ')' : '' }}</span>
+                                            <span class="text-dark">Spec: {{ $purchase->thickness ? $purchase->thickness . 'mm' : 'Standard' }} {{ $purchase->size ? ' | ' . $purchase->size : '' }} {{ $purchase->size_type ? '(' . $purchase->size_type . ')' : '' }}</span>
                                             @if($purchase->coils->count() > 0)
-                                                <small class="text-muted d-block font-monospace">
-                                                    {{ $purchase->coils->count() }} Coil(s) Attached
-                                                </small>
+                                                <div class="mt-1 d-flex flex-wrap gap-1">
+                                                    @foreach($purchase->coils as $coil)
+                                                        <span class="badge bg-light text-dark border font-monospace fs-8">{{ $coil->coil_number }}</span>
+                                                    @endforeach
+                                                </div>
                                             @endif
                                         </td>
-                                        <td class="text-end fw-bold">{{ number_format($purchase->quantity, 2) }}</td>
-                                        <td class="text-end">{{ number_format($purchase->unit_price, 2) }}</td>
-                                        <td class="text-end fw-bold text-dark">{{ number_format($purchase->total_price, 2) }}</td>
+                                        <td class="small text-muted">
+                                            <i class="fe fe-map-pin text-danger me-1"></i>{{ $purchase->warehouse ? $purchase->warehouse->name : 'Main Depot' }}
+                                        </td>
+                                        <td class="text-end fw-bold text-primary font-monospace">{{ number_format($purchase->total_weight ?? $purchase->quantity, 2) }} kg</td>
+                                        <td class="text-end font-monospace">৳{{ number_format($purchase->unit_price, 2) }}</td>
+                                        <td class="text-end fw-bold text-dark font-monospace">৳{{ number_format($purchase->sub_price ?: ($purchase->unit_price * $purchase->total_weight), 2) }}</td>
                                         <td class="text-end pe-3">
-                                            <span class="text-success small fw-semibold">{{ number_format($purchase->payment, 2) }}</span> /
-                                            <span class="text-danger small fw-semibold">{{ number_format($purchase->due, 2) }}</span>
+                                            <a href="{{ route('purchase.show', $purchase->id) }}" class="btn btn-sm btn-outline-primary rounded-2 px-2.5 py-1" title="View Full Consignment">
+                                                <i class="fe fe-eye me-1"></i>Consignment
+                                            </a>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center py-4 text-muted">
+                                        <td colspan="8" class="text-center py-4 text-muted">
                                             No purchase line items recorded under this Lot yet.
                                         </td>
                                     </tr>

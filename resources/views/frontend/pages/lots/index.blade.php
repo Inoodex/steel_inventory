@@ -194,7 +194,9 @@
                                             <i class="fe fe-package me-1"></i> {{ $lot->lot_number }}
                                         </a>
                                     </td>
-                                    <td>{{ $lot->vendor ? $lot->vendor->name : 'N/A' }}</td>
+                                    <td title="{{ $lot->vendor ? $lot->vendor->name : 'N/A' }}">
+                                        {{ Str::limit($lot->vendor ? $lot->vendor->name : 'N/A', 15) }}
+                                    </td>
                                     <td>{{ \Carbon\Carbon::parse($lot->lot_date)->format('d M Y') }}</td>
                                     <td class="text-center">
                                         <span class="badge badge-soft-primary px-2 py-1 rounded-pill">

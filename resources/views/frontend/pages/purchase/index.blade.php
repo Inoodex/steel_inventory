@@ -208,9 +208,9 @@
                         <span class="text-muted small">
                             <span class="fw-bold text-dark">{{ $lots->count() }}</span> of {{ $lots->total() }} Lots
                         </span>
-                        <button type="button" class="btn btn-sm btn-outline-primary rounded-3 px-2 py-1 shadow-none" id="toggleAllLotsBtn" onclick="toggleAllLots()" title="Expand or collapse all lot items">
+                        <!-- <button type="button" class="btn btn-sm btn-outline-primary rounded-3 px-2 py-1 shadow-none" id="toggleAllLotsBtn" onclick="toggleAllLots()" title="Expand or collapse all lot items">
                             <i class="fe fe-maximize-2 me-1" id="toggleAllIcon"></i><span id="toggleAllText">Expand All</span>
-                        </button>
+                        </button> -->
                     </div>
                 </div>
             </form>
@@ -223,15 +223,14 @@
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
                             <th class="ps-3" style="width: 70px;">#</th>
-                            <th>Date</th>
+                            <!-- <th>Date</th> -->
                             <th>Lot Number</th>
                             <th>Vendor</th>
-                            <th>Stockyard</th>
-                            <th class="text-center">Steel Items / Coils</th>
-                            <th class="text-end">Total Weight</th>
-                            <th class="text-end">Total Bill</th>
-                            <th class="text-center">Status / Due</th>
-                            <th class="text-end pe-4">Action</th>
+                            <th>Steel Items / Coils</th>
+                            <th>Total Weight</th>
+                            <th>Total Bill</th>
+                            <th>Status / Due</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
@@ -244,6 +243,13 @@
                                 $lotTotalPrice = (float) $lotPurchases->sum('total_price');
                                 $lotDue = (float) $lotPurchases->sum('due');
                                 $warehousesInLot = $lotPurchases->pluck('warehouse.name')->filter()->unique();
+                                $lotDelivery = (float) $lotPurchases->sum('delivery_charge');
+                                $lotLabour = (float) $lotPurchases->sum('labour_cost');
+                                $lotScale = (float) $lotPurchases->sum('weight_scale_cost');
+                                $lotOther = (float) $lotPurchases->sum('other_charges');
+                                $lotDiscount = (float) $lotPurchases->sum('discount');
+                                $lotTotalExtra = $lotDelivery + $lotLabour + $lotScale + $lotOther;
+                                $lotSubTotal = (float) $lotPurchases->sum(fn($p) => (float)($p->sub_price ?: $p->total_price));
                             @endphp
 
                             <!-- Main Lot Row (Clickable to Expand) -->
@@ -253,12 +259,11 @@
                                         <span class="text-muted fw-semibold small">{{ $loop->iteration + ($lots->currentPage() - 1) * $lots->perPage() }}</span>
                                     </div>
                                 </td>
-                                <td>
+                                <!-- <td>
                                     <span class="text-dark fw-semibold small d-block">
                                         {{ $lot->lot_date ? $lot->lot_date->format('d M Y') : ($lot->created_at ? $lot->created_at->format('d M Y') : 'N/A') }}
-                                    </span>
-                                    <small class="text-muted fs-8">{{ $lot->created_at ? $lot->created_at->diffForHumans() : '' }}</small>
-                                </td>
+                                    </span>                                
+                                </td> -->
                                 <td>
                                     <a href="{{ route('lots.show', $lot->id) }}" class="fw-bold text-primary text-decoration-none d-inline-flex align-items-center gap-1" onclick="event.stopPropagation()">
                                         <i class="fe fe-package"></i>
@@ -267,32 +272,13 @@
                                 </td>
                                 <td>
                                     <span class="fw-semibold text-dark d-block">
-                                        {{ Str::limit($lot->vendor->name ?? 'N/A', 22) }}
+                                        {{ Str::limit($lot->vendor->name ?? 'N/A', 18) }}
                                     </span>
                                     @if($lot->vendor && $lot->vendor->phone)
                                         <small class="text-muted fs-8">{{ $lot->vendor->phone }}</small>
                                     @endif
                                 </td>
                                 <td>
-                                    @php
-                                        $primaryWhName = $warehousesInLot->first() ?? 'Main Yard';
-                                    @endphp
-                                    @if($warehousesInLot->count() > 1)
-                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" title="{{ $warehousesInLot->implode(', ') }}">
-                                            <i class="fe fe-map-pin me-1 text-primary"></i>{{ Str::limit($primaryWhName, 18) }}
-                                            <span class="badge bg-dark rounded-pill ms-1">+{{ $warehousesInLot->count() - 1 }}</span>
-                                        </span>
-                                    @elseif($warehousesInLot->count() === 1)
-                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" title="{{ $primaryWhName }}">
-                                            <i class="fe fe-map-pin me-1 text-primary"></i>{{ Str::limit($primaryWhName, 20) }}
-                                        </span>
-                                    @else
-                                        <span class="badge bg-light text-muted border">
-                                            <i class="fe fe-map-pin me-1"></i>Main Yard
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="text-center">
                                     <span class="badge bg-dark rounded-pill px-2.5 py-1 fs-8">
                                         {{ $lotItemCount }} {{ Str::plural('Item', $lotItemCount) }}
                                     </span>
@@ -300,7 +286,7 @@
                                         {{ $lotCoilCount }} {{ Str::plural('Coil', $lotCoilCount) }}
                                     </small>
                                 </td>
-                                <td class="text-end">
+                                <td>
                                     <span class="fw-bold text-dark font-monospace d-block">
                                         {{ number_format($lotTotalWeight, 2) }} kg
                                     </span>
@@ -308,12 +294,12 @@
                                         <small class="text-muted fs-8">({{ number_format($lotTotalWeight / 1000, 2) }} MT)</small>
                                     @endif
                                 </td>
-                                <td class="text-end">
+                                <td>
                                     <span class="fw-bold text-dark font-monospace">
                                         ৳{{ number_format($lotTotalPrice, 2) }}
                                     </span>
                                 </td>
-                                <td class="text-center">
+                                <td>
                                     @if($lotDue > 0)
                                         <span class="badge badge-soft-danger px-2.5 py-1 rounded-pill fs-8">
                                             Due: ৳{{ number_format($lotDue, 2) }}
@@ -324,15 +310,23 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="text-end pe-4" onclick="event.stopPropagation()">
+                                <td onclick="event.stopPropagation()">
                                     <div class="dropdown">
                                         <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
                                             <i class="fas fa-ellipsis-v"></i>
                                         </a>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            @if($lotPurchases->isNotEmpty())
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $lotPurchases->first()->id) }}">
+                                                        <i class="fe fe-shopping-cart text-primary"></i>
+                                                        <span>View Consignment</span>
+                                                    </a>
+                                                </li>
+                                            @endif
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" onclick="toggleLotDetails({{ $lot->id }}, event)">
-                                                    <i class="fe fe-list text-primary"></i>
+                                                    <i class="fe fe-list text-secondary"></i>
                                                     <span>Expand Items ({{ $lotItemCount }})</span>
                                                 </a>
                                             </li>
@@ -370,6 +364,32 @@
                                                 Total: {{ $lotItemCount }} {{ Str::plural('item', $lotItemCount) }} | {{ number_format($lotTotalWeight, 2) }} kg
                                             </div>
                                         </div>
+
+                                        @if($lotTotalExtra > 0 || $lotDiscount > 0)
+                                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2 px-2 py-1.5 bg-white rounded-2 border border-light-subtle small">
+                                                <span class="text-dark fw-semibold">
+                                                    <i class="fe fe-dollar-sign text-primary me-1"></i>Consignment Extra Charges:
+                                                </span>
+                                                @if($lotDelivery > 0)
+                                                    <span class="badge bg-light text-dark border">Delivery: <strong>৳{{ number_format($lotDelivery, 2) }}</strong></span>
+                                                @endif
+                                                @if($lotLabour > 0)
+                                                    <span class="badge bg-light text-dark border">Labour: <strong>৳{{ number_format($lotLabour, 2) }}</strong></span>
+                                                @endif
+                                                @if($lotScale > 0)
+                                                    <span class="badge bg-light text-dark border">Scale: <strong>৳{{ number_format($lotScale, 2) }}</strong></span>
+                                                @endif
+                                                @if($lotOther > 0)
+                                                    <span class="badge bg-light text-dark border">Other: <strong>৳{{ number_format($lotOther, 2) }}</strong></span>
+                                                @endif
+                                                @if($lotDiscount > 0)
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Discount: <strong>-৳{{ number_format($lotDiscount, 2) }}</strong></span>
+                                                @endif
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-auto">
+                                                    Steel Subtotal: ৳{{ number_format($lotSubTotal, 2) }} | Total Bill: ৳{{ number_format($lotTotalPrice, 2) }}
+                                                </span>
+                                            </div>
+                                        @endif
 
                                         <div class="table-responsive bg-white rounded-3 border shadow-sm">
                                             <table class="table table-sm table-hover table-custom align-middle mb-0">
@@ -423,11 +443,8 @@
                                                                 @endif
                                                             </td>
                                                             <td class="text-end font-monospace">৳{{ number_format($item->unit_price, 2) }}</td>
-                                                            <td class="text-end font-monospace">
-                                                                <span class="fw-bold text-success">৳{{ number_format($item->sub_price ?: $item->total_price, 2) }}</span>
-                                                                @if(abs($item->total_price - ($item->sub_price ?: $item->total_price)) > 0.01)
-                                                                    <small class="text-muted d-block fs-8">Bill: ৳{{ number_format($item->total_price, 2) }}</small>
-                                                                @endif
+                                                            <td class="text-end font-monospace fw-bold text-success">
+                                                                ৳{{ number_format($item->sub_price ?: $item->total_price, 2) }}
                                                             </td>
                                                             <td class="text-end pe-4" onclick="event.stopPropagation()">
                                                                 <div class="dropdown">
@@ -437,8 +454,8 @@
                                                                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                                                         <li>
                                                                             <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $item->id) }}">
-                                                                                <i class="fe fe-eye text-info"></i>
-                                                                                <span>View Item Details</span>
+                                                                                <i class="fe fe-shopping-cart text-info"></i>
+                                                                                <span>View Consignment</span>
                                                                             </a>
                                                                         </li>
                                                                         <li>
