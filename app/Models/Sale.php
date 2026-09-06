@@ -17,6 +17,7 @@ class Sale extends Model
         'order_date',
         'customer_id',
         'qty',
+        'subtotal',
         'total',
         'payble',
         'bill',
@@ -52,6 +53,21 @@ class Sale extends Model
     public function setNotesAttribute($value)
     {
         $this->attributes['note'] = $value;
+    }
+
+    public function getPayableAmountAttribute(): float
+    {
+        return (float)($this->attributes['payble'] ?? $this->attributes['total'] ?? 0);
+    }
+
+    public function getDueAmountAttribute(): float
+    {
+        return (float)($this->attributes['due_payment'] ?? 0);
+    }
+
+    public function getPaidAmountAttribute(): float
+    {
+        return (float)($this->attributes['advanced_payment'] ?? 0);
     }
 
     protected $casts = [

@@ -14,7 +14,7 @@ class CustomerSeeder extends Seeder
     {
         $customers = [
             [
-                'name'            => 'Sharif Khan',
+                'name'            => 'Md Hasan',
                 'company'         => 'ABC Properties',
                 'phone'           => '+880 1900-000000',
                 'email'           => 'abc@properties.com',

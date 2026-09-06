@@ -36,6 +36,7 @@ class SaleService
             $sale = Sale::create([
                 'order_no'         => $invoiceNumber,
                 'customer_id'      => $customer->id,
+                'order_date'       => !empty($data['order_date']) ? $data['order_date'] : now()->toDateString(),
                 'qty'              => !empty($data['qty']) ? array_sum($data['qty']) : 0,
                 'subtotal'         => $financials['subtotal'],
                 'total'            => $financials['total'],

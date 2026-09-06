@@ -194,7 +194,7 @@
                                         <a href="{{ route('customers.show', $customer->id) }}" class="fw-bold text-dark hover-primary mb-0 text-decoration-none d-block text-truncate" title="{{ $customer->name }}" style="max-width: 200px;">
                                             {{ Str::limit($customer->name, 25) }}
                                         </a>
-                                        <small class="text-muted fs-7">Added {{ $customer->created_at?->format('d M Y') ?? 'N/A' }}</small>
+                                        <!-- <small class="text-muted fs-7">Added {{ $customer->created_at?->format('d M Y') ?? 'N/A' }}</small> -->
                                     </div>
                                 </td>
                                 <td>

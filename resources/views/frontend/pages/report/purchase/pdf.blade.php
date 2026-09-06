@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <title>Purchase Report</title>
     @php
-        $padBase64 = function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '';
+        $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
+        $padBase64 = file_exists($padPath) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($padPath)) : (function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '');
     @endphp
     <style>
         @page {
@@ -147,45 +148,75 @@
         <strong>Date Range:</strong> {{ $filters['from'] }} to {{ $filters['to'] }} &nbsp;|&nbsp;
         <strong>Vendor:</strong> {{ $filters['vendor'] }} &nbsp;|&nbsp;
         <strong>Lot:</strong> {{ $filters['lot'] }} &nbsp;|&nbsp;
-        <strong>Total Records:</strong> {{ $purchases->count() }}
+        <strong>Total Consignments:</strong> {{ $purchases->count() }}
     </div>
 
     <table class="items-table" cellpadding="0" cellspacing="0">
         <thead>
             <tr>
-                <th style="width: 5%; text-align: center;">#</th>
-                <th style="width: 12%; text-align: left;">Date</th>
-                <th style="width: 18%; text-align: left;">Lot Number</th>
-                <th style="width: 25%; text-align: left;">Vendor</th>
-                <th style="width: 15%; text-align: left;">Warehouse</th>
-                <th style="width: 12%; text-align: right;">Weight (kg)</th>
-                <th style="width: 13%; text-align: right;">Total (BDT)</th>
+                <th style="width: 4%; text-align: center;">#</th>
+                <th style="width: 11%; text-align: left;">Date</th>
+                <th style="width: 14%; text-align: left;">Lot Number</th>
+                <th style="width: 18%; text-align: left;">Vendor</th>
+                <th style="width: 11%; text-align: left;">Warehouse</th>
+                <th style="width: 10%; text-align: right;">Weight (kg)</th>
+                <th style="width: 11%; text-align: right;">Total (BDT)</th>
+                <th style="width: 10%; text-align: right;">Paid (BDT)</th>
+                <th style="width: 11%; text-align: right;">Due (BDT)</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($purchases as $index => $purchase)
+            @forelse($purchases as $index => $lot)
+                @php
+                    $lotPurchases = $lot->purchases ?? collect();
+                    $lotNo = $lot->lot_number ?? 'N/A';
+                    $vendorName = $lot->vendor->name ?? 'N/A';
+                    $whNames = $lotPurchases->pluck('warehouse.name')->filter()->unique()->implode(', ') ?: 'Main Yard';
+                    $lotWeight = (float) $lotPurchases->sum('total_weight');
+                    $lotBill = (float) $lotPurchases->sum('total_price');
+                    $lotPaid = (float) $lotPurchases->sum('payment');
+                    $lotDue = (float) $lotPurchases->sum('due');
+                    $lotDate = $lot->lot_date ? $lot->lot_date->format('d M Y') : ($lot->created_at ? $lot->created_at->format('d M Y') : 'N/A');
+                @endphp
                 <tr style="background-color: {{ $loop->even ? '#f8fafc' : '#ffffff' }};">
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td>{{ $purchase->created_at ? $purchase->created_at->format('d M Y') : 'N/A' }}</td>
-                    <td style="font-weight: 700; color: #1e293b;">{{ $purchase->lot->lot_number ?? 'N/A' }}</td>
-                    <td>{{ $purchase->vendor->name ?? 'N/A' }}</td>
-                    <td>{{ $purchase->warehouse->name ?? 'Main Yard' }}</td>
-                    <td class="text-right">{{ number_format($purchase->total_weight, 2) }}</td>
-                    <td class="text-right" style="font-weight: 700;">{{ number_format($purchase->total_price, 2) }}</td>
+                    <td>{{ $lotDate }}</td>
+                    <td style="font-weight: 700; color: #1e293b;">{{ $lotNo }}</td>
+                    <td>{{ $vendorName }}</td>
+                    <td>{{ $whNames }}</td>
+                    <td class="text-right">{{ number_format($lotWeight, 2) }}</td>
+                    <td class="text-right" style="font-weight: 700;">{{ number_format($lotBill, 2) }}</td>
+                    <td class="text-right" style="color: #16a34a;">{{ number_format($lotPaid, 2) }}</td>
+                    <td class="text-right" style="font-weight: 700; color: {{ $lotDue > 0 ? '#dc2626' : '#16a34a' }};">
+                        {{ number_format($lotDue, 2) }}
+                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center" style="padding: 15px; color: #64748b;">No purchase data found for the selected criteria</td>
+                    <td colspan="9" class="text-center" style="padding: 15px; color: #64748b;">No purchase data found for the selected criteria</td>
                 </tr>
             @endforelse
         </tbody>
+        @if($purchases->isNotEmpty())
+        <tfoot>
+            <tr style="background-color: #f1f5f9; font-weight: 700; border-top: 1.5px solid #cbd5e1;">
+                <td colspan="5" style="text-align: right; text-transform: uppercase; font-size: 9px; padding: 7px 10px; color: #475569;">Total:</td>
+                <td class="text-right" style="padding: 7px 10px;">{{ number_format($purchases->sum(fn($l) => $l->purchases->sum('total_weight')), 2) }}</td>
+                <td class="text-right" style="padding: 7px 10px;">{{ number_format($purchases->sum(fn($l) => $l->purchases->sum('total_price')), 2) }}</td>
+                <td class="text-right" style="padding: 7px 10px; color: #16a34a;">{{ number_format($purchases->sum(fn($l) => $l->purchases->sum('payment')), 2) }}</td>
+                <td class="text-right" style="padding: 7px 10px; color: #dc2626;">{{ number_format($purchases->sum(fn($l) => $l->purchases->sum('due')), 2) }}</td>
+            </tr>
+        </tfoot>
+        @endif
     </table>
 
     <div class="summary-card">
         <table>
             <tr>
-                <td style="color: #475569;">Total Weight Intake: <span style="color: #0f172a;">{{ number_format($purchases->sum('total_weight'), 2) }} kg</span></td>
-                <td class="text-right" style="color: #475569;">Total Purchase Value: <span style="color: #16a34a; font-size: 13px;">{{ number_format($purchases->sum('total_price'), 2) }}</span></td>
+                <td style="color: #475569; width: 25%;">Total Weight: <br><span style="color: #0f172a; font-size: 11px;">{{ number_format($purchases->sum(fn($l) => $l->purchases->sum('total_weight')), 2) }} kg</span></td>
+                <td style="color: #475569; width: 25%; text-align: center;">Total Value: <br><span style="color: #0f172a; font-size: 11px;">BDT {{ number_format($purchases->sum(fn($l) => $l->purchases->sum('total_price')), 2) }}</span></td>
+                <td style="color: #475569; width: 25%; text-align: center;">Total Paid: <br><span style="color: #16a34a; font-size: 11px;">BDT {{ number_format($purchases->sum(fn($l) => $l->purchases->sum('payment')), 2) }}</span></td>
+                <td class="text-right" style="color: #475569; width: 25%;">Total Outstanding Due: <br><span style="color: #dc2626; font-size: 12px; font-weight: 800;">BDT {{ number_format($purchases->sum(fn($l) => $l->purchases->sum('due')), 2) }}</span></td>
             </tr>
         </table>
     </div>

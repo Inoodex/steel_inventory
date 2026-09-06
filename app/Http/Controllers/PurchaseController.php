@@ -371,41 +371,54 @@ class PurchaseController extends Controller
     public function reportIndex(?Request $request = null)
     {
         $request = $request ?? request();
-        $query = Purchase::with(['vendor', 'lot', 'warehouse']);
+        $query = Lot::with(['vendor', 'purchases' => function ($q) {
+            $q->with(['warehouse', 'coils'])->latest();
+        }])->whereHas('purchases');
+
         $hasFilters = $request->filled('vendor_id') || $request->filled('lot_id') || $request->filled('from') || $request->filled('to');
 
         if (!$hasFilters) {
-            $query->whereBetween('created_at', [
-                Carbon::now()->startOfMonth(),
-                Carbon::now()->endOfMonth(),
-            ]);
+            $query->where(function ($q) {
+                $start = Carbon::now()->startOfMonth();
+                $end   = Carbon::now()->endOfMonth();
+                $q->whereBetween('lot_date', [$start, $end])
+                  ->orWhereBetween('created_at', [$start, $end]);
+            });
         } else {
             $query = $this->applyPurchaseReportFilters($query, $request);
         }
 
         $purchases = $query->latest()->get();
         $vendors = Vendor::latest()->get();
-        $lots = Lot::latest()->get();
+        $allLots = Lot::latest()->get();
+        $lots = $allLots;
 
-        return view('frontend.pages.report.purchase.index', compact('purchases', 'vendors', 'lots', 'request'));
+        return view('frontend.pages.report.purchase.index', compact('purchases', 'vendors', 'lots', 'allLots', 'request'));
     }
 
     public function report(Request $request)
     {
-        $query = Purchase::with(['vendor', 'lot', 'warehouse']);
+        $query = Lot::with(['vendor', 'purchases' => function ($q) {
+            $q->with(['warehouse', 'coils'])->latest();
+        }])->whereHas('purchases');
+
         $query = $this->applyPurchaseReportFilters($query, $request);
 
         $purchases = $query->latest()->get();
         $products = collect();
         $vendors = Vendor::latest()->get();
-        $lots = Lot::latest()->get();
+        $allLots = Lot::latest()->get();
+        $lots = $allLots;
 
-        return view('frontend.pages.report.purchase.index', compact('purchases', 'products', 'vendors', 'lots', 'request'));
+        return view('frontend.pages.report.purchase.index', compact('purchases', 'products', 'vendors', 'lots', 'allLots', 'request'));
     }
 
     public function reportPdf(Request $request)
     {
-        $query = Purchase::with(['vendor', 'lot', 'warehouse']);
+        $query = Lot::with(['vendor', 'purchases' => function ($q) {
+            $q->with(['warehouse', 'coils'])->latest();
+        }])->whereHas('purchases');
+
         $query = $this->applyPurchaseReportFilters($query, $request);
 
         $purchases = $query->latest()->get();
@@ -437,15 +450,21 @@ class PurchaseController extends Controller
         }
 
         if ($request->filled('lot_id')) {
-            $query->where('lot_id', $request->lot_id);
+            $query->where('id', $request->lot_id);
         }
 
         if ($request->filled('from')) {
-            $query->whereDate('created_at', '>=', $request->from);
+            $query->where(function ($q) use ($request) {
+                $q->whereDate('lot_date', '>=', $request->from)
+                  ->orWhereDate('created_at', '>=', $request->from);
+            });
         }
 
         if ($request->filled('to')) {
-            $query->whereDate('created_at', '<=', $request->to);
+            $query->where(function ($q) use ($request) {
+                $q->whereDate('lot_date', '<=', $request->to)
+                  ->orWhereDate('created_at', '<=', $request->to);
+            });
         }
 
         return $query;

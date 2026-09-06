@@ -229,7 +229,7 @@
                             <th>Steel Items / Coils</th>
                             <th>Total Weight</th>
                             <th>Total Bill</th>
-                            <th>Status / Due</th>
+                            <th>Payment / Due</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -241,6 +241,7 @@
                                 $lotCoilCount = (int) $lotPurchases->sum('quantity');
                                 $lotTotalWeight = (float) $lotPurchases->sum('total_weight');
                                 $lotTotalPrice = (float) $lotPurchases->sum('total_price');
+                                $lotPaid = (float) $lotPurchases->sum('payment');
                                 $lotDue = (float) $lotPurchases->sum('due');
                                 $warehousesInLot = $lotPurchases->pluck('warehouse.name')->filter()->unique();
                                 $lotDelivery = (float) $lotPurchases->sum('delivery_charge');
@@ -301,15 +302,21 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if($lotDue > 0)
-                                        <span class="badge badge-soft-danger px-2.5 py-1 rounded-pill fs-8">
-                                            Due: ৳{{ number_format($lotDue, 2) }}
+                                    <!-- Showing Paid and Due Amount Together -->
+                                    <div class="d-inline-flex flex-column gap-1 text-start" style="min-width: 120px;">
+                                        <span class="badge badge-soft-success px-2 py-0.5 rounded-pill fs-8 d-flex align-items-center justify-content-between">
+                                            <span class="text-muted me-1">Paid:</span> <strong class="text-success font-monospace">৳{{ number_format($lotPaid, 2) }}</strong>
                                         </span>
-                                    @else
-                                        <span class="badge badge-soft-success px-2.5 py-1 rounded-pill fs-8">
-                                            Paid
-                                        </span>
-                                    @endif
+                                        @if($lotDue > 0)
+                                            <span class="badge badge-soft-danger px-2 py-0.5 rounded-pill fs-8 d-flex align-items-center justify-content-between">
+                                                <span class="text-muted me-1">Due:</span> <strong class="text-danger font-monospace">৳{{ number_format($lotDue, 2) }}</strong>
+                                            </span>
+                                        @else
+                                            <span class="badge badge-soft-success px-2 py-0.5 rounded-pill fs-8 d-flex align-items-center justify-content-between">
+                                                <span class="text-muted me-1">Due:</span> <strong class="text-success font-monospace">৳0.00</strong>
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td onclick="event.stopPropagation()">
                                     <div class="dropdown">
