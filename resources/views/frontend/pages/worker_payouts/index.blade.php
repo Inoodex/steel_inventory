@@ -851,7 +851,7 @@
                             <div class="row g-2 mb-3">
                                 <div class="col-md-7 col-12">
                                     <label class="form-label small fw-semibold text-secondary mb-1">Recipient Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="recipient_name" class="form-control" placeholder="Worker / Driver / Sardar" required>
+                                    <input type="text" name="recipient_name" class="form-control" placeholder="Worker / Driver" required>
                                 </div>
                                 <div class="col-md-5 col-12">
                                     <label class="form-label small fw-semibold text-secondary mb-1">Phone Number</label>
@@ -887,8 +887,8 @@
                             </div>
 
                             <div class="mb-0">
-                                <label class="form-label small fw-semibold text-secondary mb-1">Notes / Narration</label>
-                                <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Paid loading charge to Hamal gang"></textarea>
+                                <label class="form-label small fw-semibold text-secondary mb-1">Notes</label>
+                                <textarea name="notes" class="form-control" rows="2"></textarea>
                             </div>
                         </div>
 

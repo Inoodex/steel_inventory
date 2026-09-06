@@ -393,9 +393,9 @@
                             <thead class="bg-light text-secondary fs-7 text-uppercase">
                                 <tr>
                                     <th class="ps-3">Coil Tag #</th>
-                                    <th>Specs (Thick / Size)</th>
+                                    <th>Dimension</th>
                                     <th>Remaining (kg)</th>
-                                    <th>Yard Location</th>
+                                    <th>Warehouse</th>
                                     <th class="pe-3 text-end">Status</th>
                                 </tr>
                             </thead>
@@ -421,7 +421,7 @@
                                         </td>
                                         <td>
                                             <span class="text-muted small">
-                                                <i class="fe fe-map-pin text-secondary me-1"></i>{{ $coil->warehouse->name ?? 'Main Yard' }}
+                                                <i class="fe fe-map-pin text-secondary me-1"></i>{{ Str::limit($coil->warehouse->name ?? 'Main Yard', 18) }}
                                             </span>
                                         </td>
                                         <td class="pe-3 text-end">
