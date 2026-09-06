@@ -109,4 +109,87 @@ class Sale extends Model
     {
         return $this->belongsTo(BankDetail::class, 'bank_detail_id');
     }
-}
+
+    public function workerPayoutItems()
+    {
+        return $this->hasMany(WorkerPayoutItem::class, 'sale_id');
+    }
+
+    public function workerPayouts()
+    {
+        return $this->belongsToMany(WorkerPayout::class, 'worker_payout_items', 'sale_id', 'worker_payout_id')
+            ->distinct();
+    }
+
+    public function getPaidLabourCostAttribute(): float
+    {
+        return (float) $this->workerPayoutItems()->where('charge_type', 'labour')->sum('amount');
+    }
+
+    public function getDueLabourCostAttribute(): float
+    {
+        return max(0, (float)$this->labour_cost - $this->paid_labour_cost);
+    }
+
+    public function getPaidDeliveryChargeAttribute(): float
+    {
+        return (float) $this->workerPayoutItems()->where('charge_type', 'delivery')->sum('amount');
+    }
+
+    public function getDueDeliveryChargeAttribute(): float
+    {
+        return max(0, (float)$this->delivery_charge - $this->paid_delivery_charge);
+    }
+
+    public function getPaidWeightScaleCostAttribute(): float
+    {
+        return (float) $this->workerPayoutItems()->where('charge_type', 'weight_scale')->sum('amount');
+    }
+
+    public function getDueWeightScaleCostAttribute(): float
+    {
+        return max(0, (float)$this->weight_scale_cost - $this->paid_weight_scale_cost);
+    }
+
+    public function getPaidOtherChargesAttribute(): float
+    {
+        return (float) $this->workerPayoutItems()->where('charge_type', 'other')->sum('amount');
+    }
+
+    public function getDueOtherChargesAttribute(): float
+    {
+        return max(0, (float)$this->other_charges - $this->paid_other_charges);
+    }
+
+    public function getTotalChargesAttribute(): float
+    {
+        return (float)$this->labour_cost + (float)$this->delivery_charge + (float)$this->weight_scale_cost + (float)$this->other_charges;
+    }
+
+    public function getTotalChargesPaidAttribute(): float
+    {
+        return (float) $this->workerPayoutItems()->sum('amount');
+    }
+
+    public function getTotalChargesDueAttribute(): float
+    {
+        return max(0, $this->total_charges - $this->total_charges_paid);
+    }
+
+    public function syncChargesPayoutStatus(): string
+    {
+        $total = $this->total_charges;
+        $paid = $this->total_charges_paid;
+
+        if ($total <= 0 || $paid >= $total) {
+            $status = 'paid';
+        } elseif ($paid > 0) {
+            $status = 'partial';
+        } else {
+            $status = 'unpaid';
+        }
+
+        $this->update(['charges_payout_status' => $status]);
+        return $status;
+    }
+}

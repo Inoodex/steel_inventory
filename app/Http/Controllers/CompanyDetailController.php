@@ -18,32 +18,88 @@ class CompanyDetailController extends Controller
         return redirect()->route('company-details.index');
     }
 
+    public function show(CompanyDetail $companyDetail)
+    {
+        return redirect()->route('company-details.index');
+    }
+
+    public function edit(CompanyDetail $companyDetail)
+    {
+        return redirect()->route('company-details.index');
+    }
+
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'signatory_name' => 'required|string|max:255',
-            'signatory_designation' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'website' => 'nullable|string|max:255',
-            'address' => 'nullable|string',
-            'is_default' => 'sometimes|boolean',
-            'is_active' => 'sometimes|boolean',
-            'signature_image' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
-            'seal_image' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
-        ]);
-
-        if ($request->hasFile('signature_image')) {
-            $imageName = time() . '_sig_' . uniqid() . '.' . $request->file('signature_image')->getClientOriginalExtension();
-            $request->file('signature_image')->move(public_path('uploads/signatures'), $imageName);
-            $data['signature_image'] = 'uploads/signatures/' . $imageName;
+        // Support either company_name or name
+        if ($request->filled('name') && !$request->filled('company_name')) {
+            $request->merge(['company_name' => $request->name]);
         }
 
-        if ($request->hasFile('seal_image')) {
-            $sealName = time() . '_seal_' . uniqid() . '.' . $request->file('seal_image')->getClientOriginalExtension();
-            $request->file('seal_image')->move(public_path('uploads/seals'), $sealName);
-            $data['seal_image'] = 'uploads/seals/' . $sealName;
+        $request->validate([
+            'company_name'         => 'required|string|max:255',
+            'tagline'              => 'nullable|string|max:255',
+            'email'                => 'nullable|email|max:255',
+            'phone'                => 'nullable|string|max:255',
+            'alternate_phone'      => 'nullable|string|max:255',
+            'address'              => 'nullable|string',
+            'city'                 => 'nullable|string|max:255',
+            'state'                => 'nullable|string|max:255',
+            'postal_code'          => 'nullable|string|max:255',
+            'country'              => 'nullable|string|max:255',
+            'tax_number'           => 'nullable|string|max:255',
+            'bin_number'           => 'nullable|string|max:255',
+            'tin_number'           => 'nullable|string|max:255',
+            'trade_license'        => 'nullable|string|max:255',
+            'website'              => 'nullable|string|max:255',
+            'currency_symbol'      => 'nullable|string|max:10',
+            'currency_code'        => 'nullable|string|max:10',
+            'terms_and_conditions' => 'nullable|string',
+            'invoice_notes'        => 'nullable|string',
+            'is_default'           => 'sometimes|boolean',
+            'logo'                 => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+            'logo_path'            => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+            'signature_image'      => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+            'signature_path'       => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+        ]);
+
+        $data = $request->only([
+            'company_name',
+            'tagline',
+            'email',
+            'phone',
+            'alternate_phone',
+            'address',
+            'city',
+            'state',
+            'postal_code',
+            'country',
+            'tax_number',
+            'bin_number',
+            'tin_number',
+            'trade_license',
+            'website',
+            'currency_symbol',
+            'currency_code',
+            'terms_and_conditions',
+            'invoice_notes',
+        ]);
+
+        $data['is_default'] = $request->boolean('is_default');
+
+        // Signature upload
+        $sigFile = $request->file('signature_path') ?? $request->file('signature_image');
+        if ($sigFile) {
+            $imageName = time() . '_sig_' . uniqid() . '.' . $sigFile->getClientOriginalExtension();
+            $sigFile->move(public_path('uploads/signatures'), $imageName);
+            $data['signature_path'] = 'uploads/signatures/' . $imageName;
+        }
+
+        // Logo upload
+        $logoFile = $request->file('logo') ?? $request->file('logo_path');
+        if ($logoFile) {
+            $logoName = time() . '_logo_' . uniqid() . '.' . $logoFile->getClientOriginalExtension();
+            $logoFile->move(public_path('uploads/logos'), $logoName);
+            $data['logo_path'] = 'uploads/logos/' . $logoName;
         }
 
         // If setting as default, remove default from others
@@ -57,43 +113,84 @@ class CompanyDetailController extends Controller
             ->with('success', 'Company details created successfully.');
     }
 
-    public function edit(CompanyDetail $companyDetail)
-    {
-        return redirect()->route('company-details.index');
-    }
-
     public function update(Request $request, CompanyDetail $companyDetail)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'signatory_name' => 'required|string|max:255',
-            'signatory_designation' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'website' => 'nullable|string|max:255',
-            'address' => 'nullable|string',
-            'is_default' => 'sometimes|boolean',
-            'is_active' => 'sometimes|boolean',
-            'signature_image' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
-            'seal_image' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
-        ]);
-
-        if ($request->hasFile('signature_image')) {
-            if ($companyDetail->signature_image && file_exists(public_path($companyDetail->signature_image))) {
-                @unlink(public_path($companyDetail->signature_image));
-            }
-            $imageName = time() . '_sig_' . uniqid() . '.' . $request->file('signature_image')->getClientOriginalExtension();
-            $request->file('signature_image')->move(public_path('uploads/signatures'), $imageName);
-            $data['signature_image'] = 'uploads/signatures/' . $imageName;
+        // Support either company_name or name
+        if ($request->filled('name') && !$request->filled('company_name')) {
+            $request->merge(['company_name' => $request->name]);
         }
 
-        if ($request->hasFile('seal_image')) {
-            if ($companyDetail->seal_image && file_exists(public_path($companyDetail->seal_image))) {
-                @unlink(public_path($companyDetail->seal_image));
+        $request->validate([
+            'company_name'         => 'required|string|max:255',
+            'tagline'              => 'nullable|string|max:255',
+            'email'                => 'nullable|email|max:255',
+            'phone'                => 'nullable|string|max:255',
+            'alternate_phone'      => 'nullable|string|max:255',
+            'address'              => 'nullable|string',
+            'city'                 => 'nullable|string|max:255',
+            'state'                => 'nullable|string|max:255',
+            'postal_code'          => 'nullable|string|max:255',
+            'country'              => 'nullable|string|max:255',
+            'tax_number'           => 'nullable|string|max:255',
+            'bin_number'           => 'nullable|string|max:255',
+            'tin_number'           => 'nullable|string|max:255',
+            'trade_license'        => 'nullable|string|max:255',
+            'website'              => 'nullable|string|max:255',
+            'currency_symbol'      => 'nullable|string|max:10',
+            'currency_code'        => 'nullable|string|max:10',
+            'terms_and_conditions' => 'nullable|string',
+            'invoice_notes'        => 'nullable|string',
+            'is_default'           => 'sometimes|boolean',
+            'logo'                 => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+            'logo_path'            => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+            'signature_image'      => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+            'signature_path'       => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+        ]);
+
+        $data = $request->only([
+            'company_name',
+            'tagline',
+            'email',
+            'phone',
+            'alternate_phone',
+            'address',
+            'city',
+            'state',
+            'postal_code',
+            'country',
+            'tax_number',
+            'bin_number',
+            'tin_number',
+            'trade_license',
+            'website',
+            'currency_symbol',
+            'currency_code',
+            'terms_and_conditions',
+            'invoice_notes',
+        ]);
+
+        $data['is_default'] = $request->boolean('is_default');
+
+        // Signature upload
+        $sigFile = $request->file('signature_path') ?? $request->file('signature_image');
+        if ($sigFile) {
+            if ($companyDetail->signature_path && file_exists(public_path($companyDetail->signature_path))) {
+                @unlink(public_path($companyDetail->signature_path));
             }
-            $sealName = time() . '_seal_' . uniqid() . '.' . $request->file('seal_image')->getClientOriginalExtension();
-            $request->file('seal_image')->move(public_path('uploads/seals'), $sealName);
-            $data['seal_image'] = 'uploads/seals/' . $sealName;
+            $imageName = time() . '_sig_' . uniqid() . '.' . $sigFile->getClientOriginalExtension();
+            $sigFile->move(public_path('uploads/signatures'), $imageName);
+            $data['signature_path'] = 'uploads/signatures/' . $imageName;
+        }
+
+        // Logo upload
+        $logoFile = $request->file('logo') ?? $request->file('logo_path');
+        if ($logoFile) {
+            if ($companyDetail->logo_path && file_exists(public_path($companyDetail->logo_path))) {
+                @unlink(public_path($companyDetail->logo_path));
+            }
+            $logoName = time() . '_logo_' . uniqid() . '.' . $logoFile->getClientOriginalExtension();
+            $logoFile->move(public_path('uploads/logos'), $logoName);
+            $data['logo_path'] = 'uploads/logos/' . $logoName;
         }
 
         // If setting as default, remove default from others
@@ -115,6 +212,13 @@ class CompanyDetailController extends Controller
             if ($newDefault) {
                 $newDefault->update(['is_default' => true]);
             }
+        }
+
+        if ($companyDetail->signature_path && file_exists(public_path($companyDetail->signature_path))) {
+            @unlink(public_path($companyDetail->signature_path));
+        }
+        if ($companyDetail->logo_path && file_exists(public_path($companyDetail->logo_path))) {
+            @unlink(public_path($companyDetail->logo_path));
         }
 
         $companyDetail->delete();

@@ -11,7 +11,8 @@ use App\Http\Controllers\{
     CompanyDetailController, PaymentController, ReturnController,
     ChartOfAccountController, JournalEntryController, LedgerController,
     TrialBalanceController, FinancialStatementController, ContraEntryController,
-    ReconciliationController, FiscalYearController, CoilController, WarehouseController
+    ReconciliationController, FiscalYearController, CoilController, WarehouseController,
+    WorkerPayoutController
 };
 
 use Illuminate\Support\Facades\{Auth, Route};
@@ -95,10 +96,15 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('purchase/report/pdf', [PurchaseController::class, 'reportPdf'])->name('purchase.report.pdf');
     Route::get('sales-report', [SalesController::class, 'report'])->name('sales.report');
     Route::get('sales-report/pdf', [SalesController::class, 'reportPdf'])->name('sales.report.pdf');
-    Route::get('extra-charges-report', [SalesController::class, 'extraChargesReport'])->name('sales.extra-charges-report');
+    Route::redirect('extra-charges-report', '/worker-payouts')->name('sales.extra-charges-report');
     Route::get('extra-charges-report/pdf', [SalesController::class, 'extraChargesReportPdf'])->name('sales.extra-charges-report.pdf');
-    Route::post('extra-charges/{id}/payout', [SalesController::class, 'updateChargesPayoutStatus'])->name('sales.extra-charges.payout');
-    Route::post('extra-charges/{id}/revert', [SalesController::class, 'revertChargesPayoutStatus'])->name('sales.extra-charges.revert');
+
+    // Worker Extra Charges & Payouts Settlement Module
+    Route::get('/worker-payouts', [WorkerPayoutController::class, 'index'])->name('worker-payouts.index');
+    Route::post('/worker-payouts/batch-settle', [WorkerPayoutController::class, 'batchSettle'])->name('worker-payouts.batch-settle');
+    Route::post('/worker-payouts/single-settle/{id}', [WorkerPayoutController::class, 'singleSettle'])->name('worker-payouts.single-settle');
+    Route::post('/worker-payouts/{id}/void', [WorkerPayoutController::class, 'voidPayout'])->name('worker-payouts.void');
+    Route::get('/worker-payouts/{id}/voucher-pdf', [WorkerPayoutController::class, 'voucherPdf'])->name('worker-payouts.voucher-pdf');
     Route::get('/revenues/pdf', [RevenueController::class, 'downloadPdf'])->name('revenues.pdf');
     Route::get('/revenues', [RevenueController::class, 'index'])->name('revenues.index');
     Route::post('/revenues/generate', [RevenueController::class, 'generate'])->name('revenues.generate');

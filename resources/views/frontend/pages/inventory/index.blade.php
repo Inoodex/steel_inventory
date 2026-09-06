@@ -246,13 +246,13 @@
                 <table class="table table-hover table-custom align-middle mb-0" id="inventoryTable">
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
-                            <th class="ps-4" style="width: 50px;">#</th>
+                            <th>#</th>
                             <th>Coil &amp; Specifications</th>
                             <th>Lot Source &amp; Vendor</th>
-                            <th>Warehouse / Yard</th>
+                            <!-- <th>Warehouse / Yard</th> -->
                             <th>Available Weight</th>
-                            <th style="min-width: 200px;">Remaining Coils &amp; Stock %</th>
-                            <th class="text-end pe-4" style="width: 80px;">Action</th>
+                            <th>Remaining Coils &amp; Stock %</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
@@ -323,11 +323,11 @@
                                         <small class="text-muted fs-7"><i class="fe fe-truck me-1"></i>{{ Str::limit($vendorName, 22) }}</small>
                                     </div>
                                 </td>
-                                <td>
+                                <!-- <td>
                                     <span class="badge bg-light text-dark border px-2 py-1 fs-7">
                                         <i class="fe fe-map-pin text-primary me-1"></i>{{ Str::limit($whName, 18) }}
                                     </span>
-                                </td>
+                                </td> -->
                                 <td>
                                     <span class="badge {{ $rem > 0 ? 'badge-soft-success' : 'badge-soft-secondary' }} px-3 py-2 rounded-pill fs-7 fw-bold">
                                         <i class="fe {{ $rem > 0 ? 'fe-check-circle' : 'fe-alert-circle' }} me-1"></i> {{ number_format($rem, 2) }} kg
@@ -352,7 +352,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="text-end pe-4">
+                                <td>
                                     <div class="dropdown">
                                         <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
                                             <i class="fas fa-ellipsis-v"></i>

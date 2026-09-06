@@ -65,7 +65,7 @@
                     @if($canView('Payment Management') || $canView('Purchase Management') || $canView('Vendor Management'))
                         <li class="{{ $active(['vendor-due-payments.*']) ? 'active' : '' }}">
                             <a href="{{ route('vendor-due-payments.index') }}">
-                                <i class="fe fe-dollar-sign"></i><span> Vendor Dues &amp; Settlements</span>
+                                <i class="fe fe-dollar-sign"></i><span> Vendor Dues</span>
                             </a>
                         </li>
                     @endif
@@ -121,7 +121,15 @@
                     @if($canView('Payment Management') || $canView('Sales Management') || $canView('Customer Management'))
                         <li class="{{ $active(['due-payments.*']) ? 'active' : '' }}">
                             <a href="{{ route('due-payments.index') }}">
-                                <i class="fe fe-user-check"></i><span> Customer Dues &amp; Receipts</span>
+                                <i class="fe fe-user-check"></i><span> Customer Dues</span>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if($canView('Payment Management') || $canView('Sales Management') || $isAdmin)
+                        <li class="{{ $active(['worker-payouts.*']) ? 'active' : '' }}">
+                            <a href="{{ route('worker-payouts.index') }}">
+                                <i class="fe fe-pocket"></i><span> Worker Charges</span>
                             </a>
                         </li>
                     @endif
@@ -255,11 +263,6 @@
                     <li class="{{ $active(['revenues.*']) ? 'active' : '' }}">
                         <a href="{{ route('revenues.index') }}">
                             <i class="fe fe-trending-up"></i><span> Revenue &amp; Margins</span>
-                        </a>
-                    </li>
-                    <li class="{{ $active(['sales.extra-charges-report*']) ? 'active' : '' }}">
-                        <a href="{{ route('sales.extra-charges-report') }}">
-                            <i class="fe fe-truck"></i><span> Freight &amp; Extra Charges</span>
                         </a>
                     </li>
                 @endif
