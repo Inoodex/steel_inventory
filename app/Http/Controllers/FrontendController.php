@@ -15,8 +15,10 @@ use App\Models\Lot;
 use App\Models\Warehouse;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
+use App\Models\WorkerPayoutItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class FrontendController extends Controller
 {
@@ -102,6 +104,18 @@ class FrontendController extends Controller
         $recentCoils = Coil::with(['lot', 'warehouse'])->where('status', 'in_stock')->latest()->take(6)->get();
         $recentJournalEntries = JournalEntry::with('creator')->latest('entry_date')->latest('id')->take(6)->get();
 
+        // Worker Extra Charges & Payouts Liability
+        $totalCollectedCharges = (float) (
+            Sale::sum('labour_cost') +
+            Sale::sum('delivery_charge') +
+            Sale::sum('weight_scale_cost') +
+            Sale::sum('other_charges')
+        );
+        $totalPaidCharges = Schema::hasTable('worker_payout_items')
+            ? (float) WorkerPayoutItem::sum('amount')
+            : 0;
+        $pendingWorkerCharges = max(0, $totalCollectedCharges - $totalPaidCharges);
+
         $stats = [
             // Sales KPIs
             'todaysSalesRevenue'     => (float) Sale::whereDate('created_at', Carbon::today())->sum('payble'),
@@ -138,6 +152,7 @@ class FrontendController extends Controller
             'bankBalance'          => $bankBalance,
             'receivables'          => $receivables,
             'payables'             => $payables,
+            'pendingWorkerCharges' => $pendingWorkerCharges,
             'inventoryValuation'   => $inventoryValuation,
             'bankAccounts'         => $bankAccounts,
             'recentJournalEntries' => $recentJournalEntries,

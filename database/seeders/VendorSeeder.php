@@ -14,11 +14,11 @@ class VendorSeeder extends Seeder
     {
         $vendors = [
             [
-                'name'            => 'Abul Khair Steel Mills (AKS Heavy Scrap)',
-                'company'         => 'Abul Khair Group',
-                'phone'           => '+880 1841-567890',
-                'email'           => 'steel@abulkhairgroup.com',
-                'address'         => 'Sitakunda, Chattogram',
+                'name'            => 'Vendor1',
+                'company'         => 'Test',
+                'phone'           => '01800000000',
+                'email'           => 'vendor1@mail.com',
+                'address'         => 'Dhaka',
                 'bin_number'      => '004567890-0404',
                 'tin_number'      => '781245670123',
                 'opening_balance' => 0.00,

@@ -88,6 +88,10 @@
                     <i class="fe fe-plus-circle fs-6"></i>
                     <span>Steel Inward</span>
                 </a>
+                <a href="{{ route('worker-payouts.index') }}" class="btn btn-outline-warning text-dark px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
+                    <i class="fe fe-users fs-6 text-warning"></i>
+                    <span>Worker Payouts</span>
+                </a>
                 <a href="{{ route('dailyExpenses.create') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
                     <i class="fe fe-dollar-sign fs-6"></i>
                     <span>Add Expense</span>
@@ -96,6 +100,27 @@
         </div>
     </div>
     <!-- /Page Header -->
+
+    <!-- Pending Worker Charges Alert (if any unsettled charges exist) -->
+    @if(($pendingWorkerCharges ?? 0) > 0)
+        <div class="alert alert-warning border-0 shadow-sm rounded-3 d-flex flex-wrap align-items-center justify-content-between p-3 mb-4 gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="avatar avatar-md bg-warning text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0">
+                    <i class="fe fe-users fs-5 text-dark"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0 text-dark">Unsettled Worker Charges Pending</h6>
+                    <p class="text-muted small mb-0">
+                        You have <strong class="text-dark">৳{{ number_format($pendingWorkerCharges, 2) }}</strong> in collected labour, delivery, and scale charges awaiting disbursement to handlers.
+                    </p>
+                </div>
+            </div>
+            <a href="{{ route('worker-payouts.index') }}" class="btn btn-sm btn-warning text-dark fw-bold px-3 py-2 rounded-2 d-inline-flex align-items-center gap-2">
+                <span>Disburse / Settle Payouts</span>
+                <i class="fe fe-arrow-right"></i>
+            </a>
+        </div>
+    @endif
 
     <!-- ROW 1: Core Steel ERP Yard & Live Stock KPIs -->
     <div class="row g-3 mb-4">
@@ -121,7 +146,10 @@
                     </div>
                     <div>
                         <h6 class="text-muted fw-normal mb-1">Total Stock Weight</h6>
-                        <h4 class="mb-0 fw-bold text-dark">{{ number_format($totalYardTonnage ?? 0, 2) }} KG</h4>
+                        <h4 class="mb-0 fw-bold text-dark">
+                            {{ number_format($totalYardTonnage ?? 0, 2) }} <span class="fs-6 fw-semibold text-muted">MT</span>
+                        </h4>
+                        <div class="text-muted small">({{ number_format($totalYardWeightKg ?? 0, 2) }} kg)</div>
                     </div>
                 </div>
             </div>
@@ -171,6 +199,9 @@
                     <a href="{{ route('journal-entries.create') }}" class="btn btn-sm btn-primary rounded-pill px-3">
                         <i class="fe fe-plus me-1"></i> New Voucher
                     </a>
+                    <a href="{{ route('worker-payouts.index') }}" class="btn btn-sm btn-outline-warning rounded-pill px-3">
+                        <i class="fe fe-users me-1"></i> Worker Payouts
+                    </a>
                     <a href="{{ route('trial-balance.index') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
                         <i class="fe fe-check-square me-1"></i> Trial Balance
                     </a>
@@ -178,56 +209,76 @@
             </div>
             <div class="row g-3">
                 <div class="col-xl-3 col-md-6 col-12">
-                    <div class="card stat-card financial-card bg-white shadow-sm h-100 mb-0 border-start border-4 border-success">
-                        <div class="card-body d-flex align-items-center">
-                            <div class="avatar avatar-lg bg-success-light text-success rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                                <i class="fe fe-dollar-sign fs-4"></i>
-                            </div>
-                            <div>
-                                <h6 class="text-muted fw-normal mb-1">Cash in Hand</h6>
-                                <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($liquidCash ?? 0, 2) }}</h4>
+                    <a href="{{ route('ledger.index') }}" class="text-decoration-none">
+                        <div class="card stat-card financial-card bg-white shadow-sm h-100 mb-0 border-start border-4 border-success">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-lg bg-success-light text-success rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                                        <i class="fe fe-dollar-sign fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="text-muted fw-normal mb-1">Cash in Hand</h6>
+                                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($liquidCash ?? 0, 2) }}</h4>
+                                        <span class="text-success small fw-semibold">View General Ledger <i class="fe fe-arrow-right fs-8"></i></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-xl-3 col-md-6 col-12">
-                    <div class="card stat-card financial-card bg-white shadow-sm h-100 mb-0 border-start border-4 border-info">
-                        <div class="card-body d-flex align-items-center">
-                            <div class="avatar avatar-lg bg-info-light text-info rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                                <i class="fe fe-credit-card fs-4"></i>
-                            </div>
-                            <div>
-                                <h6 class="text-muted fw-normal mb-1">Total Bank Balance</h6>
-                                <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($bankBalance ?? 0, 2) }}</h4>
+                    <a href="{{ route('bank-details.index') }}" class="text-decoration-none">
+                        <div class="card stat-card financial-card bg-white shadow-sm h-100 mb-0 border-start border-4 border-info">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-lg bg-info-light text-info rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                                        <i class="fe fe-credit-card fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="text-muted fw-normal mb-1">Total Bank Balance</h6>
+                                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($bankBalance ?? 0, 2) }}</h4>
+                                        <span class="text-info small fw-semibold">Manage Accounts <i class="fe fe-arrow-right fs-8"></i></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-xl-3 col-md-6 col-12">
-                    <div class="card stat-card financial-card bg-white shadow-sm h-100 mb-0 border-start border-4 border-warning">
-                        <div class="card-body d-flex align-items-center">
-                            <div class="avatar avatar-lg bg-warning-light text-warning rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                                <i class="fe fe-user-check fs-4"></i>
-                            </div>
-                            <div>
-                                <h6 class="text-muted fw-normal mb-1">Receivables</h6>
-                                <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($receivables ?? 0, 2) }}</h4>
+                    <a href="{{ route('due-payments.index') }}" class="text-decoration-none">
+                        <div class="card stat-card financial-card bg-white shadow-sm h-100 mb-0 border-start border-4 border-warning">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-lg bg-warning-light text-warning rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                                        <i class="fe fe-user-check fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="text-muted fw-normal mb-1">Receivables</h6>
+                                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($receivables ?? 0, 2) }}</h4>
+                                        <span class="text-warning small fw-semibold">Customer Dues <i class="fe fe-arrow-right fs-8"></i></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-xl-3 col-md-6 col-12">
-                    <div class="card stat-card financial-card bg-white shadow-sm h-100 mb-0 border-start border-4 border-danger">
-                        <div class="card-body d-flex align-items-center">
-                            <div class="avatar avatar-lg bg-danger-light text-danger rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                                <i class="fe fe-truck fs-4"></i>
-                            </div>
-                            <div>
-                                <h6 class="text-muted fw-normal mb-1">Payables</h6>
-                                <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($payables ?? 0, 2) }}</h4>
+                    <a href="{{ route('vendor-due-payments.index') }}" class="text-decoration-none">
+                        <div class="card stat-card financial-card bg-white shadow-sm h-100 mb-0 border-start border-4 border-danger">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-lg bg-danger-light text-danger rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                                        <i class="fe fe-truck fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="text-muted fw-normal mb-1">Payables</h6>
+                                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($payables ?? 0, 2) }}</h4>
+                                        <span class="text-danger small fw-semibold">Vendor Payables <i class="fe fe-arrow-right fs-8"></i></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
             </div>
         </div>
@@ -342,9 +393,9 @@
                             <thead class="bg-light text-secondary fs-7 text-uppercase">
                                 <tr>
                                     <th class="ps-3">Coil Tag #</th>
-                                    <!-- <th>Specs (Thick / Size)</th> -->
+                                    <th>Specs (Thick / Size)</th>
                                     <th>Remaining (kg)</th>
-                                    <!-- <th>Yard Location</th> -->
+                                    <th>Yard Location</th>
                                     <th class="pe-3 text-end">Status</th>
                                 </tr>
                             </thead>
@@ -357,20 +408,22 @@
                                                 <small class="text-muted d-block">{{ $coil->lot->lot_number }}</small>
                                             @endif
                                         </td>
-                                        <!-- <td>
-                                            <span class="fw-semibold text-dark">Thic - {{ $coil->thickness ?? '-' }}</span>
-                                            <small class="text-muted">[{{ $coil->width ?? '-' }} × {{ $coil->length ?? '-' }}]</small>
-                                        </td> -->
+                                        <td>
+                                            <span class="fw-semibold text-dark">{{ $coil->thickness ? $coil->thickness . ' mm' : '-' }}</span>
+                                            @if($coil->width || $coil->length)
+                                                <small class="text-muted d-block">[{{ $coil->width ?? '-' }} × {{ $coil->length ?? '-' }}]</small>
+                                            @endif
+                                        </td>
                                         <td>
                                             <span class="badge badge-soft-success px-2 py-1 rounded-2">
                                                 {{ number_format($coil->remaining_weight, 2) }} kg
                                             </span>
                                         </td>
-                                        <!-- <td>
+                                        <td>
                                             <span class="text-muted small">
                                                 <i class="fe fe-map-pin text-secondary me-1"></i>{{ $coil->warehouse->name ?? 'Main Yard' }}
                                             </span>
-                                        </td> -->
+                                        </td>
                                         <td class="pe-3 text-end">
                                             <span class="badge badge-soft-success px-2 py-1 rounded-pill fs-8">In Stock</span>
                                         </td>
@@ -402,9 +455,9 @@
                             <thead class="bg-light text-secondary fs-7 text-uppercase">
                                 <tr>
                                     <th class="ps-3">Order / Customer</th>
-                                    <th>Payable Amount</th>
-                                    <!-- <th>Status</th>
-                                    <th>Date</th> -->
+                                    <th>Payable</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
                                     <th class="pe-3 text-end">Action</th>
                                 </tr>
                             </thead>
@@ -418,7 +471,7 @@
                                         <td>
                                             <span class="badge badge-soft-primary px-3 py-1 rounded-pill fs-7">৳{{ number_format($sale->payble ?? $sale->total, 2) }}</span>
                                         </td>
-                                        <!-- <td>
+                                        <td>
                                             @if($sale->status === 'paid')
                                                 <span class="badge badge-soft-success px-2 py-1 rounded-pill fs-8">Paid</span>
                                             @elseif($sale->status === 'partial')
@@ -429,7 +482,7 @@
                                         </td>
                                         <td>
                                             <span class="text-secondary small">{{ $sale->created_at ? $sale->created_at->format('d M, Y') : 'N/A' }}</span>
-                                        </td> -->
+                                        </td>
                                         <td class="pe-3 text-end">
                                             <a href="{{ route('sales.invoice', $sale->id) }}" class="btn btn-sm btn-outline-secondary rounded-2 px-2 py-1">
                                                 <i class="fe fe-file-text"></i> Invoice
