@@ -151,6 +151,11 @@ class PurchaseService
                 $size = !empty($item['size']) ? trim($item['size']) : (!empty($item['width']) ? trim($item['width']) : null);
                 $sizeType = !empty($item['size_type']) ? trim($item['size_type']) : 'ft';
 
+                $paymentMethod = $data['payment_method'] ?? 'cash';
+                $isBank = ($paymentMethod !== 'cash');
+                $bankDetailId = ($isBank && !empty($data['bank_detail_id'])) ? $data['bank_detail_id'] : null;
+                $transactionRef = ($isBank && !empty($data['transaction_ref'])) ? $data['transaction_ref'] : null;
+
                 // 1. Record Purchase Line
                 $purchase = Purchase::create([
                     'lot_id'            => $lotId,
@@ -172,9 +177,9 @@ class PurchaseService
                     'total_price'       => $itemTotal,
                     'payment'           => $itemPayment,
                     'due'               => $itemDue,
-                    'payment_method'    => $data['payment_method'] ?? 'cash',
-                    'bank_detail_id'    => !empty($data['bank_detail_id']) ? $data['bank_detail_id'] : null,
-                    'transaction_ref'   => $data['transaction_ref'] ?? null,
+                    'payment_method'    => $paymentMethod,
+                    'bank_detail_id'    => $bankDetailId,
+                    'transaction_ref'   => $transactionRef,
                     'created_by'        => Auth::id(),
                 ]);
 
@@ -213,9 +218,9 @@ class PurchaseService
                     'purchase_id'     => $primaryPurchase->id,
                     'amount'          => $totalPayment,
                     'payment_for'     => 3, // 3: Purchases / Vendor payment
-                    'payment_method'  => $data['payment_method'] ?? 'cash',
-                    'bank_detail_id'  => !empty($data['bank_detail_id']) ? $data['bank_detail_id'] : null,
-                    'transaction_ref' => $data['transaction_ref'] ?? null,
+                    'payment_method'  => $paymentMethod,
+                    'bank_detail_id'  => $bankDetailId,
+                    'transaction_ref' => $transactionRef,
                     'payment_date'    => $data['purchase_date'] ?? date('Y-m-d'),
                     'remarks'         => 'Initial disbursement for ' . (!empty($lotId) ? 'Consignment Lot #' . ($lot->lot_number ?? $lotId) : 'Purchase Order #PO-' . $primaryPurchase->id),
                     'status'          => '1',

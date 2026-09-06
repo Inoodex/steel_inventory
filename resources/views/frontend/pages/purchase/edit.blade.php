@@ -483,6 +483,7 @@
             });
 
             calculateRow();
+            handlePurchasePaymentMethodChange($('#purchasePaymentMethod').val());
         });
 
         function calculateRow() {
@@ -551,14 +552,30 @@
         function handlePurchasePaymentMethodChange(method) {
             const bankContainer = document.getElementById('purchaseBankAccountContainer');
             const refContainer = document.getElementById('purchaseTransactionRefContainer');
+            const bankSelect = document.getElementById('purchaseBankDetail');
+            const refInput = document.querySelector('input[name="transaction_ref"]');
             if (!bankContainer || !refContainer) return;
 
             if (method === 'cash') {
                 bankContainer.style.display = 'none';
                 refContainer.style.display = 'none';
+                if (bankSelect) {
+                    bankSelect.value = '';
+                    bankSelect.disabled = true;
+                }
+                if (refInput) {
+                    refInput.value = '';
+                    refInput.disabled = true;
+                }
             } else {
                 bankContainer.style.display = 'block';
                 refContainer.style.display = 'block';
+                if (bankSelect) {
+                    bankSelect.disabled = false;
+                }
+                if (refInput) {
+                    refInput.disabled = false;
+                }
             }
         }
 

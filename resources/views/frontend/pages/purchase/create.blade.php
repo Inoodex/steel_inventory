@@ -464,17 +464,17 @@
                         </div>
 
                         <div class="col-lg-2 col-md-4 col-6">
-                            <label class="form-label small text-secondary fw-semibold mb-1">Delivery / Transport (৳)</label>
+                            <label class="form-label small text-secondary fw-semibold mb-1">Transport Charge (৳)</label>
                             <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="delivery_charge" name="delivery_charge" class="form-control border-light-subtle text-end" value="{{ old('delivery_charge', 0) }}" min="0" step="0.01" placeholder="0.00">
                         </div>
 
                         <div class="col-lg-2 col-md-4 col-6">
-                            <label class="form-label small text-secondary fw-semibold mb-1">Cutting & Labour (৳)</label>
+                            <label class="form-label small text-secondary fw-semibold mb-1">Cutting & Load-Unload (৳)</label>
                             <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="labour_cost" name="labour_cost" class="form-control border-light-subtle text-end" value="{{ old('labour_cost', 0) }}" min="0" step="0.01" placeholder="0.00">
                         </div>
 
                         <div class="col-lg-2 col-md-4 col-6">
-                            <label class="form-label small text-secondary fw-semibold mb-1">Scale / Weighbridge (৳)</label>
+                            <label class="form-label small text-secondary fw-semibold mb-1">Scale & Labour Charge (৳)</label>
                             <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="weight_scale_cost" name="weight_scale_cost" class="form-control border-light-subtle text-end" value="{{ old('weight_scale_cost', 0) }}" min="0" step="0.01" placeholder="0.00">
                         </div>
 
@@ -570,9 +570,9 @@
                                 <div id="purchaseBankAccountContainer" class="mb-2" style="display: none;">
                                     <label class="form-label fw-semibold small text-secondary mb-1">Disbursement Bank Account</label>
                                     <select name="bank_detail_id" id="purchaseBankDetail" class="form-select border-light-subtle">
-                                        <option value="">Select Bank Account</option>
+                                        <option value="" selected>Select Bank Account</option>
                                         @foreach($bankAccounts ?? [] as $bank)
-                                            <option value="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                            <option value="{{ $bank->id }}">
                                                 {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
                                             </option>
                                         @endforeach
@@ -673,6 +673,9 @@
             } else {
                 toggleLotMode('new');
             }
+
+            // Initial payment method trigger (disables bank account inputs if cash)
+            handlePurchasePaymentMethodChange($('#purchasePaymentMethod').val());
 
             // Calculate summary on page load (in case old items were re-rendered)
             recalculateSummary();
@@ -886,14 +889,30 @@
         function handlePurchasePaymentMethodChange(method) {
             const bankContainer = document.getElementById('purchaseBankAccountContainer');
             const refContainer = document.getElementById('purchaseTransactionRefContainer');
+            const bankSelect = document.getElementById('purchaseBankDetail');
+            const refInput = document.querySelector('input[name="transaction_ref"]');
             if (!bankContainer || !refContainer) return;
 
             if (method === 'cash') {
                 bankContainer.style.display = 'none';
                 refContainer.style.display = 'none';
+                if (bankSelect) {
+                    bankSelect.disabled = true;
+                    bankSelect.value = '';
+                }
+                if (refInput) {
+                    refInput.disabled = true;
+                    refInput.value = '';
+                }
             } else {
                 bankContainer.style.display = 'block';
                 refContainer.style.display = 'block';
+                if (bankSelect) {
+                    bankSelect.disabled = false;
+                }
+                if (refInput) {
+                    refInput.disabled = false;
+                }
             }
         }
 

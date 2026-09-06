@@ -48,13 +48,15 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::resource('permission', PermissionController::class);
     Route::get('/user/pin', [UserController::class, 'pin'])->name('users.pin');
     Route::post('/user/pin', [UserController::class, 'pinStore'])->name('users.pin_store');
+    // === Steel Inventory & Stock Registry ===
     Route::get('/inventory/pdf', [InventoryController::class, 'downloadPdf'])->name('inventory.pdf');
-    Route::resource('inventory', InventoryController::class)->only(['index', 'show']);
+    Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::post('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.update_status');
     Route::resource('warehouses', WarehouseController::class);
 
-    // === Ship Steel Coils & Plates Registry ===
-    Route::get('coils', [CoilController::class, 'index'])->name('coils.index');
-    Route::post('coils/{id}/status', [CoilController::class, 'updateStatus'])->name('coils.update_status');
+    // Backward-compatibility aliases for coils
+    Route::get('coils', [InventoryController::class, 'index'])->name('coils.index');
+    Route::post('coils/{id}/status', [InventoryController::class, 'updateStatus'])->name('coils.update_status');
 
     Route::get('/customers/pdf', [CustomerController::class, 'downloadPdf'])->name('customers.pdf');
     Route::get('/customers/{id}/ledger', [CustomerController::class, 'ledger'])->name('customers.ledger');

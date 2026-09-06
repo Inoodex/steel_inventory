@@ -125,9 +125,9 @@
                     <span>Edit Stockyard</span>
                 </button>
 
-                <a href="{{ route('coils.index', ['search' => $warehouse->name]) }}" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2 text-white">
+                <a href="{{ route('inventory.index', ['warehouse_id' => $warehouse->id]) }}" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2 text-white">
                     <i class="fe fe-disc"></i>
-                    <span>View Yard Coils</span>
+                    <span>View Yard Inventory</span>
                 </a>
 
                 <a href="{{ route('warehouses.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2">

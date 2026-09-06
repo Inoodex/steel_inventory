@@ -180,7 +180,7 @@
                                 </td>
                                 <td>
                                     <div>
-                                        <span class="fw-bold text-dark d-block">{{ $vendorName }}</span>
+                                        <span class="fw-bold text-dark d-block">{{ Str::limit($vendorName, 18, '...') }}</span>
                                         <small class="text-muted fs-7"><i class="fe fe-phone me-1"></i>{{ $vendorPhone }}</small>
                                     </div>
                                 </td>
@@ -272,7 +272,7 @@
                         <select name="bank_detail_id" id="modalBankDetail" class="form-select border-light-subtle">
                             <option value="">Select Bank / MFS Account</option>
                             @foreach($bankAccounts ?? [] as $bank)
-                                <option value="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                <option value="{{ $bank->id }}">
                                     {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
                                 </option>
                             @endforeach
@@ -349,6 +349,12 @@ function openVendorDueModal(purchaseId, vendorId, vendorName, maxDue) {
     amountInput.value = numMax > 0 ? numMax.toFixed(2) : '';
     amountInput.max = numMax > 0 ? numMax : '';
 
+    const methodSelect = document.getElementById('modalPaymentMethod');
+    if (methodSelect) {
+        methodSelect.value = 'cash';
+        toggleModalBank('cash');
+    }
+
     const modalEl = document.getElementById('vendorDueModal');
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
@@ -357,14 +363,32 @@ function openVendorDueModal(purchaseId, vendorId, vendorName, maxDue) {
 function toggleModalBank(method) {
     const bankContainer = document.getElementById('modalBankContainer');
     const refContainer = document.getElementById('modalRefContainer');
+    const bankSelect = document.getElementById('modalBankDetail');
+    const refInput = document.querySelector('#vendorDueModal input[name="transaction_ref"]');
     if (!bankContainer || !refContainer) return;
 
     if (method === 'cash') {
         bankContainer.style.display = 'none';
         refContainer.style.display = 'none';
+        if (bankSelect) {
+            bankSelect.value = '';
+            bankSelect.disabled = true;
+            bankSelect.required = false;
+        }
+        if (refInput) {
+            refInput.value = '';
+            refInput.disabled = true;
+        }
     } else {
         bankContainer.style.display = 'block';
         refContainer.style.display = 'block';
+        if (bankSelect) {
+            bankSelect.disabled = false;
+            bankSelect.required = true;
+        }
+        if (refInput) {
+            refInput.disabled = false;
+        }
     }
 }
 </script>

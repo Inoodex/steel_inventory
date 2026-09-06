@@ -256,7 +256,6 @@
                                         <a href="{{ route('lots.show', $purchase->lot->id) }}" class="fw-bold text-primary text-decoration-none">
                                             <i class="fe fe-package me-1"></i>{{ $purchase->lot->lot_number }}
                                         </a>
-                                        <span class="badge bg-light text-dark border ms-2 fs-8">{{ $purchase->lot->status ?? 'Active' }}</span>
                                     @else
                                         <span class="badge bg-light text-muted border">Direct Stock Intake</span>
                                     @endif
@@ -359,7 +358,7 @@
                                     @if($item->coils && $item->coils->count() > 0)
                                         <div class="d-flex flex-wrap gap-1">
                                             @foreach($item->coils as $coil)
-                                                <a href="{{ route('coils.index', ['search' => $coil->coil_number]) }}" class="badge bg-white text-dark border font-monospace text-decoration-none shadow-none" title="View in Coils Registry">
+                                                <a href="{{ route('inventory.index', ['search' => $coil->coil_number]) }}" class="badge bg-white text-dark border font-monospace text-decoration-none shadow-none" title="View in Steel Inventory">
                                                     {{ $coil->coil_number }}
                                                 </a>
                                             @endforeach
@@ -399,7 +398,7 @@
                                             </li>
                                             @if($item->coils && $item->coils->count() > 0)
                                                 <li>
-                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('coils.index', ['search' => $item->coils->first()->coil_number]) }}">
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('inventory.index', ['search' => $item->coils->first()->coil_number]) }}">
                                                         <i class="fe fe-disc text-info"></i>
                                                         <span>View Attached Coils</span>
                                                     </a>
@@ -567,7 +566,7 @@
                                     @endif
                                 </td>
                             </tr>
-                            @if($purchase->bankDetail)
+                            @if($purchase->payment_method !== 'cash' && $purchase->bankDetail)
                                 <tr>
                                     <td class="text-muted">Bank Account:</td>
                                     <td class="fw-semibold text-dark">
@@ -576,7 +575,7 @@
                                     </td>
                                 </tr>
                             @endif
-                            @if($purchase->transaction_ref)
+                            @if($purchase->payment_method !== 'cash' && $purchase->transaction_ref)
                                 <tr>
                                     <td class="text-muted">Transaction Ref:</td>
                                     <td class="text-dark font-monospace">{{ $purchase->transaction_ref }}</td>
@@ -621,8 +620,8 @@
                     </h5>
                     <small class="text-muted">Track actual physical coil pieces, current stockyard location, and remaining weights</small>
                 </div>
-                <a href="{{ route('coils.index', ['search' => $purchase->lot ? $purchase->lot->lot_number : '']) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                    <i class="fe fe-external-link me-1"></i>View in Coils Registry
+                <a href="{{ route('inventory.index', ['search' => $purchase->lot ? $purchase->lot->lot_number : '']) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                    <i class="fe fe-external-link me-1"></i>View in Steel Inventory
                 </a>
             </div>
             <div class="card-body p-0">
@@ -642,7 +641,7 @@
                             @foreach($allCoils as $coil)
                                 <tr>
                                     <td class="ps-4">
-                                        <a href="{{ route('coils.index', ['search' => $coil->coil_number]) }}" class="fw-bold font-monospace text-primary text-decoration-none">
+                                        <a href="{{ route('inventory.index', ['search' => $coil->coil_number]) }}" class="fw-bold font-monospace text-primary text-decoration-none">
                                             {{ $coil->coil_number }}
                                         </a>
                                     </td>
@@ -709,15 +708,14 @@
                     <table class="table table-hover table-custom align-middle mb-0">
                         <thead class="bg-light text-secondary fs-8 text-uppercase">
                             <tr>
-                                <th class="ps-4">Voucher / Ref</th>
+                                <th class="ps-4">Ref No.</th>
                                 <th>Date</th>
                                 <th>Channel</th>
                                 <th>Account / Bank</th>
                                 <th>Transaction Ref</th>
-                                <th class="text-end">Amount Disbursed</th>
+                                <th>Amount Disbursed</th>
                                 <th>Purchase Ref</th>
                                 <th>Recorded By</th>
-                                <th class="text-end pe-4">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -741,7 +739,7 @@
                                         @endif
                                     </td>
                                     <td class="text-secondary small">
-                                        @if($pmt->bankDetail)
+                                        @if($pmt->payment_method !== 'cash' && $pmt->bankDetail)
                                             <span class="fw-semibold text-dark">{{ $pmt->bankDetail->bank_name }}</span>
                                             <div class="text-muted fs-8">{{ $pmt->bankDetail->account_number }}</div>
                                         @else
@@ -749,9 +747,9 @@
                                         @endif
                                     </td>
                                     <td class="font-monospace small text-muted">
-                                        {{ $pmt->transaction_ref ?: '—' }}
+                                        {{ ($pmt->payment_method !== 'cash' && $pmt->transaction_ref) ? $pmt->transaction_ref : '—' }}
                                     </td>
-                                    <td class="text-end fw-bold text-success fs-6">
+                                    <td class="fw-bold text-success fs-6">
                                         ৳ {{ number_format($pmt->amount, 2) }}
                                     </td>
                                     <td>
@@ -759,11 +757,6 @@
                                     </td>
                                     <td class="text-secondary small">
                                         {{ $pmt->creator?->name ?? 'System' }}
-                                    </td>
-                                    <td class="text-end pe-4">
-                                        <span class="badge badge-soft-success px-3 py-1 rounded-pill">
-                                            <i class="fe fe-check me-1"></i>Settled
-                                        </span>
                                     </td>
                                 </tr>
                             @endforeach
@@ -838,7 +831,7 @@
                         <select name="bank_detail_id" id="purchaseModalBankDetail" class="form-select border-light-subtle">
                             <option value="">Select Bank / MFS Account</option>
                             @foreach($bankAccounts ?? [] as $bank)
-                                <option value="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                <option value="{{ $bank->id }}">
                                     {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
                                 </option>
                             @endforeach
@@ -887,6 +880,12 @@
         amountInput.value = numMax > 0 ? numMax.toFixed(2) : '';
         amountInput.max = numMax > 0 ? numMax : '';
 
+        const methodSelect = document.getElementById('purchaseModalPaymentMethod');
+        if (methodSelect) {
+            methodSelect.value = 'cash';
+            togglePurchaseDueModalBank('cash');
+        }
+
         const modalEl = document.getElementById('purchaseDuePaymentModal');
         const modal = new bootstrap.Modal(modalEl);
         modal.show();
@@ -895,14 +894,32 @@
     function togglePurchaseDueModalBank(method) {
         const bankContainer = document.getElementById('purchaseModalBankContainer');
         const refContainer = document.getElementById('purchaseModalRefContainer');
+        const bankSelect = document.getElementById('purchaseModalBankDetail');
+        const refInput = document.querySelector('#purchaseDuePaymentModal input[name="transaction_ref"]');
         if (!bankContainer || !refContainer) return;
 
         if (method === 'cash') {
             bankContainer.style.display = 'none';
             refContainer.style.display = 'none';
+            if (bankSelect) {
+                bankSelect.value = '';
+                bankSelect.disabled = true;
+                bankSelect.required = false;
+            }
+            if (refInput) {
+                refInput.value = '';
+                refInput.disabled = true;
+            }
         } else {
             bankContainer.style.display = 'block';
             refContainer.style.display = 'block';
+            if (bankSelect) {
+                bankSelect.disabled = false;
+                bankSelect.required = true;
+            }
+            if (refInput) {
+                refInput.disabled = false;
+            }
         }
     }
 </script>

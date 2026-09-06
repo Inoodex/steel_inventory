@@ -151,8 +151,8 @@
                             <th>Account Name</th>
                             <th>Bank Name</th>
                             <th>Account Number</th>
-                            <th>Type</th>
-                            <th>Opening Balance</th>
+                            <!-- <th>Type</th> -->
+                            <!-- <th>Opening Balance</th> -->
                             <th>Current Balance</th>
                             <th>Status</th>
                             <th>Default</th>
@@ -173,12 +173,12 @@
                                 <td>
                                     <span class="font-monospace fw-bold text-dark">{{ $bank->account_number }}</span>
                                 </td>
-                                <td>
+                                <!-- <td>
                                     <span class="badge badge-soft-info px-3 py-1 rounded-pill fs-7 text-capitalize">{{ $bank->account_type }}</span>
-                                </td>
-                                <td>
+                                </td> -->
+                                <!-- <td>
                                     <span class="text-secondary fw-semibold">৳{{ number_format($bank->opening_balance ?? 0, 2) }}</span>
-                                </td>
+                                </td> -->
                                 <td>
                                     <span class="fw-bold text-success">৳{{ number_format($bank->current_balance ?? 0, 2) }}</span>
                                 </td>

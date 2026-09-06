@@ -117,16 +117,18 @@ class LotController extends Controller
      */
     public function show(string $id)
     {
-        $lot = Lot::with(['vendor', 'purchases.coils', 'purchases.vendor', 'creator'])->findOrFail($id);
+        $lot = Lot::with(['vendor', 'purchases.coils', 'purchases.warehouse', 'purchases.vendor', 'creator'])->findOrFail($id);
 
         $totalPurchases = $lot->purchases->count();
-        $totalQuantity  = $lot->purchases->sum('quantity');
-        $totalAmount    = $lot->purchases->sum('total_price');
-        $totalPaid      = $lot->purchases->sum('payment');
-        $totalDue       = $lot->purchases->sum('due');
+        $totalCoils     = (int) $lot->purchases->sum('quantity');
+        $totalWeight    = (float) $lot->purchases->sum(fn($p) => (float)($p->total_weight ?: $p->quantity));
+        $totalQuantity  = $totalWeight;
+        $totalAmount    = (float) $lot->purchases->sum('total_price');
+        $totalPaid      = (float) $lot->purchases->sum('payment');
+        $totalDue       = max(0, round($totalAmount - $totalPaid, 2));
 
         return view('frontend.pages.lots.show', compact(
-            'lot', 'totalPurchases', 'totalQuantity', 'totalAmount', 'totalPaid', 'totalDue'
+            'lot', 'totalPurchases', 'totalCoils', 'totalWeight', 'totalQuantity', 'totalAmount', 'totalPaid', 'totalDue'
         ));
     }
 

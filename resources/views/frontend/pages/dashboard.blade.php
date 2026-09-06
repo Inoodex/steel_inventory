@@ -334,7 +334,7 @@
                     <h6 class="fw-bold text-dark mb-0">
                         <i class="fe fe-disc me-2 text-primary"></i>Live In-Stock Coils in Yard
                     </h6>
-                    <a href="{{ route('coils.index') }}" class="btn btn-sm btn-outline-primary rounded-2 px-3">View All</a>
+                    <a href="{{ route('inventory.index') }}" class="btn btn-sm btn-outline-primary rounded-2 px-3">View All</a>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">

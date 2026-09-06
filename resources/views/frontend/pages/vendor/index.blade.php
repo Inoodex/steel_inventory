@@ -192,7 +192,7 @@
                                 <td>
                                     <div>
                                         <a href="{{ route('vendors.show', $vendor->id) }}" class="fw-bold text-dark hover-primary mb-0 text-decoration-none d-inline-block" title="{{ $vendor->name }}">
-                                            {{ $vendor->name }}
+                                            {{ Str::limit($vendor->name, 20, '...') }}
                                         </a>
                                         <small class="text-muted fs-7 d-block">Added {{ $vendor->created_at?->format('d M Y') ?? 'N/A' }}</small>
                                     </div>

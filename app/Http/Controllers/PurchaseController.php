@@ -296,8 +296,8 @@ class PurchaseController extends Controller
         $purchase->payment           = $payment;
         $purchase->due               = $due;
         $purchase->payment_method    = $request->payment_method ?? 'cash';
-        $purchase->bank_detail_id    = ($request->payment_method === 'bank') ? $request->bank_detail_id : null;
-        $purchase->transaction_ref   = ($request->payment_method === 'bank') ? $request->transaction_ref : null;
+        $purchase->bank_detail_id    = ($request->payment_method !== 'cash') ? $request->bank_detail_id : null;
+        $purchase->transaction_ref   = ($request->payment_method !== 'cash') ? $request->transaction_ref : null;
         $purchase->notes             = $request->notes;
         $purchase->updated_by        = Auth::id();
         $purchase->save();

@@ -74,14 +74,9 @@
                 {{-- ===== 3. INVENTORY & WAREHOUSE (Direct 1-Click Access) ===== --}}
                 @if($canView('Inventory Management'))
                     <li class="menu-title"><span>Inventory &amp; Warehouse</span></li>
-                    <li class="{{ $active(['inventory.*']) ? 'active' : '' }}">
+                    <li class="{{ $active(['inventory.*', 'coils.*']) ? 'active' : '' }}">
                         <a href="{{ route('inventory.index') }}">
-                            <i class="fe fe-database"></i><span> Stock Overview</span>
-                        </a>
-                    </li>
-                    <li class="{{ $active(['coils.*']) ? 'active' : '' }}">
-                        <a href="{{ route('coils.index') }}">
-                            <i class="fe fe-disc"></i><span> Steel Coils Registry</span>
+                            <i class="fe fe-database"></i><span> Steel Inventory</span>
                         </a>
                     </li>
                     <li class="{{ $active(['warehouses.*']) ? 'active' : '' }}">

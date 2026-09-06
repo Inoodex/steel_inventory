@@ -63,12 +63,6 @@
                 <h3 class="page-title fw-bold text-dark mb-1">Lot Management</h3>
                 <p class="text-muted small mb-0">Manage ship breaking procurement lots, intake specifications, and inventory sources</p>
             </div>
-            <div class="col-auto">
-                <button type="button" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#createLotModal">
-                    <i class="fe fe-plus-circle fs-6"></i>
-                    <span>Create New Lot</span>
-                </button>
-            </div>
         </div>
     </div>
 
@@ -130,16 +124,16 @@
         <div class="card-body p-3">
             <form action="{{ route('lots.index') }}" method="GET" id="lotFilterForm">
                 <div class="row g-2 align-items-center">
-                    <div class="col-md-3">
+                    <div class="col-xl-3 col-lg-3 col-md-6 col-12">
                         <div class="position-relative">
                             <input type="text" name="search" id="lotSearchInput" class="form-control rounded-3 pe-4"
-                                placeholder="Search Lot Number or Vendor..." value="{{ request('search') }}" autocomplete="off">
+                                placeholder="Search Lot Number/Vendor..." value="{{ request('search') }}" autocomplete="off">
                             <span id="lotSearchSpinner" class="spinner-border spinner-border-sm text-primary position-absolute top-50 end-0 translate-middle-y me-3 d-none" role="status"></span>
                         </div>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-xl-2 col-lg-2 col-md-6 col-12">
                         <select name="vendor_id" id="filterVendor" class="form-select rounded-3">
-                            <option value="">Vendors</option>
+                            <option value="">All Vendors</option>
                             @foreach($vendors as $vendor)
                                 <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>
                                     {{ $vendor->name }}
@@ -147,22 +141,26 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-xl-2 col-lg-2 col-md-4 col-6">
                         <select name="status" id="filterStatus" class="form-select rounded-3">
                             <option value="">Status</option>
                             <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
                             <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
                         </select>
                     </div>
-                    <div class="col-md-3 d-flex gap-2">
-                        <input type="date" name="from" id="filterFromDate" class="form-control rounded-3" value="{{ request('from') }}" title="From Date">
-                        <input type="date" name="to" id="filterToDate" class="form-control rounded-3" value="{{ request('to') }}" title="To Date">
+                    <div class="col-xl-4 col-lg-4 col-md-6 col-12">
+                        <div class="d-flex gap-1.5 align-items-center">
+                            <input type="date" name="from" id="filterFromDate" class="form-control rounded-3" value="{{ request('from') }}" title="From Date">
+                            <span class="text-muted small px-1">to</span>
+                            <input type="date" name="to" id="filterToDate" class="form-control rounded-3" value="{{ request('to') }}" title="To Date">
+                        </div>
                     </div>
-                    <div class="col-md-1 text-end">
-                        <a href="{{ route('lots.index') }}" class="btn btn-outline-secondary w-100 rounded-3" id="resetFilterBtn" title="Reset Filters">
-                            Reset
+                    <!-- <div class="col-xl-1 col-lg-1 col-md-2 col-6 text-end">
+                        <a href="{{ route('lots.index') }}" class="btn btn-outline-secondary w-100 rounded-3 d-inline-flex align-items-center justify-content-center gap-1" id="resetFilterBtn" title="Reset Filters">
+                            <i class="fe fe-rotate-ccw"></i>
+                            <span>Reset</span>
                         </a>
-                    </div>
+                    </div> -->
                 </div>
             </form>
         </div>
@@ -336,55 +334,6 @@
             </div>
         </div>
         @endforeach
-    </div>
-</div>
-
-<!-- Create Lot Modal -->
-<div class="modal fade" id="createLotModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0">
-            <form action="{{ route('lots.store') }}" method="POST">
-                @csrf
-                <div class="modal-header border-bottom-0 pb-0">
-                    <h5 class="modal-title fw-bold">Create Purchase Lot</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body py-3">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Lot Number (Leave blank to auto-generate)</label>
-                        <input type="text" name="lot_number" class="form-control rounded-3">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Vendor <span class="text-danger">*</span></label>
-                        <select name="vendor_id" id="createLotVendor" class="form-select select2-lot-vendor rounded-3" required>
-                            <option value="">Search & Select Vendor</option>
-                            @foreach($vendors as $vendor)
-                                <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Lot Date <span class="text-danger">*</span></label>
-                        <input type="date" name="lot_date" class="form-control rounded-3" value="{{ date('Y-m-d') }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Status <span class="text-danger">*</span></label>
-                        <select name="status" class="form-select rounded-3" required>
-                            <option value="active" selected>Active</option>
-                            <option value="closed">Closed</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Notes</label>
-                        <textarea name="notes" class="form-control rounded-3" rows="3"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-top-0 pt-0 gap-2">
-                    <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary rounded-3">Save Lot</button>
-                </div>
-            </form>
-        </div>
     </div>
 </div>
 @endsection

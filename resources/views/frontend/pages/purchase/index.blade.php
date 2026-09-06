@@ -256,6 +256,7 @@
                             <tr class="lot-row" data-lot-id="{{ $lot->id }}" onclick="toggleLotDetails({{ $lot->id }}, event)" title="Click to view coils in this lot">
                                 <td class="ps-3">
                                     <div class="d-flex align-items-center gap-2">
+                                        <i class="fe fe-chevron-right expand-icon text-muted fs-8 {{ $loop->first ? 'rotate-90' : '' }}" id="chevron-{{ $lot->id }}"></i>
                                         <span class="text-muted fw-semibold small">{{ $loop->iteration + ($lots->currentPage() - 1) * $lots->perPage() }}</span>
                                     </div>
                                 </td>
@@ -325,12 +326,6 @@
                                                 </li>
                                             @endif
                                             <li>
-                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" onclick="toggleLotDetails({{ $lot->id }}, event)">
-                                                    <i class="fe fe-list text-secondary"></i>
-                                                    <span>Expand Items ({{ $lotItemCount }})</span>
-                                                </a>
-                                            </li>
-                                            <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $lot->id) }}">
                                                     <i class="fe fe-eye text-info"></i>
                                                     <span>View Lot Profile</span>
@@ -348,7 +343,7 @@
                             </tr>
 
                             <!-- Collapsible Details Row (Shows all steel items/coils for this lot) -->
-                            <tr class="lot-details-row" id="lot-details-{{ $lot->id }}" style="display: none; background-color: #f8fafc;">
+                            <tr class="lot-details-row" id="lot-details-{{ $lot->id }}" style="{{ $loop->first ? 'display: table-row;' : 'display: none;' }} background-color: #f8fafc;">
                                 <td colspan="10" class="p-0 border-0">
                                     <div class="p-3 bg-light-subtle border-start border-4 border-primary shadow-inner">
                                         <div class="d-flex justify-content-between align-items-center mb-2 px-1">
@@ -466,7 +461,7 @@
                                                                         </li>
                                                                         @if($item->coils && $item->coils->count() > 0)
                                                                             <li>
-                                                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('coils.index') }}?search={{ $item->coils->first()->coil_number }}">
+                                                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('inventory.index') }}?search={{ $item->coils->first()->coil_number }}">
                                                                                     <i class="fe fe-disc text-secondary"></i>
                                                                                     <span>Track Coil in Yard</span>
                                                                                 </a>
@@ -608,6 +603,10 @@
         }
     }
 
+    document.addEventListener('DOMContentLoaded', function() {
+        updateToggleAllBtn();
+    });
+
     function openPurchaseDueModal(purchaseId, vendorId, vendorName, maxDue) {
         document.getElementById('purchaseModalPurchaseId').value = purchaseId;
         document.getElementById('purchaseModalVendorId').value = vendorId;
@@ -620,6 +619,12 @@
         amountInput.value = numMax > 0 ? numMax.toFixed(2) : '';
         amountInput.max = numMax > 0 ? numMax : '';
 
+        const methodSelect = document.getElementById('purchaseModalPaymentMethod');
+        if (methodSelect) {
+            methodSelect.value = 'cash';
+            togglePurchaseDueModalBank('cash');
+        }
+
         const modalEl = document.getElementById('purchaseDuePaymentModal');
         const modal = new bootstrap.Modal(modalEl);
         modal.show();
@@ -628,14 +633,32 @@
     function togglePurchaseDueModalBank(method) {
         const bankContainer = document.getElementById('purchaseModalBankContainer');
         const refContainer = document.getElementById('purchaseModalRefContainer');
+        const bankSelect = document.getElementById('purchaseModalBankDetail');
+        const refInput = document.querySelector('#purchaseDuePaymentModal input[name="transaction_ref"]');
         if (!bankContainer || !refContainer) return;
 
         if (method === 'cash') {
             bankContainer.style.display = 'none';
             refContainer.style.display = 'none';
+            if (bankSelect) {
+                bankSelect.value = '';
+                bankSelect.disabled = true;
+                bankSelect.required = false;
+            }
+            if (refInput) {
+                refInput.value = '';
+                refInput.disabled = true;
+            }
         } else {
             bankContainer.style.display = 'block';
             refContainer.style.display = 'block';
+            if (bankSelect) {
+                bankSelect.disabled = false;
+                bankSelect.required = true;
+            }
+            if (refInput) {
+                refInput.disabled = false;
+            }
         }
     }
 </script>
@@ -687,7 +710,7 @@
                         <select name="bank_detail_id" id="purchaseModalBankDetail" class="form-select border-light-subtle">
                             <option value="">Select Bank / MFS Account</option>
                             @foreach($bankAccounts ?? [] as $bank)
-                                <option value="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                <option value="{{ $bank->id }}">
                                     {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
                                 </option>
                             @endforeach
