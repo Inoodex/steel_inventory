@@ -207,13 +207,13 @@
     <div class="summary-card">
         <table style="width: 100%; border-collapse: collapse;">
             <tr>
-                <td style="width: 25%;"><strong>Opening Balance:</strong> ৳{{ number_format($openingBalance, 2) }}</td>
-                <td style="width: 25%; color: #0284c7;"><strong>Total Invoiced:</strong> ৳{{ number_format($totalDebit, 2) }}</td>
-                <td style="width: 25%; color: #16a34a;"><strong>Total Received:</strong> ৳{{ number_format($totalCredit, 2) }}</td>
+                <td style="width: 25%;"><strong>Opening Balance:</strong> {{ number_format($openingBalance, 2) }}</td>
+                <td style="width: 25%; color: #0284c7;"><strong>Total Invoiced:</strong> {{ number_format($totalDebit, 2) }}</td>
+                <td style="width: 25%; color: #16a34a;"><strong>Total Received:</strong> {{ number_format($totalCredit, 2) }}</td>
                 <td style="width: 25%; text-align: right; font-size: 11px;">
                     <strong>Net Outstanding Due:</strong> 
                     <span style="font-weight: 800; color: {{ $closingBalance > 0 ? '#dc2626' : '#15803d' }};">
-                        ৳{{ number_format($closingBalance, 2) }}
+                        {{ number_format($closingBalance, 2) }}
                     </span>
                 </td>
             </tr>
@@ -228,9 +228,9 @@
                 <th style="width: 12%; text-align: left;">Date</th>
                 <th style="width: 18%; text-align: left;">Type &amp; Ref</th>
                 <th style="width: 27%; text-align: left;">Description</th>
-                <th style="width: 12%; text-align: right;">Debit (৳)</th>
-                <th style="width: 12%; text-align: right;">Credit (৳)</th>
-                <th style="width: 14%; text-align: right;">Balance (৳)</th>
+                <th style="width: 12%; text-align: right;">Debit</th>
+                <th style="width: 12%; text-align: right;">Credit</th>
+                <th style="width: 14%; text-align: right;">Balance</th>
             </tr>
         </thead>
         <tbody>
@@ -242,7 +242,7 @@
                 <td style="color: #64748b;">Initial / Brought Forward Balance</td>
                 <td class="text-right" style="color: #64748b;">-</td>
                 <td class="text-right" style="color: #64748b;">-</td>
-                <td class="text-right fw-bold" style="color: #0f172a;">৳{{ number_format($openingBalance, 2) }}</td>
+                <td class="text-right fw-bold" style="color: #0f172a;">{{ number_format($openingBalance, 2) }}</td>
             </tr>
 
             @forelse($ledgerRows as $index => $row)
@@ -255,13 +255,13 @@
                     </td>
                     <td style="font-size: 9.5px;">{{ $row['description'] }}</td>
                     <td class="text-right" style="color: {{ $row['debit'] > 0 ? '#0284c7' : '#94a3b8' }};">
-                        {{ $row['debit'] > 0 ? '৳' . number_format($row['debit'], 2) : '-' }}
+                        {{ $row['debit'] > 0 ? number_format($row['debit'], 2) : '-' }}
                     </td>
                     <td class="text-right" style="color: {{ $row['credit'] > 0 ? '#16a34a' : '#94a3b8' }};">
-                        {{ $row['credit'] > 0 ? '৳' . number_format($row['credit'], 2) : '-' }}
+                        {{ $row['credit'] > 0 ? number_format($row['credit'], 2) : '-' }}
                     </td>
                     <td class="text-right fw-bold" style="color: {{ $row['balance'] > 0 ? '#b91c1c' : '#15803d' }};">
-                        ৳{{ number_format($row['balance'], 2) }}
+                        {{ number_format($row['balance'], 2) }}
                     </td>
                 </tr>
             @empty
@@ -275,10 +275,10 @@
             <!-- Grand Totals Row -->
             <tr class="total-row">
                 <td colspan="4" class="text-right" style="font-size: 10.5px;">TOTALS &amp; CLOSING DUE:</td>
-                <td class="text-right" style="color: #0284c7;">৳{{ number_format($totalDebit, 2) }}</td>
-                <td class="text-right" style="color: #16a34a;">৳{{ number_format($totalCredit, 2) }}</td>
+                <td class="text-right" style="color: #0284c7;">{{ number_format($totalDebit, 2) }}</td>
+                <td class="text-right" style="color: #16a34a;">{{ number_format($totalCredit, 2) }}</td>
                 <td class="text-right" style="font-size: 11px; color: {{ $closingBalance > 0 ? '#b91c1c' : '#15803d' }};">
-                    ৳{{ number_format($closingBalance, 2) }}
+                    {{ number_format($closingBalance, 2) }}
                 </td>
             </tr>
         </tbody>

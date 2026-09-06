@@ -199,7 +199,7 @@
                     <td>{{ $item->sale && $item->sale->order_date ? \Carbon\Carbon::parse($item->sale->order_date)->format('d M Y') : 'N/A' }}</td>
                     <td>{{ $item->sale->customer->name ?? 'Walk-in Customer' }}</td>
                     <td>{{ ucwords(str_replace('_', ' ', $item->charge_type)) }}</td>
-                    <td class="text-end" style="font-weight: 700;">৳ {{ number_format($item->amount, 2) }}</td>
+                    <td class="text-end" style="font-weight: 700;">{{ number_format($item->amount, 2) }}</td>
                 </tr>
             @empty
                 <tr>
@@ -218,7 +218,7 @@
                 </td>
                 <td style="text-align: right; vertical-align: middle;">
                     <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 600;">Total Disbursed Amount:</div>
-                    <div class="amount-big">৳ {{ number_format($payout->total_amount, 2) }}</div>
+                    <div class="amount-big">BDT {{ number_format($payout->total_amount, 2) }}</div>
                 </td>
             </tr>
         </table>

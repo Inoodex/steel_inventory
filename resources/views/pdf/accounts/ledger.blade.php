@@ -111,9 +111,9 @@
                 <th style="width: 13%;">Date</th>
                 <th style="width: 17%;">Voucher #</th>
                 <th style="width: 34%;">Narration</th>
-                <th style="width: 12%;" class="text-right">Debit (৳)</th>
-                <th style="width: 12%;" class="text-right">Credit (৳)</th>
-                <th style="width: 12%;" class="text-right">Balance (৳)</th>
+                <th style="width: 12%;" class="text-right">Debit</th>
+                <th style="width: 12%;" class="text-right">Credit</th>
+                <th style="width: 12%;" class="text-right">Balance</th>
             </tr>
         </thead>
         <tbody>

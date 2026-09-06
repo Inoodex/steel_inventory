@@ -128,13 +128,13 @@
         <table style="width: 100%; border-collapse: collapse;">
             <tr>
                 <td style="width: 50%;">
-                    <strong>Total Collected:</strong> ৳ {{ number_format($totalCharges, 2) }} &nbsp;|&nbsp;
-                    <strong>Delivery:</strong> ৳ {{ number_format($totalDelivery, 2) }} &nbsp;|&nbsp;
-                    <strong>Labour:</strong> ৳ {{ number_format($totalLabour, 2) }}
+                    <strong>Total Collected:</strong> {{ number_format($totalCharges, 2) }} &nbsp;|&nbsp;
+                    <strong>Delivery:</strong> {{ number_format($totalDelivery, 2) }} &nbsp;|&nbsp;
+                    <strong>Labour:</strong> {{ number_format($totalLabour, 2) }}
                 </td>
                 <td style="width: 50%; text-align: right;">
-                    <strong>Paid to Workers:</strong> <span style="color: #15803d; font-weight: bold;">৳ {{ number_format($totalPaidCharges, 2) }}</span> &nbsp;|&nbsp;
-                    <strong>Pending Payout:</strong> <span style="color: #b45309; font-weight: bold;">৳ {{ number_format($totalUnpaidCharges, 2) }}</span>
+                    <strong>Paid to Workers:</strong> <span style="color: #15803d; font-weight: bold;">{{ number_format($totalPaidCharges, 2) }}</span> &nbsp;|&nbsp;
+                    <strong>Pending Payout:</strong> <span style="color: #b45309; font-weight: bold;">{{ number_format($totalUnpaidCharges, 2) }}</span>
                 </td>
             </tr>
         </table>
@@ -165,9 +165,9 @@
                     <td>{{ $sale->created_at ? $sale->created_at->format('d M Y') : 'N/A' }}</td>
                     <td class="fw-bold">#{{ $sale->order_no }}</td>
                     <td>{{ $sale->customer->name ?? 'Walk-in' }}</td>
-                    <td class="text-right">৳ {{ number_format($sale->delivery_charge ?? 0, 2) }}</td>
-                    <td class="text-right">৳ {{ number_format($sale->labour_cost ?? 0, 2) }}</td>
-                    <td class="text-right fw-bold" style="color: #0f172a;">৳ {{ number_format($rowTotal, 2) }}</td>
+                    <td class="text-right">{{ number_format($sale->delivery_charge ?? 0, 2) }}</td>
+                    <td class="text-right">{{ number_format($sale->labour_cost ?? 0, 2) }}</td>
+                    <td class="text-right fw-bold" style="color: #0f172a;">{{ number_format($rowTotal, 2) }}</td>
                     <td class="text-center">
                         @if ($isPaid)
                             <span class="badge-paid">PAID</span>

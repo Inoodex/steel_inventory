@@ -141,7 +141,7 @@
                 <th width="18%">Order No</th>
                 <th width="32%">Customer Name</th>
                 <th width="16%">Phone</th>
-                <th width="18%" class="text-end">Payable (৳)</th>
+                <th width="18%" class="text-end">Payable</th>
             </tr>
         </thead>
         <tbody>
