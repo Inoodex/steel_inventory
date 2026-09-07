@@ -81,7 +81,7 @@
 
                     <div class="col-lg-6 col-md-12 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Dispatch Note / Vehicle Info</label>
-                        <input type="text" name="note" id="note" class="form-control border-light-subtle" value="{{ old('note', $sales->note) }}" placeholder="Truck #, driver name & contact...">
+                        <input type="text" name="note" id="note" class="form-control border-light-subtle" value="{{ old('note', $sales->note) }}">
                     </div>
                 </div>
             </div>
@@ -250,7 +250,7 @@
                             <label class="form-label small text-secondary fw-semibold mb-1">
                                 <i class="fe fe-file-text me-1 text-secondary"></i> Transaction Ref / TrxID
                             </label>
-                            <input type="text" name="transaction_ref" id="transactionRefInput" class="form-control border-light-subtle bg-white" value="{{ $sales->transaction_ref }}" placeholder="e.g. Bank Trx # or Deposit Slip Ref">
+                            <input type="text" name="transaction_ref" id="transactionRefInput" class="form-control border-light-subtle bg-white" value="{{ $sales->transaction_ref }}">
                         </div>
                     </div>
                 </div>

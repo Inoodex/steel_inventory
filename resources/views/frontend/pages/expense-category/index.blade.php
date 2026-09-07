@@ -202,7 +202,7 @@
                                                     <div class="modal-body p-4">
                                                         <div class="mb-3">
                                                             <label class="form-label small text-secondary fw-semibold mb-1">Category Name <span class="text-danger">*</span></label>
-                                                            <input type="text" name="name" class="form-control border-light-subtle" value="{{ $category->name }}" placeholder="Enter category name" required>
+                                                            <input type="text" name="name" class="form-control border-light-subtle" value="{{ $category->name }}" required>
                                                         </div>
                                                         <div class="mb-3">
                                                             <label class="form-label small text-secondary fw-semibold mb-1">Status <span class="text-danger">*</span></label>
@@ -259,7 +259,7 @@
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label small text-secondary fw-semibold mb-1">Category Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control border-light-subtle" placeholder="Enter category name" required>
+                        <input type="text" name="name" class="form-control border-light-subtle" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small text-secondary fw-semibold mb-1">Status <span class="text-danger">*</span></label>

@@ -54,28 +54,45 @@ class BankDetail extends Model
     }
 
     /**
-     * Get or automatically initialize Chart of Account for this bank detail.
+     * Get, create, or automatically synchronize the Chart of Account for this bank detail.
      */
     public function resolveChartOfAccount(): ChartOfAccount
     {
-        if ($this->chartOfAccount) {
-            return $this->chartOfAccount;
+        $accountName = "{$this->bank_name} - {$this->account_name} ({$this->account_number})";
+        $openingBalance = (float) ($this->opening_balance ?? 0.00);
+        $isActive = (bool) ($this->is_active ?? true);
+
+        $coa = $this->chartOfAccount ?: ChartOfAccount::where('bank_detail_id', $this->id)->first();
+
+        if ($coa) {
+            $coa->update([
+                'account_name'    => $accountName,
+                'opening_balance' => $openingBalance,
+                'is_active'       => $isActive,
+            ]);
+            return $coa;
         }
 
         $parent = ChartOfAccount::where('account_code', '1120')->first();
-        $code = '1120-' . str_pad((string) $this->id, 3, '0', STR_PAD_LEFT);
+        $baseCode = '1120-' . str_pad((string) $this->id, 3, '0', STR_PAD_LEFT);
+        $code = $baseCode;
+        $counter = 1;
+        while (ChartOfAccount::where('account_code', $code)->exists()) {
+            $code = '1120-' . str_pad((string) ($this->id + $counter), 3, '0', STR_PAD_LEFT);
+            $counter++;
+        }
 
-        return ChartOfAccount::firstOrCreate(
-            ['bank_detail_id' => $this->id],
-            [
-                'account_code' => $code,
-                'account_name' => "{$this->bank_name} - {$this->account_name} ({$this->account_number})",
-                'account_type' => 'asset',
-                'parent_id' => $parent?->id,
-                'level' => 3,
-                'is_active' => true,
-                'is_system' => false,
-            ]
-        );
+        return ChartOfAccount::create([
+            'bank_detail_id'  => $this->id,
+            'account_code'    => $code,
+            'account_name'    => $accountName,
+            'account_type'    => 'asset',
+            'parent_id'       => $parent?->id,
+            'level'           => 3,
+            'opening_balance' => $openingBalance,
+            'current_balance' => 0.00,
+            'is_active'       => $isActive,
+            'is_system'       => false,
+        ]);
     }
 }

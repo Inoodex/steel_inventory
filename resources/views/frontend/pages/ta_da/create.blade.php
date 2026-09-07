@@ -52,7 +52,7 @@
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Amount (৳) <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" name="amount" class="form-control border-light-subtle" placeholder="Enter amount" required>
+                        <input type="number" step="0.01" name="amount" class="form-control border-light-subtle" required>
                     </div>
 
                     <div class="col-md-6 col-12">
@@ -65,7 +65,7 @@
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Purpose / Notes</label>
-                        <textarea name="purpose" class="form-control border-light-subtle" rows="3" placeholder="Enter purpose or travel details"></textarea>
+                        <textarea name="purpose" class="form-control border-light-subtle" rows="3"></textarea>
                     </div>
                 </div>
 

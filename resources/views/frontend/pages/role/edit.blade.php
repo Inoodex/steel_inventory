@@ -60,8 +60,7 @@
                             Role Title <span class="text-danger">*</span>
                         </label>
                         <input type="text" class="form-control border-light-subtle @error('name') is-invalid @enderror" 
-                               value="{{ old('name', $role->name) }}" id="name" name="name" 
-                               placeholder="Enter Role name" required
+                               value="{{ old('name', $role->name) }}" id="name" name="name" required
                                {{ in_array(strtolower($role->name), ['super admin']) ? 'readonly' : '' }}>
                         @error('name')
                             <div class="invalid-feedback">{{ $message }}</div>

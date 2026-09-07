@@ -133,7 +133,7 @@
 
                             <div class="col-lg-8 col-md-7 col-12">
                                 <label class="form-label small text-secondary fw-semibold mb-1">Payment Notes (Optional)</label>
-                                <input type="text" class="form-control border-light-subtle" name="notes" placeholder="Add transaction reference or notes..." autocomplete="off">
+                                <input type="text" class="form-control border-light-subtle" name="notes" autocomplete="off">
                             </div>
 
                             <div class="col-lg-4 col-md-5 col-12">

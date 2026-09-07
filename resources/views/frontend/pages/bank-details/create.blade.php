@@ -7,12 +7,12 @@
     <div class="page-header mb-4">
         <div class="content-page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-                <h4 class="card-title fw-bold text-dark mb-1">{{ isset($bankDetail) ? 'Edit' : 'Add' }} Bank Account</h4>
-                <p class="text-muted small mb-0">Configure company bank account information, branch, and routing number</p>
+                <h4 class="card-title fw-bold text-dark mb-1">{{ isset($bankDetail) ? 'Edit' : 'Add' }} Bank / MFS Account</h4>
+                <p class="text-muted small mb-0">Configure company bank/mfs account information, branch, and routing number</p>
             </div>
             <div>
                 <a href="{{ route('bank-details.index') }}" class="btn btn-outline-secondary px-4 py-2 rounded-3 shadow-sm">
-                    <i class="fa fa-arrow-left me-2"></i>Back to Bank Accounts
+                    <i class="fa fa-arrow-left me-2"></i>Back to Bank/MFS Accounts
                 </a>
             </div>
         </div>
@@ -21,6 +21,17 @@
 
     <div class="card border-0 shadow-sm rounded-3">
         <div class="card-body p-4">
+            <!-- GL Integration Note Banner -->
+            <div class="alert alert-soft-primary border-0 rounded-3 mb-4 d-flex align-items-center gap-3 py-3 px-4">
+                <div class="avatar avatar-sm bg-white text-primary rounded-circle d-flex align-items-center justify-content-center shadow-xs flex-shrink-0">
+                    <i class="fe fe-link fs-6"></i>
+                </div>
+                <div>
+                    <span class="fw-bold text-dark d-block">Automatic General Ledger (COA) Integration</span>
+                    <span class="text-muted small">Saving this account will automatically create a sub-ledger under Asset <strong>[1120] Bank & Mobile Banking Accounts</strong> in the Chart of Accounts. Its opening balance will synchronize immediately with the balance sheet.</span>
+                </div>
+            </div>
+
             <form action="{{ isset($bankDetail) ? route('bank-details.update', $bankDetail->id) : route('bank-details.store') }}" method="POST">
                 @csrf
                 @if (isset($bankDetail))
@@ -52,12 +63,10 @@
                         <label class="form-label small text-secondary fw-semibold mb-1">Account Type <span class="text-danger">*</span></label>
                         <select name="account_type" class="form-select border-light-subtle" required>
                             <option value="">Select Account Type</option>
-                            <option value="Current" {{ old('account_type', $bankDetail->account_type ?? '') == 'Current' ? 'selected' : '' }}>Current Account</option>
-                            <option value="Savings" {{ old('account_type', $bankDetail->account_type ?? '') == 'Savings' ? 'selected' : '' }}>Savings Account</option>
-                            <option value="MFS - bKash" {{ old('account_type', $bankDetail->account_type ?? '') == 'MFS - bKash' ? 'selected' : '' }}>MFS - bKash (Merchant / Personal)</option>
-                            <option value="MFS - Nagad" {{ old('account_type', $bankDetail->account_type ?? '') == 'MFS - Nagad' ? 'selected' : '' }}>MFS - Nagad (Merchant / Personal)</option>
-                            <option value="MFS - Rocket / Other" {{ old('account_type', $bankDetail->account_type ?? '') == 'MFS - Rocket / Other' ? 'selected' : '' }}>MFS - Rocket / Other Wallet</option>
-                            <option value="Salary" {{ old('account_type', $bankDetail->account_type ?? '') == 'Salary' ? 'selected' : '' }}>Salary Account</option>
+                            <option value="Bank" {{ old('account_type', $bankDetail->account_type ?? '') == 'Bank' ? 'selected' : '' }}>Bank Account</option>
+                            <option value="MFS - bKash" {{ old('account_type', $bankDetail->account_type ?? '') == 'MFS - bKash' ? 'selected' : '' }}>MFS - bKash </option>
+                            <option value="MFS - Nagad" {{ old('account_type', $bankDetail->account_type ?? '') == 'MFS - Nagad' ? 'selected' : '' }}>MFS - Nagad</option>
+                            <option value="MFS - Rocket / Other" {{ old('account_type', $bankDetail->account_type ?? '') == 'MFS - Rocket / Other' ? 'selected' : '' }}>MFS - Rocket</option>                        
                         </select>
                     </div>
 

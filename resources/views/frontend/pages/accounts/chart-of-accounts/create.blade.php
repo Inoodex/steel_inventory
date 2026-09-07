@@ -7,16 +7,12 @@
         <div class="row align-items-center">
             <div class="col">
                 <h3 class="page-title font-weight-bold" style="color: #1e293b;">Create New Account</h3>
-                <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('chart-of-accounts.index') }}">Chart of Accounts</a></li>
-                    <li class="breadcrumb-item active">New Account</li>
-                </ul>
             </div>
         </div>
     </div>
 
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-12">
             <div class="card shadow-sm border-0" style="border-radius: 12px;">
                 <div class="card-body p-4">
                     <form method="POST" action="{{ route('chart-of-accounts.store') }}">
@@ -25,7 +21,7 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Account Code <span class="text-danger">*</span></label>
-                                <input type="text" name="account_code" class="form-control @error('account_code') is-invalid @enderror" placeholder="e.g. 1160, 5250" value="{{ old('account_code') }}" required>
+                                <input type="text" name="account_code" class="form-control @error('account_code') is-invalid @enderror" value="{{ old('account_code') }}" required>
                                 @error('account_code')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -33,7 +29,7 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Account Name / Title <span class="text-danger">*</span></label>
-                                <input type="text" name="account_name" class="form-control @error('account_name') is-invalid @enderror" placeholder="e.g. Petty Cash, Legal Fees" value="{{ old('account_name') }}" required>
+                                <input type="text" name="account_name" class="form-control @error('account_name') is-invalid @enderror" value="{{ old('account_name') }}" required>
                                 @error('account_name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -76,17 +72,17 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Opening Balance</label>
-                                <input type="number" step="0.01" name="opening_balance" class="form-control" placeholder="0.00" value="{{ old('opening_balance', '0.00') }}">
+                                <input type="number" step="0.01" name="opening_balance" class="form-control" value="{{ old('opening_balance', '0.00') }}">
                             </div>
 
                             <div class="col-12">
                                 <label class="form-label fw-bold">Account Description</label>
-                                <textarea name="description" class="form-control" rows="3" placeholder="Optional notes regarding the purpose of this account...">{{ old('description') }}</textarea>
+                                <textarea name="description" class="form-control" rows="3">{{ old('description') }}</textarea>
                             </div>
 
                             <div class="col-12 text-end mt-4">
                                 <a href="{{ route('chart-of-accounts.index') }}" class="btn btn-outline-secondary me-2">Cancel</a>
-                                <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i> Save Account</button>
+                                <button type="submit" class="btn btn-primary px-4">Save Account</button>
                             </div>
                         </div>
                     </form>

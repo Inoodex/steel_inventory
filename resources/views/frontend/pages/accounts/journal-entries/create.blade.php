@@ -42,7 +42,7 @@
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-bold">Narration / Description <span class="text-danger">*</span></label>
-                        <textarea name="description" class="form-control" rows="2" placeholder="State the purpose, transaction justification, and audit notes..." required>{{ old('description') }}</textarea>
+                        <textarea name="description" class="form-control" rows="2" required>{{ old('description') }}</textarea>
                     </div>
                 </div>
             </div>
@@ -80,13 +80,13 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <input type="text" name="items[0][description]" class="form-control form-control-sm" placeholder="Line note...">
+                                    <input type="text" name="items[0][description]" class="form-control form-control-sm">
                                 </td>
                                 <td>
-                                    <input type="number" step="0.01" min="0" name="items[0][debit]" class="form-control form-control-sm text-end debit-input" placeholder="0.00" value="0.00">
+                                    <input type="number" step="0.01" min="0" name="items[0][debit]" class="form-control form-control-sm text-end debit-input" value="0.00">
                                 </td>
                                 <td>
-                                    <input type="number" step="0.01" min="0" name="items[0][credit]" class="form-control form-control-sm text-end credit-input" placeholder="0.00" value="0.00">
+                                    <input type="number" step="0.01" min="0" name="items[0][credit]" class="form-control form-control-sm text-end credit-input" value="0.00">
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-link text-danger remove-row-btn"><i class="fas fa-times"></i></button>
@@ -103,13 +103,13 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <input type="text" name="items[1][description]" class="form-control form-control-sm" placeholder="Line note...">
+                                    <input type="text" name="items[1][description]" class="form-control form-control-sm">
                                 </td>
                                 <td>
-                                    <input type="number" step="0.01" min="0" name="items[1][debit]" class="form-control form-control-sm text-end debit-input" placeholder="0.00" value="0.00">
+                                    <input type="number" step="0.01" min="0" name="items[1][debit]" class="form-control form-control-sm text-end debit-input" value="0.00">
                                 </td>
                                 <td>
-                                    <input type="number" step="0.01" min="0" name="items[1][credit]" class="form-control form-control-sm text-end credit-input" placeholder="0.00" value="0.00">
+                                    <input type="number" step="0.01" min="0" name="items[1][credit]" class="form-control form-control-sm text-end credit-input" value="0.00">
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-link text-danger remove-row-btn"><i class="fas fa-times"></i></button>
@@ -193,13 +193,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 </select>
             </td>
             <td>
-                <input type="text" name="items[${rowIndex}][description]" class="form-control form-control-sm" placeholder="Line note...">
+                <input type="text" name="items[${rowIndex}][description]" class="form-control form-control-sm">
             </td>
             <td>
-                <input type="number" step="0.01" min="0" name="items[${rowIndex}][debit]" class="form-control form-control-sm text-end debit-input" placeholder="0.00" value="0.00">
+                <input type="number" step="0.01" min="0" name="items[${rowIndex}][debit]" class="form-control form-control-sm text-end debit-input" value="0.00">
             </td>
             <td>
-                <input type="number" step="0.01" min="0" name="items[${rowIndex}][credit]" class="form-control form-control-sm text-end credit-input" placeholder="0.00" value="0.00">
+                <input type="number" step="0.01" min="0" name="items[${rowIndex}][credit]" class="form-control form-control-sm text-end credit-input" value="0.00">
             </td>
             <td class="text-center">
                 <button type="button" class="btn btn-sm btn-link text-danger remove-row-btn"><i class="fas fa-times"></i></button>

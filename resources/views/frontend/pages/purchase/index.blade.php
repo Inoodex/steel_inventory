@@ -727,17 +727,17 @@
                     <!-- Transaction Ref -->
                     <div class="mb-3" id="purchaseModalRefContainer" style="display: none;">
                         <label class="form-label small text-secondary fw-semibold mb-1">Transaction Ref / TrxID</label>
-                        <input type="text" name="transaction_ref" class="form-control border-light-subtle" placeholder="e.g. Bank Trx # or TrxID">
+                        <input type="text" name="transaction_ref" class="form-control border-light-subtle">
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label small text-secondary fw-semibold mb-1">Payment Amount (৳) <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" min="0.01" name="amount" id="purchaseModalAmount" class="form-control fw-bold text-success fs-5 border-light-subtle" placeholder="0.00" required>
+                        <input type="number" step="0.01" min="0.01" name="amount" id="purchaseModalAmount" class="form-control fw-bold text-success fs-5 border-light-subtle" required>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label small text-secondary fw-semibold mb-1">Remarks / Note</label>
-                        <textarea name="remarks" class="form-control border-light-subtle" rows="2" placeholder="Optional payment note..."></textarea>
+                        <textarea name="remarks" class="form-control border-light-subtle" rows="2"></textarea>
                     </div>
                 </div>
 

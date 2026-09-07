@@ -38,7 +38,7 @@
 
                         <div class="col-md-12 mb-3">
                             <label>Purpose / Notes</label>
-                            <textarea name="purpose" class="form-control" rows="3" placeholder="Enter Purpose or Notes"></textarea>
+                            <textarea name="purpose" class="form-control" rows="3"></textarea>
                         </div>
 
                         <div class="col-12">

@@ -230,21 +230,21 @@
                                 <label for="builder_quantity" class="form-label small text-secondary fw-semibold mb-1">
                                     Coil / Piece Qty <span class="text-danger">*</span>
                                 </label>
-                                <input type="number" min="1" step="1" id="builder_quantity" class="form-control form-control-sm text-center fw-bold" value="1" placeholder="1" oninput="calculateBuilderPreview()">
+                                <input type="number" min="1" step="1" id="builder_quantity" class="form-control form-control-sm text-center fw-bold" value="1" oninput="calculateBuilderPreview()">
                             </div>
 
                             <div class="col-lg-2 col-md-3 col-6">
                                 <label for="builder_thickness" class="form-label small text-secondary fw-semibold mb-1">
                                     Thickness
                                 </label>
-                                <input type="text" id="builder_thickness" class="form-control form-control-sm text-center" placeholder="e.g. 10mm or 0.50mm">
+                                <input type="text" id="builder_thickness" class="form-control form-control-sm text-center">
                             </div>
 
                             <div class="col-lg-3 col-md-3 col-6">
                                 <label for="builder_size" class="form-label small text-secondary fw-semibold mb-1">
                                     Size / Width
                                 </label>
-                                <input type="text" id="builder_size" class="form-control form-control-sm text-center" placeholder="e.g. 4x8 ft or 1250mm">
+                                <input type="text" id="builder_size" class="form-control form-control-sm text-center">
                             </div>
 
                             <div class="col-lg-2 col-md-3 col-6">
@@ -265,7 +265,7 @@
                                 <label for="builder_notes" class="form-label small text-secondary fw-semibold mb-1">
                                     Notes (Optional)
                                 </label>
-                                <input type="text" id="builder_notes" class="form-control form-control-sm" placeholder="Optional grade or coil tag">
+                                <input type="text" id="builder_notes" class="form-control form-control-sm">
                             </div>
                         </div>
 
@@ -276,7 +276,7 @@
                                     Per Coil Wt (kg) <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-group input-group-sm">
-                                    <input type="number" step="0.01" min="0.01" id="builder_unit_weight" class="form-control text-end fw-bold text-primary" placeholder="0.00" oninput="calculateBuilderPreview()">
+                                    <input type="number" step="0.01" min="0.01" id="builder_unit_weight" class="form-control text-end fw-bold text-primary" oninput="calculateBuilderPreview()">
                                     <span class="input-group-text bg-white text-muted">kg</span>
                                 </div>
                             </div>
@@ -286,7 +286,7 @@
                                     Total Weight (kg)
                                 </label>
                                 <div class="input-group input-group-sm">
-                                    <input type="number" step="0.01" id="builder_total_weight" class="form-control bg-white text-end fw-bold text-dark" placeholder="0.00" readonly tabindex="-1">
+                                    <input type="number" step="0.01" id="builder_total_weight" class="form-control bg-white text-end fw-bold text-dark" readonly tabindex="-1">
                                     <span class="input-group-text bg-white text-muted">kg</span>
                                 </div>
                             </div>
@@ -297,7 +297,7 @@
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white text-muted">৳</span>
-                                    <input type="number" step="0.01" min="0" id="builder_unit_price" class="form-control text-end fw-semibold" placeholder="0.00" oninput="calculateBuilderPreview()">
+                                    <input type="number" step="0.01" min="0" id="builder_unit_price" class="form-control text-end fw-semibold" oninput="calculateBuilderPreview()">
                                 </div>
                             </div>
 
@@ -307,7 +307,7 @@
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white text-muted">৳</span>
-                                    <input type="number" step="0.01" id="builder_sub_price" class="form-control bg-white text-end fw-bold text-success" placeholder="0.00" readonly tabindex="-1">
+                                    <input type="number" step="0.01" id="builder_sub_price" class="form-control bg-white text-end fw-bold text-success" readonly tabindex="-1">
                                 </div>
                             </div>
 
@@ -460,27 +460,27 @@
 
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Discount Amount (৳)</label>
-                            <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="discount" name="discount" class="form-control border-light-subtle text-end" value="{{ old('discount', 0) }}" min="0" step="0.01" placeholder="0.00">
+                            <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="discount" name="discount" class="form-control border-light-subtle text-end" value="{{ old('discount', 0) }}" min="0" step="0.01">
                         </div>
 
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Transport Charge (৳)</label>
-                            <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="delivery_charge" name="delivery_charge" class="form-control border-light-subtle text-end" value="{{ old('delivery_charge', 0) }}" min="0" step="0.01" placeholder="0.00">
+                            <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="delivery_charge" name="delivery_charge" class="form-control border-light-subtle text-end" value="{{ old('delivery_charge', 0) }}" min="0" step="0.01">
                         </div>
 
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Cutting & Load-Unload (৳)</label>
-                            <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="labour_cost" name="labour_cost" class="form-control border-light-subtle text-end" value="{{ old('labour_cost', 0) }}" min="0" step="0.01" placeholder="0.00">
+                            <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="labour_cost" name="labour_cost" class="form-control border-light-subtle text-end" value="{{ old('labour_cost', 0) }}" min="0" step="0.01">
                         </div>
 
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Scale & Labour Charge (৳)</label>
-                            <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="weight_scale_cost" name="weight_scale_cost" class="form-control border-light-subtle text-end" value="{{ old('weight_scale_cost', 0) }}" min="0" step="0.01" placeholder="0.00">
+                            <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="weight_scale_cost" name="weight_scale_cost" class="form-control border-light-subtle text-end" value="{{ old('weight_scale_cost', 0) }}" min="0" step="0.01">
                         </div>
 
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Other Charges (৳)</label>
-                            <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="other_charges" name="other_charges" class="form-control border-light-subtle text-end" value="{{ old('other_charges', 0) }}" min="0" step="0.01" placeholder="0.00">
+                            <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="other_charges" name="other_charges" class="form-control border-light-subtle text-end" value="{{ old('other_charges', 0) }}" min="0" step="0.01">
                         </div>
                     </div>
                 </div>

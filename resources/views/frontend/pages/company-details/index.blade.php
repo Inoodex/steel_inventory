@@ -304,55 +304,55 @@
                     <div class="row g-3">
                         <div class="col-md-8">
                             <label class="form-label fw-semibold small text-secondary">Company / Entity Name <span class="text-danger">*</span></label>
-                            <input type="text" name="company_name" class="form-control" placeholder="e.g. M/S SA Enterprise" required>
+                            <input type="text" name="company_name" class="form-control" required>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold small text-secondary">Tagline / Business Slogan</label>
-                            <input type="text" name="tagline" class="form-control" placeholder="e.g. Ship Breaking &amp; Steel Stockist">
+                            <input type="text" name="tagline" class="form-control">
                         </div>
 
                         <div class="col-md-4">
                             <label class="form-label fw-semibold small text-secondary">BIN / VAT Registration #</label>
-                            <input type="text" name="bin_number" class="form-control" placeholder="e.g. 0123456789-0101">
+                            <input type="text" name="bin_number" class="form-control">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold small text-secondary">TIN / Tax Number</label>
-                            <input type="text" name="tin_number" class="form-control" placeholder="e.g. 3456789012">
+                            <input type="text" name="tin_number" class="form-control">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold small text-secondary">Trade License #</label>
-                            <input type="text" name="trade_license" class="form-control" placeholder="e.g. TRAD/DHK/0001/2026">
+                            <input type="text" name="trade_license" class="form-control">
                         </div>
 
                         <div class="col-md-4">
                             <label class="form-label fw-semibold small text-secondary">Primary Phone</label>
-                            <input type="text" name="phone" class="form-control" placeholder="e.g. +880 1800-000000">
+                            <input type="text" name="phone" class="form-control">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold small text-secondary">Alternate Phone</label>
-                            <input type="text" name="alternate_phone" class="form-control" placeholder="e.g. +880 1700-000000">
+                            <input type="text" name="alternate_phone" class="form-control">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold small text-secondary">Email Address</label>
-                            <input type="email" name="email" class="form-control" placeholder="e.g. info@company.com">
+                            <input type="email" name="email" class="form-control">
                         </div>
 
                         <div class="col-md-12">
                             <label class="form-label fw-semibold small text-secondary">Registered Office / Yard Address</label>
-                            <textarea name="address" class="form-control" rows="2" placeholder="Full registered address..."></textarea>
+                            <textarea name="address" class="form-control" rows="2"></textarea>
                         </div>
 
                         <div class="col-md-3">
                             <label class="form-label fw-semibold small text-secondary">City</label>
-                            <input type="text" name="city" class="form-control" placeholder="e.g. Dhaka">
+                            <input type="text" name="city" class="form-control">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold small text-secondary">State / Division</label>
-                            <input type="text" name="state" class="form-control" placeholder="e.g. Dhaka Division">
+                            <input type="text" name="state" class="form-control">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold small text-secondary">Postal Code</label>
-                            <input type="text" name="postal_code" class="form-control" placeholder="e.g. 1204">
+                            <input type="text" name="postal_code" class="form-control">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold small text-secondary">Country</label>
@@ -361,7 +361,7 @@
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold small text-secondary">Website URL</label>
-                            <input type="text" name="website" class="form-control" placeholder="e.g. https://company.com">
+                            <input type="text" name="website" class="form-control">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold small text-secondary">Currency Symbol</label>
@@ -383,11 +383,11 @@
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold small text-secondary">Default Invoice Notes</label>
-                            <textarea name="invoice_notes" class="form-control" rows="2" placeholder="Thank you for your business..."></textarea>
+                            <textarea name="invoice_notes" class="form-control" rows="2"></textarea>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold small text-secondary">Terms &amp; Conditions</label>
-                            <textarea name="terms_and_conditions" class="form-control" rows="2" placeholder="Standard sales terms..."></textarea>
+                            <textarea name="terms_and_conditions" class="form-control" rows="2"></textarea>
                         </div>
 
                         <div class="col-12">

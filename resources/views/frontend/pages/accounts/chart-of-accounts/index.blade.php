@@ -227,9 +227,9 @@
                                             @endif
 
                                             @if($acc->bankDetail)
-                                                <span class="badge bg-info-light text-info ms-2" style="font-size: 9px;">
-                                                    <i class="fe fe-credit-card me-1"></i> Bank #{{ $acc->bank_detail_id }}
-                                                </span>
+                                                <a href="{{ route('bank-details.edit', $acc->bank_detail_id) }}" class="badge bg-info-light text-info ms-2 text-decoration-none" style="font-size: 9px;" title="View Bank/MFS Profile">
+                                                    <i class="fe fe-credit-card me-1"></i> {{ $acc->bankDetail->bank_name }}
+                                                </a>
                                             @endif
                                         </div>
                                     </td>

@@ -12,7 +12,7 @@
                 
                 <div class="mb-3">
                     <label for="name" class="form-label">Category Name <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" name="name" id="name" placeholder="Enter category name" required>
+                    <input type="text" class="form-control" name="name" id="name" required>
                 </div>
 
                 <div class="mb-3">

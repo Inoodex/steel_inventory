@@ -128,7 +128,7 @@
                                             </select>
                                         </td>
                                         <td>
-                                            <input type="text" name="items[{{ $loop->index }}][notes]" class="form-control border-light-subtle" placeholder="Item notes...">
+                                            <input type="text" name="items[{{ $loop->index }}][notes]" class="form-control border-light-subtle">
                                         </td>
                                         <td class="text-end">
                                             <button type="button" class="btn btn-outline-danger btn-sm px-3 rounded-2" onclick="this.closest('tr').remove(); calculateTotal();">
@@ -156,7 +156,7 @@
                 <div class="row g-3 align-items-end mb-4">
                     <div class="col-lg-8 col-md-7 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">General Reason / Additional Notes</label>
-                        <textarea name="reason" class="form-control border-light-subtle" rows="3" placeholder="Enter general reason or return instructions...">{{ old('reason') }}</textarea>
+                        <textarea name="reason" class="form-control border-light-subtle" rows="3">{{ old('reason') }}</textarea>
                     </div>
 
                     <div class="col-lg-4 col-md-5 col-12">
@@ -247,7 +247,7 @@
                                 </td>
                                 <td>
                                     <input type="text" name="items[${index}][notes]"
-                                        class="form-control border-light-subtle" placeholder="Notes...">
+                                        class="form-control border-light-subtle">
                                 </td>
                                 <td class="text-end">
                                     <button type="button" class="btn btn-outline-danger btn-sm px-3 rounded-2" onclick="this.closest('tr').remove(); calculateTotal();">

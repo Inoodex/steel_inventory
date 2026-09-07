@@ -50,15 +50,15 @@
                     <div class="row g-3">
                         <div class="col-lg-4 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">Customer Name <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control border-light-subtle" id="newClientName" placeholder="Enter Customer Name" required autocomplete="off">
+                            <input type="text" name="name" class="form-control border-light-subtle" id="newClientName" required autocomplete="off">
                         </div>
                         <div class="col-lg-4 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">Phone Number <span class="text-danger">*</span></label>
-                            <input type="text" name="phone" class="form-control border-light-subtle" id="newClientPhone" placeholder="Enter Phone Number" required autocomplete="off">
+                            <input type="text" name="phone" class="form-control border-light-subtle" id="newClientPhone" required autocomplete="off">
                         </div>
                         <div class="col-lg-4 col-md-12 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">Address <span class="text-danger">*</span></label>
-                            <input type="text" name="address" class="form-control border-light-subtle" id="newClientAddress" placeholder="Enter Customer Address" required autocomplete="off">
+                            <input type="text" name="address" class="form-control border-light-subtle" id="newClientAddress" required autocomplete="off">
                         </div>
                     </div>
                 </div>
@@ -177,31 +177,31 @@
                         <!-- 3. Per Coil Weight (Readonly) -->
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Per Coil Wt (kg)</label>
-                            <input type="text" id="per_coil_weight1" class="form-control border-light-subtle bg-white fw-bold text-dark" readonly placeholder="0.00 kg">
+                            <input type="text" id="per_coil_weight1" class="form-control border-light-subtle bg-white fw-bold text-dark" readonly>
                         </div>
 
                         <!-- 4. Available Coil Weight -->
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Available Weight</label>
-                            <input type="text" id="stock1" class="form-control border-light-subtle bg-white fw-bold text-primary" readonly placeholder="0.00 kg">
+                            <input type="text" id="stock1" class="form-control border-light-subtle bg-white fw-bold text-primary" readonly>
                         </div>
 
                         <!-- 5. Cost Rate -->
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Cost Rate (৳)</label>
-                            <input type="number" id="purchase_price1" class="form-control border-light-subtle bg-white" readonly placeholder="0.00">
+                            <input type="number" id="purchase_price1" class="form-control border-light-subtle bg-white" readonly>
                         </div>
 
                         <!-- 6. Selling Rate -->
                         <div class="col-lg-3 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Selling Rate (৳) <span class="text-danger">*</span></label>
-                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="unit_price1" class="form-control border-light-subtle" step="0.01" min="0" placeholder="0.00">
+                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="unit_price1" class="form-control border-light-subtle" step="0.01" min="0">
                         </div>
 
                         <!-- 7. Selling Quantity -->
                         <div class="col-lg-3 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Selling Qty / Wt (kg) <span class="text-danger">*</span></label>
-                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="qty1" class="form-control border-light-subtle text-dark" step="0.01" min="0.01" placeholder="Enter weight in kg">
+                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="qty1" class="form-control border-light-subtle text-dark" step="0.01" min="0.01">
                         </div>
 
                         <!-- 8. Line Total Preview -->
@@ -362,7 +362,7 @@
                             <label class="form-label small text-secondary fw-semibold mb-1">
                                 <i class="fe fe-file-text me-1 text-secondary"></i> Transaction Ref / TrxID
                             </label>
-                            <input type="text" name="transaction_ref" id="transactionRefInput" class="form-control border-light-subtle bg-white" placeholder="e.g. Bank Trx # or Deposit Slip Ref">
+                            <input type="text" name="transaction_ref" id="transactionRefInput" class="form-control border-light-subtle bg-white">
                         </div>
                     </div>
                 </div>

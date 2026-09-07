@@ -272,7 +272,7 @@
                             <div class="modal-body p-4">
                                 <div class="mb-3">
                                     <label class="form-label small text-secondary fw-semibold mb-1">Rejection Reason <span class="text-danger">*</span></label>
-                                    <textarea name="reason" class="form-control border-light-subtle" rows="3" placeholder="Enter reason for rejection..." required></textarea>
+                                    <textarea name="reason" class="form-control border-light-subtle" rows="3" required></textarea>
                                 </div>
                             </div>
                             <div class="modal-footer border-top pt-3">

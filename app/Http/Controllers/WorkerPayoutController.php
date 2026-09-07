@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BankDetail;
 use App\Models\ChartOfAccount;
+use App\Models\Employee;
 use App\Models\JournalEntry;
 use App\Models\Sale;
 use App\Models\WorkerPayout;
@@ -144,7 +145,88 @@ class WorkerPayoutController extends Controller
             ->where('is_active', true)
             ->get();
 
-        $bankDetails = BankDetail::where('status', 'active')->get();
+        $bankDetails = BankDetail::with('chartOfAccount')->where('status', 'active')->get();
+
+        $bankAccounts = $bankDetails->filter(function ($b) {
+            return stripos($b->account_type, 'mfs') === false &&
+                   stripos($b->bank_name, 'bkash') === false &&
+                   stripos($b->bank_name, 'nagad') === false &&
+                   stripos($b->bank_name, 'rocket') === false;
+        });
+
+        $mfsAccounts = $bankDetails->filter(function ($b) {
+            return stripos($b->account_type, 'mfs') !== false ||
+                   stripos($b->bank_name, 'bkash') !== false ||
+                   stripos($b->bank_name, 'nagad') !== false ||
+                   stripos($b->bank_name, 'rocket') !== false;
+        });
+
+        $cashAccount = ChartOfAccount::where('account_code', '1110')->first();
+        $defaultBankMfsAccount = ChartOfAccount::where('account_code', '1120')->first();
+
+        // 5. Distinct saved recipients for quick select & phone auto-fill
+        $allSavedRecipients = WorkerPayout::whereNotNull('recipient_name')
+            ->where('recipient_name', '!=', '')
+            ->select('recipient_name', 'recipient_phone')
+            ->distinct()
+            ->orderBy('recipient_name')
+            ->get();
+
+        $savedLabours = WorkerPayout::where(function ($q) {
+                $q->where('charge_type', 'labour')->orWhere('charge_type', 'all')->orWhere('charge_type', 'mixed');
+            })
+            ->whereNotNull('recipient_name')
+            ->where('recipient_name', '!=', '')
+            ->select('recipient_name', 'recipient_phone')
+            ->distinct()
+            ->orderBy('recipient_name')
+            ->get();
+
+        if ($savedLabours->isEmpty()) {
+            $savedLabours = $allSavedRecipients;
+        }
+
+        $savedDrivers = WorkerPayout::where(function ($q) {
+                $q->where('charge_type', 'delivery')->orWhere('charge_type', 'all')->orWhere('charge_type', 'mixed');
+            })
+            ->whereNotNull('recipient_name')
+            ->where('recipient_name', '!=', '')
+            ->select('recipient_name', 'recipient_phone')
+            ->distinct()
+            ->orderBy('recipient_name')
+            ->get();
+
+        if ($savedDrivers->isEmpty()) {
+            $savedDrivers = $allSavedRecipients;
+        }
+
+        $savedScalers = WorkerPayout::where(function ($q) {
+                $q->where('charge_type', 'weight_scale')->orWhere('charge_type', 'all')->orWhere('charge_type', 'mixed');
+            })
+            ->whereNotNull('recipient_name')
+            ->where('recipient_name', '!=', '')
+            ->select('recipient_name', 'recipient_phone')
+            ->distinct()
+            ->orderBy('recipient_name')
+            ->get();
+
+        if ($savedScalers->isEmpty()) {
+            $savedScalers = $allSavedRecipients;
+        }
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('employees')) {
+            $employees = Employee::whereNotNull('name')
+                ->where('name', '!=', '')
+                ->select('name as recipient_name', 'phone as recipient_phone')
+                ->get();
+
+            if ($employees->isNotEmpty()) {
+                $allSavedRecipients = $allSavedRecipients->concat($employees)->unique('recipient_name')->values();
+                $savedLabours = $savedLabours->concat($employees)->unique('recipient_name')->values();
+                $savedDrivers = $savedDrivers->concat($employees)->unique('recipient_name')->values();
+                $savedScalers = $savedScalers->concat($employees)->unique('recipient_name')->values();
+            }
+        }
 
         return view('frontend.pages.worker_payouts.index', compact(
             'sales',
@@ -166,23 +248,73 @@ class WorkerPayoutController extends Controller
             'totalDueOther',
             'paymentAccounts',
             'bankDetails',
+            'bankAccounts',
+            'mfsAccounts',
+            'cashAccount',
+            'defaultBankMfsAccount',
             'datePreset',
-            'status'
+            'status',
+            'savedLabours',
+            'savedDrivers',
+            'savedScalers',
+            'allSavedRecipients'
         ));
     }
 
     public function batchSettle(Request $request)
     {
+        // If settlement was triggered with charge_type = 'all' and no explicit sale_ids, select all unpaid
+        if ($request->input('charge_type') === 'all' && (!$request->has('sale_ids') || empty($request->input('sale_ids')))) {
+            $allUnsettled = Sale::where('charges_payout_status', '!=', 'paid')
+                ->where(function ($q) {
+                    $q->where('delivery_charge', '>', 0)
+                      ->orWhere('labour_cost', '>', 0)
+                      ->orWhere('weight_scale_cost', '>', 0)
+                      ->orWhere('other_charges', '>', 0);
+                })
+                ->get();
+
+            $matchingIds = $allUnsettled->filter(function ($s) {
+                return $s->total_charges_due > 0.001;
+            })->pluck('id')->toArray();
+
+            $request->merge(['sale_ids' => $matchingIds]);
+        }
+
+        // Auto-select sale_ids if quick settling a single charge type without explicit checkboxes
+        if ($request->filled('charge_type') && (!$request->has('sale_ids') || empty($request->input('sale_ids')))) {
+            $targetType = $request->input('charge_type');
+            $allUnsettled = Sale::where('charges_payout_status', '!=', 'paid')->get();
+
+            $matchingIds = $allUnsettled->filter(function ($s) use ($targetType) {
+                return match ($targetType) {
+                    'labour' => $s->due_labour_cost > 0.001,
+                    'delivery' => $s->due_delivery_charge > 0.001,
+                    'weight_scale' => $s->due_weight_scale_cost > 0.001,
+                    default => $s->total_charges_due > 0.001,
+                };
+            })->pluck('id')->toArray();
+
+            $request->merge(['sale_ids' => $matchingIds]);
+        }
+
+        $this->resolvePayoutPaymentDetails($request);
+
         $request->validate([
             'sale_ids'           => 'required|array|min:1',
             'sale_ids.*'         => 'exists:sales,id',
             'charge_type'        => 'required|in:labour,delivery,weight_scale,other,all',
+            'payout_amount'      => 'nullable|numeric|min:0.01',
+            'sale_amounts'       => 'nullable|array',
+            'sale_amounts.*'     => 'nullable|numeric|min:0',
             'recipient_name'     => 'required|string|max:191',
             'recipient_phone'    => 'nullable|string|max:50',
             'payout_date'        => 'required|date',
             'payment_method'     => 'required|string',
             'payment_account_id' => 'required|exists:chart_of_accounts,id',
             'bank_detail_id'     => 'nullable|exists:bank_details,id',
+            'mfs_bank_id'        => 'nullable|exists:bank_details,id',
+            'mfs_provider'       => 'nullable|string|max:100',
             'notes'              => 'nullable|string',
         ]);
 
@@ -197,12 +329,18 @@ class WorkerPayoutController extends Controller
             $payoutItemsData = [];
             $totalDisbursed = 0.00;
 
+            $hasCustomPayoutAmount = $request->filled('payout_amount');
+            $customTotalRemaining = $hasCustomPayoutAmount ? (float)$request->input('payout_amount') : null;
+            $saleAmounts = $request->input('sale_amounts', []);
+
             foreach ($sales as $sale) {
                 if ($chargeType === 'all') {
                     $typesToSettle = ['labour', 'delivery', 'weight_scale', 'other'];
                 } else {
                     $typesToSettle = [$chargeType];
                 }
+
+                $customSaleAmount = isset($saleAmounts[$sale->id]) ? (float)$saleAmounts[$sale->id] : null;
 
                 foreach ($typesToSettle as $type) {
                     $due = match ($type) {
@@ -214,22 +352,42 @@ class WorkerPayoutController extends Controller
                     };
 
                     if ($due > 0.001) {
-                        $payoutItemsData[] = [
-                            'sale_id'     => $sale->id,
-                            'charge_type' => $type,
-                            'amount'      => $due,
-                        ];
-                        $totalDisbursed += $due;
+                        if ($customSaleAmount !== null) {
+                            $amountToPay = min($due, max(0, $customSaleAmount));
+                            $customSaleAmount -= $amountToPay;
+                        } elseif ($customTotalRemaining !== null) {
+                            $amountToPay = min($due, max(0, $customTotalRemaining));
+                            $customTotalRemaining -= $amountToPay;
+                        } else {
+                            $amountToPay = $due;
+                        }
+
+                        $amountToPay = round($amountToPay, 2);
+
+                        if ($amountToPay > 0.001) {
+                            $payoutItemsData[] = [
+                                'sale_id'     => $sale->id,
+                                'charge_type' => $type,
+                                'amount'      => $amountToPay,
+                            ];
+                            $totalDisbursed += $amountToPay;
+                        }
                     }
                 }
             }
 
             if ($totalDisbursed <= 0.001) {
                 DB::rollBack();
-                return redirect()->back()->with('error', 'None of the selected sales have unpaid dues for the selected charge type.');
+                return redirect()->back()->with('error', 'Payment amount must be greater than zero.');
             }
 
             $payoutNo = WorkerPayout::generatePayoutNo($payoutDate);
+
+            $payoutNotes = $request->input('notes');
+            if ($request->input('payment_method') === 'mobile_banking' && $request->filled('mfs_provider')) {
+                $providerText = "MFS: " . $request->input('mfs_provider');
+                $payoutNotes = $payoutNotes ? ($providerText . " | " . $payoutNotes) : $providerText;
+            }
 
             $payout = WorkerPayout::create([
                 'payout_no'          => $payoutNo,
@@ -239,9 +397,9 @@ class WorkerPayoutController extends Controller
                 'recipient_phone'    => $request->input('recipient_phone'),
                 'total_amount'       => $totalDisbursed,
                 'payment_method'     => $request->input('payment_method'),
-                'bank_detail_id'     => $request->input('bank_detail_id'),
+                'bank_detail_id'     => in_array($request->input('payment_method'), ['bank', 'mobile_banking']) ? ($request->input('bank_detail_id') ?: $request->input('mfs_bank_id')) : null,
                 'payment_account_id' => $request->input('payment_account_id'),
-                'notes'              => $request->input('notes'),
+                'notes'              => $payoutNotes,
                 'created_by'         => Auth::id(),
             ]);
 
@@ -269,31 +427,34 @@ class WorkerPayoutController extends Controller
                 if ($chargesAcc && $cashAcc) {
                     $typeLabel = ucwords(str_replace('_', ' ', $chargeType));
                     $salesCount = count($sales);
+
                     $journal = postJournalEntry([
                         'entry_date'     => $payoutDate,
                         'reference_type' => 'worker_payout',
                         'reference_id'   => $payout->id,
-                        'description'    => "Worker extra charges payout [{$typeLabel}] Voucher #{$payout->payout_no} to {$payout->recipient_name} ({$salesCount} sales invoices)",
+                        'description'    => "Worker extra charges payout Voucher #{$payout->payout_no} for {$salesCount} sales to {$payout->recipient_name} ({$typeLabel})",
                         'items'          => [
                             [
                                 'account_id'  => $chargesAcc->id,
                                 'debit'       => $totalDisbursed,
                                 'credit'      => 0.00,
-                                'description' => "Clear pass-through liability for Voucher #{$payout->payout_no}"
+                                'description' => "Clear pass-through liability for settled {$typeLabel} charges"
                             ],
                             [
                                 'account_id'  => $cashAcc->id,
                                 'debit'       => 0.00,
                                 'credit'      => $totalDisbursed,
-                                'description' => "Disburse funds from {$cashAcc->account_name} to {$payout->recipient_name}"
-                            ]
+                                'description' => "Disbursement from {$cashAcc->account_name}"
+                            ],
                         ]
                     ]);
 
-                    $payout->update(['journal_entry_id' => $journal->id]);
+                    if ($journal) {
+                        $payout->update(['journal_entry_id' => $journal->id]);
+                    }
                 }
-            } catch (\Throwable $e) {
-                Log::warning("Worker payout journal entry posting failed: " . $e->getMessage());
+            } catch (\Throwable $je) {
+                Log::warning("Journal entry posting failed for worker payout #{$payout->payout_no}: " . $je->getMessage());
             }
 
             DB::commit();
@@ -310,6 +471,8 @@ class WorkerPayoutController extends Controller
 
     public function singleSettle(Request $request, $saleId)
     {
+        $this->resolvePayoutPaymentDetails($request);
+
         $request->validate([
             'recipient_name'     => 'required|string|max:191',
             'recipient_phone'    => 'nullable|string|max:50',
@@ -317,6 +480,8 @@ class WorkerPayoutController extends Controller
             'payment_method'     => 'required|string',
             'payment_account_id' => 'required|exists:chart_of_accounts,id',
             'bank_detail_id'     => 'nullable|exists:bank_details,id',
+            'mfs_bank_id'        => 'nullable|exists:bank_details,id',
+            'mfs_provider'       => 'nullable|string|max:100',
             'notes'              => 'nullable|string',
             'charges'            => 'required|array',
             'charges.*'          => 'nullable|numeric|min:0',
@@ -324,16 +489,18 @@ class WorkerPayoutController extends Controller
 
         $sale = Sale::findOrFail($saleId);
         $payoutDate = $request->input('payout_date');
-        $charges = $request->input('charges');
 
         DB::beginTransaction();
         try {
-            $totalDisbursed = 0.00;
             $itemsData = [];
+            $totalDisbursed = 0.00;
             $settledTypes = [];
 
-            foreach ($charges as $type => $amount) {
-                $amt = (float) $amount;
+            $validTypes = ['labour', 'delivery', 'weight_scale', 'other'];
+            $inputCharges = $request->input('charges', []);
+
+            foreach ($validTypes as $type) {
+                $amt = isset($inputCharges[$type]) ? (float) $inputCharges[$type] : 0.00;
                 if ($amt > 0.001) {
                     $due = match ($type) {
                         'labour'       => $sale->due_labour_cost,
@@ -365,6 +532,12 @@ class WorkerPayoutController extends Controller
             $chargeTypeLabel = count($settledTypes) === 1 ? $settledTypes[0] : 'mixed';
             $payoutNo = WorkerPayout::generatePayoutNo($payoutDate);
 
+            $payoutNotes = $request->input('notes');
+            if ($request->input('payment_method') === 'mobile_banking' && $request->filled('mfs_provider')) {
+                $providerText = "MFS: " . $request->input('mfs_provider');
+                $payoutNotes = $payoutNotes ? ($providerText . " | " . $payoutNotes) : $providerText;
+            }
+
             $payout = WorkerPayout::create([
                 'payout_no'          => $payoutNo,
                 'payout_date'        => $payoutDate,
@@ -373,9 +546,9 @@ class WorkerPayoutController extends Controller
                 'recipient_phone'    => $request->input('recipient_phone'),
                 'total_amount'       => $totalDisbursed,
                 'payment_method'     => $request->input('payment_method'),
-                'bank_detail_id'     => $request->input('bank_detail_id'),
+                'bank_detail_id'     => in_array($request->input('payment_method'), ['bank', 'mobile_banking']) ? ($request->input('bank_detail_id') ?: $request->input('mfs_bank_id')) : null,
                 'payment_account_id' => $request->input('payment_account_id'),
-                'notes'              => $request->input('notes'),
+                'notes'              => $payoutNotes,
                 'created_by'         => Auth::id(),
             ]);
 
@@ -489,11 +662,57 @@ class WorkerPayoutController extends Controller
             'margin_right' => 15,
         ]);
 
+        $mpdf->WriteHTML($html);
+
         $pdfContent = $mpdf->Output("Voucher-{$payout->payout_no}.pdf", 'S');
 
         return response($pdfContent, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => "inline; filename=\"Voucher-{$payout->payout_no}.pdf\"",
         ]);
+    }
+
+    /**
+     * Auto-resolve payment_account_id, bank_detail_id, and mfs_provider from payment method.
+     */
+    protected function resolvePayoutPaymentDetails(Request $request): void
+    {
+        $paymentMethod = $request->input('payment_method', 'cash');
+
+        if (!$request->filled('payment_account_id')) {
+            if ($paymentMethod === 'cash') {
+                $cashAcc = ChartOfAccount::where('account_code', '1110')->first();
+                $request->merge(['payment_account_id' => $cashAcc?->id]);
+            } elseif ($paymentMethod === 'bank') {
+                $bank = BankDetail::find($request->input('bank_detail_id'));
+                $acc = $bank?->resolveChartOfAccount() ?: ChartOfAccount::where('account_code', '1120')->first();
+                $request->merge(['payment_account_id' => $acc?->id]);
+            } elseif ($paymentMethod === 'mobile_banking') {
+                $mfsId = $request->input('mfs_bank_id') ?: $request->input('bank_detail_id');
+                $mfs = $mfsId ? BankDetail::find($mfsId) : null;
+                $acc = $mfs?->resolveChartOfAccount() ?: ChartOfAccount::where('account_code', '1120')->first();
+                $mergeData = [
+                    'payment_account_id' => $acc?->id,
+                    'bank_detail_id'     => $mfs?->id,
+                ];
+                if ($mfs && !$request->filled('mfs_provider')) {
+                    $mergeData['mfs_provider'] = $mfs->bank_name;
+                }
+                $request->merge($mergeData);
+            }
+        }
+
+        if ($paymentMethod === 'mobile_banking') {
+            if ($request->filled('mfs_bank_id')) {
+                $mfs = BankDetail::find($request->input('mfs_bank_id'));
+                if ($mfs) {
+                    $mergeData = ['bank_detail_id' => $mfs->id];
+                    if (!$request->filled('mfs_provider')) {
+                        $mergeData['mfs_provider'] = $mfs->bank_name;
+                    }
+                    $request->merge($mergeData);
+                }
+            }
+        }
     }
 }

@@ -9,7 +9,16 @@ class BankDetailController extends Controller
 {
     public function index()
     {
-        $banks = BankDetail::latest()->get();
+        $banks = BankDetail::with('chartOfAccount')->latest()->get();
+
+        // Ensure all accounts have a connected Chart of Account
+        foreach ($banks as $bank) {
+            if (!$bank->chartOfAccount) {
+                $bank->resolveChartOfAccount();
+                $bank->load('chartOfAccount');
+            }
+        }
+
         return view('frontend.pages.bank-details.index', compact('banks'));
     }
 
@@ -45,10 +54,10 @@ class BankDetailController extends Controller
         }
 
         $bank = BankDetail::create($data);
-        $bank->resolveChartOfAccount();
+        $coa = $bank->resolveChartOfAccount();
 
         return redirect()->route('bank-details.index')
-            ->with('success', 'Bank/MFS account details created successfully.');
+            ->with('success', "Bank/MFS account created and automatically connected to Chart of Accounts ({$coa->account_code}).");
     }
 
     public function edit(BankDetail $bankDetail)
@@ -90,14 +99,22 @@ class BankDetailController extends Controller
         }
 
         $bankDetail->update($data);
-        $bankDetail->resolveChartOfAccount();
+        $coa = $bankDetail->resolveChartOfAccount();
 
         return redirect()->route('bank-details.index')
-            ->with('success', 'Bank details updated successfully.');
+            ->with('success', "Bank/MFS details and linked Chart of Accounts ({$coa->account_code}) updated successfully.");
     }
 
     public function destroy(BankDetail $bankDetail)
     {
+        $coa = $bankDetail->chartOfAccount;
+
+        // Check if linked Chart of Account has existing journal transactions
+        if ($coa && $coa->journalItems()->exists()) {
+            return redirect()->route('bank-details.index')
+                ->with('error', "Cannot delete {$bankDetail->bank_name} ({$bankDetail->account_number}) because it has recorded financial transactions in Chart of Accounts ({$coa->account_code}). Please deactivate it instead.");
+        }
+
         // If deleting default, set another as default
         if ($bankDetail->is_default) {
             $newDefault = BankDetail::where('id', '!=', $bankDetail->id)->first();
@@ -106,10 +123,15 @@ class BankDetailController extends Controller
             }
         }
 
+        // Clean up linked Chart of Account since it has no transactions
+        if ($coa) {
+            $coa->delete();
+        }
+
         $bankDetail->delete();
 
         return redirect()->route('bank-details.index')
-            ->with('success', 'Bank details deleted successfully.');
+            ->with('success', 'Bank/MFS account and associated Chart of Accounts removed successfully.');
     }
 
     public function setDefault(BankDetail $bankDetail)

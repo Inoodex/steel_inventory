@@ -305,7 +305,7 @@
                 <label class="form-label" for="email">Email Address</label>
                 <div class="input-wrapper">
                     <input type="email" name="email" id="email" class="form-control"
-                        value="{{ old('email') }}" placeholder="name@company.com" required autofocus>
+                        value="{{ old('email') }}" required autofocus>
                     <i class="fas fa-envelope input-icon"></i>
                 </div>
             </div>
@@ -313,8 +313,7 @@
             <div class="form-group">
                 <label class="form-label" for="password">Password</label>
                 <div class="input-wrapper pass-input-wrapper">
-                    <input type="password" name="password" id="password" class="form-control pass-input"
-                        placeholder="••••••••" required>
+                    <input type="password" name="password" id="password" class="form-control pass-input" required>
                     <i class="fas fa-lock input-icon"></i>
                     <i class="fas fa-eye toggle-password" id="togglePassword"></i>
                 </div>

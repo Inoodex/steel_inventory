@@ -34,8 +34,7 @@
                                 Permission Name <span class="text-danger">*</span>
                             </label>
                             <input type="text" class="form-control border-light-subtle @error('name') is-invalid @enderror" 
-                                   value="{{ old('name') }}" id="name" name="name" 
-                                   placeholder="e.g. Sales Management, Purchase Management" required>
+                                   value="{{ old('name') }}" id="name" name="name" required>
                             @error('name')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

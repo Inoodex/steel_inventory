@@ -218,7 +218,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-secondary mb-1">Reason for Reversal <span class="text-danger">*</span></label>
-                            <textarea name="reason" id="reverseReasonInput" class="form-control border-light-subtle" rows="3" placeholder="e.g. Accounting error correction, duplicate entry..." required></textarea>
+                            <textarea name="reason" id="reverseReasonInput" class="form-control border-light-subtle" rows="3" required></textarea>
                         </div>
                     </div>
                     <div class="modal-footer border-top bg-light">

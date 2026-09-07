@@ -137,8 +137,7 @@
                         </p>
                         <div class="mb-3">
                             <label class="form-label fw-bold">Reason for Reversal <span class="text-danger">*</span></label>
-                            <textarea name="reason" class="form-control" rows="3"
-                                placeholder="State error correction justification..." required></textarea>
+                            <textarea name="reason" class="form-control" rows="3" required></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">

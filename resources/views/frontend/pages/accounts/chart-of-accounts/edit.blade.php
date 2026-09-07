@@ -7,16 +7,12 @@
         <div class="row align-items-center">
             <div class="col">
                 <h3 class="page-title font-weight-bold" style="color: #1e293b;">Edit Account: {{ $chartOfAccount->account_code }}</h3>
-                <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('chart-of-accounts.index') }}">Chart of Accounts</a></li>
-                    <li class="breadcrumb-item active">Edit Account</li>
-                </ul>
             </div>
         </div>
     </div>
 
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-12">
             <div class="card shadow-sm border-0" style="border-radius: 12px;">
                 <div class="card-body p-4">
                     <form method="POST" action="{{ route('chart-of-accounts.update', $chartOfAccount->id) }}">
@@ -74,7 +70,7 @@
 
                             <div class="col-12 text-end mt-4">
                                 <a href="{{ route('chart-of-accounts.index') }}" class="btn btn-outline-secondary me-2">Cancel</a>
-                                <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i> Update Account</button>
+                                <button type="submit" class="btn btn-primary px-4"> Update Account</button>
                             </div>
                         </div>
                     </form>

@@ -125,22 +125,7 @@
         border-bottom: 2px solid #4338ca;
         background: transparent;
     }
-    .batch-bar {
-        position: fixed;
-        bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 1050;
-        min-width: 480px;
-        max-width: 90%;
-        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.25);
-        border-radius: 50px;
-        animation: slideUp 0.3s ease;
-    }
-    @keyframes slideUp {
-        from { transform: translate(-50%, 60px); opacity: 0; }
-        to { transform: translate(-50%, 0); opacity: 1; }
-    }
+
 </style>
 @endpush
 
@@ -164,31 +149,6 @@
         </div>
     </div>
 
-    <!-- Alert Messages -->
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm d-flex align-items-center justify-content-between mb-4" role="alert">
-            <div class="d-flex align-items-center gap-2">
-                <i class="fe fe-check-circle fs-5"></i>
-                <span>{{ session('success') }}</span>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                @if(session('last_payout_id'))
-                    <a href="{{ route('worker-payouts.voucher-pdf', session('last_payout_id')) }}" target="_blank" class="btn btn-sm btn-light text-success fw-bold">
-                        <i class="fe fe-printer me-1"></i> Print Voucher
-                    </a>
-                @endif
-                <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm d-flex align-items-center gap-2 mb-4" role="alert">
-            <i class="fe fe-alert-circle fs-5"></i>
-            <span>{{ session('error') }}</span>
-            <button type="button" class="btn-close shadow-none ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
     <!-- 4 KPI Summary Cards (Optimized for Laptop & Desktop Responsiveness) -->
     <div class="row g-3 mb-4">
         <!-- 1. Total Pass-Through Liability -->
@@ -204,9 +164,16 @@
                         </div>
                         <div class="kpi-value text-dark mb-2">৳ {{ number_format($totalCollectedCharges, 2) }}</div>
                     </div>
-                    <div class="pt-2 border-top d-flex justify-content-between align-items-center kpi-sub">
-                        <span>Paid: <strong class="text-success">৳{{ number_format($totalPaidCharges, 2) }}</strong></span>
-                        <span>Due: <strong class="text-warning">৳{{ number_format($totalDueCharges, 2) }}</strong></span>
+                    <div>
+                        <div class="pt-2 border-top d-flex justify-content-between align-items-center kpi-sub">
+                            <span>Paid: <strong class="text-success">৳{{ number_format($totalPaidCharges, 2) }}</strong></span>
+                            <span>Due: <strong class="text-warning">৳{{ number_format($totalDueCharges, 2) }}</strong></span>
+                        </div>
+                        @if($totalDueCharges > 0.001)
+                            <button type="button" class="btn btn-sm btn-outline-primary w-100 mt-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-none" data-bs-toggle="modal" data-bs-target="#quickPayAllModal">
+                                <i class="fe fe-check-circle fs-7"></i> Pay All Charges (৳{{ number_format($totalDueCharges, 2) }})
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -225,9 +192,16 @@
                         </div>
                         <div class="kpi-value text-success mb-2">৳ {{ number_format($totalCollectedLabour, 2) }}</div>
                     </div>
-                    <div class="pt-2 border-top d-flex justify-content-between align-items-center kpi-sub">
-                        <span>Paid: <strong class="text-success">৳{{ number_format($totalPaidLabour, 2) }}</strong></span>
-                        <span>Due: <strong class="text-danger">৳{{ number_format($totalDueLabour, 2) }}</strong></span>
+                    <div>
+                        <div class="pt-2 border-top d-flex justify-content-between align-items-center kpi-sub">
+                            <span>Paid: <strong class="text-success">৳{{ number_format($totalPaidLabour, 2) }}</strong></span>
+                            <span>Due: <strong class="text-danger">৳{{ number_format($totalDueLabour, 2) }}</strong></span>
+                        </div>
+                        @if($totalDueLabour > 0.001)
+                            <button type="button" class="btn btn-sm btn-outline-success w-100 mt-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-none" data-bs-toggle="modal" data-bs-target="#quickPayLabourModal">
+                                <i class="fe fe-check-circle fs-7"></i> Pay All Labour (৳{{ number_format($totalDueLabour, 2) }})
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -246,9 +220,16 @@
                         </div>
                         <div class="kpi-value text-info mb-2">৳ {{ number_format($totalCollectedDelivery, 2) }}</div>
                     </div>
-                    <div class="pt-2 border-top d-flex justify-content-between align-items-center kpi-sub">
-                        <span>Paid: <strong class="text-success">৳{{ number_format($totalPaidDelivery, 2) }}</strong></span>
-                        <span>Due: <strong class="text-danger">৳{{ number_format($totalDueDelivery, 2) }}</strong></span>
+                    <div>
+                        <div class="pt-2 border-top d-flex justify-content-between align-items-center kpi-sub">
+                            <span>Paid: <strong class="text-success">৳{{ number_format($totalPaidDelivery, 2) }}</strong></span>
+                            <span>Due: <strong class="text-danger">৳{{ number_format($totalDueDelivery, 2) }}</strong></span>
+                        </div>
+                        @if($totalDueDelivery > 0.001)
+                            <button type="button" class="btn btn-sm btn-outline-info w-100 mt-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-none" data-bs-toggle="modal" data-bs-target="#quickPayDeliveryModal">
+                                <i class="fe fe-check-circle fs-7"></i> Pay All Delivery (৳{{ number_format($totalDueDelivery, 2) }})
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -267,9 +248,16 @@
                         </div>
                         <div class="kpi-value text-warning mb-2">৳ {{ number_format($totalCollectedScale, 2) }}</div>
                     </div>
-                    <div class="pt-2 border-top d-flex justify-content-between align-items-center kpi-sub">
-                        <span>Paid: <strong class="text-success">৳{{ number_format($totalPaidScale, 2) }}</strong></span>
-                        <span>Due: <strong class="text-danger">৳{{ number_format($totalDueScale, 2) }}</strong></span>
+                    <div>
+                        <div class="pt-2 border-top d-flex justify-content-between align-items-center kpi-sub">
+                            <span>Paid: <strong class="text-success">৳{{ number_format($totalPaidScale, 2) }}</strong></span>
+                            <span>Due: <strong class="text-danger">৳{{ number_format($totalDueScale, 2) }}</strong></span>
+                        </div>
+                        @if($totalDueScale > 0.001)
+                            <button type="button" class="btn btn-sm btn-outline-warning w-100 mt-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-none" data-bs-toggle="modal" data-bs-target="#quickPayScaleModal">
+                                <i class="fe fe-check-circle fs-7"></i> Pay All Scale (৳{{ number_format($totalDueScale, 2) }})
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -282,7 +270,7 @@
             <ul class="nav nav-tabs nav-tabs-custom border-0" id="payoutTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="unsettled-tab" data-bs-toggle="tab" data-bs-target="#unsettled" type="button" role="tab">
-                        <i class="fe fe-clock me-1"></i> Unsettled Charges &amp; Batch Settle 
+                        <i class="fe fe-clock me-1"></i> Unsettled Charges 
                         <span class="badge bg-warning-light text-warning ms-2 rounded-pill">{{ $sales->count() }}</span>
                     </button>
                 </li>
@@ -324,7 +312,7 @@
                             </select>
                         </div>
                         <div class="col-xl-4 col-md-8 col-12 d-flex gap-2">
-                            <input type="text" name="search" class="form-control form-control-sm" placeholder="Invoice # or customer..." value="{{ request('search') }}">
+                            <input type="text" name="search" class="form-control form-control-sm" value="{{ request('search') }}">
                             <button type="submit" class="btn btn-sm btn-primary px-3 rounded-2">
                                 <i class="fe fe-filter"></i>
                             </button>
@@ -339,17 +327,14 @@
                         <table class="table table-hover table-custom align-middle mb-0">
                             <thead class="bg-white text-secondary fs-7 text-uppercase border-bottom">
                                 <tr>
-                                    <th class="ps-4" style="width: 40px;">
-                                        <input class="form-check-input shadow-none" type="checkbox" id="selectAllSales" onchange="toggleSelectAll(this)">
-                                    </th>
-                                    <th>Date</th>
+                                    <th class="ps-4">Date</th>
                                     <th>Invoice No</th>
+                                    <th>Customer</th>
                                     <th>Labour Charge</th>
                                     <th>Delivery Charge</th>
                                     <th>Scale Fee</th>
                                     <th>Total Charge</th>
-                                    <th>Status</th>
-                                    <th class="pe-4 text-end">Action</th>
+                                    <th class="pe-4 text-end">Status</th>
                                 </tr>
                             </thead>
                             <tbody class="border-top-0">
@@ -363,24 +348,14 @@
                                         $isFullyPaid = $totalDue <= 0.001;
                                     @endphp
                                     <tr>
-                                        <td class="ps-4">
-                                            @if(!$isFullyPaid)
-                                                <input class="form-check-input sale-checkbox shadow-none" type="checkbox" 
-                                                       value="{{ $sale->id }}" 
-                                                       data-due-labour="{{ $dueLabour }}"
-                                                       data-due-delivery="{{ $dueDelivery }}"
-                                                       data-due-scale="{{ $dueScale }}"
-                                                       data-due-total="{{ $totalDue }}"
-                                                       onchange="updateBatchSelection()">
-                                            @else
-                                                <i class="fe fe-check-circle text-success fs-6"></i>
-                                            @endif
-                                        </td>
-                                        <td>{{ $sale->order_date ? \Carbon\Carbon::parse($sale->order_date)->format('d M Y') : ($sale->created_at ? $sale->created_at->format('d M Y') : 'N/A') }}</td>
+                                        <td class="ps-4">{{ $sale->order_date ? \Carbon\Carbon::parse($sale->order_date)->format('d M Y') : ($sale->created_at ? $sale->created_at->format('d M Y') : 'N/A') }}</td>
                                         <td>
                                             <a href="{{ route('sales.invoice', $sale->id) }}" class="fw-bold text-primary">
                                                 #{{ $sale->order_no }}
                                             </a>
+                                        </td>
+                                        <td>
+                                            <span class="text-dark">{{ $sale->customer->name ?? 'Walk-in' }}</span>
                                         </td>
                                         <td>
                                             @if((float)$sale->labour_cost > 0)
@@ -425,7 +400,7 @@
                                                 <span class="text-success fw-bold">৳ 0.00</span>
                                             @endif
                                         </td>
-                                        <td>
+                                        <td class="pe-4 text-end">
                                             @if($sale->charges_payout_status === 'paid' || $isFullyPaid)
                                                 <span class="badge badge-soft-success px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1">
                                                     <i class="fe fe-check-circle"></i> Fully Settled
@@ -440,20 +415,10 @@
                                                 </span>
                                             @endif
                                         </td>
-                                        <td class="pe-4 text-end">
-                                            @if(!$isFullyPaid)
-                                                <button type="button" class="btn btn-sm btn-primary py-1 px-2 rounded-2 shadow-sm" style="font-size: 11px; font-weight: 500;"
-                                                        data-bs-toggle="modal" data-bs-target="#singlePayModal{{ $sale->id }}">
-                                                    Pay
-                                                </button>
-                                            @else
-                                                <span class="text-muted small"><i class="fe fe-check text-success me-1"></i> Completed</span>
-                                            @endif
-                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="10" class="text-center py-5 text-muted">
+                                        <td colspan="8" class="text-center py-5 text-muted">
                                             <i class="fe fe-check-circle fs-2 text-success d-block mb-2"></i>
                                             No pending sales with extra charges matching the filter criteria.
                                         </td>
@@ -483,7 +448,7 @@
                         </div>
                         <div class="col-md-5 col-12">
                             <label class="form-label small fw-semibold text-secondary mb-1">Search Vouchers</label>
-                            <input type="text" name="history_search" class="form-control form-control-sm" placeholder="Search by Voucher #, Recipient Name, or Phone..." value="{{ request('history_search') }}">
+                            <input type="text" name="history_search" class="form-control form-control-sm" value="{{ request('history_search') }}">
                         </div>
                         <div class="col-md-4 col-12 d-flex gap-2">
                             <button type="submit" class="btn btn-sm btn-primary px-3 rounded-2">
@@ -574,7 +539,7 @@
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" 
                                                            onclick="if(confirm('Are you sure you want to void voucher #{{ $payout->payout_no }}? This will remove the journal entry and restore the unpaid charge balance.')) { document.getElementById('voidPayoutForm{{ $payout->id }}').submit(); }">
                                                             <i class="fe fe-trash-2 text-danger"></i>
-                                                            <span>Void / Cancel Payout</span>
+                                                            <span>Cancel Payout</span>
                                                         </a>
                                                         <form id="voidPayoutForm{{ $payout->id }}" action="{{ route('worker-payouts.void', $payout->id) }}" method="POST" class="d-none">
                                                             @csrf
@@ -607,301 +572,6 @@
 
 </div>
 
-<!-- FLOATING BATCH ACTION BAR -->
-<div id="batchActionBar" class="batch-bar bg-dark text-white p-3 shadow-lg d-none align-items-center justify-content-between">
-    <div class="d-flex align-items-center gap-3">
-        <span class="badge bg-primary px-3 py-2 rounded-pill fs-7" id="selectedCountBadge">0 Selected</span>
-        <span class="text-light small">Total Payable Dues: <strong class="text-white fs-6" id="selectedTotalAmount">৳ 0.00</strong></span>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-        <button type="button" class="btn btn-outline-light btn-sm rounded-pill px-3" onclick="clearBatchSelection()">Cancel</button>
-        <button type="button" class="btn btn-success btn-sm rounded-pill px-4 fw-bold shadow-sm d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#batchSettleModal">
-            <i class="fe fe-check-circle"></i> Settle &amp; Pay Selected
-        </button>
-    </div>
-</div>
-
-<!-- ==================== MODALS PLACEMENT (Outside Table to prevent DOM clipping) ==================== -->
-
-<!-- 1. BATCH SETTLEMENT MODAL -->
-<div class="modal fade" id="batchSettleModal" tabindex="-1" aria-labelledby="batchSettleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow rounded-3">
-            <form action="{{ route('worker-payouts.batch-settle') }}" method="POST">
-                @csrf
-                <div id="batchHiddenInputsContainer"></div>
-
-                <div class="modal-header bg-light border-bottom">
-                    <h5 class="modal-title fw-bold text-dark" id="batchSettleModalLabel">
-                        <i class="fe fe-users text-primary me-1"></i> Disburse Batch Worker Settlement
-                    </h5>
-                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-
-                <div class="modal-body p-4">
-                    <div class="bg-light p-3 rounded-3 border mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted small">Invoices Selected:</span>
-                            <strong class="text-dark" id="modalSelectedCount">0 invoices</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted small">Available Labour Dues:</span>
-                            <span class="text-dark fw-bold" id="modalLabourDue">৳ 0.00</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted small">Available Delivery Dues:</span>
-                            <span class="text-dark fw-bold" id="modalDeliveryDue">৳ 0.00</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted small">Available Scale Dues:</span>
-                            <span class="text-dark fw-bold" id="modalScaleDue">৳ 0.00</span>
-                        </div>
-                        <hr class="my-2 opacity-50">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="fw-bold text-dark">Total Payout Amount:</span>
-                            <h4 class="fw-bold text-primary mb-0" id="modalTotalDisburseAmount">৳ 0.00</h4>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Settlement Category <span class="text-danger">*</span></label>
-                        <select name="charge_type" id="batchChargeType" class="form-select" onchange="recalcModalAmounts()" required>
-                            <option value="labour">Labour / Loading Cost (Loading Workers / Sardar)</option>
-                            <option value="delivery">Delivery / Transport Charge (Truck Drivers / Transport Agency)</option>
-                            <option value="weight_scale">Weight Scale Cost (Scale Operator)</option>
-                            <option value="all">All Available Extra Charges</option>
-                        </select>
-                    </div>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-7 col-12">
-                            <label class="form-label small fw-semibold text-secondary mb-1">Recipient / Payee Name <span class="text-danger">*</span></label>
-                            <input type="text" name="recipient_name" class="form-control" placeholder="e.g. Labour Sardar Rahim / Driver Karim" required>
-                        </div>
-                        <div class="col-md-5 col-12">
-                            <label class="form-label small fw-semibold text-secondary mb-1">Phone Number</label>
-                            <input type="text" name="recipient_phone" class="form-control" placeholder="017xxxxxxxx">
-                        </div>
-                    </div>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-6 col-12">
-                            <label class="form-label small fw-semibold text-secondary mb-1">Payout Date <span class="text-danger">*</span></label>
-                            <input type="date" name="payout_date" class="form-control" value="{{ date('Y-m-d') }}" required>
-                        </div>
-                        <div class="col-md-6 col-12">
-                            <label class="form-label small fw-semibold text-secondary mb-1">Payment Method <span class="text-danger">*</span></label>
-                            <select name="payment_method" class="form-select" required>
-                                <option value="cash" selected>Cash in Hand</option>
-                                <option value="bank">Bank Transfer</option>
-                                <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
-                                <option value="cheque">Cheque</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Disburse From Account <span class="text-danger">*</span></label>
-                        <select name="payment_account_id" class="form-select" required>
-                            @foreach($paymentAccounts as $acc)
-                                <option value="{{ $acc->id }}" {{ $acc->account_code == '1110' ? 'selected' : '' }}>
-                                    [{{ $acc->account_code }}] {{ $acc->account_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <small class="text-muted fs-8">Debits Pass-Through Liability (2140) &amp; Credits Selected Account</small>
-                    </div>
-
-                    <div class="mb-0">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Narration / Settlement Notes</label>
-                        <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Daily settlement for 5 trucks loaded today"></textarea>
-                    </div>
-                </div>
-
-                <div class="modal-footer bg-light border-top gap-2">
-                    <button type="button" class="btn btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary px-4 rounded-2">Confirm &amp; Disburse Payout</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- 2. SINGLE INVOICE SETTLEMENT MODALS -->
-@foreach ($sales as $sale)
-    @php
-        $dueLabour = $sale->due_labour_cost;
-        $dueDelivery = $sale->due_delivery_charge;
-        $dueScale = $sale->due_weight_scale_cost;
-        $dueOther = $sale->due_other_charges;
-        $totalDue = $sale->total_charges_due;
-    @endphp
-
-    @if($totalDue > 0.001)
-        <div class="modal fade" id="singlePayModal{{ $sale->id }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-0 shadow rounded-3">
-                    <form action="{{ route('worker-payouts.single-settle', $sale->id) }}" method="POST">
-                        @csrf
-                        <div class="modal-header bg-light border-bottom">
-                            <h5 class="modal-title fw-bold text-dark">
-                                <i class="fe fe-dollar-sign text-primary me-1"></i> Pay Charges — #{{ $sale->order_no }}
-                            </h5>
-                            <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-
-                        <div class="modal-body p-4">
-                            <!-- Invoice Summary Card -->
-                            <div class="bg-light p-3 rounded-3 border mb-3">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="text-muted small">Customer:</span>
-                                    <strong class="text-dark">{{ $sale->customer->name ?? 'Walk-in' }}</strong>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted small">Invoice Date:</span>
-                                    <span class="text-dark">{{ $sale->order_date ? \Carbon\Carbon::parse($sale->order_date)->format('d M Y') : 'N/A' }}</span>
-                                </div>
-                                <hr class="my-2 opacity-50">
-
-                                <!-- Itemized Check & Amount Fields -->
-                                <div class="mb-2">
-                                    <label class="form-label small fw-bold text-dark mb-1">Select Charges &amp; Amounts to Pay:</label>
-                                    
-                                    <!-- Labour -->
-                                    <div class="d-flex align-items-center justify-content-between py-1 border-bottom">
-                                        <div>
-                                            <span class="fw-semibold text-dark">Labour / Loading:</span>
-                                            <small class="text-muted d-block fs-8">Due: ৳ {{ number_format($dueLabour, 2) }}</small>
-                                        </div>
-                                        <div style="width: 140px;">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text">৳</span>
-                                                <input type="number" step="0.01" max="{{ $dueLabour }}" name="charges[labour]" 
-                                                       class="form-control text-end single-charge-input" 
-                                                       value="{{ $dueLabour > 0 ? $dueLabour : 0 }}" 
-                                                       {{ $dueLabour <= 0 ? 'readonly disabled' : '' }}
-                                                       oninput="recalcSingleTotal({{ $sale->id }})">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Delivery -->
-                                    <div class="d-flex align-items-center justify-content-between py-1 border-bottom">
-                                        <div>
-                                            <span class="fw-semibold text-dark">Delivery / Transport:</span>
-                                            <small class="text-muted d-block fs-8">Due: ৳ {{ number_format($dueDelivery, 2) }}</small>
-                                        </div>
-                                        <div style="width: 140px;">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text">৳</span>
-                                                <input type="number" step="0.01" max="{{ $dueDelivery }}" name="charges[delivery]" 
-                                                       class="form-control text-end single-charge-input" 
-                                                       value="{{ $dueDelivery > 0 ? $dueDelivery : 0 }}" 
-                                                       {{ $dueDelivery <= 0 ? 'readonly disabled' : '' }}
-                                                       oninput="recalcSingleTotal({{ $sale->id }})">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Weight Scale -->
-                                    <div class="d-flex align-items-center justify-content-between py-1 border-bottom">
-                                        <div>
-                                            <span class="fw-semibold text-dark">Weight Scale Cost:</span>
-                                            <small class="text-muted d-block fs-8">Due: ৳ {{ number_format($dueScale, 2) }}</small>
-                                        </div>
-                                        <div style="width: 140px;">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text">৳</span>
-                                                <input type="number" step="0.01" max="{{ $dueScale }}" name="charges[weight_scale]" 
-                                                       class="form-control text-end single-charge-input" 
-                                                       value="{{ $dueScale > 0 ? $dueScale : 0 }}" 
-                                                       {{ $dueScale <= 0 ? 'readonly disabled' : '' }}
-                                                       oninput="recalcSingleTotal({{ $sale->id }})">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    @if((float)$sale->other_charges > 0)
-                                    <!-- Other Charges -->
-                                    <div class="d-flex align-items-center justify-content-between py-1">
-                                        <div>
-                                            <span class="fw-semibold text-dark">Other Charges:</span>
-                                            <small class="text-muted d-block fs-8">Due: ৳ {{ number_format($dueOther, 2) }}</small>
-                                        </div>
-                                        <div style="width: 140px;">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text">৳</span>
-                                                <input type="number" step="0.01" max="{{ $dueOther }}" name="charges[other]" 
-                                                       class="form-control text-end single-charge-input" 
-                                                       value="{{ $dueOther > 0 ? $dueOther : 0 }}" 
-                                                       {{ $dueOther <= 0 ? 'readonly disabled' : '' }}
-                                                       oninput="recalcSingleTotal({{ $sale->id }})">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @endif
-                                </div>
-
-                                <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
-                                    <span class="fw-bold text-dark">Total Disbursing Now:</span>
-                                    <h5 class="fw-bold text-primary mb-0" id="singleTotalAmount{{ $sale->id }}">৳ {{ number_format($totalDue, 2) }}</h5>
-                                </div>
-                            </div>
-
-                            <div class="row g-2 mb-3">
-                                <div class="col-md-7 col-12">
-                                    <label class="form-label small fw-semibold text-secondary mb-1">Recipient Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="recipient_name" class="form-control" placeholder="Worker / Driver" required>
-                                </div>
-                                <div class="col-md-5 col-12">
-                                    <label class="form-label small fw-semibold text-secondary mb-1">Phone Number</label>
-                                    <input type="text" name="recipient_phone" class="form-control" placeholder="017xxxxxxxx">
-                                </div>
-                            </div>
-
-                            <div class="row g-2 mb-3">
-                                <div class="col-md-6 col-12">
-                                    <label class="form-label small fw-semibold text-secondary mb-1">Payout Date <span class="text-danger">*</span></label>
-                                    <input type="date" name="payout_date" class="form-control" value="{{ date('Y-m-d') }}" required>
-                                </div>
-                                <div class="col-md-6 col-12">
-                                    <label class="form-label small fw-semibold text-secondary mb-1">Payment Method <span class="text-danger">*</span></label>
-                                    <select name="payment_method" class="form-select" required>
-                                        <option value="cash" selected>Cash in Hand</option>
-                                        <option value="bank">Bank Transfer</option>
-                                        <option value="mobile_banking">Mobile Banking</option>
-                                        <option value="cheque">Cheque</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-semibold text-secondary mb-1">Disburse From Account <span class="text-danger">*</span></label>
-                                <select name="payment_account_id" class="form-select" required>
-                                    @foreach($paymentAccounts as $acc)
-                                        <option value="{{ $acc->id }}" {{ $acc->account_code == '1110' ? 'selected' : '' }}>
-                                            [{{ $acc->account_code }}] {{ $acc->account_name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="mb-0">
-                                <label class="form-label small fw-semibold text-secondary mb-1">Notes</label>
-                                <textarea name="notes" class="form-control" rows="2"></textarea>
-                            </div>
-                        </div>
-
-                        <div class="modal-footer bg-light border-top gap-2">
-                            <button type="button" class="btn btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary px-4 rounded-2">Confirm &amp; Disburse</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    @endif
-@endforeach
 
 <!-- 3. VIEW PAYOUT DETAILS MODALS -->
 @foreach ($payouts as $payout)
@@ -1000,107 +670,1132 @@
     </div>
 @endforeach
 
+@php
+    $labourDueSales = $sales->filter(fn($s) => $s->due_labour_cost > 0.001);
+    $deliveryDueSales = $sales->filter(fn($s) => $s->due_delivery_charge > 0.001);
+    $scaleDueSales = $sales->filter(fn($s) => $s->due_weight_scale_cost > 0.001);
+    $allDueSales = $sales->filter(fn($s) => $s->total_charges_due > 0.001);
+@endphp
+
+<!-- ==================== QUICK-PAY CATEGORY MODALS ==================== -->
+
+<!-- 1. QUICK PAY: LABOUR CHARGES MODAL -->
+<div class="modal fade" id="quickPayLabourModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-3">
+            <form action="{{ route('worker-payouts.batch-settle') }}" method="POST">
+                @csrf
+                <input type="hidden" name="settle_all" value="1">
+                <input type="hidden" name="charge_type" value="labour">
+                @foreach($labourDueSales as $s)
+                    <input type="hidden" name="sale_ids[]" value="{{ $s->id }}">
+                @endforeach
+
+                <div class="modal-header bg-light border-bottom">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="fe fe-users text-success me-1"></i> Pay All Labour / Loading Charges
+                    </h5>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <div class="bg-light p-3 rounded-3 border mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Category:</span>
+                            <span class="badge badge-soft-success text-uppercase">Labour / Loading</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Invoices Affected:</span>
+                            <strong class="text-dark">{{ $labourDueSales->count() }} invoices</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted small">Total Unpaid Due:</span>
+                            <strong class="text-dark">৳ {{ number_format($totalDueLabour, 2) }}</strong>
+                        </div>
+                        <div class="pt-2 border-top">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small fw-bold text-dark mb-0">
+                                    Payment Amount to Pay Now <span class="text-danger">*</span>
+                                </label>
+                                <button type="button" class="btn btn-link p-0 text-success text-decoration-none small fw-semibold" 
+                                        onclick="setFullPayoutAmount(this, '{{ number_format($totalDueLabour, 2, '.', '') }}')">
+                                    Pay Full Due
+                                </button>
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white fw-bold text-success border-end-0">৳</span>
+                                <input type="number" 
+                                       step="0.01" 
+                                       min="0.01" 
+                                       max="{{ number_format($totalDueLabour, 2, '.', '') }}" 
+                                       name="payout_amount" 
+                                       class="form-control form-control-lg fw-bold text-success border-start-0 payout-amount-input" 
+                                       value="{{ number_format($totalDueLabour, 2, '.', '') }}" 
+                                       data-max-amount="{{ number_format($totalDueLabour, 2, '.', '') }}"
+                                       required 
+                                       oninput="handlePayoutAmountInput(this)">
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small mt-1">
+                                <span>Edit amount to make a partial payment</span>
+                                <span class="payout-balance-remaining">Remaining Due: ৳ 0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($labourDueSales->count() > 0)
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Invoices Breakdown &amp; Allocation</label>
+                            <div class="table-responsive border rounded-3" style="max-height: 150px; overflow-y: auto;">
+                                <table class="table table-sm table-hover mb-0 fs-7 align-middle">
+                                    <thead class="bg-light text-muted sticky-top">
+                                        <tr>
+                                            <th>Invoice</th>
+                                            <th>Customer</th>
+                                            <th class="text-end">Due</th>
+                                            <th class="text-end" style="width: 125px;">Pay Now (৳)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($labourDueSales as $s)
+                                            <tr>
+                                                <td class="fw-bold text-primary">#{{ $s->order_no }}</td>
+                                                <td class="text-truncate" style="max-width: 120px;">{{ $s->customer->name ?? 'Walk-in' }}</td>
+                                                <td class="text-end fw-semibold text-secondary">৳ {{ number_format($s->due_labour_cost, 2) }}</td>
+                                                <td class="text-end">
+                                                    <input type="number" 
+                                                           step="0.01" 
+                                                           min="0" 
+                                                           max="{{ number_format($s->due_labour_cost, 2, '.', '') }}" 
+                                                           name="sale_amounts[{{ $s->id }}]" 
+                                                           class="form-control form-control-sm text-end fw-semibold text-success sale-amount-input" 
+                                                           value="{{ number_format($s->due_labour_cost, 2, '.', '') }}" 
+                                                           data-max="{{ number_format($s->due_labour_cost, 2, '.', '') }}"
+                                                           data-sale-id="{{ $s->id }}"
+                                                           oninput="handleSaleAmountRowInput(this)">
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary mb-1">
+                            Select Existing Labour / Worker <span class="text-muted fw-normal">(Optional)</span>
+                        </label>
+                        <select class="form-select form-select-sm recipient-quick-select" onchange="handleRecipientQuickSelect(this)">
+                            <option value="" data-phone="">-- Select Existing Labour (Auto-fills Phone) --</option>
+                            @if(isset($savedLabours) && $savedLabours->isNotEmpty())
+                                @foreach($savedLabours as $labour)
+                                    <option value="{{ $labour->recipient_name }}" data-phone="{{ $labour->recipient_phone ?? '' }}">
+                                        {{ $labour->recipient_name }}@if(!empty($labour->recipient_phone)) ({{ $labour->recipient_phone }})@endif
+                                    </option>
+                                @endforeach
+                            @endif
+                            <option value="__new__">+ Enter New Labour...</option>
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-7 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Labour Name <span class="text-danger">*</span></label>
+                            <input type="text" name="recipient_name" class="form-control recipient-name-input" list="savedLaboursList" required autocomplete="off" oninput="handleRecipientNameInput(this)">
+                            <datalist id="savedLaboursList">
+                                @if(isset($savedLabours))
+                                    @foreach($savedLabours as $labour)
+                                        <option value="{{ $labour->recipient_name }}" data-phone="{{ $labour->recipient_phone ?? '' }}">{{ $labour->recipient_phone ?: '' }}</option>
+                                    @endforeach
+                                @endif
+                            </datalist>
+                        </div>
+                        <div class="col-md-5 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Phone Number</label>
+                            <input type="text" name="recipient_phone" class="form-control recipient-phone-input" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Payout Date <span class="text-danger">*</span></label>
+                            <input type="date" name="payout_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Payment Method <span class="text-danger">*</span></label>
+                            <select name="payment_method" class="form-select payout-method-select" required onchange="handlePayoutMethodChange(this)">
+                                <option value="cash" selected>Cash in Hand</option>
+                                <option value="bank">Bank Transfer</option>
+                                <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Auto-filled Bank Account (Shown when Bank Transfer is selected) -->
+                    <div class="mb-3 payout-bank-group" style="display: none;">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement Bank Account <span class="text-danger">*</span></label>
+                        <select name="bank_detail_id" class="form-select payout-bank-select" onchange="handlePayoutBankChange(this)">
+                            @forelse($bankAccounts as $bank)
+                                <option value="{{ $bank->id }}" 
+                                        data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
+                                        {{ $bank->is_default ? 'selected' : '' }}>
+                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                </option>
+                            @empty
+                                @foreach($bankDetails as $bank)
+                                    <option value="{{ $bank->id }}" 
+                                            data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
+                                            {{ $bank->is_default ? 'selected' : '' }}>
+                                        {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                    </option>
+                                @endforeach
+                            @endforelse
+                        </select>
+                    </div>
+
+                    <!-- Dynamic MFS Provider / Account (Shown when Mobile Banking is selected) -->
+                    <div class="mb-3 payout-mfs-group" style="display: none;">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement MFS Account / Wallet <span class="text-danger">*</span></label>
+                        <select name="mfs_bank_id" class="form-select payout-mfs-select" onchange="handlePayoutMfsChange(this)">
+                            @forelse($mfsAccounts as $mfs)
+                                <option value="{{ $mfs->id }}" 
+                                        data-provider="{{ $mfs->bank_name }}" 
+                                        data-chart-id="{{ $mfs->chartOfAccount?->id ?? '' }}"
+                                        {{ $loop->first ? 'selected' : '' }}>
+                                    {{ $mfs->bank_name }} - {{ $mfs->account_name }} ({{ $mfs->account_number }})
+                                </option>
+                            @empty
+                                <option value="" disabled selected>No registered MFS accounts found</option>
+                            @endforelse
+                        </select>
+                        <input type="hidden" name="mfs_provider" class="payout-mfs-provider-input" value="{{ $mfsAccounts->first()?->bank_name ?? '' }}">
+                        @if(!isset($mfsAccounts) || $mfsAccounts->isEmpty())
+                            <div class="mt-1">
+                                <a href="{{ route('bank-details.create') }}" target="_blank" class="text-primary fs-8 text-decoration-none">
+                                    <i class="fe fe-plus-circle me-1"></i>Add your company MFS account in Bank/MFS Accounts
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Hidden Payment Account ID (Auto-selected based on Cash/Bank/MFS) -->
+                    <input type="hidden" name="payment_account_id" class="payout-account-id-input" value="{{ $cashAccount?->id ?? '' }}">
+
+                    <div class="mb-0">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Narration / Settlement Notes</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-top gap-2">
+                    <button type="button" class="btn btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4 rounded-2">Confirm &amp; Pay Labour</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. QUICK PAY: DELIVERY / TRANSPORT CHARGES MODAL -->
+<div class="modal fade" id="quickPayDeliveryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-3">
+            <form action="{{ route('worker-payouts.batch-settle') }}" method="POST">
+                @csrf
+                <input type="hidden" name="settle_all" value="1">
+                <input type="hidden" name="charge_type" value="delivery">
+                @foreach($deliveryDueSales as $s)
+                    <input type="hidden" name="sale_ids[]" value="{{ $s->id }}">
+                @endforeach
+
+                <div class="modal-header bg-light border-bottom">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="fe fe-truck text-info me-1"></i> Pay All Delivery / Transport Charges
+                    </h5>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <div class="bg-light p-3 rounded-3 border mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Category:</span>
+                            <span class="badge badge-soft-info text-uppercase">Delivery / Transport</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Invoices Affected:</span>
+                            <strong class="text-dark">{{ $deliveryDueSales->count() }} invoices</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted small">Total Unpaid Due:</span>
+                            <strong class="text-dark">৳ {{ number_format($totalDueDelivery, 2) }}</strong>
+                        </div>
+                        <div class="pt-2 border-top">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small fw-bold text-dark mb-0">
+                                    Payment Amount to Pay Now <span class="text-danger">*</span>
+                                </label>
+                                <button type="button" class="btn btn-link p-0 text-info text-decoration-none small fw-semibold" 
+                                        onclick="setFullPayoutAmount(this, '{{ number_format($totalDueDelivery, 2, '.', '') }}')">
+                                    Pay Full Due
+                                </button>
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white fw-bold text-info border-end-0">৳</span>
+                                <input type="number" 
+                                       step="0.01" 
+                                       min="0.01" 
+                                       max="{{ number_format($totalDueDelivery, 2, '.', '') }}" 
+                                       name="payout_amount" 
+                                       class="form-control form-control-lg fw-bold text-info border-start-0 payout-amount-input" 
+                                       value="{{ number_format($totalDueDelivery, 2, '.', '') }}" 
+                                       data-max-amount="{{ number_format($totalDueDelivery, 2, '.', '') }}"
+                                       required 
+                                       oninput="handlePayoutAmountInput(this)">
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small mt-1">
+                                <span>Edit amount to make a partial payment</span>
+                                <span class="payout-balance-remaining">Remaining Due: ৳ 0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($deliveryDueSales->count() > 0)
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Invoices Breakdown &amp; Allocation</label>
+                            <div class="table-responsive border rounded-3" style="max-height: 150px; overflow-y: auto;">
+                                <table class="table table-sm table-hover mb-0 fs-7 align-middle">
+                                    <thead class="bg-light text-muted sticky-top">
+                                        <tr>
+                                            <th>Invoice</th>
+                                            <th>Customer</th>
+                                            <th class="text-end">Due</th>
+                                            <th class="text-end" style="width: 125px;">Pay Now (৳)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($deliveryDueSales as $s)
+                                            <tr>
+                                                <td class="fw-bold text-primary">#{{ $s->order_no }}</td>
+                                                <td class="text-truncate" style="max-width: 120px;">{{ $s->customer->name ?? 'Walk-in' }}</td>
+                                                <td class="text-end fw-semibold text-secondary">৳ {{ number_format($s->due_delivery_charge, 2) }}</td>
+                                                <td class="text-end">
+                                                    <input type="number" 
+                                                           step="0.01" 
+                                                           min="0" 
+                                                           max="{{ number_format($s->due_delivery_charge, 2, '.', '') }}" 
+                                                           name="sale_amounts[{{ $s->id }}]" 
+                                                           class="form-control form-control-sm text-end fw-semibold text-info sale-amount-input" 
+                                                           value="{{ number_format($s->due_delivery_charge, 2, '.', '') }}" 
+                                                           data-max="{{ number_format($s->due_delivery_charge, 2, '.', '') }}"
+                                                           data-sale-id="{{ $s->id }}"
+                                                           oninput="handleSaleAmountRowInput(this)">
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary mb-1">
+                            Select Existing Driver / Transporter <span class="text-muted fw-normal">(Optional)</span>
+                        </label>
+                        <select class="form-select form-select-sm recipient-quick-select" onchange="handleRecipientQuickSelect(this)">
+                            <option value="" data-phone="">-- Select Existing Driver (Auto-fills Phone) --</option>
+                            @if(isset($savedDrivers) && $savedDrivers->isNotEmpty())
+                                @foreach($savedDrivers as $driver)
+                                    <option value="{{ $driver->recipient_name }}" data-phone="{{ $driver->recipient_phone ?? '' }}">
+                                        {{ $driver->recipient_name }}@if(!empty($driver->recipient_phone)) ({{ $driver->recipient_phone }})@endif
+                                    </option>
+                                @endforeach
+                            @endif
+                            <option value="__new__">+ Enter New Driver / Agency...</option>
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-7 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Driver / Agency Name <span class="text-danger">*</span></label>
+                            <input type="text" name="recipient_name" class="form-control recipient-name-input" list="savedDriversList" required autocomplete="off" oninput="handleRecipientNameInput(this)">
+                            <datalist id="savedDriversList">
+                                @if(isset($savedDrivers))
+                                    @foreach($savedDrivers as $driver)
+                                        <option value="{{ $driver->recipient_name }}" data-phone="{{ $driver->recipient_phone ?? '' }}">{{ $driver->recipient_phone ?: '' }}</option>
+                                    @endforeach
+                                @endif
+                            </datalist>
+                        </div>
+                        <div class="col-md-5 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Phone Number</label>
+                            <input type="text" name="recipient_phone" class="form-control recipient-phone-input" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Payout Date <span class="text-danger">*</span></label>
+                            <input type="date" name="payout_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Payment Method <span class="text-danger">*</span></label>
+                            <select name="payment_method" class="form-select payout-method-select" required onchange="handlePayoutMethodChange(this)">
+                                <option value="cash" selected>Cash in Hand</option>
+                                <option value="bank">Bank Transfer</option>
+                                <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Auto-filled Bank Account (Shown when Bank Transfer is selected) -->
+                    <div class="mb-3 payout-bank-group" style="display: none;">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement Bank Account <span class="text-danger">*</span></label>
+                        <select name="bank_detail_id" class="form-select payout-bank-select" onchange="handlePayoutBankChange(this)">
+                            @forelse($bankAccounts as $bank)
+                                <option value="{{ $bank->id }}" 
+                                        data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
+                                        {{ $bank->is_default ? 'selected' : '' }}>
+                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                </option>
+                            @empty
+                                @foreach($bankDetails as $bank)
+                                    <option value="{{ $bank->id }}" 
+                                            data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
+                                            {{ $bank->is_default ? 'selected' : '' }}>
+                                        {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                    </option>
+                                @endforeach
+                            @endforelse
+                        </select>
+                    </div>
+
+                    <!-- Dynamic MFS Provider / Account (Shown when Mobile Banking is selected) -->
+                    <div class="mb-3 payout-mfs-group" style="display: none;">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement MFS Account / Wallet <span class="text-danger">*</span></label>
+                        <select name="mfs_bank_id" class="form-select payout-mfs-select" onchange="handlePayoutMfsChange(this)">
+                            @forelse($mfsAccounts as $mfs)
+                                <option value="{{ $mfs->id }}" 
+                                        data-provider="{{ $mfs->bank_name }}" 
+                                        data-chart-id="{{ $mfs->chartOfAccount?->id ?? '' }}"
+                                        {{ $loop->first ? 'selected' : '' }}>
+                                    {{ $mfs->bank_name }} - {{ $mfs->account_name }} ({{ $mfs->account_number }})
+                                </option>
+                            @empty
+                                <option value="" disabled selected>No registered MFS accounts found</option>
+                            @endforelse
+                        </select>
+                        <input type="hidden" name="mfs_provider" class="payout-mfs-provider-input" value="{{ $mfsAccounts->first()?->bank_name ?? '' }}">
+                        @if(!isset($mfsAccounts) || $mfsAccounts->isEmpty())
+                            <div class="mt-1">
+                                <a href="{{ route('bank-details.create') }}" target="_blank" class="text-primary fs-8 text-decoration-none">
+                                    <i class="fe fe-plus-circle me-1"></i>Add your company MFS account in Bank/MFS Accounts
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Hidden Payment Account ID (Auto-selected based on Cash/Bank/MFS) -->
+                    <input type="hidden" name="payment_account_id" class="payout-account-id-input" value="{{ $cashAccount?->id ?? '' }}">
+
+                    <div class="mb-0">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Narration / Settlement Notes</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-top gap-2">
+                    <button type="button" class="btn btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info px-4 rounded-2 text-white">Confirm &amp; Pay Delivery</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 3. QUICK PAY: WEIGHT SCALE CHARGES MODAL -->
+<div class="modal fade" id="quickPayScaleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-3">
+            <form action="{{ route('worker-payouts.batch-settle') }}" method="POST">
+                @csrf
+                <input type="hidden" name="settle_all" value="1">
+                <input type="hidden" name="charge_type" value="weight_scale">
+                @foreach($scaleDueSales as $s)
+                    <input type="hidden" name="sale_ids[]" value="{{ $s->id }}">
+                @endforeach
+
+                <div class="modal-header bg-light border-bottom">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="fe fe-compass text-warning me-1"></i> Pay All Weight Scale Charges
+                    </h5>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <div class="bg-light p-3 rounded-3 border mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Category:</span>
+                            <span class="badge badge-soft-warning text-uppercase">Weight Scale</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Invoices Affected:</span>
+                            <strong class="text-dark">{{ $scaleDueSales->count() }} invoices</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted small">Total Unpaid Due:</span>
+                            <strong class="text-dark">৳ {{ number_format($totalDueScale, 2) }}</strong>
+                        </div>
+                        <div class="pt-2 border-top">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small fw-bold text-dark mb-0">
+                                    Payment Amount to Pay Now <span class="text-danger">*</span>
+                                </label>
+                                <button type="button" class="btn btn-link p-0 text-warning text-decoration-none small fw-semibold" 
+                                        onclick="setFullPayoutAmount(this, '{{ number_format($totalDueScale, 2, '.', '') }}')">
+                                    Pay Full Due
+                                </button>
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white fw-bold text-warning border-end-0">৳</span>
+                                <input type="number" 
+                                       step="0.01" 
+                                       min="0.01" 
+                                       max="{{ number_format($totalDueScale, 2, '.', '') }}" 
+                                       name="payout_amount" 
+                                       class="form-control form-control-lg fw-bold text-warning border-start-0 payout-amount-input" 
+                                       value="{{ number_format($totalDueScale, 2, '.', '') }}" 
+                                       data-max-amount="{{ number_format($totalDueScale, 2, '.', '') }}"
+                                       required 
+                                       oninput="handlePayoutAmountInput(this)">
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small mt-1">
+                                <span>Edit amount to make a partial payment</span>
+                                <span class="payout-balance-remaining">Remaining Due: ৳ 0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($scaleDueSales->count() > 0)
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Invoices Breakdown &amp; Allocation</label>
+                            <div class="table-responsive border rounded-3" style="max-height: 150px; overflow-y: auto;">
+                                <table class="table table-sm table-hover mb-0 fs-7 align-middle">
+                                    <thead class="bg-light text-muted sticky-top">
+                                        <tr>
+                                            <th>Invoice</th>
+                                            <th>Customer</th>
+                                            <th class="text-end">Due</th>
+                                            <th class="text-end" style="width: 125px;">Pay Now (৳)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($scaleDueSales as $s)
+                                            <tr>
+                                                <td class="fw-bold text-primary">#{{ $s->order_no }}</td>
+                                                <td class="text-truncate" style="max-width: 120px;">{{ $s->customer->name ?? 'Walk-in' }}</td>
+                                                <td class="text-end fw-semibold text-secondary">৳ {{ number_format($s->due_weight_scale_cost, 2) }}</td>
+                                                <td class="text-end">
+                                                    <input type="number" 
+                                                           step="0.01" 
+                                                           min="0" 
+                                                           max="{{ number_format($s->due_weight_scale_cost, 2, '.', '') }}" 
+                                                           name="sale_amounts[{{ $s->id }}]" 
+                                                           class="form-control form-control-sm text-end fw-semibold text-warning sale-amount-input" 
+                                                           value="{{ number_format($s->due_weight_scale_cost, 2, '.', '') }}" 
+                                                           data-max="{{ number_format($s->due_weight_scale_cost, 2, '.', '') }}"
+                                                           data-sale-id="{{ $s->id }}"
+                                                           oninput="handleSaleAmountRowInput(this)">
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary mb-1">
+                            Select Existing Scale Operator / Payee <span class="text-muted fw-normal">(Optional)</span>
+                        </label>
+                        <select class="form-select form-select-sm recipient-quick-select" onchange="handleRecipientQuickSelect(this)">
+                            <option value="" data-phone="">-- Select Existing Scale Operator (Auto-fills Phone) --</option>
+                            @if(isset($savedScalers) && $savedScalers->isNotEmpty())
+                                @foreach($savedScalers as $scaler)
+                                    <option value="{{ $scaler->recipient_name }}" data-phone="{{ $scaler->recipient_phone ?? '' }}">
+                                        {{ $scaler->recipient_name }}@if(!empty($scaler->recipient_phone)) ({{ $scaler->recipient_phone }})@endif
+                                    </option>
+                                @endforeach
+                            @endif
+                            <option value="__new__">+ Enter New Scale Operator...</option>
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-7 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Scale Operator / Payee Name <span class="text-danger">*</span></label>
+                            <input type="text" name="recipient_name" class="form-control recipient-name-input" list="savedScalersList" required autocomplete="off" oninput="handleRecipientNameInput(this)">
+                            <datalist id="savedScalersList">
+                                @if(isset($savedScalers))
+                                    @foreach($savedScalers as $scaler)
+                                        <option value="{{ $scaler->recipient_name }}" data-phone="{{ $scaler->recipient_phone ?? '' }}">{{ $scaler->recipient_phone ?: '' }}</option>
+                                    @endforeach
+                                @endif
+                            </datalist>
+                        </div>
+                        <div class="col-md-5 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Phone Number</label>
+                            <input type="text" name="recipient_phone" class="form-control recipient-phone-input" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Payout Date <span class="text-danger">*</span></label>
+                            <input type="date" name="payout_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Payment Method <span class="text-danger">*</span></label>
+                            <select name="payment_method" class="form-select payout-method-select" required onchange="handlePayoutMethodChange(this)">
+                                <option value="cash" selected>Cash in Hand</option>
+                                <option value="bank">Bank Transfer</option>
+                                <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Auto-filled Bank Account (Shown when Bank Transfer is selected) -->
+                    <div class="mb-3 payout-bank-group" style="display: none;">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement Bank Account <span class="text-danger">*</span></label>
+                        <select name="bank_detail_id" class="form-select payout-bank-select" onchange="handlePayoutBankChange(this)">
+                            @forelse($bankAccounts as $bank)
+                                <option value="{{ $bank->id }}" 
+                                        data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
+                                        {{ $bank->is_default ? 'selected' : '' }}>
+                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                </option>
+                            @empty
+                                @foreach($bankDetails as $bank)
+                                    <option value="{{ $bank->id }}" 
+                                            data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
+                                            {{ $bank->is_default ? 'selected' : '' }}>
+                                        {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                    </option>
+                                @endforeach
+                            @endforelse
+                        </select>
+                    </div>
+
+                    <!-- Dynamic MFS Provider / Account (Shown when Mobile Banking is selected) -->
+                    <div class="mb-3 payout-mfs-group" style="display: none;">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement MFS Account / Wallet <span class="text-danger">*</span></label>
+                        <select name="mfs_bank_id" class="form-select payout-mfs-select" onchange="handlePayoutMfsChange(this)">
+                            @forelse($mfsAccounts as $mfs)
+                                <option value="{{ $mfs->id }}" 
+                                        data-provider="{{ $mfs->bank_name }}" 
+                                        data-chart-id="{{ $mfs->chartOfAccount?->id ?? '' }}"
+                                        {{ $loop->first ? 'selected' : '' }}>
+                                    {{ $mfs->bank_name }} - {{ $mfs->account_name }} ({{ $mfs->account_number }})
+                                </option>
+                            @empty
+                                <option value="" disabled selected>No registered MFS accounts found</option>
+                            @endforelse
+                        </select>
+                        <input type="hidden" name="mfs_provider" class="payout-mfs-provider-input" value="{{ $mfsAccounts->first()?->bank_name ?? '' }}">
+                        @if(!isset($mfsAccounts) || $mfsAccounts->isEmpty())
+                            <div class="mt-1">
+                                <a href="{{ route('bank-details.create') }}" target="_blank" class="text-primary fs-8 text-decoration-none">
+                                    <i class="fe fe-plus-circle me-1"></i>Add your company MFS account in Bank/MFS Accounts
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Hidden Payment Account ID (Auto-selected based on Cash/Bank/MFS) -->
+                    <input type="hidden" name="payment_account_id" class="payout-account-id-input" value="{{ $cashAccount?->id ?? '' }}">
+
+                    <div class="mb-0">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Narration / Settlement Notes</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-top gap-2">
+                    <button type="button" class="btn btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning px-4 rounded-2 text-dark">Confirm &amp; Pay Scale</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 4. QUICK PAY: ALL CHARGES (LABOUR, DELIVERY & SCALE) MODAL -->
+<div class="modal fade" id="quickPayAllModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-3">
+            <form action="{{ route('worker-payouts.batch-settle') }}" method="POST">
+                @csrf
+                <input type="hidden" name="settle_all" value="1">
+                <input type="hidden" name="charge_type" value="all">
+                @foreach($allDueSales as $s)
+                    <input type="hidden" name="sale_ids[]" value="{{ $s->id }}">
+                @endforeach
+
+                <div class="modal-header bg-light border-bottom">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="fe fe-layers text-primary me-1"></i> Pay All Extra Charges Together
+                    </h5>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <div class="bg-light p-3 rounded-3 border mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Invoices Affected:</span>
+                            <strong class="text-dark">{{ $allDueSales->count() }} invoices</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Labour / Loading Dues:</span>
+                            <span class="text-success fw-bold">৳ {{ number_format($totalDueLabour, 2) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Delivery / Transport Dues:</span>
+                            <span class="text-info fw-bold">৳ {{ number_format($totalDueDelivery, 2) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Weight Scale Dues:</span>
+                            <span class="text-warning fw-bold">৳ {{ number_format($totalDueScale, 2) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 pt-1 border-top">
+                            <span class="text-muted small">Total Unpaid Dues:</span>
+                            <strong class="text-dark">৳ {{ number_format($totalDueCharges, 2) }}</strong>
+                        </div>
+                        <div class="pt-2 border-top">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small fw-bold text-dark mb-0">
+                                    Payment Amount to Pay Now <span class="text-danger">*</span>
+                                </label>
+                                <button type="button" class="btn btn-link p-0 text-primary text-decoration-none small fw-semibold" 
+                                        onclick="setFullPayoutAmount(this, '{{ number_format($totalDueCharges, 2, '.', '') }}')">
+                                    Pay Full Due
+                                </button>
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white fw-bold text-primary border-end-0">৳</span>
+                                <input type="number" 
+                                       step="0.01" 
+                                       min="0.01" 
+                                       max="{{ number_format($totalDueCharges, 2, '.', '') }}" 
+                                       name="payout_amount" 
+                                       class="form-control form-control-lg fw-bold text-primary border-start-0 payout-amount-input" 
+                                       value="{{ number_format($totalDueCharges, 2, '.', '') }}" 
+                                       data-max-amount="{{ number_format($totalDueCharges, 2, '.', '') }}"
+                                       required 
+                                       oninput="handlePayoutAmountInput(this)">
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small mt-1">
+                                <span>Edit amount to make a partial payment</span>
+                                <span class="payout-balance-remaining">Remaining Due: ৳ 0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($allDueSales->count() > 0)
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Invoices Breakdown &amp; Allocation</label>
+                            <div class="table-responsive border rounded-3" style="max-height: 150px; overflow-y: auto;">
+                                <table class="table table-sm table-hover mb-0 fs-7 align-middle">
+                                    <thead class="bg-light text-muted sticky-top">
+                                        <tr>
+                                            <th>Invoice</th>
+                                            <th>Customer</th>
+                                            <th class="text-end">Total Due</th>
+                                            <th class="text-end" style="width: 125px;">Pay Now (৳)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($allDueSales as $s)
+                                            <tr>
+                                                <td class="fw-bold text-primary">#{{ $s->order_no }}</td>
+                                                <td class="text-truncate" style="max-width: 120px;">{{ $s->customer->name ?? 'Walk-in' }}</td>
+                                                <td class="text-end fw-semibold text-secondary">৳ {{ number_format($s->total_charges_due, 2) }}</td>
+                                                <td class="text-end">
+                                                    <input type="number" 
+                                                           step="0.01" 
+                                                           min="0" 
+                                                           max="{{ number_format($s->total_charges_due, 2, '.', '') }}" 
+                                                           name="sale_amounts[{{ $s->id }}]" 
+                                                           class="form-control form-control-sm text-end fw-semibold text-primary sale-amount-input" 
+                                                           value="{{ number_format($s->total_charges_due, 2, '.', '') }}" 
+                                                           data-max="{{ number_format($s->total_charges_due, 2, '.', '') }}"
+                                                           data-sale-id="{{ $s->id }}"
+                                                           oninput="handleSaleAmountRowInput(this)">
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary mb-1">
+                            Select Existing Recipient / Payee <span class="text-muted fw-normal">(Optional)</span>
+                        </label>
+                        <select class="form-select form-select-sm recipient-quick-select" onchange="handleRecipientQuickSelect(this)">
+                            <option value="" data-phone="">-- Select Existing Recipient (Auto-fills Phone) --</option>
+                            @if(isset($allSavedRecipients) && $allSavedRecipients->isNotEmpty())
+                                @foreach($allSavedRecipients as $recip)
+                                    <option value="{{ $recip->recipient_name }}" data-phone="{{ $recip->recipient_phone ?? '' }}">
+                                        {{ $recip->recipient_name }}@if(!empty($recip->recipient_phone)) ({{ $recip->recipient_phone }})@endif
+                                    </option>
+                                @endforeach
+                            @endif
+                            <option value="__new__">+ Enter New Recipient...</option>
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-7 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Recipient / Payee Name <span class="text-danger">*</span></label>
+                            <input type="text" name="recipient_name" class="form-control recipient-name-input" list="allSavedRecipientsList" required autocomplete="off" oninput="handleRecipientNameInput(this)">
+                            <datalist id="allSavedRecipientsList">
+                                @if(isset($allSavedRecipients))
+                                    @foreach($allSavedRecipients as $recip)
+                                        <option value="{{ $recip->recipient_name }}" data-phone="{{ $recip->recipient_phone ?? '' }}">{{ $recip->recipient_phone ?: '' }}</option>
+                                    @endforeach
+                                @endif
+                            </datalist>
+                        </div>
+                        <div class="col-md-5 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Phone Number</label>
+                            <input type="text" name="recipient_phone" class="form-control recipient-phone-input" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Payout Date <span class="text-danger">*</span></label>
+                            <input type="date" name="payout_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Payment Method <span class="text-danger">*</span></label>
+                            <select name="payment_method" class="form-select payout-method-select" required onchange="handlePayoutMethodChange(this)">
+                                <option value="cash" selected>Cash in Hand</option>
+                                <option value="bank">Bank Transfer</option>
+                                <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Auto-filled Bank Account (Shown when Bank Transfer is selected) -->
+                    <div class="mb-3 payout-bank-group" style="display: none;">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement Bank Account <span class="text-danger">*</span></label>
+                        <select name="bank_detail_id" class="form-select payout-bank-select" onchange="handlePayoutBankChange(this)">
+                            @forelse($bankAccounts as $bank)
+                                <option value="{{ $bank->id }}" 
+                                        data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
+                                        {{ $bank->is_default ? 'selected' : '' }}>
+                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                </option>
+                            @empty
+                                @foreach($bankDetails as $bank)
+                                    <option value="{{ $bank->id }}" 
+                                            data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
+                                            {{ $bank->is_default ? 'selected' : '' }}>
+                                        {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                    </option>
+                                @endforeach
+                            @endforelse
+                        </select>
+                    </div>
+
+                    <!-- Dynamic MFS Provider / Account (Shown when Mobile Banking is selected) -->
+                    <div class="mb-3 payout-mfs-group" style="display: none;">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement MFS Account / Wallet <span class="text-danger">*</span></label>
+                        <select name="mfs_bank_id" class="form-select payout-mfs-select" onchange="handlePayoutMfsChange(this)">
+                            @forelse($mfsAccounts as $mfs)
+                                <option value="{{ $mfs->id }}" 
+                                        data-provider="{{ $mfs->bank_name }}" 
+                                        data-chart-id="{{ $mfs->chartOfAccount?->id ?? '' }}"
+                                        {{ $loop->first ? 'selected' : '' }}>
+                                    {{ $mfs->bank_name }} - {{ $mfs->account_name }} ({{ $mfs->account_number }})
+                                </option>
+                            @empty
+                                <option value="" disabled selected>No registered MFS accounts found</option>
+                            @endforelse
+                        </select>
+                        <input type="hidden" name="mfs_provider" class="payout-mfs-provider-input" value="{{ $mfsAccounts->first()?->bank_name ?? '' }}">
+                        @if(!isset($mfsAccounts) || $mfsAccounts->isEmpty())
+                            <div class="mt-1">
+                                <a href="{{ route('bank-details.create') }}" target="_blank" class="text-primary fs-8 text-decoration-none">
+                                    <i class="fe fe-plus-circle me-1"></i>Add your company MFS account in Bank/MFS Accounts
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Hidden Payment Account ID (Auto-selected based on Cash/Bank/MFS) -->
+                    <input type="hidden" name="payment_account_id" class="payout-account-id-input" value="{{ $cashAccount?->id ?? '' }}">
+
+                    <div class="mb-0">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Narration / Settlement Notes</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-top gap-2">
+                    <button type="button" class="btn btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 rounded-2">Confirm &amp; Pay All Charges</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
 <script>
-    let selectedSales = [];
 
-    function toggleSelectAll(masterCheckbox) {
-        const checkboxes = document.querySelectorAll('.sale-checkbox');
-        checkboxes.forEach(cb => {
-            cb.checked = masterCheckbox.checked;
-        });
-        updateBatchSelection();
-    }
 
-    function updateBatchSelection() {
-        const checkboxes = document.querySelectorAll('.sale-checkbox:checked');
-        selectedSales = [];
-        let totalLabour = 0.0;
-        let totalDelivery = 0.0;
-        let totalScale = 0.0;
-        let totalSum = 0.0;
-
-        checkboxes.forEach(cb => {
-            const id = cb.value;
-            const labour = parseFloat(cb.getAttribute('data-due-labour')) || 0;
-            const delivery = parseFloat(cb.getAttribute('data-due-delivery')) || 0;
-            const scale = parseFloat(cb.getAttribute('data-due-scale')) || 0;
-            const due = parseFloat(cb.getAttribute('data-due-total')) || 0;
-
-            selectedSales.push({ id, labour, delivery, scale, due });
-            totalLabour += labour;
-            totalDelivery += delivery;
-            totalScale += scale;
-            totalSum += due;
-        });
-
-        const bar = document.getElementById('batchActionBar');
-        if (selectedSales.length > 0) {
-            bar.classList.remove('d-none');
-            bar.classList.add('d-flex');
-            document.getElementById('selectedCountBadge').textContent = `${selectedSales.length} Selected`;
-            document.getElementById('selectedTotalAmount').textContent = `৳ ${totalSum.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-
-            // Update modal hidden inputs and labels
-            const container = document.getElementById('batchHiddenInputsContainer');
-            container.innerHTML = '';
-            selectedSales.forEach(s => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'sale_ids[]';
-                input.value = s.id;
-                container.appendChild(input);
-            });
-
-            document.getElementById('modalSelectedCount').textContent = `${selectedSales.length} invoices`;
-            document.getElementById('modalLabourDue').textContent = `৳ ${totalLabour.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('modalDeliveryDue').textContent = `৳ ${totalDelivery.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('modalScaleDue').textContent = `৳ ${totalScale.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-
-            recalcModalAmounts();
-        } else {
-            bar.classList.add('d-none');
-            bar.classList.remove('d-flex');
-            document.getElementById('selectAllSales').checked = false;
-        }
-    }
-
-    function clearBatchSelection() {
-        document.querySelectorAll('.sale-checkbox').forEach(cb => cb.checked = false);
-        document.getElementById('selectAllSales').checked = false;
-        updateBatchSelection();
-    }
-
-    function recalcModalAmounts() {
-        const type = document.getElementById('batchChargeType').value;
-        let total = 0.0;
-
-        selectedSales.forEach(s => {
-            if (type === 'labour') total += s.labour;
-            else if (type === 'delivery') total += s.delivery;
-            else if (type === 'weight_scale') total += s.scale;
-            else if (type === 'all') total += s.due;
-        });
-
-        document.getElementById('modalTotalDisburseAmount').textContent = `৳ ${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    }
-
-    function recalcSingleTotal(saleId) {
-        const modal = document.getElementById(`singlePayModal${saleId}`);
+    function handlePayoutMethodChange(selectElem) {
+        const modal = selectElem.closest('.modal');
         if (!modal) return;
-        const inputs = modal.querySelectorAll('.single-charge-input');
-        let total = 0.0;
-        inputs.forEach(inp => {
-            if (!inp.disabled) {
-                total += parseFloat(inp.value) || 0;
+
+        const method = selectElem.value;
+        const bankGroup = modal.querySelector('.payout-bank-group');
+        const mfsGroup = modal.querySelector('.payout-mfs-group');
+        const bankSelect = modal.querySelector('.payout-bank-select');
+        const mfsSelect = modal.querySelector('.payout-mfs-select');
+        const accountInput = modal.querySelector('.payout-account-id-input');
+        const defaultCashId = "{{ $cashAccount?->id ?? '' }}";
+        const defaultBankMfsId = "{{ $defaultBankMfsAccount?->id ?? '' }}";
+
+        if (method === 'cash') {
+            if (bankGroup) bankGroup.style.display = 'none';
+            if (mfsGroup) mfsGroup.style.display = 'none';
+            if (bankSelect) bankSelect.disabled = true;
+            if (mfsSelect) mfsSelect.disabled = true;
+            if (accountInput) accountInput.value = defaultCashId;
+        } else if (method === 'bank') {
+            if (bankGroup) bankGroup.style.display = 'block';
+            if (mfsGroup) mfsGroup.style.display = 'none';
+            if (mfsSelect) mfsSelect.disabled = true;
+            if (bankSelect) {
+                bankSelect.disabled = false;
+                if (!bankSelect.value && bankSelect.options.length > 0) {
+                    bankSelect.selectedIndex = 0;
+                }
+                handlePayoutBankChange(bankSelect);
+            } else if (accountInput) {
+                accountInput.value = defaultBankMfsId;
             }
-        });
-        const totalElem = document.getElementById(`singleTotalAmount${saleId}`);
-        if (totalElem) {
-            totalElem.textContent = `৳ ${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        } else if (method === 'mobile_banking') {
+            if (bankGroup) bankGroup.style.display = 'none';
+            if (mfsGroup) mfsGroup.style.display = 'block';
+            if (bankSelect) bankSelect.disabled = true;
+            if (mfsSelect) {
+                mfsSelect.disabled = false;
+                if (!mfsSelect.value && mfsSelect.options.length > 0) {
+                    mfsSelect.selectedIndex = 0;
+                }
+                handlePayoutMfsChange(mfsSelect);
+            } else if (accountInput) {
+                accountInput.value = defaultBankMfsId;
+            }
         }
     }
+
+    function handlePayoutBankChange(bankSelect) {
+        const modal = bankSelect.closest('.modal');
+        if (!modal) return;
+
+        const selectedOpt = bankSelect.options[bankSelect.selectedIndex];
+        const chartId = selectedOpt ? selectedOpt.getAttribute('data-chart-id') : null;
+        const accountInput = modal.querySelector('.payout-account-id-input');
+        const defaultBankMfsId = "{{ $defaultBankMfsAccount?->id ?? '' }}";
+
+        if (accountInput) {
+            accountInput.value = chartId || defaultBankMfsId;
+        }
+    }
+
+    function handlePayoutMfsChange(mfsSelect) {
+        const modal = mfsSelect.closest('.modal');
+        if (!modal) return;
+
+        const selectedOpt = mfsSelect.options[mfsSelect.selectedIndex];
+        const chartId = selectedOpt ? selectedOpt.getAttribute('data-chart-id') : null;
+        const provider = selectedOpt ? selectedOpt.getAttribute('data-provider') : mfsSelect.value;
+        const accountInput = modal.querySelector('.payout-account-id-input');
+        const providerInput = modal.querySelector('.payout-mfs-provider-input');
+        const defaultBankMfsId = "{{ $defaultBankMfsAccount?->id ?? '' }}";
+
+        if (accountInput) {
+            accountInput.value = chartId || defaultBankMfsId;
+        }
+        if (providerInput && provider) {
+            providerInput.value = provider;
+        }
+    }
+
+    function handleRecipientQuickSelect(selectEl) {
+        const modal = selectEl.closest('.modal');
+        if (!modal) return;
+
+        const nameInput = modal.querySelector('.recipient-name-input');
+        const phoneInput = modal.querySelector('.recipient-phone-input');
+        if (!nameInput) return;
+
+        const selectedVal = selectEl.value;
+        if (selectedVal === '__new__') {
+            nameInput.value = '';
+            if (phoneInput) phoneInput.value = '';
+            nameInput.focus();
+            return;
+        }
+
+        if (!selectedVal) {
+            return;
+        }
+
+        const selectedOption = selectEl.options[selectEl.selectedIndex];
+        const phone = selectedOption ? selectedOption.getAttribute('data-phone') : '';
+
+        nameInput.value = selectedVal;
+        if (phoneInput) {
+            phoneInput.value = phone || '';
+        }
+    }
+
+    function handleRecipientNameInput(nameInput) {
+        const modal = nameInput.closest('.modal');
+        if (!modal) return;
+
+        const val = nameInput.value.trim().toLowerCase();
+        const phoneInput = modal.querySelector('.recipient-phone-input');
+        const quickSelect = modal.querySelector('.recipient-quick-select');
+
+        if (!val) {
+            if (quickSelect) quickSelect.value = '';
+            return;
+        }
+
+        let matched = false;
+        if (quickSelect) {
+            for (let i = 0; i < quickSelect.options.length; i++) {
+                const opt = quickSelect.options[i];
+                if (opt.value && opt.value.toLowerCase() === val) {
+                    quickSelect.selectedIndex = i;
+                    if (phoneInput && opt.getAttribute('data-phone')) {
+                        phoneInput.value = opt.getAttribute('data-phone');
+                    }
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched && quickSelect.querySelector('option[value="__new__"]')) {
+                quickSelect.value = '__new__';
+            }
+        }
+
+        if (!matched) {
+            const dlOptions = modal.querySelectorAll('datalist option');
+            for (let i = 0; i < dlOptions.length; i++) {
+                const dopt = dlOptions[i];
+                if (dopt.value && dopt.value.toLowerCase() === val) {
+                    if (phoneInput && dopt.getAttribute('data-phone')) {
+                        phoneInput.value = dopt.getAttribute('data-phone');
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    function handlePayoutAmountInput(mainInput) {
+        const modal = mainInput.closest('.modal');
+        if (!modal) return;
+
+        let enteredAmount = parseFloat(mainInput.value) || 0;
+        const maxTotal = parseFloat(mainInput.dataset.maxAmount) || 0;
+
+        if (enteredAmount > maxTotal) {
+            enteredAmount = maxTotal;
+            mainInput.value = maxTotal.toFixed(2);
+        }
+
+        const remainingEl = modal.querySelector('.payout-balance-remaining');
+        if (remainingEl) {
+            const diff = Math.max(0, maxTotal - enteredAmount);
+            remainingEl.innerText = 'Remaining Due: ৳ ' + diff.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Distribute entered amount down the invoice rows (FIFO)
+        let remainingToAllocate = enteredAmount;
+        const rows = modal.querySelectorAll('.sale-amount-input');
+        rows.forEach(function(row) {
+            const rowMax = parseFloat(row.dataset.max) || 0;
+            const allocated = Math.min(remainingToAllocate, rowMax);
+            row.value = allocated.toFixed(2);
+            remainingToAllocate -= allocated;
+        });
+    }
+
+    function handleSaleAmountRowInput(rowInput) {
+        const modal = rowInput.closest('.modal');
+        if (!modal) return;
+
+        let val = parseFloat(rowInput.value) || 0;
+        const rowMax = parseFloat(rowInput.dataset.max) || 0;
+
+        if (val > rowMax) {
+            val = rowMax;
+            rowInput.value = rowMax.toFixed(2);
+        }
+
+        let total = 0;
+        const rows = modal.querySelectorAll('.sale-amount-input');
+        rows.forEach(function(r) {
+            total += (parseFloat(r.value) || 0);
+        });
+
+        const mainInput = modal.querySelector('.payout-amount-input');
+        if (mainInput) {
+            mainInput.value = total.toFixed(2);
+            const maxTotal = parseFloat(mainInput.dataset.maxAmount) || 0;
+            const remainingEl = modal.querySelector('.payout-balance-remaining');
+            if (remainingEl) {
+                const diff = Math.max(0, maxTotal - total);
+                remainingEl.innerText = 'Remaining Due: ৳ ' + diff.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+        }
+    }
+
+    function setFullPayoutAmount(btn, fullAmount) {
+        const modal = btn.closest('.modal');
+        if (!modal) return;
+
+        const mainInput = modal.querySelector('.payout-amount-input');
+        if (mainInput) {
+            mainInput.value = parseFloat(fullAmount).toFixed(2);
+            handlePayoutAmountInput(mainInput);
+        }
+    }
+
+    // Auto initialize payment state whenever any settlement modal is shown
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.modal').forEach(function(modal) {
+            modal.addEventListener('shown.bs.modal', function() {
+                const methodSelect = modal.querySelector('.payout-method-select');
+                if (methodSelect) {
+                    handlePayoutMethodChange(methodSelect);
+                }
+            });
+        });
+    });
 </script>
 @endpush

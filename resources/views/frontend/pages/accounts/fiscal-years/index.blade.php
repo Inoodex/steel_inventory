@@ -162,7 +162,7 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Fiscal Year Name <span class="text-danger">*</span></label>
-                        <input type="text" name="year_name" class="form-control" placeholder="e.g. 2027-2028, FY-2027" required>
+                        <input type="text" name="year_name" class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Period Start Date <span class="text-danger">*</span></label>

@@ -66,7 +66,7 @@
 
                     <div class="col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Purpose / Notes</label>
-                        <textarea name="purpose" class="form-control border-light-subtle" rows="3" placeholder="Enter purpose or travel details">{{ old('purpose', $tada->purpose ?? '') }}</textarea>
+                        <textarea name="purpose" class="form-control border-light-subtle" rows="3">{{ old('purpose', $tada->purpose ?? '') }}</textarea>
                     </div>
                 </div>
 

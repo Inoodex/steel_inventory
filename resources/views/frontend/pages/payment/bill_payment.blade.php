@@ -189,17 +189,17 @@
                         <!-- Transaction Reference -->
                         <div class="mb-3" id="modalRefContainer" style="display: none;">
                             <label class="form-label small fw-semibold text-secondary mb-1">Transaction Ref / TrxID</label>
-                            <input class="form-control" type="text" name="transaction_ref" placeholder="e.g. Bank Trx # or Deposit Slip Ref">
+                            <input class="form-control" type="text" name="transaction_ref">
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-secondary mb-1">Payment Amount (৳) <span class="text-danger">*</span></label>
-                            <input class="form-control fw-bold text-success fs-5" type="number" step="0.01" min="0.01" name="amount" placeholder="0.00" required>
+                            <input class="form-control fw-bold text-success fs-5" type="number" step="0.01" min="0.01" name="amount" required>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-secondary mb-1">Payment Remarks</label>
-                            <textarea class="form-control" name="remarks" rows="2" placeholder="Optional payment note..."></textarea>
+                            <textarea class="form-control" name="remarks" rows="2"></textarea>
                         </div>
                     </div>
 

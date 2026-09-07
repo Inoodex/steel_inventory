@@ -95,7 +95,7 @@
 
                     <div class="col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Notes</label>
-                        <textarea name="note" class="form-control border-light-subtle" rows="3" placeholder="Enter notes or comments">{{ old('note', $salary->note ?? '') }}</textarea>
+                        <textarea name="note" class="form-control border-light-subtle" rows="3">{{ old('note', $salary->note ?? '') }}</textarea>
                     </div>
                 </div>
 

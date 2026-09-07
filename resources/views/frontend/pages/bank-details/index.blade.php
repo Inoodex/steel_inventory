@@ -57,6 +57,8 @@
     .table-custom th, .table-custom td {
         white-space: nowrap;
     }
+    .table-responsive { overflow: visible !important; }
+    .dropdown-menu { z-index: 1060 !important; }
 </style>
 @endpush
 
@@ -67,13 +69,13 @@
     <div class="page-header mb-4">
         <div class="content-page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-                <h4 class="card-title fw-bold text-dark mb-1">Bank Accounts</h4>
-                <p class="text-muted small mb-0">Manage company bank accounts, routing details, and default billing accounts</p>
+                <h4 class="card-title fw-bold text-dark mb-1">Bank / MFS Accounts</h4>
+                <p class="text-muted small mb-0">Manage company bank/mfs accounts, routing details, and default billing accounts</p>
             </div>
             <div>
                 <a href="{{ route('bank-details.create') }}" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
                     <i class="fe fe-plus-circle fs-6"></i>
-                    <span>Add Bank Account</span>
+                    <span>Add Bank/MFS Account</span>
                 </a>
             </div>
         </div>
@@ -126,14 +128,26 @@
     </div>
     <!-- /Summary Stats Bar -->
 
+    <!-- GL Integration Note Banner -->
+    <div class="alert alert-soft-primary border-0 rounded-3 mb-4 d-flex align-items-center gap-3 py-3 px-4 shadow-sm">
+        <div class="avatar avatar-md bg-white text-primary rounded-circle d-flex align-items-center justify-content-center shadow-xs flex-shrink-0">
+            <i class="fe fe-link fs-5"></i>
+        </div>
+        <div>
+            <span class="fw-bold text-dark d-block">Automatic General Ledger (COA) Integration</span>
+            <span class="text-muted small">Every Bank and MFS account added here is automatically synchronized with <strong>[1120] Bank & Mobile Banking Accounts</strong> in the Chart of Accounts for double-entry bookkeeping and financial reports.</span>
+        </div>
+    </div>
+
     <!-- Table Card -->
     <div class="card border-0 shadow-sm rounded-3">
         <!-- Live Search Header -->
         <div class="card-header bg-white py-3 border-bottom border-light">
             <div class="row align-items-center g-3">
                 <div class="col-12 col-md-6">
-                    <div class="search-box-custom">
-                        <input type="text" id="bankSearchInput" class="form-control border-light-subtle" placeholder="Search bank name, account name, number, branch..." autocomplete="off">
+                    <div class="search-box-custom d-flex align-items-center position-relative">
+                        <i class="fe fe-search text-muted position-absolute ms-3"></i>
+                        <input type="text" id="bankSearchInput" class="form-control border-light-subtle ps-5" autocomplete="off">
                     </div>
                 </div>
                 <div class="col-12 col-md-6 text-md-end text-muted small">
@@ -149,10 +163,9 @@
                         <tr>
                             <th class="ps-4">#</th>
                             <th>Account Name</th>
-                            <th>Bank Name</th>
+                            <th>Bank / Provider</th>
                             <th>Account Number</th>
-                            <!-- <th>Type</th> -->
-                            <!-- <th>Opening Balance</th> -->
+                            <th>COA Ledger</th>
                             <th>Current Balance</th>
                             <th>Status</th>
                             <th>Default</th>
@@ -161,24 +174,35 @@
                     </thead>
                     <tbody class="border-top-0">
                         @forelse ($banks as $bank)
-                            <tr class="bank-row" data-search="{{ strtolower($bank->account_name . ' ' . $bank->bank_name . ' ' . $bank->branch . ' ' . $bank->account_number . ' ' . $bank->account_type) }}">
+                            <tr class="bank-row" data-search="{{ strtolower($bank->account_name . ' ' . $bank->bank_name . ' ' . $bank->branch . ' ' . $bank->account_number . ' ' . $bank->account_type . ' ' . ($bank->chartOfAccount?->account_code ?? '')) }}">
                                 <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
                                 <td>
-                                    <span class="fw-bold text-dark d-block">{{ Str::limit($bank->account_name, 20) }}</span>
+                                    <span class="fw-bold text-dark d-block">{{ Str::limit($bank->account_name, 22) }}</span>
+                                    @if(stripos($bank->account_type, 'mfs') !== false)
+                                        <span class="badge badge-soft-info px-2 py-0 fs-8 rounded-pill mt-1">MFS</span>
+                                    @else
+                                        <span class="badge badge-soft-secondary px-2 py-0 fs-8 rounded-pill mt-1">Bank</span>
+                                    @endif
                                 </td>
                                 <td>
-                                    <span class="fw-bold text-primary">{{ Str::limit($bank->bank_name, 20) }}</span>
-                                    <p class="text-muted small">{{ Str::limit($bank->branch, 20) ?: 'N/A' }}</p>
+                                    <span class="fw-bold text-primary">{{ Str::limit($bank->bank_name, 22) }}</span>
+                                    <p class="text-muted small mb-0">{{ Str::limit($bank->branch, 22) ?: 'N/A' }}</p>
                                 </td>
                                 <td>
                                     <span class="font-monospace fw-bold text-dark">{{ $bank->account_number }}</span>
                                 </td>
-                                <!-- <td>
-                                    <span class="badge badge-soft-info px-3 py-1 rounded-pill fs-7 text-capitalize">{{ $bank->account_type }}</span>
-                                </td> -->
-                                <!-- <td>
-                                    <span class="text-secondary fw-semibold">৳{{ number_format($bank->opening_balance ?? 0, 2) }}</span>
-                                </td> -->
+                                <td>
+                                    @if($bank->chartOfAccount)
+                                        <a href="{{ route('chart-of-accounts.index', ['search' => $bank->chartOfAccount->account_code]) }}" 
+                                           class="badge badge-soft-primary font-monospace fs-7 text-decoration-none py-1 px-2 rounded-2 d-inline-flex align-items-center gap-1 shadow-none"
+                                           title="Linked General Ledger Asset: 1120 Bank & Mobile Banking Accounts">
+                                            <i class="fe fe-link fs-8"></i>
+                                            <span>{{ $bank->chartOfAccount->account_code }}</span>
+                                        </a>
+                                    @else
+                                        <span class="badge badge-soft-secondary fs-8 py-1 px-2 rounded-2">Syncing...</span>
+                                    @endif
+                                </td>
                                 <td>
                                     <span class="fw-bold text-success">৳{{ number_format($bank->current_balance ?? 0, 2) }}</span>
                                 </td>
@@ -211,6 +235,14 @@
                                                     <span>Edit Details</span>
                                                 </a>
                                             </li>
+                                            @if($bank->chartOfAccount)
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('chart-of-accounts.index', ['search' => $bank->chartOfAccount->account_code]) }}">
+                                                        <i class="fe fe-layers text-info"></i>
+                                                        <span>View General Ledger</span>
+                                                    </a>
+                                                </li>
+                                            @endif
                                             @if(!$bank->is_default)
                                                 <li>
                                                     <form action="{{ route('bank-details.set-default', $bank->id) }}" method="POST" class="d-inline">
@@ -240,7 +272,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
                                         <div class="avatar avatar-xl bg-primary-light text-primary rounded-circle mb-3 d-flex align-items-center justify-content-center">
                                             <i class="fe fe-credit-card fs-1"></i>

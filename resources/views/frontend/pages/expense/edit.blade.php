@@ -72,7 +72,7 @@
 
                     <div class="col-md-8 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Remarks</label>
-                        <textarea name="remarks" class="form-control border-light-subtle" rows="3" placeholder="Enter remarks (optional)">{{ old('remarks', $expense->remarks) }}</textarea>
+                        <textarea name="remarks" class="form-control border-light-subtle" rows="3">{{ old('remarks', $expense->remarks) }}</textarea>
                     </div>
                 </div>
 

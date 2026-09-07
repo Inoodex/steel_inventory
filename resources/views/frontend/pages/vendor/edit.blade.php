@@ -58,7 +58,7 @@
                     <!-- Full Name -->
                     <div class="col-md-6 col-lg-4">
                         <label class="form-label fw-semibold text-secondary small mb-1">Vendor / Company Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name', $vData->name) }}" placeholder="Enter vendor name" required>
+                        <input type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name', $vData->name) }}" required>
                         @error('name')
                             <div class="text-danger fs-7 mt-1">{{ $message }}</div>
                         @enderror
@@ -67,7 +67,7 @@
                     <!-- Phone Number -->
                     <div class="col-md-6 col-lg-4">
                         <label class="form-label fw-semibold text-secondary small mb-1">Phone Number <span class="text-danger">*</span></label>
-                        <input type="tel" class="form-control @error('phone') is-invalid @enderror" name="phone" value="{{ old('phone', $vData->phone) }}" pattern="[0-9]{11}" maxlength="11" placeholder="Enter 11-digit phone number" required>
+                        <input type="tel" class="form-control @error('phone') is-invalid @enderror" name="phone" value="{{ old('phone', $vData->phone) }}" pattern="[0-9]{11}" maxlength="11" required>
                         @error('phone')
                             <div class="text-danger fs-7 mt-1">{{ $message }}</div>
                         @enderror
@@ -76,7 +76,7 @@
                     <!-- Email Address -->
                     <div class="col-md-6 col-lg-4">
                         <label class="form-label fw-semibold text-secondary small mb-1">Email Address</label>
-                        <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email', $vData->email) }}" placeholder="Enter email address">
+                        <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email', $vData->email) }}">
                         @error('email')
                             <div class="text-danger fs-7 mt-1">{{ $message }}</div>
                         @enderror
@@ -97,7 +97,7 @@
                     <!-- Address -->
                     <div class="col-12">
                         <label class="form-label fw-semibold text-secondary small mb-1">Office / Warehouse Address <span class="text-danger">*</span></label>
-                        <textarea class="form-control @error('address') is-invalid @enderror" name="address" rows="3" placeholder="Enter complete address..." required>{{ old('address', $vData->address) }}</textarea>
+                        <textarea class="form-control @error('address') is-invalid @enderror" name="address" rows="3" required>{{ old('address', $vData->address) }}</textarea>
                         @error('address')
                             <div class="text-danger fs-7 mt-1">{{ $message }}</div>
                         @enderror

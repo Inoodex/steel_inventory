@@ -123,7 +123,7 @@
 
                         <div class="col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">Notes</label>
-                            <textarea name="note" class="form-control border-light-subtle" rows="2" placeholder="Optional notes..."></textarea>
+                            <textarea name="note" class="form-control border-light-subtle" rows="2"></textarea>
                         </div>
 
                         <div class="d-flex justify-content-end gap-2 border-top pt-3 mt-3">

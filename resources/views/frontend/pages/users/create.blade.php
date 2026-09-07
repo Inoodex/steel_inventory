@@ -36,22 +36,22 @@
                                         <div class="col-xxl-3 col-md-6 mb-3">
                                             <label for="name" class="form-label">Name</label>
                                             <input type="text" class="form-control" value="{{ old('name') }}"
-                                                id="name" name="name" placeholder="Enter User name">
+                                                id="name" name="name">
                                         </div>
                                         <div class="col-xxl-3 col-md-6 mb-3">
                                             <label for="name" class="form-label">Email</label>
                                             <input type="text" class="form-control" value="{{ old('email') }}"
-                                                id="email" name="email" placeholder="Enter User email">
+                                                id="email" name="email">
                                         </div>
                                         <div class="col-xxl-3 col-md-6 mb-3">
                                             <label for="name" class="form-label">Password</label>
                                             <input type="text" class="form-control" value="{{ old('password') }}"
-                                                id="password" name="password" placeholder="Enter User password">
+                                                id="password" name="password">
                                         </div>
                                         <div class="col-xxl-3 col-md-6 mb-3">
                                             <label for="name" class="form-label">Phone</label>
                                             <input type="text" class="form-control" value="{{ old('phone') }}"
-                                                id="phone" name="phone" placeholder="Enter User phone">
+                                                id="phone" name="phone">
                                         </div>
                                         <div class="col-xxl-3 col-md-6 mb-3">
                                             <label for="image" class="form-label">Image(366x366)</label>

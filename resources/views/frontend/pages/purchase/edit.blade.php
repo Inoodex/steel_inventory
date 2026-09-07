@@ -149,7 +149,7 @@
                                 Shipment / Procurement Notes
                             </label>
                             <input type="text" name="notes" id="notes" class="form-control"
-                                value="{{ old('notes', $purchase->notes ?? $purchase->note) }}" placeholder="Optional procurement remarks...">
+                                value="{{ old('notes', $purchase->notes ?? $purchase->note) }}">
                         </div>
                     </div>
                 </div>
@@ -207,7 +207,7 @@
                                 </label>
                                 <input type="text" name="thickness" id="thicknessInput"
                                     class="form-control form-control-sm text-center"
-                                    value="{{ old('thickness', $purchase->thickness ?? ($coil->thickness ?? '')) }}" placeholder="e.g. 10mm">
+                                    value="{{ old('thickness', $purchase->thickness ?? ($coil->thickness ?? '')) }}">
                             </div>
 
                             <div class="col-lg-3 col-md-3 col-6">
@@ -216,7 +216,7 @@
                                 </label>
                                 <input type="text" name="size" id="sizeInput"
                                     class="form-control form-control-sm text-center"
-                                    value="{{ old('size', $purchase->size ?? ($coil->width ?? '')) }}" placeholder="e.g. 4x8 ft or 1250mm">
+                                    value="{{ old('size', $purchase->size ?? ($coil->width ?? '')) }}">
                             </div>
 
                             <div class="col-lg-2 col-md-3 col-6">
@@ -242,7 +242,7 @@
                                 </label>
                                 <input type="text" name="coil_notes" id="coilNotesInput"
                                     class="form-control form-control-sm"
-                                    value="{{ old('coil_notes', $coil->notes ?? '') }}" placeholder="Optional grade/tag">
+                                    value="{{ old('coil_notes', $coil->notes ?? '') }}">
                             </div>
                         </div>
 
@@ -255,7 +255,7 @@
                                 <div class="input-group input-group-sm">
                                     <input oninput="calculateRow()" type="number" step="0.001" min="0.001" name="unit_weight" id="unitWeightInput"
                                         class="form-control text-end fw-bold text-primary"
-                                        value="{{ old('unit_weight', $purchase->unit_weight) }}" placeholder="0.000" required>
+                                        value="{{ old('unit_weight', $purchase->unit_weight) }}" required>
                                     <span class="input-group-text bg-white text-muted">kg</span>
                                 </div>
                             </div>
@@ -267,7 +267,7 @@
                                 <div class="input-group input-group-sm">
                                     <input type="number" step="0.001" name="total_weight" id="totalWeightInput"
                                         class="form-control bg-white text-end fw-bold text-dark"
-                                        value="{{ old('total_weight', $purchase->total_weight) }}" placeholder="0.000" readonly>
+                                        value="{{ old('total_weight', $purchase->total_weight) }}" readonly>
                                     <span class="input-group-text bg-white text-muted">kg</span>
                                 </div>
                                 <input type="hidden" id="minAllowedWeight" value="{{ $soldWeight }}">
@@ -281,7 +281,7 @@
                                     <span class="input-group-text bg-white text-muted">৳</span>
                                     <input oninput="calculateRow()" type="number" step="0.01" min="0" name="unit_price" id="unitPriceInput"
                                         class="form-control text-end fw-semibold"
-                                        value="{{ old('unit_price', $purchase->unit_price) }}" placeholder="0.00" required>
+                                        value="{{ old('unit_price', $purchase->unit_price) }}" required>
                                 </div>
                             </div>
 
@@ -293,7 +293,7 @@
                                     <span class="input-group-text bg-white text-muted">৳</span>
                                     <input type="number" step="0.01" name="sub_price" id="subPriceInput"
                                         class="form-control bg-white text-end fw-bold text-success"
-                                        value="{{ old('sub_price', $purchase->sub_price) }}" placeholder="0.00" readonly>
+                                        value="{{ old('sub_price', $purchase->sub_price) }}" readonly>
                                 </div>
                                 <input type="hidden" name="total_price" id="totalPriceInput" value="{{ old('total_price', $purchase->total_price) }}">
                             </div>
@@ -321,27 +321,27 @@
 
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Discount Amount (৳)</label>
-                            <input oninput="calculateFinancials()" onchange="calculateFinancials()" type="number" id="discount" name="discount" class="form-control border-light-subtle text-end" value="{{ old('discount', $purchase->discount ?? 0) }}" min="0" step="0.01" placeholder="0.00">
+                            <input oninput="calculateFinancials()" onchange="calculateFinancials()" type="number" id="discount" name="discount" class="form-control border-light-subtle text-end" value="{{ old('discount', $purchase->discount ?? 0) }}" min="0" step="0.01">
                         </div>
 
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Delivery / Transport (৳)</label>
-                            <input oninput="calculateFinancials()" onchange="calculateFinancials()" type="number" id="delivery_charge" name="delivery_charge" class="form-control border-light-subtle text-end" value="{{ old('delivery_charge', $purchase->delivery_charge ?? 0) }}" min="0" step="0.01" placeholder="0.00">
+                            <input oninput="calculateFinancials()" onchange="calculateFinancials()" type="number" id="delivery_charge" name="delivery_charge" class="form-control border-light-subtle text-end" value="{{ old('delivery_charge', $purchase->delivery_charge ?? 0) }}" min="0" step="0.01">
                         </div>
 
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Cutting & Labour (৳)</label>
-                            <input oninput="calculateFinancials()" onchange="calculateFinancials()" type="number" id="labour_cost" name="labour_cost" class="form-control border-light-subtle text-end" value="{{ old('labour_cost', $purchase->labour_cost ?? 0) }}" min="0" step="0.01" placeholder="0.00">
+                            <input oninput="calculateFinancials()" onchange="calculateFinancials()" type="number" id="labour_cost" name="labour_cost" class="form-control border-light-subtle text-end" value="{{ old('labour_cost', $purchase->labour_cost ?? 0) }}" min="0" step="0.01">
                         </div>
 
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Scale / Weighbridge (৳)</label>
-                            <input oninput="calculateFinancials()" onchange="calculateFinancials()" type="number" id="weight_scale_cost" name="weight_scale_cost" class="form-control border-light-subtle text-end" value="{{ old('weight_scale_cost', $purchase->weight_scale_cost ?? 0) }}" min="0" step="0.01" placeholder="0.00">
+                            <input oninput="calculateFinancials()" onchange="calculateFinancials()" type="number" id="weight_scale_cost" name="weight_scale_cost" class="form-control border-light-subtle text-end" value="{{ old('weight_scale_cost', $purchase->weight_scale_cost ?? 0) }}" min="0" step="0.01">
                         </div>
 
                         <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Other Charges (৳)</label>
-                            <input oninput="calculateFinancials()" onchange="calculateFinancials()" type="number" id="other_charges" name="other_charges" class="form-control border-light-subtle text-end" value="{{ old('other_charges', $purchase->other_charges ?? 0) }}" min="0" step="0.01" placeholder="0.00">
+                            <input oninput="calculateFinancials()" onchange="calculateFinancials()" type="number" id="other_charges" name="other_charges" class="form-control border-light-subtle text-end" value="{{ old('other_charges', $purchase->other_charges ?? 0) }}" min="0" step="0.01">
                         </div>
                     </div>
                 </div>
@@ -445,7 +445,7 @@
                                 <div id="purchaseTransactionRefContainer" style="{{ old('payment_method', $purchase->payment_method) === 'bank' ? '' : 'display: none;' }}">
                                     <label class="form-label fw-semibold small text-secondary mb-1">Transaction Ref / TrxID</label>
                                     <input type="text" name="transaction_ref" class="form-control border-light-subtle bg-white"
-                                        value="{{ old('transaction_ref', $purchase->transaction_ref) }}" placeholder="e.g. Cheque / TrxID">
+                                        value="{{ old('transaction_ref', $purchase->transaction_ref) }}">
                                 </div>
                             </div>
 

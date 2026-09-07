@@ -56,7 +56,7 @@
 
                     <div class="col-lg-4 col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Amount <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" name="amount" class="form-control border-light-subtle" placeholder="Enter amount (৳)" value="{{ old('amount') }}" required autocomplete="off">
+                        <input type="number" step="0.01" name="amount" class="form-control border-light-subtle" value="{{ old('amount') }}" required autocomplete="off">
                     </div>
 
                     <div class="col-lg-4 col-md-6 col-12">
@@ -71,7 +71,7 @@
 
                     <div class="col-lg-4 col-md-12 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Remarks <span class="text-danger">*</span></label>
-                        <textarea name="remarks" class="form-control border-light-subtle" rows="2" placeholder="Enter remarks or details" required>{{ old('remarks') }}</textarea>
+                        <textarea name="remarks" class="form-control border-light-subtle" rows="2" required>{{ old('remarks') }}</textarea>
                     </div>
                 </div>
 

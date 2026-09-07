@@ -51,19 +51,20 @@
             border-collapse: collapse;
         }
         .meta-table td {
-            padding: 4px 8px;
+            padding: 4px 6px;
             vertical-align: top;
             font-size: 11px;
         }
         .meta-label {
             color: #64748b;
             font-weight: 600;
-            width: 18%;
+            width: 22%;
+            white-space: nowrap;
         }
         .meta-val {
             color: #0f172a;
             font-weight: 700;
-            width: 32%;
+            width: 28%;
         }
         .badge-type {
             display: inline-block;
@@ -121,21 +122,6 @@
             font-weight: 800;
             color: #0f172a;
         }
-        .signature-table {
-            width: 100%;
-            margin-top: 30px;
-            border-collapse: collapse;
-        }
-        .signature-line {
-            width: 180px;
-            border-top: 1.5px solid #475569;
-            padding-top: 5px;
-            text-align: center;
-            font-size: 10px;
-            font-weight: 600;
-            color: #475569;
-            text-transform: uppercase;
-        }
     </style>
 </head>
 <body>
@@ -163,7 +149,12 @@
                     <span class="badge-type">{{ ucwords(str_replace('_', ' ', $payout->charge_type)) }}</span>
                 </td>
                 <td class="meta-label">Payment Method:</td>
-                <td class="meta-val">{{ ucfirst($payout->payment_method) }}</td>
+                <td class="meta-val">
+                    {{ ucfirst(str_replace('_', ' ', $payout->payment_method)) }}
+                    @if($payout->bankDetail)
+                        <span style="font-weight: normal; color: #475569;">({{ $payout->bankDetail->bank_name }})</span>
+                    @endif
+                </td>
             </tr>
             <tr>
                 <td class="meta-label">Paid From Account:</td>
@@ -224,19 +215,31 @@
         </table>
     </div>
 
-    <table class="signature-table">
+    <table style="width: 100%; margin-top: 40px; border-collapse: collapse;">
         <tr>
             <td style="width: 50%; vertical-align: bottom;">
-                <div class="signature-line">
-                    Received By<br>
-                    <span style="font-size: 9px; color: #64748b; text-transform: none;">({{ $payout->recipient_name }})</span>
-                </div>
+                <table style="width: 180px; border-collapse: collapse;">
+                    <tr>
+                        <td style="border-top: 1.5px solid #475569; height: 1px; font-size: 1px; line-height: 1px;">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; padding-top: 6px; font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase;">
+                            Received By
+                        </td>
+                    </tr>
+                </table>
             </td>
-            <td style="width: 50%; text-align: right; vertical-align: bottom;">
-                <div class="signature-line" style="margin-left: auto;">
-                    Authorized Signature<br>
-                    <span style="font-size: 9px; color: #64748b; text-transform: none;">(Accounts / Finance Dept)</span>
-                </div>
+            <td style="width: 50%; vertical-align: bottom;" align="right">
+                <table align="right" style="width: 180px; margin: 0 0 0 auto; border-collapse: collapse;">
+                    <tr>
+                        <td style="border-top: 1.5px solid #475569; height: 1px; font-size: 1px; line-height: 1px;">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; padding-top: 6px; font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase;">
+                            Authorized Signature
+                        </td>
+                    </tr>
+                </table>
             </td>
         </tr>
     </table>

@@ -57,7 +57,7 @@
                                 @foreach ($extras as $extra)
                                     <div class="col-xxl-3 col-md-6 mb-3">
                                         <label for="{{$extra->name}}" class="form-label" style="text-transform: capitalize;">{{$extra->name}}</label>
-                                        <input type="text" class="form-control" value="{{$extra->value}}" id="{{$extra->name}}" name="{{$extra->name}}" placeholder="Enter {{$extra->name}}" >
+                                        <input type="text" class="form-control" value="{{$extra->value}}" id="{{$extra->name}}" name="{{$extra->name}}" >
                                     </div>   
                                 @endforeach
                                 <div class="col-12">

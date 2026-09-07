@@ -657,7 +657,7 @@
                     </div>
                     <div class="mb-0">
                         <label class="form-label small fw-semibold text-secondary mb-1">Operational Notes & Facilities</label>
-                        <textarea name="notes" class="form-control border-light-subtle" rows="3" placeholder="Yard cranes, siding, decoiling facilities, etc.">{{ $warehouse->notes }}</textarea>
+                        <textarea name="notes" class="form-control border-light-subtle" rows="3">{{ $warehouse->notes }}</textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-top bg-light gap-2">
