@@ -92,10 +92,10 @@
                 <p class="text-muted small mb-0">In-depth analytics of procurement costs, sales revenue, customer distributions, and gross profit/loss per lot</p>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap">
-                <a href="{{ route('lots.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
+                <!-- <a href="{{ route('lots.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
                     <i class="fe fe-arrow-left"></i>
                     <span>Manage Lots</span>
-                </a>
+                </a> -->
                 <a href="{{ route('lots.report.pdf', request()->query()) }}" class="btn btn-outline-danger px-4 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2" target="_blank">
                     <i class="fe fe-download fs-6"></i>
                     <span>Export PDF</span>
@@ -277,7 +277,7 @@
                     </div>
 
                     <!-- Buttons -->
-                    <div class="col-xl-3 col-lg-3 col-md-6 col-12 d-flex gap-2">
+                    <div class="col-xl-2 col-lg-2 col-md-2 col-12 d-flex gap-2">
                         <button type="submit" class="btn btn-primary text-nowrap rounded-3 px-3 py-2 flex-fill d-inline-flex align-items-center justify-content-center gap-1 shadow-sm">
                             <i class="fe fe-filter"></i>
                             <span>Filter</span>
@@ -344,7 +344,7 @@
                                 </td>
                                 <td>
                                     <div>
-                                        <span class="fw-semibold text-dark d-block">{{ $item->vendor_name }}</span>
+                                        <span class="fw-semibold text-dark d-block">{{ Str::limit($item->vendor_name, 15) }}</span>
                                         @if($item->vendor_company)
                                             <small class="text-muted">{{ $item->vendor_company }}</small>
                                         @endif

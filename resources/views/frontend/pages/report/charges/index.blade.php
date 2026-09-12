@@ -87,10 +87,10 @@
                 <p class="text-muted small mb-0">Audit operational service charges collected on customer orders and disbursements paid to workers, drivers, and scale operators</p>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap">
-                <a href="{{ route('worker-payouts.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
+                <!-- <a href="{{ route('worker-payouts.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
                     <i class="fe fe-pocket"></i>
                     <span>Manage Payouts</span>
-                </a>
+                </a> -->
                 <a href="{{ route('charges.report.pdf', request()->query()) }}" class="btn btn-outline-danger px-4 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2" target="_blank">
                     <i class="fe fe-download fs-6"></i>
                     <span>Export PDF</span>
@@ -239,7 +239,7 @@
                     </div>
 
                     <!-- Buttons -->
-                    <div class="col-xl-6 col-lg-4 col-md-4 col-12 d-flex gap-2">
+                    <div class="col-xl-2 col-lg-2 col-md-2 col-12 d-flex gap-2">
                         <button type="submit" class="btn btn-primary text-nowrap rounded-3 px-4 py-2 flex-grow-1 d-inline-flex align-items-center justify-content-center gap-1 shadow-sm">
                             <i class="fe fe-filter"></i>
                             <span>Filter</span>

@@ -175,7 +175,7 @@
                                 <td>
                                     <span class="fw-bold text-primary font-monospace d-block">#PO-{{ $purchase->id }}</span>
                                     @if($purchase->lot)
-                                        <small class="text-muted fs-8">Lot: {{ $purchase->lot->lot_number }}</small>
+                                        <small class="text-muted fs-8">{{ $purchase->lot->lot_number }}</small>
                                     @endif
                                 </td>
                                 <td>
