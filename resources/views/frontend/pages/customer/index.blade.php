@@ -174,12 +174,13 @@
                 <table class="table table-hover table-custom align-middle mb-0" id="customersTable">
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
-                            <th>#</th>
+                            <th class="ps-4">#</th>
                             <th>Customer Name</th>
                             <th>Phone & Email</th>
                             <th>Address</th>
+                            <th>Opening Due</th>
                             <th>Status</th>
-                            <th>Action</th>
+                            <th class="pe-4 text-end">Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
@@ -214,6 +215,15 @@
                                     <span class="text-secondary small text-truncate d-inline-block" style="max-width: 220px;" title="{{ $customer->address }}">
                                         {{ Str::limit($customer->address, 30) ?: 'N/A' }}
                                     </span>
+                                </td>
+                                <td>
+                                    @if((float)($customer->opening_balance ?? 0) > 0)
+                                        <span class="badge badge-soft-warning px-2.5 py-1 rounded-pill fs-7 fw-semibold">
+                                            ৳{{ number_format($customer->opening_balance, 2) }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted small">৳0.00</span>
+                                    @endif
                                 </td>
                                 <td>
                                     @if ($isActive)

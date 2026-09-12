@@ -715,4 +715,225 @@ class WorkerPayoutController extends Controller
             }
         }
     }
+
+    /**
+     * Display the comprehensive Charges & Worker Payouts Analytics Report.
+     */
+    public function chargesReport(Request $request)
+    {
+        $data = $this->getChargesReportData($request);
+
+        return view('frontend.pages.report.charges.index', $data);
+    }
+
+    /**
+     * Export Charges & Worker Payouts Report as an mPDF document.
+     */
+    public function chargesReportPdf(Request $request)
+    {
+        $data = $this->getChargesReportData($request);
+
+        $html = view('frontend.pages.report.charges.pdf', $data)->render();
+
+        $mpdf = new Mpdf([
+            'mode'         => 'utf-8',
+            'format'       => 'A4',
+            'default_font' => 'Helvetica',
+        ]);
+
+        $mpdf->WriteHTML($html);
+
+        $pdfContent = $mpdf->Output('extra-charges-report-' . now()->format('Y-m-d') . '.pdf', 'S');
+
+        return response($pdfContent, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="extra-charges-report-' . now()->format('Y-m-d') . '.pdf"',
+        ]);
+    }
+
+    /**
+     * Helper to prepare analyzed Charges & Payouts Report data.
+     */
+    private function getChargesReportData(Request $request): array
+    {
+        $query = Sale::with(['customer', 'workerPayoutItems.workerPayout'])
+            ->where(function ($q) {
+                $q->where('delivery_charge', '>', 0)
+                  ->orWhere('labour_cost', '>', 0)
+                  ->orWhere('weight_scale_cost', '>', 0)
+                  ->orWhere('other_charges', '>', 0);
+            });
+
+        // 1. Date Range & Preset Filtering
+        $datePreset = $request->input('date_preset');
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+
+        if ($datePreset === 'today') {
+            $query->whereDate('order_date', Carbon::today());
+        } elseif ($datePreset === 'this_week') {
+            $query->whereBetween('order_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+        } elseif ($datePreset === 'this_month') {
+            $query->whereBetween('order_date', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+        } elseif ($datePreset === 'last_month') {
+            $query->whereBetween('order_date', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()]);
+        } elseif ($datePreset === 'this_year') {
+            $query->whereBetween('order_date', [Carbon::now()->startOfYear(), Carbon::now()->endOfYear()]);
+        } elseif ($fromDate || $toDate) {
+            if ($fromDate && $toDate) {
+                $query->whereBetween('order_date', [$fromDate, $toDate]);
+            } elseif ($fromDate) {
+                $query->whereDate('order_date', '>=', $fromDate);
+            } elseif ($toDate) {
+                $query->whereDate('order_date', '<=', $toDate);
+            }
+        }
+
+        // 2. Filter by Customer
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        // 3. Filter by Status
+        if ($request->filled('status') && $request->status !== 'all') {
+            if ($request->status === 'unpaid') {
+                $query->where('charges_payout_status', 'unpaid');
+            } elseif ($request->status === 'partial') {
+                $query->where('charges_payout_status', 'partial');
+            } elseif ($request->status === 'paid') {
+                $query->where('charges_payout_status', 'paid');
+            }
+        }
+
+        // 4. Search Filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('order_no', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function ($cq) use ($search) {
+                      $cq->where('name', 'like', "%{$search}%")
+                         ->orWhere('phone', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $allSales = $query->latest('order_date')->get();
+
+        // Perform in-depth per-sale charge calculations
+        $analyzedCharges = $allSales->map(function ($sale) {
+            $labourCol   = (float) $sale->labour_cost;
+            $deliveryCol = (float) $sale->delivery_charge;
+            $scaleCol    = (float) $sale->weight_scale_cost;
+            $otherCol    = (float) $sale->other_charges;
+            $totalCol    = $labourCol + $deliveryCol + $scaleCol + $otherCol;
+
+            // Worker payouts per charge type
+            $items = $sale->workerPayoutItems ?? collect();
+            $labourPaid   = (float) $items->where('charge_type', 'labour')->sum('amount');
+            $deliveryPaid = (float) $items->where('charge_type', 'delivery')->sum('amount');
+            $scalePaid    = (float) $items->where('charge_type', 'weight_scale')->sum('amount');
+            $otherPaid    = (float) $items->where('charge_type', 'other')->sum('amount');
+            $totalPaid    = $labourPaid + $deliveryPaid + $scalePaid + $otherPaid;
+
+            $labourDue   = max(0, round($labourCol - $labourPaid, 2));
+            $deliveryDue = max(0, round($deliveryCol - $deliveryPaid, 2));
+            $scaleDue    = max(0, round($scaleCol - $scalePaid, 2));
+            $otherDue    = max(0, round($otherCol - $otherPaid, 2));
+            $totalDue    = max(0, round($totalCol - $totalPaid, 2));
+
+            // Status
+            $status = $sale->charges_payout_status ?: 'unpaid';
+            if ($totalPaid <= 0) {
+                $status = 'unpaid';
+            } elseif ($totalPaid >= $totalCol && $totalCol > 0) {
+                $status = 'paid';
+            } else {
+                $status = 'partial';
+            }
+
+            return (object) [
+                'sale'          => $sale,
+                'id'            => $sale->id,
+                'order_no'      => $sale->order_no,
+                'order_date'    => $sale->order_date ? $sale->order_date : $sale->created_at->format('Y-m-d'),
+                'customer_name' => $sale->customer?->name ?? 'Walk-in Customer',
+                'customer_phone'=> $sale->customer?->phone ?? '',
+                'labour_col'    => $labourCol,
+                'labour_paid'   => $labourPaid,
+                'labour_due'    => $labourDue,
+                'delivery_col'  => $deliveryCol,
+                'delivery_paid' => $deliveryPaid,
+                'delivery_due'  => $deliveryDue,
+                'scale_col'     => $scaleCol,
+                'scale_paid'    => $scalePaid,
+                'scale_due'     => $scaleDue,
+                'other_col'     => $otherCol,
+                'other_paid'    => $otherPaid,
+                'other_due'     => $otherDue,
+                'total_col'     => $totalCol,
+                'total_paid'    => $totalPaid,
+                'total_due'     => $totalDue,
+                'status'        => $status,
+                'payout_items'  => $items,
+            ];
+        });
+
+        // 5. Filter by Charge Type
+        $chargeTypeFilter = $request->input('charge_type');
+        if ($chargeTypeFilter === 'labour') {
+            $analyzedCharges = $analyzedCharges->where('labour_col', '>', 0)->values();
+        } elseif ($chargeTypeFilter === 'delivery') {
+            $analyzedCharges = $analyzedCharges->where('delivery_col', '>', 0)->values();
+        } elseif ($chargeTypeFilter === 'scale') {
+            $analyzedCharges = $analyzedCharges->where('scale_col', '>', 0)->values();
+        } elseif ($chargeTypeFilter === 'other') {
+            $analyzedCharges = $analyzedCharges->where('other_col', '>', 0)->values();
+        }
+
+        // Summary KPI Metrics
+        $totalOrdersCount     = $analyzedCharges->count();
+        $totalCollectedGrand  = (float) $analyzedCharges->sum('total_col');
+        $totalPaidGrand       = (float) $analyzedCharges->sum('total_paid');
+        $totalDueGrand        = (float) $analyzedCharges->sum('total_due');
+
+        $totalLabourCol       = (float) $analyzedCharges->sum('labour_col');
+        $totalLabourPaid      = (float) $analyzedCharges->sum('labour_paid');
+        $totalLabourDue       = (float) $analyzedCharges->sum('labour_due');
+
+        $totalDeliveryCol     = (float) $analyzedCharges->sum('delivery_col');
+        $totalDeliveryPaid    = (float) $analyzedCharges->sum('delivery_paid');
+        $totalDeliveryDue     = (float) $analyzedCharges->sum('delivery_due');
+
+        $totalScaleCol        = (float) $analyzedCharges->sum('scale_col');
+        $totalScalePaid       = (float) $analyzedCharges->sum('scale_paid');
+        $totalScaleDue        = (float) $analyzedCharges->sum('scale_due');
+
+        $totalOtherCol        = (float) $analyzedCharges->sum('other_col');
+        $totalOtherPaid       = (float) $analyzedCharges->sum('other_paid');
+        $totalOtherDue        = (float) $analyzedCharges->sum('other_due');
+
+        $customers = \App\Models\Customer::orderBy('name')->get();
+
+        return compact(
+            'analyzedCharges',
+            'totalOrdersCount',
+            'totalCollectedGrand',
+            'totalPaidGrand',
+            'totalDueGrand',
+            'totalLabourCol',
+            'totalLabourPaid',
+            'totalLabourDue',
+            'totalDeliveryCol',
+            'totalDeliveryPaid',
+            'totalDeliveryDue',
+            'totalScaleCol',
+            'totalScalePaid',
+            'totalScaleDue',
+            'totalOtherCol',
+            'totalOtherPaid',
+            'totalOtherDue',
+            'customers',
+            'request'
+        );
+    }
 }

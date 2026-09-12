@@ -77,6 +77,19 @@
                         @enderror
                     </div>
 
+                    <!-- Opening Balance / Previous Due -->
+                    <div class="col-md-6 col-lg-4">
+                        <label class="form-label fw-semibold text-secondary small mb-1">Opening Balance / Previous Due (৳)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-light-subtle text-muted">৳</span>
+                            <input type="number" step="0.01" min="0" class="form-control @error('opening_balance') is-invalid @enderror" name="opening_balance" value="{{ old('opening_balance', '0.00') }}" placeholder="0.00">
+                        </div>
+                        <small class="text-muted d-block mt-1" style="font-size: 11px;">Customer's existing receivable / previous due before this system</small>
+                        @error('opening_balance')
+                            <div class="text-danger fs-7 mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     <!-- Status -->
                     <div class="col-md-6 col-lg-4">
                         <label class="form-label fw-semibold text-secondary small mb-1">Account Status</label>

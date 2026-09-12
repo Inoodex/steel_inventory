@@ -63,6 +63,12 @@
                 <h3 class="page-title fw-bold text-dark mb-1">Lot Management</h3>
                 <p class="text-muted small mb-0">Manage ship breaking procurement lots, intake specifications, and inventory sources</p>
             </div>
+            <div class="col-auto">
+                <a href="{{ route('lots.report') }}" class="btn btn-outline-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
+                    <i class="fe fe-pie-chart fs-6"></i>
+                    <span>Profit &amp; Lifecycle Report</span>
+                </a>
+            </div>
         </div>
     </div>
 

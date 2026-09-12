@@ -21,7 +21,7 @@
 
     <div class="card border-0 shadow-sm rounded-3">
         <div class="card-body p-4">
-            <form action="{{ route('dailyExpenses.store') }}" method="post">
+            <form action="{{ route('dailyExpenses.store') }}" method="post" id="dailyExpenseForm">
                 @csrf
 
                 <div class="row g-3 mb-4">
@@ -61,15 +61,30 @@
 
                     <div class="col-lg-4 col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Spend Method <span class="text-danger">*</span></label>
-                        <select name="spend_method" id="spendMethodSelect" class="form-select border-light-subtle select2" required data-placeholder="Select Spend Method">
-                            <option value="">Select Spend Method</option>
+                        <select name="spend_method" id="spendMethodSelect" class="form-select border-light-subtle select2" required data-placeholder="Select Spend Method" onchange="toggleBankSelect(this.value)">
                             <option value="cash" {{ old('spend_method', 'cash') == 'cash' ? 'selected' : '' }}>Cash Payment</option>
+                            <option value="bank" {{ old('spend_method') == 'bank' ? 'selected' : '' }}>Bank Transfer / Deposit</option>
+                            <option value="mobile_banking" {{ old('spend_method') == 'mobile_banking' ? 'selected' : '' }}>Mobile Banking (bKash / Nagad / Rocket)</option>
                             <option value="card" {{ old('spend_method') == 'card' ? 'selected' : '' }}>Card Payment</option>
-                            <option value="bank_transfer" {{ old('spend_method') == 'bank_transfer' ? 'selected' : '' }}>Bank Transfer / Other</option>
+                            <option value="other" {{ old('spend_method') == 'other' ? 'selected' : '' }}>Other / Online</option>
                         </select>
                     </div>
 
-                    <div class="col-lg-4 col-md-12 col-12">
+                    <div class="col-lg-4 col-md-6 col-12" id="bankAccountWrapper" style="{{ old('spend_method', 'cash') === 'cash' ? 'display: none;' : '' }}">
+                        <label class="form-label small text-secondary fw-semibold mb-1">
+                            <i class="fe fe-layers me-1 text-primary"></i> Bank / MFS Account <span class="text-danger">*</span>
+                        </label>
+                        <select name="bank_detail_id" id="bankDetailSelect" class="form-select border-light-subtle select2" data-placeholder="Select Bank / MFS Account">
+                            <option value="">Select Bank / MFS Account</option>
+                            @foreach ($bankDetails as $bank)
+                                <option value="{{ $bank->id }}" {{ old('bank_detail_id') == $bank->id ? 'selected' : '' }}>
+                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-lg-4 col-md-12 col-12" id="remarksWrapper">
                         <label class="form-label small text-secondary fw-semibold mb-1">Remarks <span class="text-danger">*</span></label>
                         <textarea name="remarks" class="form-control border-light-subtle" rows="2" required>{{ old('remarks') }}</textarea>
                     </div>
@@ -87,10 +102,33 @@
 
 @push('scripts')
 <script>
+    function toggleBankSelect(method) {
+        const wrapper = document.getElementById('bankAccountWrapper');
+        const bankSelect = document.getElementById('bankDetailSelect');
+        
+        if (method === 'cash') {
+            wrapper.style.display = 'none';
+            if (bankSelect) {
+                bankSelect.removeAttribute('required');
+            }
+        } else {
+            wrapper.style.display = 'block';
+            if (bankSelect) {
+                bankSelect.setAttribute('required', 'required');
+            }
+        }
+    }
+
     $(document).ready(function() {
         $('.select2').select2({
             width: '100%'
         });
+
+        $('#spendMethodSelect').on('change', function() {
+            toggleBankSelect($(this).val());
+        });
+
+        toggleBankSelect($('#spendMethodSelect').val());
     });
 </script>
 @endpush

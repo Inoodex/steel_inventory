@@ -52,10 +52,11 @@ class CustomerController extends Controller
     
         $attributes = $request->all();
         $rules = [
-            'name' => 'required',
-            'phone' => 'required|numeric|unique:customers,phone',
-            'email' => 'nullable|email',
-            'address' => 'required|string',
+            'name'            => 'required|string|max:255',
+            'phone'           => 'required|numeric|unique:customers,phone',
+            'email'           => 'nullable|email|max:255',
+            'opening_balance' => 'nullable|numeric|min:0',
+            'address'         => 'required|string',
         ];
         $validation = Validator::make($attributes, $rules);
         if ($validation->fails()) {
@@ -67,7 +68,8 @@ class CustomerController extends Controller
         $customer->phone = $request->phone;
         $customer->email = $request->email;
         $customer->address = $request->address;
-        $customer->status = '1';
+        $customer->opening_balance = $request->filled('opening_balance') ? (float)$request->opening_balance : 0.00;
+        $customer->status = $request->status ?? '1';
         $customer->save();
     
         return redirect()->route('customers.index')->with(['success' => getNotify(1)]);
@@ -101,10 +103,11 @@ class CustomerController extends Controller
     {
         $attributes = $request->all();
         $rules = [
-            'name' => 'required',
-            'phone' => 'required|numeric|unique:customers,phone,'. $id,
-            'email' => 'nullable|email',
-            'address' => 'required|string',
+            'name'            => 'required|string|max:255',
+            'phone'           => 'required|numeric|unique:customers,phone,'. $id,
+            'email'           => 'nullable|email|max:255',
+            'opening_balance' => 'nullable|numeric|min:0',
+            'address'         => 'required|string',
         ];
         $validation = Validator::make($attributes, $rules);
         if ($validation->fails()) {
@@ -116,6 +119,12 @@ class CustomerController extends Controller
         $customer->phone = $request->phone;
         $customer->email = $request->email;
         $customer->address = $request->address;
+        if ($request->has('opening_balance')) {
+            $customer->opening_balance = $request->filled('opening_balance') ? (float)$request->opening_balance : 0.00;
+        }
+        if ($request->has('status')) {
+            $customer->status = $request->status;
+        }
         $customer->save();
     
         return redirect()->route('customers.index')->with(['success' => getNotify(2)]);

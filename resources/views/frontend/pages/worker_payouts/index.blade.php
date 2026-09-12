@@ -140,8 +140,13 @@
                 <p class="text-muted small mb-0">Disburse pass-through extra charges (Labour, Transport/Delivery, Weight Scale) &amp; manage daily/weekly worker settlement records</p>
             </div>
             <div class="d-flex align-items-center gap-2">
+                <a class="btn btn-outline-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2" 
+                   href="{{ route('charges.report') }}">
+                    <i class="fe fe-pie-chart fs-6"></i>
+                    <span>Charge Analytics Report</span>
+                </a>
                 <a class="btn btn-outline-danger px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2" 
-                   href="{{ route('sales.extra-charges-report.pdf', request()->all()) }}" target="_blank">
+                   href="{{ route('charges.report.pdf', request()->all()) }}" target="_blank">
                     <i class="fe fe-file-text fs-6"></i>
                     <span>Export Summary PDF</span>
                 </a>

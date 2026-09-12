@@ -7,10 +7,6 @@
         <div class="row align-items-center">
             <div class="col">
                 <h3 class="page-title font-weight-bold" style="color: #1e293b;">Create Journal Voucher</h3>
-                <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('journal-entries.index') }}">Journal Vouchers</a></li>
-                    <li class="breadcrumb-item active">New Voucher</li>
-                </ul>
             </div>
             <div class="col-auto">
                 <span class="badge bg-primary fs-6 px-3 py-2">{{ $journalNo }}</span>
@@ -41,7 +37,7 @@
                         <input type="text" class="form-control" value="{{ $journalNo }}" readonly disabled>
                     </div>
                     <div class="col-12">
-                        <label class="form-label fw-bold">Narration / Description <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold">Description <span class="text-danger">*</span></label>
                         <textarea name="description" class="form-control" rows="2" required>{{ old('description') }}</textarea>
                     </div>
                 </div>

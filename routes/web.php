@@ -90,14 +90,18 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('/employee/{id}/advance-sum-by-month', [EmployeeController::class, 'getAdvanceSumByMonth']);
     Route::get('/employee/{id}/advance-sum', [ExpenseController::class, 'getAdvanceSum']);
 
-    // === Reports & Payments ===
+    // === Reports & Analytics ===
     Route::get('purchase-report', [PurchaseController::class, 'reportIndex'])->name('purchase.report');
     Route::get('purchase/report', [PurchaseController::class, 'report'])->name('purchase.report.get');
     Route::get('purchase/report/pdf', [PurchaseController::class, 'reportPdf'])->name('purchase.report.pdf');
     Route::get('sales-report', [SalesController::class, 'report'])->name('sales.report');
     Route::get('sales-report/pdf', [SalesController::class, 'reportPdf'])->name('sales.report.pdf');
-    Route::redirect('extra-charges-report', '/worker-payouts')->name('sales.extra-charges-report');
-    Route::get('extra-charges-report/pdf', [SalesController::class, 'extraChargesReportPdf'])->name('sales.extra-charges-report.pdf');
+    Route::get('lots-report', [LotController::class, 'report'])->name('lots.report');
+    Route::get('lots-report/pdf', [LotController::class, 'reportPdf'])->name('lots.report.pdf');
+    Route::get('charges-report', [WorkerPayoutController::class, 'chargesReport'])->name('charges.report');
+    Route::get('charges-report/pdf', [WorkerPayoutController::class, 'chargesReportPdf'])->name('charges.report.pdf');
+    Route::redirect('extra-charges-report', '/charges-report')->name('sales.extra-charges-report');
+    Route::get('extra-charges-report/pdf', [WorkerPayoutController::class, 'chargesReportPdf'])->name('sales.extra-charges-report.pdf');
 
     // Worker Extra Charges & Payouts Settlement Module
     Route::get('/worker-payouts', [WorkerPayoutController::class, 'index'])->name('worker-payouts.index');

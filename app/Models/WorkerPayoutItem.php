@@ -25,6 +25,11 @@ class WorkerPayoutItem extends Model
         return $this->belongsTo(WorkerPayout::class, 'worker_payout_id');
     }
 
+    public function workerPayout()
+    {
+        return $this->belongsTo(WorkerPayout::class, 'worker_payout_id');
+    }
+
     public function sale()
     {
         return $this->belongsTo(Sale::class, 'sale_id');

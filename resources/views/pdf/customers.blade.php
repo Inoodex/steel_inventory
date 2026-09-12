@@ -134,8 +134,8 @@
                 <th style="width: 5%; text-align: center;">#</th>
                 <th style="width: 25%; text-align: left;">Customer Name</th>
                 <th style="width: 18%; text-align: left;">Phone</th>
-                <th style="width: 22%; text-align: left;">Email</th>
-                <th style="width: 20%; text-align: left;">Address</th>
+                <th style="width: 24%; text-align: left;">Address</th>
+                <th style="width: 18%; text-align: right;">Opening Due</th>
                 <th style="width: 10%; text-align: center;">Status</th>
             </tr>
         </thead>
@@ -145,8 +145,8 @@
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td class="fw-bold">{{ $customer->name }}</td>
                     <td>{{ $customer->phone ?? 'N/A' }}</td>
-                    <td>{{ $customer->email ?? 'N/A' }}</td>
                     <td>{{ $customer->address ?? 'N/A' }}</td>
+                    <td class="text-right fw-bold">৳{{ number_format((float)($customer->opening_balance ?? 0), 2) }}</td>
                     <td class="text-center">
                         <span class="badge {{ $customer->status == '1' ? 'badge-active' : 'badge-inactive' }}">
                             {{ $customer->status == '1' ? 'Active' : 'Inactive' }}

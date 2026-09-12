@@ -21,6 +21,6 @@ class Customer extends Model
 
     public function getOutstandingBalanceAttribute(): float
     {
-        return (float) $this->sales()->whereNull('deleted_at')->sum('due_payment');
+        return (float)($this->opening_balance ?? 0.00) + (float) $this->sales()->whereNull('deleted_at')->sum('due_payment');
     }
 }

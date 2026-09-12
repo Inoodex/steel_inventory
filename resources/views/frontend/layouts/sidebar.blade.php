@@ -252,17 +252,27 @@
                     <li class="menu-title"><span>Reports &amp; Analytics</span></li>
                     <li class="{{ $active(['sales.report']) ? 'active' : '' }}">
                         <a href="{{ route('sales.report') }}">
-                            <i class="fe fe-shopping-bag"></i><span> Sales Analytics</span>
+                            <i class="fe fe-shopping-bag"></i><span> Sales Report</span>
                         </a>
                     </li>
                     <li class="{{ $active(['purchase.report']) ? 'active' : '' }}">
                         <a href="{{ route('purchase.report') }}">
-                            <i class="fe fe-shopping-cart"></i><span> Purchase Analytics</span>
+                            <i class="fe fe-shopping-cart"></i><span> Purchase Report</span>
+                        </a>
+                    </li>
+                    <li class="{{ $active(['lots.report']) ? 'active' : '' }}">
+                        <a href="{{ route('lots.report') }}">
+                            <i class="fe fe-layers"></i><span> Lot Report</span>
+                        </a>
+                    </li>
+                    <li class="{{ $active(['charges.report']) ? 'active' : '' }}">
+                        <a href="{{ route('charges.report') }}">
+                            <i class="fe fe-pocket"></i><span> Charges Report</span>
                         </a>
                     </li>
                     <li class="{{ $active(['revenues.*']) ? 'active' : '' }}">
                         <a href="{{ route('revenues.index') }}">
-                            <i class="fe fe-trending-up"></i><span> Revenue &amp; Margins</span>
+                            <i class="fe fe-trending-up"></i><span> Revenue Report</span>
                         </a>
                     </li>
                 @endif

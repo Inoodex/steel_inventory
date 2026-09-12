@@ -95,18 +95,24 @@
             </thead>
             <tbody>
                 @foreach ($dailyExpense as $i => $exp)
+                    @php
+                        $spendMethodText = ucfirst(str_replace('_', ' ', $exp->spend_method));
+                        if ($exp->bankDetail) {
+                            $spendMethodText .= ' (' . $exp->bankDetail->bank_name . ')';
+                        }
+                    @endphp
                     <tr>
                         <td>{{ $i + 1 }}</td>
                         <td>{{ \Carbon\Carbon::parse($exp->date)->format('d M, Y') }}</td>
-                        <td>{{ $exp->category_name }}</td>
+                        <td>{{ $exp->category_name ?? ($exp->category->name ?? 'N/A') }}</td>
                         <td>{{ $exp->remarks }}</td>
-                        <td>${{ number_format($exp->amount, 2) }}</td>
-                        <td>{{ ucfirst(str_replace('_', ' ', $exp->spend_method)) }}</td>
+                        <td>৳{{ number_format($exp->amount, 2) }}</td>
+                        <td>{{ $spendMethodText }}</td>
                     </tr>
                 @endforeach
                 <tr>
                     <td colspan="4" style="text-align:right;font-weight:bold;">Total</td>
-                    <td style="font-weight:bold;">${{ number_format($dailyExpense->sum('amount'), 2) }}</td>
+                    <td style="font-weight:bold;">৳{{ number_format($dailyExpense->sum('amount'), 2) }}</td>
                     <td></td>
                 </tr>
             </tbody>

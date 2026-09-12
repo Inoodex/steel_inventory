@@ -44,6 +44,11 @@ class Lot extends Model
         return $this->hasMany(Coil::class);
     }
 
+    public function salesItems()
+    {
+        return $this->hasMany(SalesItem::class, 'lot_id');
+    }
+
     /**
      * Get the primary warehouse for this lot from its purchases
      */

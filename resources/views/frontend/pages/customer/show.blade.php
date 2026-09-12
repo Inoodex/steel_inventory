@@ -68,6 +68,8 @@
         $totalOrders = $sales->count();
         $totalSpent = $sales->sum('payable_amount');
         $dueAmount = $sales->sum('due_amount');
+        $openingBalance = (float)($customer->opening_balance ?? 0.00);
+        $netOutstandingDue = $openingBalance + (float)$dueAmount;
     @endphp
 
     <!-- Customer Summary Card -->
@@ -128,10 +130,10 @@
 
     <!-- Sales & Financial Metrics -->
     <div class="row g-3 mb-4">
-        <div class="col-12 col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 bg-white mb-0">
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="card border-0 shadow-sm rounded-3 bg-white mb-0 h-100">
                 <div class="card-body p-3 d-flex align-items-center">
-                    <div class="avatar avatar-md bg-primary-light text-primary rounded-circle me-3 d-flex align-items-center justify-content-center">
+                    <div class="avatar avatar-md bg-primary-light text-primary rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
                         <i class="fe fe-shopping-bag fs-5"></i>
                     </div>
                     <div>
@@ -142,29 +144,43 @@
             </div>
         </div>
 
-        <div class="col-12 col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 bg-white mb-0">
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="card border-0 shadow-sm rounded-3 bg-white mb-0 h-100">
                 <div class="card-body p-3 d-flex align-items-center">
-                    <div class="avatar avatar-md bg-success-light text-success rounded-circle me-3 d-flex align-items-center justify-content-center">
+                    <div class="avatar avatar-md bg-success-light text-success rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
                         <i class="fe fe-dollar-sign fs-5"></i>
                     </div>
                     <div>
-                        <small class="text-muted d-block">Total Purchased Amount</small>
+                        <small class="text-muted d-block">Total Invoiced</small>
                         <h5 class="fw-bold text-dark mb-0">৳{{ number_format($totalSpent, 2) }}</h5>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-12 col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 bg-white mb-0">
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="card border-0 shadow-sm rounded-3 bg-white mb-0 h-100">
                 <div class="card-body p-3 d-flex align-items-center">
-                    <div class="avatar avatar-md bg-danger-light text-danger rounded-circle me-3 d-flex align-items-center justify-content-center">
+                    <div class="avatar avatar-md bg-warning-light text-warning rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                        <i class="fe fe-clock fs-5"></i>
+                    </div>
+                    <div>
+                        <small class="text-muted d-block">Opening Due Balance</small>
+                        <h5 class="fw-bold text-dark mb-0">৳{{ number_format($openingBalance, 2) }}</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="card border-0 shadow-sm rounded-3 bg-white mb-0 h-100">
+                <div class="card-body p-3 d-flex align-items-center">
+                    <div class="avatar avatar-md {{ $netOutstandingDue > 0 ? 'bg-danger-light text-danger' : 'bg-success-light text-success' }} rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
                         <i class="fe fe-alert-circle fs-5"></i>
                     </div>
                     <div>
-                        <small class="text-muted d-block">Outstanding Due</small>
-                        <h5 class="fw-bold text-dark mb-0">৳{{ number_format($dueAmount, 2) }}</h5>
+                        <small class="text-muted d-block">Net Outstanding Due</small>
+                        <h5 class="fw-bold {{ $netOutstandingDue > 0 ? 'text-danger' : 'text-success' }} mb-0">৳{{ number_format($netOutstandingDue, 2) }}</h5>
                     </div>
                 </div>
             </div>

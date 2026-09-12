@@ -121,8 +121,8 @@
                         <i class="fe fe-credit-card fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Card / Bank Payments</h6>
-                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($dailyExpense->whereIn('spend_method', ['card', 'bank_transfer'])->sum('amount'), 2) }}</h4>
+                        <h6 class="text-muted fw-normal mb-1">Bank / MFS Payments</h6>
+                        <h4 class="mb-0 fw-bold text-dark">৳{{ number_format($dailyExpense->where('spend_method', '!=', 'cash')->sum('amount'), 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -136,27 +136,41 @@
             <h6 class="fw-bold text-dark mb-3"><i class="fe fe-filter me-2 text-primary"></i>Filter Daily Expenses</h6>
             <form action="{{ route('dailyExpenses.index') }}" method="GET">
                 <div class="row g-3 align-items-end">
-                    <div class="col-lg-2 col-md-6 col-12">
+                    <div class="col-lg-2 col-md-4 col-6">
                         <label class="form-label small text-secondary fw-semibold mb-1">From Date</label>
                         <input type="date" name="from" class="form-control border-light-subtle" value="{{ old('from', $request->from ?? '') }}">
                     </div>
 
-                    <div class="col-lg-2 col-md-6 col-12">
+                    <div class="col-lg-2 col-md-4 col-6">
                         <label class="form-label small text-secondary fw-semibold mb-1">To Date</label>
                         <input type="date" name="to" class="form-control border-light-subtle" value="{{ old('to', $request->to ?? '') }}">
                     </div>
 
-                    <div class="col-lg-2 col-md-6 col-12">
+                    <div class="col-lg-2 col-md-4 col-6">
                         <label class="form-label small text-secondary fw-semibold mb-1">Spend Method</label>
                         <select name="spend_method" class="form-select border-light-subtle">
                             <option value="">All Methods</option>
                             <option value="cash" {{ $request->spend_method == 'cash' ? 'selected' : '' }}>Cash</option>
-                            <option value="card" {{ $request->spend_method == 'card' ? 'selected' : '' }}>Card</option>
-                            <option value="bank_transfer" {{ $request->spend_method == 'bank_transfer' ? 'selected' : '' }}>Bank Transfer</option>
+                            <option value="bank" {{ $request->spend_method == 'bank' ? 'selected' : '' }}>Bank Transfer</option>
+                            <option value="mobile_banking" {{ $request->spend_method == 'mobile_banking' ? 'selected' : '' }}>Mobile Banking (bKash/Nagad)</option>
+                            <option value="card" {{ $request->spend_method == 'card' ? 'selected' : '' }}>Card Payment</option>
+                            <option value="other" {{ $request->spend_method == 'other' ? 'selected' : '' }}>Other / Online</option>
                         </select>
                     </div>
 
-                    <div class="col-lg-3 col-md-6 col-12">
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Bank / MFS Account</label>
+                        <select name="bank_detail_id" class="form-select border-light-subtle">
+                            <option value="">All Accounts</option>
+                            @foreach ($bankDetails as $bank)
+                                <option value="{{ $bank->id }}" {{ $request->bank_detail_id == $bank->id ? 'selected' : '' }}>
+                                    {{ $bank->bank_name }} ({{ $bank->account_number }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-lg-2 col-md-4 col-6">
                         <label class="form-label small text-secondary fw-semibold mb-1">Category</label>
                         <select name="expense_category_id" class="form-select border-light-subtle">
                             <option value="">All Categories</option>
@@ -168,7 +182,7 @@
                         </select>
                     </div>
 
-                    <div class="col-lg-3 col-md-12 col-12 d-flex gap-2">
+                    <div class="col-lg-2 col-md-4 col-12 d-flex gap-2">
                         <button type="submit" name="search_for" value="filter" class="btn btn-primary flex-fill rounded-3 py-2">Filter</button>
                         <a href="{{ route('dailyExpenses.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3">Reset</a>
                     </div>
@@ -184,7 +198,7 @@
             <div class="row align-items-center g-3">
                 <div class="col-12 col-md-6">
                     <div class="search-box-custom">
-                        <input type="text" id="dailyExpenseSearchInput" class="form-control border-light-subtle" placeholder="Search employee, category, remarks, amount..." value="{{ old('key', $request->key ?? '') }}" autocomplete="off">
+                        <input type="text" id="dailyExpenseSearchInput" class="form-control border-light-subtle" placeholder="Search employee, category, remarks, amount, bank..." value="{{ old('key', $request->key ?? '') }}" autocomplete="off">
                     </div>
                 </div>
                 <div class="col-12 col-md-6 text-md-end text-muted small">
@@ -203,7 +217,7 @@
                             <th>Employee</th>
                             <th>Category</th>
                             <th>Amount</th>
-                            <th>Spend Method</th>
+                            <th>Spend Method / Account</th>
                             <th>Remarks</th>
                             <th class="pe-4 text-end">Action</th>
                         </tr>
@@ -212,11 +226,12 @@
                         @forelse ($dailyExpense as $item)
                             @php
                                 $empName = $item->employee->name ?? 'N/A';
-                                $catName = $item->category_name ?? 'N/A';
+                                $catName = $item->category_name ?? ($item->category->name ?? 'N/A');
                                 $dateFormatted = \Carbon\Carbon::parse($item->date)->format('d M, Y');
                                 $spendFormatted = ucfirst(str_replace('_', ' ', $item->spend_method));
+                                $bankInfo = $item->bankDetail ? ($item->bankDetail->bank_name . ' ' . $item->bankDetail->account_number . ' ' . $item->bankDetail->account_name) : '';
                             @endphp
-                            <tr class="daily-expense-row" data-search="{{ strtolower($empName . ' ' . $catName . ' ' . $item->remarks . ' ' . $item->amount . ' ' . $spendFormatted) }}">
+                            <tr class="daily-expense-row" data-search="{{ strtolower($empName . ' ' . $catName . ' ' . $item->remarks . ' ' . $item->amount . ' ' . $spendFormatted . ' ' . $bankInfo) }}">
                                 <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
                                 <td>
                                     <span class="text-secondary small">{{ $dateFormatted }}</span>
@@ -231,7 +246,21 @@
                                     <span class="badge badge-soft-primary px-3 py-1 rounded-pill fs-7">৳{{ number_format($item->amount, 2) }}</span>
                                 </td>
                                 <td>
-                                    <span class="text-dark small fw-semibold">{{ $spendFormatted }}</span>
+                                    @if($item->spend_method === 'cash')
+                                        <span class="badge badge-soft-success px-2.5 py-1 rounded-pill fs-8 fw-semibold">
+                                            <i class="fe fe-dollar-sign me-1"></i>Cash
+                                        </span>
+                                    @else
+                                        <span class="badge badge-soft-info px-2.5 py-1 rounded-pill fs-8 fw-semibold">
+                                            <i class="fe fe-credit-card me-1"></i>{{ $spendFormatted }}
+                                        </span>
+                                        @if($item->bankDetail)
+                                            <div class="text-secondary mt-1" style="font-size: 11px; line-height: 1.2;">
+                                                <i class="fe fe-layers me-1 text-primary"></i><strong>{{ $item->bankDetail->bank_name }}</strong>
+                                                <span class="text-muted d-block font-monospace">{{ $item->bankDetail->account_number }}</span>
+                                            </div>
+                                        @endif
+                                    @endif
                                 </td>
                                 <td>
                                     <span class="text-muted small">{{ Str::limit($item->remarks, 30) }}</span>

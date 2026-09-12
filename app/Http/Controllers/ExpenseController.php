@@ -14,12 +14,11 @@ use Illuminate\Http\Request;
 use App\Mail\CreateSalesMail;
 use Illuminate\Support\Facades\Mail;
 use App\Models\ExpenseCategory;
+use App\Models\BankDetail;
 use Illuminate\Support\Facades\Auth;
 
 class ExpenseController extends Controller
 {
-   
-
     public function index(Request $request)
     {
         // Start the query on daily_expenses, joining to categories only:
@@ -37,6 +36,12 @@ class ExpenseController extends Controller
         // Spend method filter
         if ($request->spend_method) {
             $query->where('daily_expenses.spend_method', $request->spend_method);
+            $defaultFilter = false;
+        }
+
+        // Bank Detail filter
+        if ($request->bank_detail_id) {
+            $query->where('daily_expenses.bank_detail_id', $request->bank_detail_id);
             $defaultFilter = false;
         }
 
@@ -61,7 +66,7 @@ class ExpenseController extends Controller
 
         // Select what we need
         $dailyExpense = $query
-            ->with('employee')
+            ->with(['employee', 'bankDetail', 'category'])
             ->select(
                 'daily_expenses.*',
                 'expense_categories.name as category_name'
@@ -69,12 +74,13 @@ class ExpenseController extends Controller
             ->orderBy('daily_expenses.id', 'desc')
             ->get();
 
-        // Pull only the active categories for the filter dropdown
+        // Pull only the active categories and bank accounts for the filter dropdown
         $categories = ExpenseCategory::where('status', 1)->orderBy('name')->get();
+        $bankDetails = BankDetail::active()->orderBy('bank_name')->get();
 
         // PDF export shortcut
         if ($request->search_for === 'pdf') {
-            $html = view('pdf.daily_expense', compact('dailyExpense', 'request', 'categories'))->render();
+            $html = view('pdf.daily_expense', compact('dailyExpense', 'request', 'categories', 'bankDetails'))->render();
             $mpdf = new \Mpdf\Mpdf([
                 'mode' => 'utf-8',
                 'format' => 'A4',
@@ -87,7 +93,7 @@ class ExpenseController extends Controller
         }
 
         // Render index view
-        return view('frontend.pages.expense.index', compact('dailyExpense','request','categories'));
+        return view('frontend.pages.expense.index', compact('dailyExpense', 'request', 'categories', 'bankDetails'));
     }
 
 
@@ -97,17 +103,17 @@ class ExpenseController extends Controller
      */
     public function create()
     {
-            $users = User::leftJoin('model_has_roles', 'model_has_roles.model_id', '=', 'users.id')
-                ->leftJoin('roles', 'model_has_roles.role_id', '=', 'roles.id')
-                ->select('users.*', 'roles.name as roleName')
-                ->orderBy('users.id', 'desc')
-                ->get();
+        $users = User::leftJoin('model_has_roles', 'model_has_roles.model_id', '=', 'users.id')
+            ->leftJoin('roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->select('users.*', 'roles.name as roleName')
+            ->orderBy('users.id', 'desc')
+            ->get();
 
-            $employees = Employee::where('status', 'active')->get();
+        $employees = Employee::where('status', 'active')->get();
+        $categories = ExpenseCategory::all();
+        $bankDetails = BankDetail::active()->orderBy('bank_name')->get();
 
-            $categories = ExpenseCategory::all();
-
-            return view('frontend.pages.expense.create', compact('users', 'categories', 'employees'));
+        return view('frontend.pages.expense.create', compact('users', 'categories', 'employees', 'bankDetails'));
     }
 
 
@@ -154,7 +160,8 @@ class ExpenseController extends Controller
             'employee_id' => 'required|exists:employees,id',
             'date' => 'required|date',
             'amount' => 'required|numeric|min:0.01',
-            'spend_method' => 'required|in:cash,card,bank_transfer',
+            'spend_method' => 'required|in:cash,bank,card,bank_transfer,mobile_banking,other',
+            'bank_detail_id' => 'nullable|required_unless:spend_method,cash|exists:bank_details,id',
             'remarks' => 'nullable|string',
             'expense_category_id' => 'required|exists:expense_categories,id',
         ]);
@@ -166,6 +173,7 @@ class ExpenseController extends Controller
             'expense_category_id' => $request->expense_category_id,
             'amount' => $request->amount,
             'spend_method' => $request->spend_method,
+            'bank_detail_id' => $request->spend_method === 'cash' ? null : $request->bank_detail_id,
             'remarks' => $request->remarks,
         ]);
 
@@ -191,7 +199,7 @@ class ExpenseController extends Controller
      */
     public function edit(string $id)
     {
-        $expense = DailyExpense::where('id', $id)->first();        
+        $expense = DailyExpense::where('id', $id)->firstOrFail();        
         $users = User::leftJoin('model_has_roles', 'model_has_roles.model_id', '=', 'users.id')
             ->leftJoin('roles', 'model_has_roles.role_id', '=', 'roles.id')
             ->select('users.*', 'roles.name as roleName')
@@ -199,8 +207,9 @@ class ExpenseController extends Controller
             ->get();
         $employees = Employee::where('status', 'active')->get();
         $categories = ExpenseCategory::where('status', 1)->orderBy('name')->get();
-        return view('frontend.pages.expense.edit', compact('users', 'expense', 'categories', 'employees'));
+        $bankDetails = BankDetail::active()->orderBy('bank_name')->get();
 
+        return view('frontend.pages.expense.edit', compact('users', 'expense', 'categories', 'employees', 'bankDetails'));
     }
 
     /**
@@ -208,31 +217,28 @@ class ExpenseController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $attributes = $request->all();
-        $rules = [
+        $request->validate([
+            'employee_id'         => 'nullable|exists:employees,id',
             'date'                => 'required|date',
             'expense_category_id' => 'required|exists:expense_categories,id',
             'amount'              => 'required|numeric|min:0.01',
-            'spend_method'        => 'required|in:cash,card,bank_transfer',
+            'spend_method'        => 'required|in:cash,bank,card,bank_transfer,mobile_banking,other',
+            'bank_detail_id'      => 'nullable|required_unless:spend_method,cash|exists:bank_details,id',
             'remarks'             => 'nullable|string|max:1000',
-        ];
-
-        $validation = Validator::make($attributes, $rules);
-        if ($validation->fails()) {
-            return redirect()->back()
-                ->with(['error' => getNotify(4)])
-                ->withErrors($validation)
-                ->withInput();
-        }
+        ]);
 
         // Find the existing expense entry
         $expense = DailyExpense::findOrFail($id);
 
         // Update the expense details
         $expense->date                = $request->date;
+        if ($request->has('employee_id')) {
+            $expense->employee_id     = $request->employee_id;
+        }
         $expense->expense_category_id = $request->expense_category_id;
         $expense->amount              = $request->amount;
         $expense->spend_method        = $request->spend_method;
+        $expense->bank_detail_id      = $request->spend_method === 'cash' ? null : $request->bank_detail_id;
         $expense->remarks             = $request->remarks;
         $expense->save();
 
@@ -307,22 +313,28 @@ class ExpenseController extends Controller
         }
 
         // Determine Credit Account (Payment Source Asset)
+        $cashAcc = null;
         if ($expense->spend_method === 'cash') {
             $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
-        } else {
-            $cashAcc = \App\Models\ChartOfAccount::where('account_code', 'like', '1120-%')
-                ->where('is_active', true)
-                ->first() ?? \App\Models\ChartOfAccount::where('account_code', '1120')->first();
+        } elseif ($expense->bank_detail_id && $expense->bankDetail) {
+            $cashAcc = $expense->bankDetail->resolveChartOfAccount();
         }
 
         if (!$cashAcc) {
-            $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
+            $cashAcc = \App\Models\ChartOfAccount::where('account_code', 'like', '1120-%')
+                ->where('is_active', true)
+                ->first() ?? \App\Models\ChartOfAccount::where('account_code', '1120')->first()
+                ?? \App\Models\ChartOfAccount::where('account_code', '1110')->first();
         }
 
         if ($expenseAcc && $cashAcc && (float)$expense->amount > 0) {
             $catTitle = $category ? $category->name : 'Expense';
             $employeeName = $expense->employee ? $expense->employee->name : '';
             $desc = "Daily Expense #{$expense->id}: {$catTitle}" . ($employeeName ? " ({$employeeName})" : '') . ($expense->remarks ? " - {$expense->remarks}" : '');
+            
+            $creditDesc = $expense->spend_method === 'cash'
+                ? 'Paid via Cash'
+                : ('Paid from ' . ($expense->bankDetail ? $expense->bankDetail->bank_name . ' (' . $expense->bankDetail->account_number . ')' : ucfirst(str_replace('_', ' ', $expense->spend_method))));
 
             postJournalEntry([
                 'entry_date' => $expense->date ?? date('Y-m-d'),
@@ -342,7 +354,7 @@ class ExpenseController extends Controller
                         'account_id' => $cashAcc->id,
                         'debit' => 0.00,
                         'credit' => (float) $expense->amount,
-                        'description' => "Paid via " . ucfirst(str_replace('_', ' ', $expense->spend_method)),
+                        'description' => $creditDesc,
                     ],
                 ],
             ]);

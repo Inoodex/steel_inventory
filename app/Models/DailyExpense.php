@@ -16,6 +16,7 @@ class DailyExpense extends Model
         'remarks',
         'amount',
         'spend_method',
+        'bank_detail_id',
     ];
 
     public function user()
@@ -36,5 +37,10 @@ class DailyExpense extends Model
     public function expenseCategory()
     {
         return $this->belongsTo(ExpenseCategory::class, 'expense_category_id');
+    }
+
+    public function bankDetail()
+    {
+        return $this->belongsTo(BankDetail::class, 'bank_detail_id');
     }
 }

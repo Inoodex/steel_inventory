@@ -99,12 +99,12 @@
                         <label class="form-label small fw-bold text-secondary mb-1">To Date:</label>
                         <input type="date" name="to_date" class="form-control form-control-sm" value="{{ $toDate }}">
                     </div>
-                    <div class="col-lg-2 col-md-4 col-12 d-flex gap-1 ms-auto">
-                        <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                    <div class="col-lg-2 col-md-4 col-6 d-flex align-items-center gap-1">
+                        <button type="submit" class="btn btn-primary btn-sm px-3 rounded-2 shadow-sm flex-grow-1 flex-md-grow-0 d-inline-flex align-items-center justify-content-center text-nowrap" style="height: 31px;">
                             <i class="fas fa-search me-1"></i> View
                         </button>
-                        <a href="{{ route('ledger.index') }}" class="btn btn-outline-secondary btn-sm px-2" title="Reset">
-                            <i class="fas fa-undo"></i>
+                        <a href="{{ route('ledger.index') }}" class="btn btn-outline-secondary btn-sm px-3 rounded-2 shadow-sm flex-grow-1 flex-md-grow-0 d-inline-flex align-items-center justify-content-center text-nowrap" title="Reset" style="height: 31px;">
+                            <i class="fas fa-undo me-1"></i> Reset
                         </a>
                     </div>
                 </form>
