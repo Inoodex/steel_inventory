@@ -149,6 +149,64 @@ class InventoryController extends Controller
     }
 
     /**
+     * Update an opening stock coil.
+     */
+    public function updateOpeningStock(Request $request, $id)
+    {
+        $coil = Coil::findOrFail($id);
+
+        if ($coil->purchase_id !== null) {
+            return redirect()->back()->with('error', 'This coil originated from a vendor purchase invoice and must be managed via Purchases.');
+        }
+
+        $request->validate([
+            'warehouse_id' => 'required|exists:warehouses,id',
+            'lot_id'       => 'nullable|exists:lots,id',
+            'coil_number'  => 'required|string|max:100|unique:coils,coil_number,' . $id,
+            'thickness'    => 'required|string|max:100',
+            'width'        => 'required|string|max:100',
+            'length'       => 'required|string|max:100',
+            'piece_count'  => 'required|numeric|min:0.01',
+            'net_weight'   => 'required|numeric|min:0.01',
+            'rate_per_ton' => 'nullable|numeric|min:0',
+            'notes'        => 'nullable|string',
+        ]);
+
+        $prevNetWeight = (float) $coil->net_weight;
+        $prevRemaining = (float) $coil->remaining_weight;
+        $consumedWeight = max(0, $prevNetWeight - $prevRemaining);
+
+        $newNetWeight = (float) $request->net_weight;
+        if ($newNetWeight < $consumedWeight) {
+            return redirect()->back()->withInput()->with('error', "Net weight cannot be less than already sold/consumed weight (" . number_format($consumedWeight, 2) . " kg).");
+        }
+
+        $newRemainingWeight = $newNetWeight - $consumedWeight;
+        $rate = (float) ($request->rate_per_ton ?? 0);
+        $itemTotal = $newNetWeight * $rate;
+
+        $coil->update([
+            'warehouse_id'     => $request->warehouse_id,
+            'lot_id'           => $request->filled('lot_id') ? $request->lot_id : null,
+            'coil_number'      => trim($request->coil_number),
+            'thickness'        => $request->thickness,
+            'width'            => $request->width,
+            'length'           => $request->length,
+            'piece_count'      => (float) $request->piece_count,
+            'gross_weight'     => $newNetWeight,
+            'net_weight'       => $newNetWeight,
+            'remaining_weight' => $newRemainingWeight,
+            'rate_per_ton'     => $rate,
+            'total_price'      => $itemTotal,
+            'status'           => ($newRemainingWeight <= 0) ? 'exhausted' : 'in_stock',
+            'notes'            => $request->notes ?? $coil->notes,
+            'updated_by'       => Auth::id(),
+        ]);
+
+        return redirect()->route('inventory.index')->with('success', "Opening stock coil {$coil->coil_number} updated successfully.");
+    }
+
+    /**
      * Delete an untouched opening stock coil.
      */
     public function destroyOpeningStock($id)

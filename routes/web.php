@@ -53,6 +53,7 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('/inventory/pdf', [InventoryController::class, 'downloadPdf'])->name('inventory.pdf');
     Route::get('/inventory/opening-stock', [InventoryController::class, 'openingStock'])->name('inventory.opening-stock.create');
     Route::post('/inventory/opening-stock', [InventoryController::class, 'storeOpeningStock'])->name('inventory.opening-stock.store');
+    Route::put('/inventory/opening-stock/{id}', [InventoryController::class, 'updateOpeningStock'])->name('inventory.opening-stock.update');
     Route::delete('/inventory/opening-stock/{id}', [InventoryController::class, 'destroyOpeningStock'])->name('inventory.opening-stock.destroy');
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::post('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.update_status');

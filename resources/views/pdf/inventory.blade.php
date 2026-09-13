@@ -130,8 +130,8 @@
         <tbody>
             @forelse($coils as $index => $coil)
                 @php
-                    $vendorName = $coil->lot && $coil->lot->vendor ? $coil->lot->vendor->name : ($coil->vendor->name ?? 'N/A');
-                    $lotNo = $coil->lot ? $coil->lot->lot_number : 'N/A';
+                    $lotNo = $coil->lot ? $coil->lot->lot_number : ($coil->purchase_id ? 'N/A' : 'Opening Stock');
+                    $vendorName = $coil->lot && $coil->lot->vendor ? $coil->lot->vendor->name : ($coil->vendor->name ?? ($coil->purchase_id ? 'N/A' : 'Direct Yard Stock'));
                     $whName = $coil->warehouse ? $coil->warehouse->name : 'Main Yard';
                     $rem = (float) $coil->remaining_weight;
                 @endphp
