@@ -102,6 +102,27 @@
                     <i class="fe fe-file-text fs-6"></i>
                     <span>Export PDF Report</span>
                 </a>
+                <div class="dropdown">
+                    <button class="btn btn-outline-success px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2 dropdown-toggle" 
+                            type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fe fe-layers"></i>
+                        <span>Opening Stock</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                        <li>
+                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#quickOpeningStockModal">
+                                <i class="fe fe-plus text-success"></i>
+                                <span>Quick Single Entry</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('inventory.opening-stock.create') }}">
+                                <i class="fe fe-grid text-primary"></i>
+                                <span>Batch Intake Grid</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
                 <a href="{{ route('purchase.create') }}" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
                     <i class="fe fe-plus-circle"></i>
                     <span>Receive Ship Steel</span>
@@ -182,8 +203,7 @@
                 <div class="col-xl-4 col-lg-4 col-md-6 col-12">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-light border-light-subtle text-muted"><i class="fe fe-search"></i></span>
-                        <input type="text" name="search" class="form-control border-light-subtle" 
-                               placeholder="Search Coil #, thickness, size, lot, vendor..." value="{{ request('search') }}">
+                        <input type="text" name="search" class="form-control border-light-subtle" value="{{ request('search') }}">
                     </div>
                 </div>
                 <div class="col-xl-3 col-lg-2 col-md-3 col-6">
@@ -317,6 +337,10 @@
                                             <a href="{{ route('lots.show', $coil->lot->id) }}" class="fw-bold text-dark text-decoration-none d-block">
                                                 {{ $lotNo }}
                                             </a>
+                                        @elseif(!$coil->purchase_id)
+                                            <span class="badge badge-soft-info border px-2 py-0 fs-8 d-inline-block mb-1">
+                                                <i class="fe fe-layers me-1"></i>Opening Stock
+                                            </span>
                                         @else
                                             <span class="fw-bold text-dark d-block">{{ $lotNo }}</span>
                                         @endif
@@ -368,6 +392,18 @@
                                                     <i class="fe fe-layers text-secondary"></i>
                                                     <span>View Lot Details</span>
                                                 </a>
+                                            @endif
+
+                                            @if(!$coil->purchase_id && (float)$coil->remaining_weight >= (float)$coil->net_weight)
+                                                <div class="dropdown-divider my-1"></div>
+                                                <form action="{{ route('inventory.opening-stock.destroy', $coil->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to remove this opening stock coil from inventory?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger">
+                                                        <i class="fe fe-trash-2"></i>
+                                                        <span>Delete Opening Stock</span>
+                                                    </button>
+                                                </form>
                                             @endif
 
                                         </div>
@@ -567,6 +603,120 @@
         </div>
     </div>
 </div>
+
+<!-- Quick Opening Stock Modal -->
+<div class="modal fade" id="quickOpeningStockModal" tabindex="-1" aria-labelledby="quickOpeningStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-3 border-0 shadow">
+            <div class="modal-header border-bottom bg-light">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="avatar avatar-md bg-success-light text-success rounded-circle d-flex align-items-center justify-content-center">
+                        <i class="fe fe-layers fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Add Opening Stock</h5>
+                        <small class="text-muted">Register existing physical steel coils or plates into yard inventory</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form action="{{ route('inventory.opening-stock.store') }}" method="POST">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <span><i class="fe fe-info me-1"></i>Need to enter multiple items at once?</span>
+                        <a href="{{ route('inventory.opening-stock.create') }}" class="fw-bold text-primary text-decoration-none">
+                            Open Batch Intake Grid &rarr;
+                        </a>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-bold small text-dark mb-1">Warehouse / Yard <span class="text-danger">*</span></label>
+                            <select name="warehouse_id" class="form-select form-select-sm" required>
+                                <option value="">Select Warehouse</option>
+                                @foreach($warehouses as $wh)
+                                    <option value="{{ $wh->id }}">{{ $wh->name }} {{ $wh->location ? '('.$wh->location.')' : '' }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-bold small text-dark mb-1">Lot / Consignment (Optional)</label>
+                            <select name="lot_id" class="form-select form-select-sm">
+                                <option value="">None / Auto Opening</option>
+                                @foreach($lots as $lot)
+                                    <option value="{{ $lot->id }}">{{ $lot->lot_number }} {{ $lot->name ? '- '.$lot->name : '' }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 col-12">
+                            <label class="form-label fw-bold small text-dark mb-1">Custom Coil Tag (Optional)</label>
+                            <input type="text" name="coil_number" class="form-control form-control-sm" />
+                            <small class="text-muted fs-8">Leave empty for auto tag</small>
+                        </div>
+
+                        <div class="col-md-4 col-12">
+                            <label class="form-label fw-bold small text-dark mb-1">Thickness <span class="text-danger">*</span></label>
+                            <input type="text" name="thickness" class="form-control form-control-sm" required />
+                        </div>
+
+                        <div class="col-md-4 col-12">
+                            <label class="form-label fw-bold small text-dark mb-1">Width / Size <span class="text-danger">*</span></label>
+                            <input type="text" name="width" class="form-control form-control-sm" required />
+                        </div>
+
+                        <div class="col-md-4 col-12">
+                            <label class="form-label fw-bold small text-dark mb-1">Size Type <span class="text-danger">*</span></label>
+                            <select name="length" class="form-select form-select-sm" required>
+                                <option value="ft" selected>Feet (ft)</option>
+                                <option value="mm">Millimeter (mm)</option>
+                                <option value="inch">Inch (in)</option>
+                                <option value="Coil">Coil</option>
+                                <option value="Plate">Plate</option>
+                                <option value="Standard">Standard</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 col-12">
+                            <label class="form-label fw-bold small text-dark mb-1">Piece Count (Qty) <span class="text-danger">*</span></label>
+                            <input type="number" step="any" min="0.01" name="piece_count" id="quickModalQty" class="form-control form-control-sm text-end" value="1" required />
+                        </div>
+
+                        <div class="col-md-4 col-12">
+                            <label class="form-label fw-bold small text-dark mb-1">Net Weight (kg) <span class="text-danger">*</span></label>
+                            <input type="number" step="any" min="0.01" name="net_weight" id="quickModalWeight" class="form-control form-control-sm text-end" required />
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-bold small text-dark mb-1">Cost Rate (৳/kg)</label>
+                            <input type="number" step="any" min="0" name="rate_per_ton" id="quickModalRate" class="form-control form-control-sm text-end" value="0" />
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-bold small text-dark mb-1">Total Valuation (৳)</label>
+                            <input type="text" id="quickModalTotal" class="form-control form-control-sm text-end bg-light fw-bold" readonly value="0.00" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-dark mb-1">Notes / Origin Remarks</label>
+                            <input type="text" name="notes" class="form-control form-control-sm" value="Opening Stock" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top p-3 bg-light d-flex justify-content-between">
+                    <button type="button" class="btn btn-secondary px-3 py-2 rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4 py-2 rounded-3 shadow fw-semibold">
+                        <i class="fe fe-check me-1"></i>Save Opening Stock
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -625,5 +775,17 @@ function openCoilModal(c) {
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
 }
+
+// Quick modal calculation
+$(document).ready(function() {
+    function calcQuickModal() {
+        const w = parseFloat($('#quickModalWeight').val()) || 0;
+        const r = parseFloat($('#quickModalRate').val()) || 0;
+        const tot = w * r;
+        $('#quickModalTotal').val(tot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    }
+
+    $('#quickModalWeight, #quickModalRate').on('input', calcQuickModal);
+});
 </script>
 @endpush

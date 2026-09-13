@@ -7,9 +7,167 @@ use App\Models\Lot;
 use App\Models\Vendor;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class InventoryController extends Controller
 {
+    /**
+     * Show opening stock batch entry page.
+     */
+    public function openingStock()
+    {
+        $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
+        $lots = Lot::where('status', 'active')->latest()->get();
+        $vendors = Vendor::where('status', '1')->orderBy('name')->get();
+
+        return view('frontend.pages.inventory.opening_stock', compact('warehouses', 'lots', 'vendors'));
+    }
+
+    /**
+     * Store opening stock intake (single modal or multi-row batch grid).
+     */
+    public function storeOpeningStock(Request $request)
+    {
+        if ($request->has('items') && is_array($request->items)) {
+            $request->validate([
+                'items' => 'required|array|min:1',
+                'items.*.warehouse_id' => 'required|exists:warehouses,id',
+                'items.*.thickness' => 'required',
+                'items.*.width' => 'required',
+                'items.*.length' => 'required',
+                'items.*.piece_count' => 'required|numeric|min:0.01',
+                'items.*.net_weight' => 'required|numeric|min:0.01',
+                'items.*.rate_per_ton' => 'nullable|numeric|min:0',
+                'items.*.lot_id' => 'nullable|exists:lots,id',
+                'items.*.vendor_id' => 'nullable|exists:vendors,id',
+            ], [
+                'items.*.warehouse_id.required' => 'Warehouse is required for each row.',
+                'items.*.thickness.required' => 'Thickness is required for each row.',
+                'items.*.width.required' => 'Width / Size is required for each row.',
+                'items.*.length.required' => 'Length / Size type is required for each row.',
+                'items.*.piece_count.required' => 'Piece count is required for each row.',
+                'items.*.net_weight.required' => 'Net weight is required for each row.',
+            ]);
+
+            $rows = $request->items;
+        } else {
+            $request->validate([
+                'warehouse_id' => 'required|exists:warehouses,id',
+                'thickness' => 'required',
+                'width' => 'required',
+                'length' => 'required',
+                'piece_count' => 'required|numeric|min:0.01',
+                'net_weight' => 'required|numeric|min:0.01',
+                'rate_per_ton' => 'nullable|numeric|min:0',
+                'lot_id' => 'nullable|exists:lots,id',
+                'vendor_id' => 'nullable|exists:vendors,id',
+            ]);
+
+            $rows = [$request->all()];
+        }
+
+        $createdCount = 0;
+        $totalWeight = 0;
+        $totalValuation = 0;
+
+        DB::beginTransaction();
+        try {
+            foreach ($rows as $item) {
+                if (empty($item['thickness']) && empty($item['net_weight'])) {
+                    continue;
+                }
+
+                $netWeight = (float) ($item['net_weight'] ?? 0);
+                $pieceCount = (float) ($item['piece_count'] ?? 1);
+                $rate = (float) ($item['rate_per_ton'] ?? 0);
+                $itemTotal = $netWeight * $rate;
+
+                $customCoilNo = !empty($item['coil_number']) ? trim($item['coil_number']) : null;
+                if ($customCoilNo && Coil::where('coil_number', $customCoilNo)->exists()) {
+                    $coilNumber = Coil::generateCoilNumber();
+                } else {
+                    $coilNumber = $customCoilNo ?: Coil::generateCoilNumber();
+                }
+
+                Coil::create([
+                    'coil_number'      => $coilNumber,
+                    'purchase_id'      => null, // Opening Stock has no vendor purchase invoice
+                    'lot_id'           => !empty($item['lot_id']) ? $item['lot_id'] : null,
+                    'vendor_id'        => !empty($item['vendor_id']) ? $item['vendor_id'] : null,
+                    'warehouse_id'     => $item['warehouse_id'],
+                    'thickness'        => $item['thickness'],
+                    'width'            => $item['width'],
+                    'length'           => $item['length'],
+                    'piece_count'      => $pieceCount,
+                    'gross_weight'     => $netWeight,
+                    'tare_weight'      => 0,
+                    'net_weight'       => $netWeight,
+                    'remaining_weight' => $netWeight,
+                    'rate_per_ton'     => $rate,
+                    'total_price'      => $itemTotal,
+                    'status'           => 'in_stock',
+                    'notes'            => !empty($item['notes']) ? $item['notes'] : 'Opening Stock Intake',
+                    'created_by'       => Auth::id(),
+                ]);
+
+                $createdCount++;
+                $totalWeight += $netWeight;
+                $totalValuation += $itemTotal;
+            }
+
+            // Record journal entry for stock asset valuation if double entry exists
+            if ($totalValuation > 0 && function_exists('createJournalEntry')) {
+                try {
+                    $invAccount = \App\Models\ChartOfAccount::where('account_code', '1140')->first();
+                    $eqAccount = \App\Models\ChartOfAccount::where('account_code', '3100')->first();
+
+                    if ($invAccount && $eqAccount) {
+                        createJournalEntry([
+                            'entry_date' => now()->format('Y-m-d'),
+                            'reference_type' => 'opening_stock',
+                            'description' => "Opening Stock Intake ({$createdCount} items, " . number_format($totalWeight, 2) . " kg)",
+                            'items' => [
+                                ['account_id' => $invAccount->id, 'debit' => $totalValuation, 'credit' => 0],
+                                ['account_id' => $eqAccount->id, 'debit' => 0, 'credit' => $totalValuation],
+                            ],
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Opening stock journal could not be created: ' . $e->getMessage());
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('inventory.index')->with('success', "Successfully registered {$createdCount} opening stock item(s) (" . number_format($totalWeight, 2) . " kg) into yard inventory.");
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return redirect()->back()->withInput()->with('error', 'Failed to save opening stock: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete an untouched opening stock coil.
+     */
+    public function destroyOpeningStock($id)
+    {
+        $coil = Coil::findOrFail($id);
+
+        if ($coil->purchase_id !== null) {
+            return redirect()->back()->with('error', 'This coil originated from a vendor purchase invoice and cannot be deleted from opening stock.');
+        }
+
+        if ((float)$coil->remaining_weight < (float)$coil->net_weight) {
+            return redirect()->back()->with('error', "Coil {$coil->coil_number} has already been partially or fully sold/processed and cannot be deleted.");
+        }
+
+        $coilNumber = $coil->coil_number;
+        $coil->delete();
+
+        return redirect()->route('inventory.index')->with('success', "Opening stock coil {$coilNumber} has been removed from inventory.");
+    }
     /**
      * Display a unified listing of steel coil inventory & stock registry.
      */

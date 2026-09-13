@@ -51,6 +51,9 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::post('/user/pin', [UserController::class, 'pinStore'])->name('users.pin_store');
     // === Steel Inventory & Stock Registry ===
     Route::get('/inventory/pdf', [InventoryController::class, 'downloadPdf'])->name('inventory.pdf');
+    Route::get('/inventory/opening-stock', [InventoryController::class, 'openingStock'])->name('inventory.opening-stock.create');
+    Route::post('/inventory/opening-stock', [InventoryController::class, 'storeOpeningStock'])->name('inventory.opening-stock.store');
+    Route::delete('/inventory/opening-stock/{id}', [InventoryController::class, 'destroyOpeningStock'])->name('inventory.opening-stock.destroy');
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::post('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.update_status');
     Route::resource('warehouses', WarehouseController::class);
