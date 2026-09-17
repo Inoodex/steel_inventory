@@ -248,7 +248,105 @@
             </form>
         </div>
     </div>
-    <!-- /Filter & Search Card -->
+    <!-- Thickness & Weighted Average Price Breakdown Card -->
+    @if(isset($thicknessBreakdown) && $thicknessBreakdown->isNotEmpty())
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom border-light d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="avatar avatar-sm bg-primary-light text-primary rounded-circle d-flex align-items-center justify-content-center">
+                        <i class="fe fe-layers fs-5"></i>
+                    </span>
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0">Thickness &amp; Weighted Average Cost Breakdown</h6>
+                        <small class="text-muted">Calculated as Total Valuation ÷ Available Weight (AVCO) for active yard stock</small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    @php
+                        $overallWeight = $thicknessBreakdown->sum('total_weight');
+                        $overallVal = $thicknessBreakdown->sum('total_valuation');
+                        $overallAvg = $overallWeight > 0 ? ($overallVal / $overallWeight) : 0;
+                    @endphp
+                    <span class="badge bg-primary-light text-primary font-monospace px-3 py-2 fs-7 fw-bold">
+                        Overall Avg: ৳ {{ number_format($overallAvg, 2) }} / kg
+                    </span>
+                    <button class="btn btn-sm btn-light border rounded-2" type="button" data-bs-toggle="collapse" data-bs-target="#thicknessBreakdownCollapse" aria-expanded="true" aria-controls="thicknessBreakdownCollapse">
+                        <i class="fe fe-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="collapse show" id="thicknessBreakdownCollapse">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom align-middle mb-0">
+                            <thead class="bg-light text-secondary fs-7 text-uppercase">
+                                <tr>
+                                    <th class="ps-4">Thickness</th>
+                                    <th>Dimensions in Stock</th>
+                                    <th class="text-center">Batches / Qty</th>
+                                    <th class="text-end">Available Stock (kg)</th>
+                                    <th class="text-end">Total Valuation</th>
+                                    <th class="text-end">Weighted Avg Price</th>
+                                    <th class="text-end pe-4">Filter</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($thicknessBreakdown as $row)
+                                    <tr>
+                                        <td class="ps-4">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="fw-bold text-dark fs-6">{{ $row['thickness'] }}</span>
+                                                <span class="badge bg-light text-secondary border fs-8">Thickness</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if(!empty($row['sizes']))
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    @foreach($row['sizes'] as $sz)
+                                                        <span class="badge bg-light text-dark border px-2 py-1 fs-8">{{ $sz }}</span>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <span class="text-muted small">Standard Coil</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="fw-bold text-dark font-monospace">{{ $row['coils_count'] }}</span>
+                                            <small class="text-muted d-block" style="font-size: 10px;">{{ $row['pieces_count'] }} pcs</small>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="fw-bold text-primary font-monospace">{{ number_format($row['total_weight'], 2) }} kg</span>
+                                            <small class="text-muted d-block" style="font-size: 10px;">{{ number_format($row['total_weight_mt'], 3) }} MT</small>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="fw-bold text-success font-monospace">৳ {{ number_format($row['total_valuation'], 2) }}</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-inline-block text-end">
+                                                <span class="badge bg-primary-light text-primary fs-7 fw-bold px-3 py-1 font-monospace d-block">
+                                                    ৳ {{ number_format($row['avg_price_per_kg'], 2) }} / kg
+                                                </span>
+                                                <small class="text-muted fw-semibold" style="font-size: 10px;">
+                                                    (৳ {{ number_format($row['avg_price_per_ton'], 0) }} / MT)
+                                                </small>
+                                            </div>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <a href="{{ route('inventory.index', array_merge(request()->except(['page', 'search']), ['search' => $row['thickness']])) }}" class="btn btn-sm btn-outline-primary rounded-2 px-2 py-1 d-inline-flex align-items-center gap-1" title="Filter this thickness">
+                                                <i class="fe fe-filter"></i>
+                                                <span class="fs-8">View</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <!-- Inventory Table Card -->
     <div class="card border-0 shadow-sm rounded-3">
@@ -309,21 +407,6 @@
                                     'status' => $coil->status,
                                     'status_label' => ucfirst(str_replace('_', ' ', $coil->status)),
                                     'notes' => $coil->notes ?: 'No additional notes recorded for this coil.'
-                                ];
-                                $editData = [
-                                    'id' => $coil->id,
-                                    'update_url' => route('inventory.opening-stock.update', $coil->id),
-                                    'warehouse_id' => $coil->warehouse_id,
-                                    'lot_id' => $coil->lot_id,
-                                    'coil_number' => $coil->coil_number,
-                                    'thickness' => $coil->thickness,
-                                    'width' => $coil->width,
-                                    'length' => $coil->length ?: 'ft',
-                                    'piece_count' => (float)($coil->piece_count ?? 1),
-                                    'net_weight' => (float)$coil->net_weight,
-                                    'rate_per_ton' => (float)$coil->rate_per_ton,
-                                    'notes' => $coil->notes,
-                                    'consumed_weight' => max(0, (float)$coil->net_weight - (float)$coil->remaining_weight)
                                 ];
                             @endphp
                             <tr>
@@ -410,7 +493,7 @@
                                             @endif
 
                                             @if(!$coil->purchase_id)
-                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-primary" href="javascript:void(0)" onclick='openEditOpeningStockModal(@json($editData))'>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-primary" href="{{ route('inventory.opening-stock.edit', $coil->id) }}">
                                                     <i class="fe fe-edit"></i>
                                                     <span>Edit Opening Stock</span>
                                                 </a>
@@ -740,116 +823,6 @@
     </div>
 </div>
 
-<!-- Edit Opening Stock Modal -->
-<div class="modal fade" id="editOpeningStockModal" tabindex="-1" aria-labelledby="editOpeningStockModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content rounded-3 border-0 shadow">
-            <div class="modal-header border-bottom bg-light">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="avatar avatar-md bg-primary-light text-primary rounded-circle d-flex align-items-center justify-content-center">
-                        <i class="fe fe-edit fs-4"></i>
-                    </div>
-                    <div>
-                        <h5 class="modal-title fw-bold text-dark mb-0">Edit Opening Stock</h5>
-                        <small class="text-muted" id="editModalCoilSubtitle">Update physical specifications and cost valuation</small>
-                    </div>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-
-            <form id="editOpeningStockForm" method="POST" action="">
-                @csrf
-                @method('PUT')
-                <div class="modal-body p-4">
-                    <div id="editConsumedWarning" class="alert alert-warning py-2 px-3 mb-3 small d-none">
-                        <i class="fe fe-alert-triangle me-1"></i><strong>Note:</strong> <span id="editConsumedText">0.00 kg</span> of this coil has already been sold/dispatched. Net weight cannot be reduced below this amount.
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-md-6 col-12">
-                            <label class="form-label fw-bold small text-dark mb-1">Warehouse / Yard <span class="text-danger">*</span></label>
-                            <select name="warehouse_id" id="editWarehouseId" class="form-select form-select-sm" required>
-                                <option value="">Select Warehouse</option>
-                                @foreach($warehouses as $wh)
-                                    <option value="{{ $wh->id }}">{{ $wh->name }} {{ $wh->location ? '('.$wh->location.')' : '' }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-6 col-12">
-                            <label class="form-label fw-bold small text-dark mb-1">Lot / Consignment (Optional)</label>
-                            <select name="lot_id" id="editLotId" class="form-select form-select-sm">
-                                <option value="">None / Auto Opening</option>
-                                @foreach($lots as $lot)
-                                    <option value="{{ $lot->id }}">{{ $lot->lot_number }} {{ $lot->name ? '- '.$lot->name : '' }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-4 col-12">
-                            <label class="form-label fw-bold small text-dark mb-1">Coil Tag / Number <span class="text-danger">*</span></label>
-                            <input type="text" name="coil_number" id="editCoilNumber" class="form-control form-control-sm" required />
-                        </div>
-
-                        <div class="col-md-4 col-12">
-                            <label class="form-label fw-bold small text-dark mb-1">Thickness <span class="text-danger">*</span></label>
-                            <input type="text" name="thickness" id="editThickness" class="form-control form-control-sm" required />
-                        </div>
-
-                        <div class="col-md-4 col-12">
-                            <label class="form-label fw-bold small text-dark mb-1">Width / Size <span class="text-danger">*</span></label>
-                            <input type="text" name="width" id="editWidth" class="form-control form-control-sm" required />
-                        </div>
-
-                        <div class="col-md-4 col-12">
-                            <label class="form-label fw-bold small text-dark mb-1">Size Type <span class="text-danger">*</span></label>
-                            <select name="length" id="editLength" class="form-select form-select-sm" required>
-                                <option value="ft">Feet (ft)</option>
-                                <option value="mm">Millimeter (mm)</option>
-                                <option value="inch">Inch (in)</option>
-                                <option value="Coil">Coil</option>
-                                <option value="Plate">Plate</option>
-                                <option value="Standard">Standard</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-4 col-12">
-                            <label class="form-label fw-bold small text-dark mb-1">Piece Count (Qty) <span class="text-danger">*</span></label>
-                            <input type="number" step="any" min="0.01" name="piece_count" id="editPieceCount" class="form-control form-control-sm text-end" required />
-                        </div>
-
-                        <div class="col-md-4 col-12">
-                            <label class="form-label fw-bold small text-dark mb-1">Net Weight (kg) <span class="text-danger">*</span></label>
-                            <input type="number" step="any" min="0.01" name="net_weight" id="editNetWeight" class="form-control form-control-sm text-end" required />
-                        </div>
-
-                        <div class="col-md-6 col-12">
-                            <label class="form-label fw-bold small text-dark mb-1">Cost Rate (৳/kg)</label>
-                            <input type="number" step="any" min="0" name="rate_per_ton" id="editRatePerTon" class="form-control form-control-sm text-end" />
-                        </div>
-
-                        <div class="col-md-6 col-12">
-                            <label class="form-label fw-bold small text-dark mb-1">Total Valuation (৳)</label>
-                            <input type="text" id="editTotalValuation" class="form-control form-control-sm text-end bg-light fw-bold text-success" readonly value="0.00" />
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label fw-bold small text-dark mb-1">Notes / Origin Remarks</label>
-                            <input type="text" name="notes" id="editNotes" class="form-control form-control-sm" />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer border-top p-3 bg-light d-flex justify-content-between">
-                    <button type="button" class="btn btn-secondary px-3 py-2 rounded-3" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 shadow fw-semibold">
-                        <i class="fe fe-save me-1"></i>Save Changes
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 @endsection
 
 @push('scripts')
@@ -909,43 +882,7 @@ function openCoilModal(c) {
     modal.show();
 }
 
-function openEditOpeningStockModal(data) {
-    if (!data) return;
-
-    document.getElementById('editOpeningStockForm').action = data.update_url;
-    document.getElementById('editModalCoilSubtitle').textContent = 'Editing Coil #' + data.coil_number;
-    document.getElementById('editWarehouseId').value = data.warehouse_id || '';
-    document.getElementById('editLotId').value = data.lot_id || '';
-    document.getElementById('editCoilNumber').value = data.coil_number || '';
-    document.getElementById('editThickness').value = data.thickness || '';
-    document.getElementById('editWidth').value = data.width || '';
-    document.getElementById('editLength').value = data.length || 'ft';
-    document.getElementById('editPieceCount').value = data.piece_count || 1;
-    document.getElementById('editNetWeight').value = data.net_weight || 0;
-    document.getElementById('editRatePerTon').value = data.rate_per_ton || 0;
-    document.getElementById('editNotes').value = data.notes || '';
-
-    // Calculate total valuation
-    const w = parseFloat(data.net_weight) || 0;
-    const r = parseFloat(data.rate_per_ton) || 0;
-    document.getElementById('editTotalValuation').value = (w * r).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-    // Consumed weight warning
-    const consumed = parseFloat(data.consumed_weight) || 0;
-    const warningEl = document.getElementById('editConsumedWarning');
-    if (consumed > 0) {
-        document.getElementById('editConsumedText').textContent = consumed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kg';
-        warningEl.classList.remove('d-none');
-    } else {
-        warningEl.classList.add('d-none');
-    }
-
-    const modalEl = document.getElementById('editOpeningStockModal');
-    const modal = new bootstrap.Modal(modalEl);
-    modal.show();
-}
-
-// Quick modal calculation & Edit modal calculation
+// Quick modal calculation
 $(document).ready(function() {
     function calcQuickModal() {
         const w = parseFloat($('#quickModalWeight').val()) || 0;
@@ -954,15 +891,7 @@ $(document).ready(function() {
         $('#quickModalTotal').val(tot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     }
 
-    function calcEditModal() {
-        const w = parseFloat($('#editNetWeight').val()) || 0;
-        const r = parseFloat($('#editRatePerTon').val()) || 0;
-        const tot = w * r;
-        $('#editTotalValuation').val(tot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-    }
-
     $('#quickModalWeight, #quickModalRate').on('input', calcQuickModal);
-    $('#editNetWeight, #editRatePerTon').on('input', calcEditModal);
 });
 </script>
 @endpush

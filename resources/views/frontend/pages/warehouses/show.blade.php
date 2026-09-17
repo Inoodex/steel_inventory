@@ -119,11 +119,10 @@
                 </p>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-outline-primary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2"
-                        data-bs-toggle="modal" data-bs-target="#editWarehouseModal">
+                <a href="{{ route('warehouses.edit', $warehouse->id) }}" class="btn btn-outline-primary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2">
                     <i class="fe fe-edit"></i>
                     <span>Edit Stockyard</span>
-                </button>
+                </a>
 
                 <a href="{{ route('inventory.index', ['warehouse_id' => $warehouse->id]) }}" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2 text-white">
                     <i class="fe fe-disc"></i>
@@ -216,24 +215,24 @@
         </div>
     </div>
 
-    <!-- Main Content Section: Two Column Layout -->
+    <!-- Main Content Section: Two Column Profile & Activity Cards Side by Side -->
     <div class="row g-4 mb-4">
-        <!-- Left: Yard Information Details -->
-        <div class="col-xl-4 col-lg-5 col-12">
-            <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <!-- Stockyard Profile Card -->
+        <div class="col-xl-6 col-lg-6 col-12">
+            <div class="card border-0 shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
                     <h5 class="card-title fw-bold text-dark mb-0">
                         <i class="fe fe-info text-primary me-2"></i>Stockyard Profile
                     </h5>
-                    <button type="button" class="btn btn-sm btn-light border px-2 py-1 rounded-2" data-bs-toggle="modal" data-bs-target="#editWarehouseModal">
+                    <a href="{{ route('warehouses.edit', $warehouse->id) }}" class="btn btn-sm btn-light border px-2 py-1 rounded-2" title="Edit Stockyard">
                         <i class="fe fe-edit-2 text-muted"></i>
-                    </button>
+                    </a>
                 </div>
                 <div class="card-body">
                     <table class="table table-borderless info-table mb-0">
                         <tbody>
                             <tr>
-                                <td class="text-muted" style="width: 40%;">Yard Code:</td>
+                                <td class="text-muted" style="width: 35%;">Yard Code:</td>
                                 <td class="font-monospace fw-bold text-dark">{{ $warehouse->code ?? 'WH-' . $warehouse->id }}</td>
                             </tr>
                             <tr>
@@ -295,16 +294,18 @@
                     @endif
                 </div>
             </div>
+        </div>
 
-            <!-- Quick Operational Actions Card -->
-            <div class="card border-0 shadow-sm rounded-3">
+        <!-- Quick Operational Actions Card -->
+        <div class="col-xl-6 col-lg-6 col-12">
+            <div class="card border-0 shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-header bg-white py-3 border-bottom border-light">
                     <h5 class="card-title fw-bold text-dark mb-0">
                         <i class="fe fe-activity text-primary me-2"></i>Yard Activity Summary
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between p-3 bg-light-subtle rounded-3 mb-2 border">
+                    <div class="d-flex align-items-center justify-content-between p-3 bg-light-subtle rounded-3 mb-3 border">
                         <div class="d-flex align-items-center gap-3">
                             <div class="avatar avatar-md bg-primary-light text-primary rounded-2 d-flex align-items-center justify-content-center">
                                 <i class="fe fe-shopping-cart fs-5"></i>
@@ -319,7 +320,7 @@
                         </span>
                     </div>
 
-                    <div class="d-flex align-items-center justify-content-between p-3 bg-light-subtle rounded-3 mb-2 border">
+                    <div class="d-flex align-items-center justify-content-between p-3 bg-light-subtle rounded-3 mb-3 border">
                         <div class="d-flex align-items-center gap-3">
                             <div class="avatar avatar-md bg-success-light text-success rounded-2 d-flex align-items-center justify-content-center">
                                 <i class="fe fe-truck fs-5"></i>
@@ -351,17 +352,24 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Right: Tabbed Tables for Yard Coils, Purchases & Sales -->
-        <div class="col-xl-8 col-lg-7 col-12">
+     <div class="col-xl-12 col-lg-12 col-12">
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-white border-bottom border-light p-0">
                     <ul class="nav nav-tabs nav-tabs-custom mb-0" id="yardTab" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active d-flex align-items-center gap-2" id="coils-tab" data-bs-toggle="tab" data-bs-target="#coils-content" type="button" role="tab" aria-selected="true">
+                            <button class="nav-link active d-flex align-items-center gap-2" id="thickness-tab" data-bs-toggle="tab" data-bs-target="#thickness-content" type="button" role="tab" aria-selected="true">
+                                <i class="fe fe-layers"></i>
+                                <span>Thickness & Avg Rates</span>
+                                <span class="badge badge-soft-primary rounded-pill">{{ $thicknessBreakdown->count() }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link d-flex align-items-center gap-2" id="coils-tab" data-bs-toggle="tab" data-bs-target="#coils-content" type="button" role="tab" aria-selected="false">
                                 <i class="fe fe-disc"></i>
-                                <span>Coils in Yard</span>
-                                <span class="badge badge-soft-primary rounded-pill">{{ $coils->total() }}</span>
+                                <span>All Yard Coils</span>
+                                <span class="badge bg-light text-muted border rounded-pill">{{ $coils->total() }}</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
@@ -383,8 +391,121 @@
 
                 <div class="card-body p-0">
                     <div class="tab-content" id="yardTabContent">
-                        <!-- TAB 1: COILS IN YARD -->
-                        <div class="tab-pane fade show active" id="coils-content" role="tabpanel" aria-labelledby="coils-tab">
+                        <!-- TAB 1: THICKNESS & WEIGHTED AVERAGE PRICE BREAKDOWN -->
+                        <div class="tab-pane fade show active" id="thickness-content" role="tabpanel" aria-labelledby="thickness-tab">
+                            @if($thicknessBreakdown->isNotEmpty())
+                                <div class="p-3 bg-light-subtle border-bottom d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fe fe-info text-primary fs-5"></i>
+                                        <span class="small text-dark">
+                                            <strong>Weighted Average Cost (AVCO)</strong> = Total Stock Valuation ÷ Total Available Weight (kg)
+                                        </span>
+                                    </div>
+                                    <span class="badge bg-white text-dark border px-3 py-1 font-monospace">
+                                        {{ $thicknessBreakdown->count() }} Thickness Specs
+                                    </span>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-custom align-middle mb-0">
+                                        <thead class="bg-light text-secondary fs-7 text-uppercase">
+                                            <tr>
+                                                <th class="ps-4">Thickness</th>
+                                                <th>Dimensions in Stock</th>
+                                                <th class="text-center">Batches / Qty</th>
+                                                <th class="text-end">Available Weight</th>
+                                                <th class="text-end">Total Valuation</th>
+                                                <th class="text-end">Weighted Avg Rate</th>
+                                                <th class="text-end pe-4">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($thicknessBreakdown as $row)
+                                                <tr>
+                                                    <td class="ps-4">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <div class="avatar avatar-xs bg-primary-light text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 11px;">
+                                                                T
+                                                            </div>
+                                                            <div>
+                                                                <span class="fw-bold text-dark fs-6">{{ $row['thickness'] }}</span>
+                                                                <small class="text-muted d-block" style="font-size: 10px;">Thickness</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        @if(!empty($row['sizes']))
+                                                            <div class="d-flex flex-wrap gap-1">
+                                                                @foreach($row['sizes'] as $sz)
+                                                                    <span class="badge bg-light text-dark border px-2 py-1 fs-8">{{ $sz }}</span>
+                                                                @endforeach
+                                                            </div>
+                                                        @else
+                                                            <span class="text-muted small">Standard Coil</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="fw-bold text-dark font-monospace">{{ $row['coils_count'] }}</span>
+                                                        <small class="text-muted d-block" style="font-size: 10px;">{{ $row['pieces_count'] }} pcs</small>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <span class="fw-bold text-primary font-monospace">{{ number_format($row['total_weight'], 2) }} kg</span>
+                                                        <small class="text-muted d-block" style="font-size: 10px;">{{ number_format($row['total_weight_mt'], 3) }} MT</small>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <span class="fw-bold text-success font-monospace">৳ {{ number_format($row['total_valuation'], 2) }}</span>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <div class="d-inline-block text-end">
+                                                            <span class="badge bg-primary-light text-primary fs-7 fw-bold px-3 py-1 font-monospace d-block">
+                                                                ৳ {{ number_format($row['avg_price_per_kg'], 2) }} / kg
+                                                            </span>
+                                                            <small class="text-muted fw-semibold" style="font-size: 10px;">
+                                                                (৳ {{ number_format($row['avg_price_per_ton'], 0) }} / MT)
+                                                            </small>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-end pe-4">
+                                                        <a href="{{ route('inventory.index', ['warehouse_id' => $warehouse->id, 'search' => $row['thickness']]) }}" class="btn btn-sm btn-outline-primary rounded-2 px-2 py-1 d-inline-flex align-items-center gap-1" title="View Coils">
+                                                            <i class="fe fe-list"></i>
+                                                            <span class="fs-8">View Coils</span>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                        <tfoot class="bg-light-subtle border-top fw-bold">
+                                            <tr>
+                                                <td class="ps-4 text-uppercase text-secondary fs-8">Total Yard Stock</td>
+                                                <td></td>
+                                                <td class="text-center font-monospace">{{ $thicknessBreakdown->sum('coils_count') }} Coils</td>
+                                                <td class="text-end text-primary font-monospace">{{ number_format($thicknessBreakdown->sum('total_weight'), 2) }} kg</td>
+                                                <td class="text-end text-success font-monospace">৳ {{ number_format($thicknessBreakdown->sum('total_valuation'), 2) }}</td>
+                                                <td class="text-end text-primary font-monospace">
+                                                    @php
+                                                        $overallWeight = $thicknessBreakdown->sum('total_weight');
+                                                        $overallVal = $thicknessBreakdown->sum('total_valuation');
+                                                        $overallAvg = $overallWeight > 0 ? ($overallVal / $overallWeight) : 0;
+                                                    @endphp
+                                                    ৳ {{ number_format($overallAvg, 2) }} / kg (Avg)
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="p-5 text-center">
+                                    <div class="avatar avatar-xxl bg-light text-secondary rounded-circle mb-3 mx-auto d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                                        <i class="fe fe-layers fs-3 opacity-50"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-1">No active stock in this yard currently</h6>
+                                    <p class="text-muted small mb-0">Thickness groups and weighted average rates will automatically calculate once stock is received.</p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- TAB 2: ALL COILS IN YARD -->
+                        <div class="tab-pane fade" id="coils-content" role="tabpanel" aria-labelledby="coils-tab">
                             @if($coils->count() > 0)
                                 <div class="table-responsive">
                                     <table class="table table-hover table-custom align-middle mb-0">
@@ -602,70 +723,6 @@
                 </div>
             </div>
         </div>
-    </div>
 
-</div>
-
-<!-- Edit Warehouse Modal (Placed at bottom outside table structure per project guidelines) -->
-<div class="modal fade" id="editWarehouseModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-3">
-            <div class="modal-header bg-light py-3 border-bottom">
-                <h5 class="modal-title fw-bold text-dark">
-                    <i class="fe fe-edit text-primary me-2"></i>Edit Stockyard / Warehouse
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="{{ route('warehouses.update', $warehouse->id) }}" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Yard / Depot Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control border-light-subtle" value="{{ $warehouse->name }}" required>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label small fw-semibold text-secondary mb-1">Yard Code</label>
-                            <input type="text" name="code" class="form-control border-light-subtle" value="{{ $warehouse->code }}">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-semibold text-secondary mb-1">Status <span class="text-danger">*</span></label>
-                            <select name="status" class="form-select border-light-subtle" required>
-                                <option value="active" {{ $warehouse->status === 'active' ? 'selected' : '' }}>Active</option>
-                                <option value="inactive" {{ $warehouse->status === 'inactive' ? 'selected' : '' }}>Inactive</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Location / Address</label>
-                        <input type="text" name="location" class="form-control border-light-subtle" value="{{ $warehouse->location }}">
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label small fw-semibold text-secondary mb-1">Contact Person</label>
-                            <input type="text" name="contact_person" class="form-control border-light-subtle" value="{{ $warehouse->contact_person }}">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-semibold text-secondary mb-1">Phone Number</label>
-                            <input type="text" name="contact_phone" class="form-control border-light-subtle" value="{{ $warehouse->contact_phone }}">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Storage Capacity (Metric Tons)</label>
-                        <input type="number" step="0.001" name="capacity_ton" class="form-control border-light-subtle" value="{{ $warehouse->capacity_ton }}">
-                    </div>
-                    <div class="mb-0">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Operational Notes & Facilities</label>
-                        <textarea name="notes" class="form-control border-light-subtle" rows="3">{{ $warehouse->notes }}</textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-top bg-light gap-2">
-                    <button type="button" class="btn btn-light px-4 rounded-3 text-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary px-4 rounded-3 shadow-sm">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
 </div>
 @endsection

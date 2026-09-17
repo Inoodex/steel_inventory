@@ -146,31 +146,42 @@
                 <!-- Product Add Builder Card -->
                 <div class="p-3 bg-light rounded-3 mb-4 border" id="form-group-item1">
                     <div class="row g-3 align-items-end">
-                        <!-- 1. Mandatory Lot Select Dropdown -->
-                        <!-- 1. Select Lot Source -->
+                        <!-- 1. Stock / Lot Source Select Dropdown -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">
-                                1. Select Lot Source <span class="text-danger">*</span>
+                                1. Select Stock / Lot Source <span class="text-danger">*</span>
                             </label>
                             <select id="builder_lot_id" class="form-select select2 border-light-subtle" onchange="handleLotSelection(this.value)" required>
-                                <option value="">Select Lot</option>
-                                @foreach ($lots as $lot)
-                                    <option value="{{ $lot->id }}" 
-                                        data-vendor="{{ $lot->vendor ? $lot->vendor->name : 'No Vendor' }}"
-                                        data-lot-number="{{ $lot->lot_number }}">
-                                        {{ $lot->lot_number }} {{ $lot->vendor ? '('.$lot->vendor->name.')' : '' }}
+                                <option value="">Select Stock / Lot Source</option>
+                                <optgroup label="Direct / Opening Warehouse Stock">
+                                    <option value="opening_stock" data-vendor="Direct Yard Stock" data-lot-number="Opening Stock">
+                                        📦 Opening Stock / Direct Inventory
                                     </option>
-                                @endforeach
+                                    <option value="all_stock" data-vendor="All Inventory" data-lot-number="All Stock">
+                                        🌐 All In-Stock Coils (All Sources)
+                                    </option>
+                                </optgroup>
+                                @if($lots->isNotEmpty())
+                                    <optgroup label="Purchase Mill Lots">
+                                        @foreach ($lots as $lot)
+                                            <option value="{{ $lot->id }}" 
+                                                data-vendor="{{ $lot->vendor ? $lot->vendor->name : 'No Vendor' }}"
+                                                data-lot-number="{{ $lot->lot_number }}">
+                                                {{ $lot->lot_number }} {{ $lot->vendor ? '('.$lot->vendor->name.')' : '' }}
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
                             </select>
                         </div>
 
-                        <!-- 2. Coil Select Dropdown (Filtered by selected Lot) -->
+                        <!-- 2. Coil Select Dropdown (Filtered by selected Source/Lot) -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">
                                 2. Select In-Stock Coil <span class="text-danger">*</span>
                             </label>
                             <select onchange="selectCoil(this)" id="coil_select" class="form-select select2 border-light-subtle" disabled>
-                                <option value="">Select a Lot first</option>
+                                <option value="">Select Stock Source first</option>
                             </select>
                         </div>
 
@@ -188,7 +199,10 @@
 
                         <!-- 5. Cost Rate -->
                         <div class="col-lg-2 col-md-4 col-6">
-                            <label class="form-label small text-secondary fw-semibold mb-1">Cost Rate (৳)</label>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small text-secondary fw-semibold mb-0">Cost Rate (৳)</label>
+                                <span id="thicknessAvgBadge" class="badge bg-light text-primary border" style="display:none; font-size: 9px;"></span>
+                            </div>
                             <input type="number" id="purchase_price1" class="form-control border-light-subtle bg-white" readonly>
                         </div>
 
@@ -484,32 +498,52 @@ function handleLotSelection(lotId) {
     resetCoilFields();
 
     if (!lotId) {
-        coilSelect.append('<option value="">Select a Lot first</option>');
+        coilSelect.append('<option value="">Select Stock Source first</option>');
         coilSelect.prop('disabled', true);
         coilSelect.trigger('change');
         return;
     }
 
-    const lotOption = $(`#builder_lot_id option[value="${lotId}"]`);
-    if (lotOption.length) {
+    let filtered = [];
+
+    if (lotId === 'opening_stock') {
         currentSelectedLot = {
-            id: lotId,
-            lot_number: lotOption.data('lot-number') || lotOption.text().trim(),
-            vendor: lotOption.data('vendor') || ''
+            id: '',
+            lot_number: 'Opening Stock',
+            vendor: 'Direct Yard Stock'
         };
+        // All coils that are opening stock (purchase_id is null OR lot_id is null)
+        filtered = allAvailableCoils.filter(c => (c.purchase_id === null || !c.lot_id) && parseFloat(c.remaining_weight) > 0);
+    } else if (lotId === 'all_stock') {
+        currentSelectedLot = {
+            id: '',
+            lot_number: 'All Stock',
+            vendor: 'All Inventory'
+        };
+        // All in-stock coils regardless of source
+        filtered = allAvailableCoils.filter(c => parseFloat(c.remaining_weight) > 0);
+    } else {
+        const lotOption = $(`#builder_lot_id option[value="${lotId}"]`);
+        if (lotOption.length) {
+            currentSelectedLot = {
+                id: lotId,
+                lot_number: lotOption.data('lot-number') || lotOption.text().trim(),
+                vendor: lotOption.data('vendor') || ''
+            };
+        }
+        filtered = allAvailableCoils.filter(c => String(c.lot_id) === String(lotId) && parseFloat(c.remaining_weight) > 0);
     }
 
-    const filtered = allAvailableCoils.filter(c => String(c.lot_id) === String(lotId) && parseFloat(c.remaining_weight) > 0);
-
     if (filtered.length === 0) {
-        coilSelect.append('<option value="">No in-stock coils in this Lot</option>');
+        const msg = lotId === 'opening_stock' ? 'No opening stock coils available' : 'No in-stock coils in this selection';
+        coilSelect.append(`<option value="">${msg}</option>`);
         coilSelect.prop('disabled', true);
         coilSelect.trigger('change');
         return;
     }
 
     coilSelect.prop('disabled', false);
-    coilSelect.append('<option value="">Choose In-Stock Coil</option>');
+    coilSelect.append('<option value="">Choose In-Stock Coil / Plate</option>');
     filtered.forEach(coil => {
         const remaining = parseFloat(coil.remaining_weight) || 0;
         const thickness = coil.thickness ? ` | Thk: ${coil.thickness}` : '';
@@ -517,13 +551,15 @@ function handleLotSelection(lotId) {
         const sizeUnit = (coil.length && coil.length !== 'N/A') ? coil.length : (coil.size_type || '');
         const sizeText = sizeVal ? ` | Size: ${sizeVal}${sizeUnit ? ' ' + sizeUnit : ''}` : '';
         const yard = coil.warehouse ? ` (${coil.warehouse.name})` : '';
+        const isOpening = (coil.purchase_id === null || !coil.lot_id);
+        const sourceTag = isOpening ? ' [Opening Stock]' : (coil.lot ? ` [Lot: ${coil.lot.lot_number}]` : '');
         const pieceCount = coil.piece_count ? Number(coil.piece_count) : 1;
         const grossWeight = parseFloat(coil.gross_weight || coil.net_weight || 0);
         const unitWeight = pieceCount > 0 && grossWeight > 0 ? (grossWeight / pieceCount) : remaining;
         const remainingCoils = unitWeight > 0 ? (remaining / unitWeight) : (pieceCount > 0 ? pieceCount : 1);
         const formattedRemCoils = (Math.round(remainingCoils * 100) / 100).toFixed(remainingCoils % 1 === 0 ? 0 : (remainingCoils * 10 % 1 === 0 ? 1 : 2));
         const remainingPct = grossWeight > 0 ? Math.min(100, Math.max(0, (remaining / grossWeight) * 100)).toFixed(1) : '100.0';
-        const text = `${coil.coil_number} | Stock: ${formattedRemCoils}/${pieceCount} Coils (${remainingPct}%) ${thickness}${sizeText} | Avail: ${remaining.toLocaleString()} kg`;
+        const text = `${coil.coil_number}${sourceTag} | Stock: ${formattedRemCoils}/${pieceCount} Coils (${remainingPct}%) ${thickness}${sizeText}${yard} | Avail: ${remaining.toLocaleString()} kg`;
 
         const opt = $('<option></option>')
             .val(coil.id)
@@ -539,8 +575,9 @@ function handleLotSelection(lotId) {
             .attr('data-gross-weight', grossWeight)
             .attr('data-remaining', remaining)
             .attr('data-rate', coil.rate_per_ton || 0)
-            .attr('data-lot-id', coil.lot_id)
-            .attr('data-lot-number', coil.lot ? coil.lot.lot_number : (currentSelectedLot ? currentSelectedLot.lot_number : ''))
+            .attr('data-is-opening', isOpening ? '1' : '0')
+            .attr('data-lot-id', coil.lot_id || '')
+            .attr('data-lot-number', coil.lot ? coil.lot.lot_number : (isOpening ? 'Opening Stock' : (currentSelectedLot ? currentSelectedLot.lot_number : '')))
             .attr('data-warehouse', coil.warehouse ? coil.warehouse.name : '');
 
         coilSelect.append(opt);
@@ -555,6 +592,14 @@ function handleLotSelection(lotId) {
     coilSelect.trigger('change');
 }
 
+function getThicknessAvgRate(thickness) {
+    if (!thickness) return 0;
+    const sameThicknessCoils = allAvailableCoils.filter(c => String(c.thickness || '').trim().toLowerCase() === String(thickness).trim().toLowerCase() && parseFloat(c.remaining_weight) > 0);
+    const totalWeight = sameThicknessCoils.reduce((sum, c) => sum + (parseFloat(c.remaining_weight) || 0), 0);
+    const totalVal = sameThicknessCoils.reduce((sum, c) => sum + ((parseFloat(c.remaining_weight) || 0) * (parseFloat(c.rate_per_ton) || 0)), 0);
+    return totalWeight > 0 ? (totalVal / totalWeight) : 0;
+}
+
 function resetCoilFields() {
     currentSelectedCoil = null;
     const perCoilEl = document.getElementById('per_coil_weight1');
@@ -564,6 +609,12 @@ function resetCoilFields() {
     document.getElementById('unit_price1').value = '';
     document.getElementById('qty1').value = '';
     document.getElementById('total1').value = '0.00';
+
+    const avgBadge = document.getElementById('thicknessAvgBadge');
+    if (avgBadge) {
+        avgBadge.style.display = 'none';
+        avgBadge.innerHTML = '';
+    }
 }
 
 function selectCoil(selectEl) {
@@ -579,7 +630,8 @@ function selectCoil(selectEl) {
     const pieceCount = parseFloat(selectedOption.dataset.pieceCount) || 1;
     const remainingCoils = selectedOption.dataset.remainingCoils || '1';
     const remainingPct = selectedOption.dataset.remainingPct || '100.0';
-    const lotId = selectedOption.dataset.lotId;
+    const lotId = selectedOption.dataset.lotId || '';
+    const isOpening = selectedOption.dataset.isOpening === '1';
 
     currentSelectedCoil = {
         id: selectedOption.value,
@@ -593,6 +645,7 @@ function selectCoil(selectEl) {
         unit_weight: unitWeight,
         remaining: remaining,
         rate: rate,
+        is_opening: isOpening,
         lot_id: lotId,
         lot_number: selectedOption.dataset.lotNumber,
         warehouse: selectedOption.dataset.warehouse
@@ -608,6 +661,19 @@ function selectCoil(selectEl) {
     document.getElementById('qty1').value = '';
     document.getElementById('qty1').focus();
 
+    // Show Thickness Benchmark Weighted Average Rate
+    const avgRate = getThicknessAvgRate(currentSelectedCoil.thickness);
+    const avgBadge = document.getElementById('thicknessAvgBadge');
+    if (avgBadge) {
+        if (avgRate > 0) {
+            avgBadge.style.display = 'inline-block';
+            avgBadge.title = `Weighted Average cost for ${currentSelectedCoil.thickness} mm across all in-stock inventory`;
+            avgBadge.innerHTML = `<i class="fe fe-info me-1"></i>Avg: ৳${avgRate.toFixed(2)}/kg`;
+        } else {
+            avgBadge.style.display = 'none';
+        }
+    }
+
     updatePreviewTotal();
 }
 
@@ -620,13 +686,13 @@ function updatePreviewTotal() {
 
 function addItem() {
     if (!currentSelectedLot) {
-        alert('Please select a Lot first.');
+        alert('Please select a Stock / Lot Source first.');
         $('#builder_lot_id').focus();
         return;
     }
 
     if (!currentSelectedCoil) {
-        alert('Please select an In-Stock Coil from the selected lot.');
+        alert('Please select an In-Stock Coil from the selected source.');
         $('#coil_select').focus();
         return;
     }
@@ -678,10 +744,22 @@ function addItem() {
     const rowTotal = (qty * unitPrice).toFixed(2);
 
     const lot = currentSelectedLot;
-    const lotId = lot ? lot.id : (coil.lot_id || '');
-    const lotLabel = lot ? `<span class="badge bg-light text-dark border px-2 py-1 fs-8"><i class="fe fe-package text-primary me-1"></i>${lot.lot_number}</span>` : '<span class="text-muted small">Lot</span>';
+    const lotId = coil.lot_id || (lot && lot.id && lot.id !== 'opening_stock' && lot.id !== 'all_stock' ? lot.id : '');
+    
+    let lotLabel = '';
+    if (coil.is_opening || (!lotId && coil.lot_number === 'Opening Stock') || (lot && lot.lot_number === 'Opening Stock' && !lotId)) {
+        lotLabel = `<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-8"><i class="fe fe-archive me-1"></i>Opening Stock</span>`;
+    } else if (coil.lot_number && coil.lot_number !== 'All Stock') {
+        lotLabel = `<span class="badge bg-light text-dark border px-2 py-1 fs-8"><i class="fe fe-package text-primary me-1"></i>${coil.lot_number}</span>`;
+    } else if (lot && lot.lot_number && lot.lot_number !== 'All Stock') {
+        lotLabel = `<span class="badge bg-light text-dark border px-2 py-1 fs-8"><i class="fe fe-package text-primary me-1"></i>${lot.lot_number}</span>`;
+    } else {
+        lotLabel = `<span class="badge bg-light text-secondary border px-2 py-1 fs-8">Direct Stock</span>`;
+    }
+
     const pieceCount = coil.piece_count ? Number(coil.piece_count) : 1;
     let specBadges = ``;
+    if (coil.is_opening) specBadges += `<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-8 me-1">Opening Stock</span>`;
     if (pieceCount > 1) specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1">Qty: ${pieceCount} Coils</span>`;
     if (thickness) specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1">Thickness: ${thickness}</span>`;
     if (size) specBadges += `<span class="badge bg-light text-secondary border px-2 py-1 fs-8 me-1">Size: ${size} ${sizeType}</span>`;

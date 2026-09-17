@@ -149,6 +149,24 @@ class InventoryController extends Controller
     }
 
     /**
+     * Show edit page for opening stock coil.
+     */
+    public function editOpeningStock($id)
+    {
+        $coil = Coil::findOrFail($id);
+
+        if ($coil->purchase_id !== null) {
+            return redirect()->route('inventory.index')->with('error', 'This coil originated from a vendor purchase invoice and must be managed via Purchases.');
+        }
+
+        $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
+        $lots = Lot::where('status', 'active')->latest()->get();
+        $vendors = Vendor::where('status', '1')->orderBy('name')->get();
+
+        return view('frontend.pages.inventory.edit_opening_stock', compact('coil', 'warehouses', 'lots', 'vendors'));
+    }
+
+    /**
      * Update an opening stock coil.
      */
     public function updateOpeningStock(Request $request, $id)
@@ -292,6 +310,49 @@ class InventoryController extends Controller
             ->get()
             ->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton);
 
+        // Thickness-wise Weighted Average Cost & Stock Breakdown
+        $breakdownQuery = Coil::whereIn('status', ['in_stock', 'processing'])
+            ->where('remaining_weight', '>', 0);
+
+        if ($request->filled('warehouse_id')) {
+            $breakdownQuery->where('warehouse_id', $request->warehouse_id);
+        }
+        if ($request->filled('lot_id')) {
+            $breakdownQuery->where('lot_id', $request->lot_id);
+        }
+
+        $thicknessBreakdown = $breakdownQuery->get()->groupBy(function ($coil) {
+            return trim($coil->thickness) ?: 'Standard';
+        })->map(function ($group, $thickness) {
+            $totalCoils = $group->count();
+            $totalPieces = $group->sum(fn($c) => (float)($c->piece_count ?: 1));
+            $totalRemainingWeight = (float) $group->sum('remaining_weight');
+            $totalValuation = (float) $group->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton);
+            $avgPricePerKg = $totalRemainingWeight > 0 ? ($totalValuation / $totalRemainingWeight) : 0;
+            $avgPricePerTon = $avgPricePerKg * 1000;
+            $minRate = (float) $group->min('rate_per_ton');
+            $maxRate = (float) $group->max('rate_per_ton');
+            $sizes = $group->map(function($c) {
+                $w = $c->width ?: '';
+                $l = ($c->length && $c->length !== 'N/A') ? $c->length : '';
+                return trim("{$w} {$l}");
+            })->filter()->unique()->values()->all();
+
+            return [
+                'thickness' => $thickness,
+                'coils_count' => $totalCoils,
+                'pieces_count' => $totalPieces,
+                'total_weight' => $totalRemainingWeight,
+                'total_weight_mt' => $totalRemainingWeight / 1000,
+                'total_valuation' => $totalValuation,
+                'avg_price_per_kg' => $avgPricePerKg,
+                'avg_price_per_ton' => $avgPricePerTon,
+                'min_rate' => $minRate,
+                'max_rate' => $maxRate,
+                'sizes' => $sizes,
+            ];
+        })->sortByDesc('total_weight');
+
         return view('frontend.pages.inventory.index', compact(
             'coils',
             'lots',
@@ -301,7 +362,8 @@ class InventoryController extends Controller
             'totalIntakeWeight',
             'inStockCount',
             'totalCoilsCount',
-            'totalValuation'
+            'totalValuation',
+            'thicknessBreakdown'
         ));
     }
 

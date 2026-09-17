@@ -115,9 +115,12 @@
                                 <tr class="group-item item{{ $item->coil_id ?? $item->id }}" data-itemnumber="{{ $index + 1 }}" id="form-group-item{{ $index + 1 }}">
                                     <td>
                                         <input type="hidden" name="coil_id[]" value="{{ $item->coil_id }}">
-                                        <span class="fw-bold text-dark d-block">
-                                            #{{ $coilNumber }}
-                                        </span>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-bold text-dark">#{{ $coilNumber }}</span>
+                                            @if($coil && ($coil->purchase_id === null || !$coil->lot_id))
+                                                <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-0 fs-8">Opening Stock</span>
+                                            @endif
+                                        </div>
                                         @if($thickness || $size)
                                             <small class="text-muted d-block">
                                                 {{ $thickness ? 'Thick: '.$thickness : '' }}{{ ($thickness && $size) ? ' | ' : '' }}{{ $size ? 'Size: '.$size.' '.$sizeType : '' }}
@@ -126,7 +129,7 @@
                                     </td>
                                     <td>
                                         <select name="lot_id[]" class="form-select form-select-sm border-light-subtle">
-                                            <option value="">Standard Stock (No Lot)</option>
+                                            <option value="">📦 Opening Stock / Direct Stock (No Lot)</option>
                                             @foreach ($lots as $lot)
                                                 <option value="{{ $lot->id }}" {{ ($item->lot_id ?? ($coil->lot_id ?? '')) == $lot->id ? 'selected' : '' }}>
                                                     {{ $lot->lot_number }} ({{ $lot->vendor->name ?? 'Mill' }})

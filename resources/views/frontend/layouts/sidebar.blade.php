@@ -74,22 +74,24 @@
                 {{-- ===== 3. INVENTORY & WAREHOUSE (Direct 1-Click Access) ===== --}}
                 @if($canView('Inventory Management'))
                     <li class="menu-title"><span>Inventory &amp; Warehouse</span></li>
-                    <li class="submenu {{ $active(['inventory.*', 'coils.*', 'warehouses.*']) ? 'active' : '' }}">
+                    <li class="submenu {{ $active(['inventory.*', 'coils.*']) ? 'active' : '' }}">
                         <a href="javascript:void(0)">
                             <i class="fe fe-database"></i><span> Inventory</span>
                             <span class="menu-arrow"></span>
                         </a>
-                        <ul style="{{ $active(['inventory.*', 'coils.*', 'warehouses.*']) ? 'display:block' : '' }}">
+                        <ul style="{{ $active(['inventory.*', 'coils.*']) ? 'display:block' : '' }}">
                             <li class="{{ $active(['inventory.index', 'coils.index']) ? 'active' : '' }}">
                                 <a href="{{ route('inventory.index') }}"><i class="fe fe-list"></i> Steel Inventory</a>
                             </li>
                             <li class="{{ $active(['inventory.opening-stock.create']) ? 'active' : '' }}">
                                 <a href="{{ route('inventory.opening-stock.create') }}"><i class="fe fe-plus-circle"></i> Opening Stock Intake</a>
                             </li>
-                            <li class="{{ $active(['warehouses.*']) ? 'active' : '' }}">
-                                <a href="{{ route('warehouses.index') }}"><i class="fe fe-map-pin"></i> Warehouses &amp; Yards</a>
-                            </li>
                         </ul>
+                    </li>
+                    <li class="{{ $active(['warehouses.*']) ? 'active' : '' }}">
+                        <a href="{{ route('warehouses.index') }}">
+                            <i class="fe fe-map-pin"></i><span> Warehouses &amp; Yards</span>
+                        </a>
                     </li>
                 @endif
 

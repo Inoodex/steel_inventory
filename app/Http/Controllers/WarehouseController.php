@@ -94,10 +94,48 @@ class WarehouseController extends Controller
         $totalStockTonnageKg = (float) $warehouse->coils()->whereIn('status', ['in_stock', 'processing'])->sum('remaining_weight');
         $totalStockTonnageMT = $totalStockTonnageKg / 1000;
         
-        $totalStockValuation = (float) $warehouse->coils()->whereIn('status', ['in_stock', 'processing'])->sum('total_price');
+        $totalStockValuation = (float) $warehouse->coils()->whereIn('status', ['in_stock', 'processing'])->get()->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton);
 
         $capacityTon = (float) ($warehouse->capacity_ton ?? 0);
         $utilizationPercent = $capacityTon > 0 ? min(100, round(($totalStockTonnageMT / $capacityTon) * 100, 1)) : 0;
+
+        // Thickness-wise Weighted Average Cost & Stock Breakdown
+        $activeCoils = $warehouse->coils()
+            ->whereIn('status', ['in_stock', 'processing'])
+            ->where('remaining_weight', '>', 0)
+            ->get();
+
+        $thicknessBreakdown = $activeCoils->groupBy(function ($coil) {
+            return trim($coil->thickness) ?: 'Standard';
+        })->map(function ($group, $thickness) {
+            $totalCoils = $group->count();
+            $totalPieces = $group->sum(fn($c) => (float)($c->piece_count ?: 1));
+            $totalRemainingWeight = (float) $group->sum('remaining_weight');
+            $totalValuation = (float) $group->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton);
+            $avgPricePerKg = $totalRemainingWeight > 0 ? ($totalValuation / $totalRemainingWeight) : 0;
+            $avgPricePerTon = $avgPricePerKg * 1000;
+            $minRate = (float) $group->min('rate_per_ton');
+            $maxRate = (float) $group->max('rate_per_ton');
+            $sizes = $group->map(function($c) {
+                $w = $c->width ?: '';
+                $l = ($c->length && $c->length !== 'N/A') ? $c->length : '';
+                return trim("{$w} {$l}");
+            })->filter()->unique()->values()->all();
+
+            return [
+                'thickness' => $thickness,
+                'coils_count' => $totalCoils,
+                'pieces_count' => $totalPieces,
+                'total_weight' => $totalRemainingWeight,
+                'total_weight_mt' => $totalRemainingWeight / 1000,
+                'total_valuation' => $totalValuation,
+                'avg_price_per_kg' => $avgPricePerKg,
+                'avg_price_per_ton' => $avgPricePerTon,
+                'min_rate' => $minRate,
+                'max_rate' => $maxRate,
+                'sizes' => $sizes,
+            ];
+        })->sortByDesc('total_weight');
 
         // Recent purchases received at this warehouse
         $recentPurchases = $warehouse->purchases()->with(['vendor', 'lot'])->latest()->take(10)->get();
@@ -115,9 +153,19 @@ class WarehouseController extends Controller
             'totalStockValuation',
             'capacityTon',
             'utilizationPercent',
+            'thicknessBreakdown',
             'recentPurchases',
             'recentSales'
         ));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit($id)
+    {
+        $warehouse = Warehouse::withCount(['purchases', 'sales', 'coils'])->findOrFail($id);
+        return view('frontend.pages.warehouses.edit', compact('warehouse'));
     }
 
     /**
@@ -144,7 +192,7 @@ class WarehouseController extends Controller
 
         $warehouse->update($validated);
 
-        return redirect()->back()->with('success', 'Stockyard / Warehouse updated successfully.');
+        return redirect()->route('warehouses.show', $warehouse->id)->with('success', 'Stockyard / Warehouse updated successfully.');
     }
 
     /**
