@@ -125,6 +125,7 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
 
     // Customer Sale Payments
     Route::post('/add-payment', [PaymentController::class, 'addPayment'])->name('add.payment');
+    Route::post('/customer-due-payment', [PaymentController::class, 'payCustomerDue'])->name('customer.due.pay');
     Route::delete('/delete-payment/{id}', [PaymentController::class, 'deletePayment'])->name('delete.payment');
     Route::post('/sales/process-payment', [SalesController::class, 'processPayment'])->name('sales.process-payment');
     Route::get('/sales/search-orders', [SalesController::class, 'searchOrders'])->name('sales.search-orders');

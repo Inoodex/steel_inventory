@@ -16,14 +16,18 @@ class CustomerController extends Controller
      */
     public function index()
     {
-         $customers = Customer::latest()->get();
+        $customers = Customer::withSum(['sales' => function($q) {
+            $q->whereNull('deleted_at');
+        }], 'due_payment')->latest()->get();
         return view('frontend.pages.customer.index', compact('customers'));
     }
 
     public function downloadPdf()
     {
         ini_set('memory_limit', '512M');
-        $customers = Customer::latest()->get();
+        $customers = Customer::withSum(['sales' => function($q) {
+            $q->whereNull('deleted_at');
+        }], 'due_payment')->latest()->get();
         $html = view('pdf.customers', compact('customers'))->render();
         $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8',

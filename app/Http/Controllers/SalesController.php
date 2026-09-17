@@ -112,7 +112,7 @@ class SalesController extends Controller
         $users  = User::get();
         $products = collect();
         $coils = Coil::where('status', 'in_stock')->where('remaining_weight', '>', 0)->with(['lot', 'warehouse'])->latest()->get();
-        $existingClients = Customer::select('id', 'name', 'phone', 'address')
+        $existingClients = Customer::select('id', 'name', 'phone', 'address', 'opening_balance')
             ->withSum(['sales' => function($q) {
                 $q->whereNull('deleted_at');
             }], 'due_payment')
@@ -616,37 +616,92 @@ class SalesController extends Controller
 //     return view('frontend.pages.sales.due-payments', compact('sales'));
 // }
 
-public function duePayments()
-{
-    $sales = Sale::with('customer')
-        ->where('due_payment', '>', 0)
-        ->latest()
-        ->get();
+    public function duePayments()
+    {
+        $sales = Sale::with(['customer', 'warehouse'])
+            ->where('due_payment', '>', 0)
+            ->latest()
+            ->get();
 
-    return view('frontend.pages.sales.due-payments', ['sales' => $sales]);
-}
+        $customersWithDue = Customer::withSum(['sales' => function($q) {
+                $q->whereNull('deleted_at');
+            }], 'due_payment')
+            ->get()
+            ->map(function($c) {
+                $c->opening_due = (float)($c->opening_balance ?? 0);
+                $c->sales_due = (float)($c->sales_sum_due_payment ?? 0);
+                $c->total_due = $c->opening_due + $c->sales_due;
+                return $c;
+            })
+            ->filter(function($c) {
+                return $c->total_due > 0;
+            })
+            ->sortByDesc('total_due')
+            ->values();
 
-public function duePaymentsPdf()
-{
-    $sales = Sale::with('customer')
-        ->where('due_payment', '>', 0)
-        ->latest()
-        ->get();
+        $totalOpeningDues = (float) Customer::sum('opening_balance');
+        $totalInvoiceDues = (float) Sale::where('due_payment', '>', 0)->sum('due_payment');
+        $grandTotalDues = $totalOpeningDues + $totalInvoiceDues;
+        $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
 
-    $html = view('pdf.due_payments', ['sales' => $sales])->render();
-    $mpdf = new \Mpdf\Mpdf([
-        'mode' => 'utf-8',
-        'format' => 'A4',
-        'default_font' => 'Helvetica',
-    ]);
-    $mpdf->WriteHTML($html);
-    $filename = 'Due_Payments_Report_' . now()->format('Y_m_d_His') . '.pdf';
+        return view('frontend.pages.sales.due-payments', compact(
+            'sales',
+            'customersWithDue',
+            'totalOpeningDues',
+            'totalInvoiceDues',
+            'grandTotalDues',
+            'bankAccounts'
+        ));
+    }
 
-    return response($mpdf->Output($filename, 'S'), 200, [
-        'Content-Type' => 'application/pdf',
-        'Content-Disposition' => 'inline; filename="' . $filename . '"',
-    ]);
-}
+    public function duePaymentsPdf()
+    {
+        $sales = Sale::with(['customer', 'warehouse'])
+            ->where('due_payment', '>', 0)
+            ->latest()
+            ->get();
+
+        $customersWithDue = Customer::withSum(['sales' => function($q) {
+                $q->whereNull('deleted_at');
+            }], 'due_payment')
+            ->get()
+            ->map(function($c) {
+                $c->opening_due = (float)($c->opening_balance ?? 0);
+                $c->sales_due = (float)($c->sales_sum_due_payment ?? 0);
+                $c->total_due = $c->opening_due + $c->sales_due;
+                return $c;
+            })
+            ->filter(function($c) {
+                return $c->total_due > 0;
+            })
+            ->sortByDesc('total_due')
+            ->values();
+
+        $totalOpeningDues = (float) Customer::sum('opening_balance');
+        $totalInvoiceDues = (float) Sale::where('due_payment', '>', 0)->sum('due_payment');
+        $grandTotalDues = $totalOpeningDues + $totalInvoiceDues;
+
+        $html = view('pdf.due_payments', compact(
+            'sales',
+            'customersWithDue',
+            'totalOpeningDues',
+            'totalInvoiceDues',
+            'grandTotalDues'
+        ))->render();
+
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font' => 'Helvetica',
+        ]);
+        $mpdf->WriteHTML($html);
+        $filename = 'Due_Payments_Report_' . now()->format('Y_m_d_His') . '.pdf';
+
+        return response($mpdf->Output($filename, 'S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
 
 public function extraChargesReportPdf(Request $request)
 {

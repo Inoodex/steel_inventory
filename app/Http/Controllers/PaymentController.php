@@ -106,6 +106,101 @@ class PaymentController extends Controller
         return redirect()->back()->with(['success' => 'Payment added successfully.']);
     }
 
+    /**
+     * Settle opening due or general account payment directly for a customer.
+     */
+    public function payCustomerDue(Request $request)
+    {
+        $request->validate([
+            'customer_id'    => 'required|exists:customers,id',
+            'amount'         => 'required|numeric|min:0.01',
+            'payment_type'   => 'required|in:opening_due,general_payment',
+            'payment_method' => 'nullable|string|in:cash,bank,cheque,mobile_banking',
+            'bank_detail_id' => 'nullable|exists:bank_details,id',
+            'transaction_ref'=> 'nullable|string|max:255',
+            'remarks'        => 'nullable|string|max:500',
+        ]);
+
+        $customer = Customer::findOrFail($request->customer_id);
+        $amount = (float) $request->amount;
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            $payment = new Payment;
+            $payment->payment_for = 2; // Customer collection
+            $payment->customer_id = $customer->id;
+            $payment->sale_id = null; // Direct customer account / opening due payment
+            $paymentMethod = $request->payment_method ?? 'cash';
+            $isBank = ($paymentMethod !== 'cash');
+            $payment->payment_method = $paymentMethod;
+            $payment->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
+            $payment->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
+            $payment->amount = $amount;
+            $payment->remarks = $request->remarks ?: ($request->payment_type === 'opening_due' ? 'Customer opening due payment collection' : 'Customer account due collection');
+            $payment->created_by = \Illuminate\Support\Facades\Auth::id();
+            $payment->status = 1;
+            $payment->save();
+
+            // If settling opening due specifically, deduct from customer's opening_balance
+            if ($request->payment_type === 'opening_due') {
+                $customer->opening_balance = max(0, (float)($customer->opening_balance ?? 0) - $amount);
+                $customer->save();
+            }
+
+            // Double Entry Journal Post
+            try {
+                $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
+                $arAcc = \App\Models\ChartOfAccount::where('account_code', '1130')->first();
+
+                $collectionAcc = $cashAcc;
+                if ($payment->payment_method !== 'cash' && !empty($payment->bank_detail_id)) {
+                    $bank = \App\Models\BankDetail::find($payment->bank_detail_id);
+                    $collectionAcc = $bank?->resolveChartOfAccount()
+                        ?? \App\Models\ChartOfAccount::where('account_code', '1120')->first()
+                        ?? $cashAcc;
+                }
+
+                if ($collectionAcc && $arAcc && $amount > 0 && function_exists('postJournalEntry')) {
+                    $methodLabel = match($payment->payment_method) {
+                        'bank' => 'Bank Transfer',
+                        'cheque' => 'Cheque',
+                        'mobile_banking' => 'Mobile Banking',
+                        default => 'Cash'
+                    };
+                    $refText = $payment->transaction_ref ? " [Ref: {$payment->transaction_ref}]" : "";
+                    postJournalEntry([
+                        'entry_date' => date('Y-m-d'),
+                        'reference_type' => 'customer_payment',
+                        'reference_id' => $customer->id,
+                        'description' => "Due collection from {$customer->name} via {$methodLabel}{$refText}",
+                        'items' => [
+                            [
+                                'account_id' => $collectionAcc->id,
+                                'debit' => $amount,
+                                'credit' => 0.00,
+                                'description' => "Due collected from {$customer->name} via {$methodLabel}{$refText}"
+                            ],
+                            [
+                                'account_id' => $arAcc->id,
+                                'debit' => 0.00,
+                                'credit' => $amount,
+                                'description' => "AR credit for {$customer->name}"
+                            ]
+                        ]
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Customer due collection journal skipped: ' . $e->getMessage());
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+            return redirect()->back()->with('success', "Payment of ৳" . number_format($amount, 2) . " received successfully for {$customer->name}.");
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return redirect()->back()->with('error', 'Error recording payment: ' . $e->getMessage());
+        }
+    }
+
     public function updatePayment(Request $request, $id)
     {
         $payment = Payment::where('id', $id)->first();

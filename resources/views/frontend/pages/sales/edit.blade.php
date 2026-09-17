@@ -38,8 +38,20 @@
 
         <!-- Section 1: Customer & Dispatch Information -->
         <div class="card border-0 shadow-sm rounded-3 mb-4">
-            <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fe fe-user me-2 text-primary"></i>Customer & Dispatch Information</h6>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-dark mb-0"><i class="fe fe-user me-2 text-primary"></i>Customer & Dispatch Information</h6>
+                    @if($customer)
+                        @php
+                            $openingDue = (float)($customer->opening_balance ?? 0);
+                            $salesDue = (float)($customer->sales_sum_due_payment ?? $customer->sales_due);
+                            $totalDue = $openingDue + $salesDue;
+                        @endphp
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-warning-light text-warning fs-8 px-2 py-1 rounded-pill">Opening: ৳{{ number_format($openingDue, 2) }}</span>
+                            <span class="badge bg-danger-light text-danger fs-8 px-2 py-1 rounded-pill fw-bold">Total Due: ৳{{ number_format($totalDue, 2) }}</span>
+                        </div>
+                    @endif
+                </div>
                 
                 <div class="row g-3 mb-3">
                     <div class="col-lg-4 col-md-6 col-12">

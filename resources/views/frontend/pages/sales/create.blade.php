@@ -72,29 +72,43 @@
                                 <option value="">Select Customer</option>
                                 @foreach ($existingClients as $client)
                                     @php
-                                        $prevDue = (float)($client->sales_sum_due_payment ?? 0);
+                                        $openingDue = (float)($client->opening_balance ?? 0);
+                                        $salesDue = (float)($client->sales_sum_due_payment ?? 0);
+                                        $totalDue = $openingDue + $salesDue;
                                     @endphp
                                     <option value="{{ $client->id }}" 
                                         data-name="{{ $client->name }}"
                                         data-phone="{{ $client->phone }}" 
                                         data-address="{{ $client->address }}" 
-                                        data-previous-due="{{ $prevDue }}">
-                                        {{ $client->name }} — {{ $client->phone }}
+                                        data-opening-due="{{ $openingDue }}"
+                                        data-sales-due="{{ $salesDue }}"
+                                        data-previous-due="{{ $totalDue }}">
+                                        {{ $client->name }} — {{ $client->phone }} {{ $totalDue > 0 ? '(Due: ৳'.number_format($totalDue, 2).')' : '' }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
                         
-                        <!-- Minimal Customer Profile & Due Widget -->
+                        <!-- Customer Profile & Due Widget (Opening Due + Sales Due + Total) -->
                         <div class="col-lg-6 col-md-6 col-12">
-                            <div id="customerBalanceCard" class="p-3 bg-light rounded-3 border h-100 d-flex align-items-center justify-content-between">
+                            <div id="customerBalanceCard" class="p-3 bg-light rounded-3 border h-100 d-flex flex-wrap align-items-center justify-content-between gap-2">
                                 <div>
                                     <div class="fw-semibold text-dark mb-0" id="custNameText">No Customer Selected</div>
                                     <div class="small text-muted" id="custContactText" style="font-size: 11px;">Select customer to view previous balance</div>
                                 </div>
-                                <div class="text-end">
-                                    <span class="text-secondary small d-block" style="font-size: 10px; text-transform: uppercase;">Previous Due</span>
-                                    <span id="custBalanceBadge" class="fw-bold text-secondary fs-6">৳ 0.00</span>
+                                <div class="d-flex align-items-center gap-2 text-end flex-wrap">
+                                    <div class="bg-white px-2 py-1 rounded border">
+                                        <span class="text-muted d-block" style="font-size: 9px; text-transform: uppercase;">Opening Due</span>
+                                        <span id="custOpeningDueBadge" class="fw-bold text-warning fs-7">৳ 0.00</span>
+                                    </div>
+                                    <div class="bg-white px-2 py-1 rounded border">
+                                        <span class="text-muted d-block" style="font-size: 9px; text-transform: uppercase;">Sales Due</span>
+                                        <span id="custSalesDueBadge" class="fw-bold text-info fs-7">৳ 0.00</span>
+                                    </div>
+                                    <div class="bg-white px-2 py-1 rounded border">
+                                        <span class="text-muted d-block" style="font-size: 9px; text-transform: uppercase;">Total Prev Due</span>
+                                        <span id="custBalanceBadge" class="fw-bold text-secondary fs-7">৳ 0.00</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -444,44 +458,61 @@ $(document).ready(function () {
 function handleCustomerChange(selectEl) {
     const selectedOption = selectEl.options[selectEl.selectedIndex];
     if (selectedOption && selectedOption.value) {
-        const prevDue = parseFloat(selectedOption.dataset.previousDue) || 0;
+        const openingDue = parseFloat(selectedOption.dataset.openingDue) || 0;
+        const salesDue = parseFloat(selectedOption.dataset.salesDue) || 0;
+        const totalDue = parseFloat(selectedOption.dataset.previousDue) || (openingDue + salesDue);
         const name = selectedOption.dataset.name || selectedOption.text.split('—')[0].trim();
         const phone = selectedOption.dataset.phone || 'N/A';
         const address = selectedOption.dataset.address || 'N/A';
-        window.selectedCustomerPreviousDue = prevDue;
-        updateCustomerBalanceCard(prevDue, name, `Phone: ${phone} | Addr: ${address}`);
+        window.selectedCustomerPreviousDue = totalDue;
+        window.selectedCustomerOpeningDue = openingDue;
+        window.selectedCustomerSalesDue = salesDue;
+        updateCustomerBalanceCard(totalDue, name, `Phone: ${phone} | Addr: ${address}`, openingDue, salesDue);
     } else {
         window.selectedCustomerPreviousDue = 0;
-        updateCustomerBalanceCard(0, null, null);
+        window.selectedCustomerOpeningDue = 0;
+        window.selectedCustomerSalesDue = 0;
+        updateCustomerBalanceCard(0, null, null, 0, 0);
     }
     calculateTotal();
 }
 
-function updateCustomerBalanceCard(due, name, details) {
+function updateCustomerBalanceCard(totalDue, name, details, openingDue = 0, salesDue = 0) {
     const nameText = document.getElementById('custNameText');
     const contactText = document.getElementById('custContactText');
-    const badge = document.getElementById('custBalanceBadge');
+    const totalBadge = document.getElementById('custBalanceBadge');
+    const openingBadge = document.getElementById('custOpeningDueBadge');
+    const salesBadge = document.getElementById('custSalesDueBadge');
 
-    if (!nameText || !badge) return;
+    if (!nameText || !totalBadge) return;
 
     if (!name) {
         nameText.innerText = 'No Customer Selected';
         nameText.className = 'fw-semibold text-dark mb-0';
         contactText.innerText = 'Select customer to view previous balance';
-        badge.innerText = '৳ 0.00';
-        badge.className = 'fw-bold text-secondary fs-6';
+        totalBadge.innerText = '৳ 0.00';
+        totalBadge.className = 'fw-bold text-secondary fs-7';
+        if (openingBadge) openingBadge.innerText = '৳ 0.00';
+        if (salesBadge) salesBadge.innerText = '৳ 0.00';
         return;
     }
 
     nameText.innerText = name;
     contactText.innerText = details;
 
-    if (due > 0) {
-        badge.className = 'fw-bold text-danger fs-6';
-        badge.innerText = '৳ ' + due.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    if (openingBadge) {
+        openingBadge.innerText = '৳ ' + openingDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+    if (salesBadge) {
+        salesBadge.innerText = '৳ ' + salesDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    if (totalDue > 0) {
+        totalBadge.className = 'fw-bold text-danger fs-7';
+        totalBadge.innerText = '৳ ' + totalDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     } else {
-        badge.className = 'fw-bold text-success fs-6';
-        badge.innerText = '৳ 0.00 (Clear)';
+        totalBadge.className = 'fw-bold text-success fs-7';
+        totalBadge.innerText = '৳ 0.00 (Clear)';
     }
 }
 

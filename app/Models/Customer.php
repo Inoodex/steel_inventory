@@ -19,8 +19,28 @@ class Customer extends Model
         return $this->hasMany(Sale::class);
     }
 
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function returns()
+    {
+        return $this->hasMany(ProductReturn::class);
+    }
+
+    public function getSalesDueAttribute(): float
+    {
+        return (float) $this->sales()->whereNull('deleted_at')->sum('due_payment');
+    }
+
+    public function getTotalDueAttribute(): float
+    {
+        return (float)($this->opening_balance ?? 0.00) + $this->sales_due;
+    }
+
     public function getOutstandingBalanceAttribute(): float
     {
-        return (float)($this->opening_balance ?? 0.00) + (float) $this->sales()->whereNull('deleted_at')->sum('due_payment');
+        return $this->total_due;
     }
 }

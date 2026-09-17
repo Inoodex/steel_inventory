@@ -98,29 +98,13 @@
         <div class="col-xl-3 col-md-6 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
-                    <div class="avatar avatar-lg bg-success-light text-success rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-user-check fs-4"></i>
+                    <div class="avatar avatar-lg bg-warning-light text-warning rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                        <i class="fe fe-layers fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Active Accounts</h6>
-                        <h4 class="mb-0 fw-bold text-dark">
-                            {{ number_format($customers->filter(fn($c) => in_array($c->status, ['active', '1', 1]))->count()) }}
-                        </h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 col-12">
-            <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
-                <div class="card-body d-flex align-items-center">
-                    <div class="avatar avatar-lg bg-danger-light text-danger rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-user-x fs-4"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-muted fw-normal mb-1">Inactive Accounts</h6>
-                        <h4 class="mb-0 fw-bold text-dark">
-                            {{ number_format($customers->filter(fn($c) => !in_array($c->status, ['active', '1', 1]))->count()) }}
+                        <h6 class="text-muted fw-normal mb-1">Total Opening Dues</h6>
+                        <h4 class="mb-0 fw-bold text-warning">
+                            ৳{{ number_format($customers->sum('opening_balance'), 2) }}
                         </h4>
                     </div>
                 </div>
@@ -131,12 +115,28 @@
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
                     <div class="avatar avatar-lg bg-info-light text-info rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-calendar fs-4"></i>
+                        <i class="fe fe-shopping-cart fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">New This Month</h6>
-                        <h4 class="mb-0 fw-bold text-dark">
-                            {{ number_format($customers->filter(fn($c) => $c->created_at?->isCurrentMonth())->count()) }}
+                        <h6 class="text-muted fw-normal mb-1">Sales Invoices Due</h6>
+                        <h4 class="mb-0 fw-bold text-info">
+                            ৳{{ number_format($customers->sum('sales_sum_due_payment'), 2) }}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 col-12">
+            <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
+                <div class="card-body d-flex align-items-center">
+                    <div class="avatar avatar-lg bg-danger-light text-danger rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                        <i class="fe fe-dollar-sign fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted fw-normal mb-1">Total Outstanding Dues</h6>
+                        <h4 class="mb-0 fw-bold text-danger">
+                            ৳{{ number_format($customers->sum(fn($c) => (float)($c->opening_balance ?? 0) + (float)($c->sales_sum_due_payment ?? 0)), 2) }}
                         </h4>
                     </div>
                 </div>
@@ -179,14 +179,19 @@
                             <th>Phone & Email</th>
                             <th>Address</th>
                             <th>Opening Due</th>
+                            <th>Sales Due</th>
+                            <th>Total Due</th>
                             <th>Status</th>
-                            <th class="pe-4 text-end">Action</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
                         @forelse ($customers as $key => $customer)
                             @php
                                 $isActive = in_array($customer->status, ['active', '1', 1]);
+                                $openingDue = (float)($customer->opening_balance ?? 0);
+                                $salesDue = (float)($customer->sales_sum_due_payment ?? 0);
+                                $totalDue = $openingDue + $salesDue;
                             @endphp
                             <tr class="customer-row" data-status="{{ $isActive ? 'active' : 'inactive' }}" data-search="{{ strtolower($customer->name . ' ' . $customer->phone . ' ' . $customer->email . ' ' . $customer->address) }}">
                                 <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
@@ -195,7 +200,6 @@
                                         <a href="{{ route('customers.show', $customer->id) }}" class="fw-bold text-dark hover-primary mb-0 text-decoration-none d-block text-truncate" title="{{ $customer->name }}" style="max-width: 200px;">
                                             {{ Str::limit($customer->name, 25) }}
                                         </a>
-                                        <!-- <small class="text-muted fs-7">Added {{ $customer->created_at?->format('d M Y') ?? 'N/A' }}</small> -->
                                     </div>
                                 </td>
                                 <td>
@@ -212,17 +216,37 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="text-secondary small text-truncate d-inline-block" style="max-width: 220px;" title="{{ $customer->address }}">
-                                        {{ Str::limit($customer->address, 30) ?: 'N/A' }}
+                                    <span class="text-secondary small text-truncate d-inline-block" style="max-width: 200px;" title="{{ $customer->address }}">
+                                        {{ Str::limit($customer->address, 26) ?: 'N/A' }}
                                     </span>
                                 </td>
                                 <td>
-                                    @if((float)($customer->opening_balance ?? 0) > 0)
+                                    @if($openingDue > 0)
                                         <span class="badge badge-soft-warning px-2.5 py-1 rounded-pill fs-7 fw-semibold">
-                                            ৳{{ number_format($customer->opening_balance, 2) }}
+                                            ৳{{ number_format($openingDue, 2) }}
                                         </span>
                                     @else
                                         <span class="text-muted small">৳0.00</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($salesDue > 0)
+                                        <span class="badge badge-soft-info px-2.5 py-1 rounded-pill fs-7 fw-semibold">
+                                            ৳{{ number_format($salesDue, 2) }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted small">৳0.00</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($totalDue > 0)
+                                        <span class="badge badge-soft-danger px-2.5 py-1 rounded-pill fs-7 fw-bold">
+                                            ৳{{ number_format($totalDue, 2) }}
+                                        </span>
+                                    @else
+                                        <span class="badge badge-soft-success px-2.5 py-1 rounded-pill fs-7 fw-semibold">
+                                            ৳0.00
+                                        </span>
                                     @endif
                                 </td>
                                 <td>
@@ -284,7 +308,7 @@
                             </tr>
                         @empty
                             <tr id="emptyStateRow">
-                                <td colspan="6" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
                                         <div class="avatar avatar-xl bg-primary-light text-primary rounded-circle mb-3 d-flex align-items-center justify-content-center">
                                             <i class="fe fe-users fs-1"></i>
