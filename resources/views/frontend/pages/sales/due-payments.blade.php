@@ -62,6 +62,12 @@
     .table-custom th, .table-custom td {
         white-space: nowrap;
     }
+    .table-responsive {
+        overflow: visible !important;
+    }
+    .dropdown-menu {
+        z-index: 1060 !important;
+    }
     .nav-tabs-custom .nav-link {
         border: none;
         border-bottom: 2.5px solid transparent;
@@ -275,16 +281,38 @@
                                             ৳{{ number_format($cust->total_due, 2) }}
                                         </span>
                                     </td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <button type="button" class="btn btn-sm btn-success rounded-2 px-2.5 py-1 d-inline-flex align-items-center gap-1"
-                                                onclick="openCustomerPaymentModal({{ $cust->id }}, '{{ addslashes($cust->name) }}', {{ $cust->opening_due }}, {{ $cust->total_due }})">
-                                                <i class="fe fe-dollar-sign"></i>
-                                                <span>Collect Due</span>
-                                            </button>
-                                            <a href="{{ route('customers.ledger', $cust->id) }}" class="btn btn-sm btn-outline-primary rounded-2 px-2.5 py-1" title="View Ledger">
-                                                <i class="fe fe-book-open"></i> View Ledger
+                                    <td class="text-center">
+                                        <div class="dropdown">
+                                            <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
                                             </a>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="javascript:void(0)"
+                                                        onclick="openCustomerPaymentModal({{ $cust->id }}, '{{ addslashes($cust->name) }}', {{ $cust->opening_due }}, {{ $cust->total_due }})">
+                                                        <i class="fe fe-dollar-sign text-success"></i>
+                                                        <span>Collect Due</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.ledger', $cust->id) }}">
+                                                        <i class="fe fe-book-open text-primary"></i>
+                                                        <span>View Ledger</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.show', $cust->id) }}">
+                                                        <i class="fe fe-eye text-info"></i>
+                                                        <span>Customer Profile</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.ledger.pdf', $cust->id) }}" target="_blank">
+                                                        <i class="fe fe-download text-secondary"></i>
+                                                        <span>Statement PDF</span>
+                                                    </a>
+                                                </li>
+                                            </ul>
                                         </div>
                                     </td>
                                 </tr>
@@ -335,7 +363,7 @@
                                 <th>Total Amount</th>
                                 <th>Paid Amount</th>
                                 <th>Due Amount</th>
-                                <th>Action</th>
+                                <th class="text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody class="border-top-0">
@@ -383,12 +411,42 @@
                                             ৳{{ number_format($sale->due_payment, 2) }}
                                         </span>
                                     </td>
-                                    <td>
-                                        @if ($sale->due_payment > 0)
-                                            <a href="{{ route('sales.payments', $sale->id) }}" class="btn btn-sm btn-outline-success rounded-2 px-3">
-                                                <i class="fe fe-credit-card me-1"></i> Pay Now
+                                    <td class="text-center">
+                                        <div class="dropdown">
+                                            <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
                                             </a>
-                                        @endif
+                                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                                @if ($sale->due_payment > 0)
+                                                    <li>
+                                                        <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="{{ route('sales.payments', $sale->id) }}">
+                                                            <i class="fe fe-credit-card text-success"></i>
+                                                            <span>Pay Invoice</span>
+                                                        </a>
+                                                    </li>
+                                                @endif
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.show', $sale->id) }}">
+                                                        <i class="fe fe-eye text-info"></i>
+                                                        <span>View Order Details</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.invoice.pdf', $sale->id) }}" target="_blank">
+                                                        <i class="fe fe-file-text text-danger"></i>
+                                                        <span>Invoice PDF</span>
+                                                    </a>
+                                                </li>
+                                                @if($sale->customer_id)
+                                                    <li>
+                                                        <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.ledger', $sale->customer_id) }}">
+                                                            <i class="fe fe-book-open text-primary"></i>
+                                                            <span>Customer Ledger</span>
+                                                        </a>
+                                                    </li>
+                                                @endif
+                                            </ul>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty

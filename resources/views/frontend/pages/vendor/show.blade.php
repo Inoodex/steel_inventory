@@ -15,6 +15,33 @@
     .stat-card-mini {
         border: 1px solid rgba(0, 0, 0, 0.05) !important;
     }
+    .btn-action-icon {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #dbe2ea !important;
+        border-radius: 8px !important;
+        background-color: #ffffff !important;
+        color: #555e6d !important;
+        padding: 0;
+        transition: all 0.2s ease;
+    }
+    .btn-action-icon:hover {
+        background-color: #7638ff !important;
+        color: #ffffff !important;
+        border-color: #7638ff !important;
+    }
+    .table th, .table td {
+        white-space: nowrap;
+    }
+    .table-responsive {
+        overflow: visible !important;
+    }
+    .dropdown-menu {
+        z-index: 1060 !important;
+    }
 </style>
 @endpush
 
@@ -197,7 +224,7 @@
                             <th>Rate</th>
                             <th>Total Price</th>
                             <th>Paid / Due</th>
-                            <th class="text-end pe-4">Action</th>
+                            <th class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -263,15 +290,43 @@
                                         @endif
                                     </div>
                                 </td>
-                                <td class="text-end pe-4">
-                                    @if($due > 0)
-                                        <button type="button" class="btn btn-sm btn-outline-success rounded-2 px-3 py-1 fw-semibold"
-                                            onclick="openVendorPaymentModal('{{ $purchase->id }}', '{{ $due }}')">
-                                            <i class="fe fe-credit-card me-1"></i>Pay Due
-                                        </button>
-                                    @else
-                                        <span class="badge badge-soft-success px-3 py-1 rounded-pill fs-7">Settled</span>
-                                    @endif
+                                <td class="text-center">
+                                    <div class="dropdown">
+                                        <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            @if($due > 0)
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="javascript:void(0)"
+                                                        onclick="openVendorPaymentModal('{{ $purchase->id }}', '{{ $due }}')">
+                                                        <i class="fe fe-credit-card text-success"></i>
+                                                        <span>Pay Due</span>
+                                                    </a>
+                                                </li>
+                                            @endif
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $purchase->id) }}">
+                                                    <i class="fe fe-eye text-info"></i>
+                                                    <span>View PO Details</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.edit', $purchase->id) }}">
+                                                    <i class="fe fe-edit text-warning"></i>
+                                                    <span>Edit Purchase</span>
+                                                </a>
+                                            </li>
+                                            @if($purchase->lot_id)
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $purchase->lot_id) }}">
+                                                        <i class="fe fe-package text-primary"></i>
+                                                        <span>View Lot</span>
+                                                    </a>
+                                                </li>
+                                            @endif
+                                        </ul>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -303,11 +358,11 @@
                         <tr>
                             <th class="ps-4" style="width: 5%;">#</th>
                             <th style="width: 15%;">Date</th>
-                            <th style="width: 25%;">Payment Method & Channel</th>
+                            <th style="width: 25%;">Payment Method &amp; Channel</th>
                             <th style="width: 20%;">Transaction Ref / TrxID</th>
                             <th style="width: 15%;">PO Reference</th>
                             <th style="width: 15%;">Amount (৳)</th>
-                            <th class="text-end pe-4" style="width: 5%;">Action</th>
+                            <th class="text-center" style="width: 5%;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -356,15 +411,25 @@
                                 <td>
                                     <strong class="text-success fs-6">৳ {{ number_format($payment->amount, 2) }}</strong>
                                 </td>
-                                <td class="text-end pe-4">
-                                    <form action="{{ route('vendor-payments.destroy', $payment->id) }}" method="POST" class="d-inline"
-                                        onsubmit="return confirm('Are you sure you want to revert this payment of ৳{{ number_format($payment->amount, 2) }}? This will restore the purchase due balance.');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-2 py-1 px-2" title="Delete Payment Record">
-                                            <i class="fe fe-trash-2"></i>
-                                        </button>
-                                    </form>
+                                <td class="text-center">
+                                    <div class="dropdown">
+                                        <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
+                                                    onclick="if (confirm('Are you sure you want to revert this payment of ৳{{ number_format($payment->amount, 2) }}? This will restore the purchase due balance.')) { document.getElementById('delVendorPayment{{ $payment->id }}').submit(); }">
+                                                    <i class="fe fe-trash-2 text-danger"></i>
+                                                    <span>Delete / Revert</span>
+                                                </a>
+                                                <form id="delVendorPayment{{ $payment->id }}" action="{{ route('vendor-payments.destroy', $payment->id) }}" method="POST" class="d-none">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

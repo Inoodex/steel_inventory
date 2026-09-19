@@ -36,8 +36,32 @@
         color: #b58105 !important;
         font-weight: 600;
     }
+    .btn-action-icon {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #dbe2ea !important;
+        border-radius: 8px !important;
+        background-color: #ffffff !important;
+        color: #555e6d !important;
+        padding: 0;
+        transition: all 0.2s ease;
+    }
+    .btn-action-icon:hover {
+        background-color: #7638ff !important;
+        color: #ffffff !important;
+        border-color: #7638ff !important;
+    }
     .table-custom th, .table-custom td {
         white-space: nowrap;
+    }
+    .table-responsive {
+        overflow: visible !important;
+    }
+    .dropdown-menu {
+        z-index: 1060 !important;
     }
 </style>
 @endpush
@@ -155,7 +179,7 @@
                             <th>Total Amount</th>
                             <th>Paid Amount</th>
                             <th>Outstanding Due</th>
-                            <th>Action</th>
+                            <th class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
@@ -199,11 +223,49 @@
                                         ৳{{ number_format($purchase->due, 2) }}
                                     </span>
                                 </td>
-                                <td>
-                                    <button type="button" class="btn btn-sm btn-outline-success rounded-2 px-3 py-1 fw-semibold"
-                                        onclick="openVendorDueModal('{{ $purchase->id }}', '{{ $purchase->vendor_id }}', '{{ addslashes($vendorName) }}', '{{ $purchase->due }}')">
-                                        <i class="fe fe-dollar-sign me-1"></i>Pay Due
-                                    </button>
+                                <td class="text-center">
+                                    <div class="dropdown">
+                                        <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="javascript:void(0)"
+                                                    onclick="openVendorDueModal('{{ $purchase->id }}', '{{ $purchase->vendor_id }}', '{{ addslashes($vendorName) }}', '{{ $purchase->due }}')">
+                                                    <i class="fe fe-dollar-sign text-success"></i>
+                                                    <span>Pay Due</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $purchase->id) }}">
+                                                    <i class="fe fe-eye text-info"></i>
+                                                    <span>View Purchase Order</span>
+                                                </a>
+                                            </li>
+                                            @if($purchase->lot_id)
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $purchase->lot_id) }}">
+                                                        <i class="fe fe-package text-primary"></i>
+                                                        <span>View Lot / Batch</span>
+                                                    </a>
+                                                </li>
+                                            @endif
+                                            @if($purchase->vendor_id)
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('vendors.ledger', $purchase->vendor_id) }}">
+                                                        <i class="fe fe-book-open text-secondary"></i>
+                                                        <span>Vendor Ledger</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('vendors.show', $purchase->vendor_id) }}">
+                                                        <i class="fe fe-user text-dark"></i>
+                                                        <span>Vendor Profile</span>
+                                                    </a>
+                                                </li>
+                                            @endif
+                                        </ul>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

@@ -28,6 +28,33 @@
     .stat-card-mini {
         border: 1px solid rgba(0, 0, 0, 0.05) !important;
     }
+    .btn-action-icon {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #dbe2ea !important;
+        border-radius: 8px !important;
+        background-color: #ffffff !important;
+        color: #555e6d !important;
+        padding: 0;
+        transition: all 0.2s ease;
+    }
+    .btn-action-icon:hover {
+        background-color: #7638ff !important;
+        color: #ffffff !important;
+        border-color: #7638ff !important;
+    }
+    .table th, .table td {
+        white-space: nowrap;
+    }
+    .table-responsive {
+        overflow: visible !important;
+    }
+    .dropdown-menu {
+        z-index: 1060 !important;
+    }
 </style>
 @endpush
 
@@ -204,7 +231,7 @@
                             <th>Paid Amount</th>
                             <th>Due Amount</th>
                             <th>Payment Status</th>
-                            <th class="text-end pe-4">Action</th>
+                            <th class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -228,10 +255,46 @@
                                         <span class="badge badge-soft-danger px-3 py-1 rounded-pill">Due</span>
                                     @endif
                                 </td>
-                                <td class="text-end pe-4">
-                                    <a href="{{ route('sales.invoice', $sale->id) }}" class="btn btn-sm btn-light border rounded-2 px-3">
-                                        View Invoice
-                                    </a>
+                                <td class="text-center">
+                                    <div class="dropdown">
+                                        <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.show', $sale->id) }}">
+                                                    <i class="fe fe-eye text-info"></i>
+                                                    <span>View Details</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.invoice', $sale->id) }}">
+                                                    <i class="fe fe-file-text text-primary"></i>
+                                                    <span>View Invoice</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.invoice.pdf', $sale->id) }}" target="_blank">
+                                                    <i class="fe fe-download text-danger"></i>
+                                                    <span>Invoice PDF</span>
+                                                </a>
+                                            </li>
+                                            @if(($sale->due_amount ?? 0) > 0)
+                                                <li>
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="{{ route('sales.payments', $sale->id) }}">
+                                                        <i class="fe fe-credit-card text-success"></i>
+                                                        <span>Collect Payment</span>
+                                                    </a>
+                                                </li>
+                                            @endif
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.edit', $sale->id) }}">
+                                                    <i class="fe fe-edit text-warning"></i>
+                                                    <span>Edit Sale</span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
