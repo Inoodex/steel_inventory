@@ -262,6 +262,7 @@ class SaleService
             $thickness  = $data['thickness'][$index] ?? null;
             $size       = $data['size'][$index] ?? null;
             $sizeType   = $data['size_type'][$index] ?? 'ft';
+            $customSize = $data['custom_size'][$index] ?? null;
 
             $purchasePrice = 0;
             if ($coilId) {
@@ -292,6 +293,7 @@ class SaleService
                 'thickness'      => $thickness,
                 'size'           => $size,
                 'size_type'      => $sizeType,
+                'custom_size'    => $customSize,
                 'unit_price'     => $unitPrice,
                 'qty'            => $qty,
                 'total_price'    => $total,

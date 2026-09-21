@@ -95,7 +95,7 @@
                     <!-- NEW LOT FIELDS -->
                     <div id="newLotContainer" style="{{ old('lot_type', 'new') === 'new' ? '' : 'display: none;' }}">
                         <div class="row g-3">
-                            <div class="col-lg-3 col-md-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12">
                                 <label for="new_lot_number" class="form-label fw-semibold small text-secondary mb-1">
                                     New Lot Number <span class="text-danger">*</span>
                                 </label>
@@ -107,21 +107,7 @@
                                 <small class="text-muted fs-8">Auto-generated, editable</small>
                             </div>
 
-                            <div class="col-lg-3 col-md-6 col-12">
-                                <label for="new_vendor_id" class="form-label fw-semibold small text-secondary mb-1">
-                                    Vendor / Ship Breaker <span class="text-danger">*</span>
-                                </label>
-                                <select id="new_vendor_id" name="new_vendor_id" class="form-select select2">
-                                    <option value="">Select Vendor / Supplier</option>
-                                    @foreach ($vendors as $vendor)
-                                        <option value="{{ $vendor->id }}" {{ old('vendor_id') == $vendor->id ? 'selected' : '' }}>
-                                            {{ $vendor->name }} ({{ $vendor->phone }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="col-lg-3 col-md-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12">
                                 <label for="warehouse_id" class="form-label fw-semibold small text-secondary mb-1">
                                     Stockyard Location <span class="text-danger">*</span>
                                 </label>
@@ -135,7 +121,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-lg-3 col-md-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12">
                                 <label for="purchase_date" class="form-label fw-semibold small text-secondary mb-1">
                                     Intake Date <span class="text-danger">*</span>
                                 </label>
@@ -156,7 +142,7 @@
                     <!-- EXISTING LOT FIELDS -->
                     <div id="existingLotContainer" style="{{ old('lot_type') === 'existing' ? '' : 'display: none;' }}">
                         <div class="row g-3">
-                            <div class="col-lg-3 col-md-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12">
                                 <label for="purchase_lot_id" class="form-label fw-semibold small text-secondary mb-1">
                                     Existing Purchase Lot <span class="text-danger">*</span>
                                 </label>
@@ -164,23 +150,14 @@
                                     <option value="">Select Existing Purchase Lot</option>
                                     @foreach ($lots as $lot)
                                         <option value="{{ $lot->id }}" 
-                                            data-vendor-id="{{ $lot->vendor_id }}"
-                                            data-vendor-name="{{ $lot->vendor ? $lot->vendor->name : 'No Vendor' }}"
                                             {{ old('lot_id', request('lot_id')) == $lot->id ? 'selected' : '' }}>
-                                            {{ $lot->lot_number }} — {{ $lot->vendor ? $lot->vendor->name : 'Lot' }}
+                                            {{ $lot->lot_number }} {{ $lot->vendor_names ? '('.$lot->vendor_names.')' : '' }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
 
-                            <div class="col-lg-3 col-md-6 col-12">
-                                <label class="form-label fw-semibold small text-secondary mb-1">
-                                    Vendor / Supplier
-                                </label>
-                                <input type="text" id="vendor_display" class="form-control bg-light" readonly>
-                            </div>
-
-                            <div class="col-lg-3 col-md-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12">
                                 <label for="warehouse_id_existing" class="form-label fw-semibold small text-secondary mb-1">
                                     Stockyard Location <span class="text-danger">*</span>
                                 </label>
@@ -194,7 +171,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-lg-3 col-md-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12">
                                 <label for="purchase_date_existing" class="form-label fw-semibold small text-secondary mb-1">
                                     Intake Date <span class="text-danger">*</span>
                                 </label>
@@ -204,7 +181,7 @@
                         </div>
                     </div>
 
-                    <!-- Hidden vendor id field for submission -->
+                    <!-- Hidden vendor id field for submission fallback -->
                     <input type="hidden" name="vendor_id" id="vendor_hidden" value="{{ old('vendor_id') }}">
                 </div>
             </div>
@@ -223,6 +200,28 @@
                 <div class="card-body p-3 p-md-4 bg-light-subtle">
                     <!-- Builder Form Card (Fixed Persistent Form) -->
                     <div class="builder-card p-3 p-md-4 shadow-sm mb-4">
+
+                        <!-- Line 0: Dedicated Vendor Selection Bar -->
+                        <div class="row g-3 mb-3 pb-3 border-bottom align-items-center">
+                            <div class="col-lg-5 col-md-6 col-12">
+                                <label for="builder_vendor_id" class="form-label small text-secondary fw-bold mb-1">
+                                    <i class="fe fe-user text-primary me-1"></i>Vendor / Supplier <span class="text-danger">*</span>
+                                </label>
+                                <select id="builder_vendor_id" class="form-select select2">
+                                    <option value="">Select Vendor / Supplier</option>
+                                    @foreach ($vendors as $vendor)
+                                        <option value="{{ $vendor->id }}" {{ (old('vendor_id') == $vendor->id || (isset($vendors) && count($vendors) == 1)) ? 'selected' : '' }}>
+                                            {{ $vendor->name }} ({{ $vendor->phone }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-lg-7 col-md-6 col-12">
+                                <div class="text-muted small mt-md-4 pt-md-1">
+                                    <i class="fe fe-info text-info me-1"></i>Select the supplier for the coils/steel plates you are adding below.
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Line 1: Physical Specifications & Dimensions -->
                         <div class="row g-2 mb-3">
@@ -337,13 +336,14 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th class="text-center" style="width: 50px;">#</th>
+                                        <th>Vendor / Supplier</th>
                                         <th>Specifications & Dimensions</th>
-                                        <th class="text-center" style="width: 100px;">Coil Qty</th>
-                                        <th class="text-end" style="width: 130px;">Per Coil Wt</th>
-                                        <th class="text-end" style="width: 140px;">Total Wt</th>
-                                        <th class="text-end" style="width: 120px;">Rate (৳/kg)</th>
-                                        <th class="text-end" style="width: 140px;">Sub Total (৳)</th>
-                                        <th class="text-center" style="width: 70px;">Action</th>
+                                        <th class="text-center" style="width: 90px;">Coil Qty</th>
+                                        <th class="text-end" style="width: 120px;">Per Coil Wt</th>
+                                        <th class="text-end" style="width: 130px;">Total Wt</th>
+                                        <th class="text-end" style="width: 110px;">Rate (৳/kg)</th>
+                                        <th class="text-end" style="width: 130px;">Sub Total (৳)</th>
+                                        <th class="text-center" style="width: 60px;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="steelTableBody">
@@ -372,10 +372,17 @@
                                                 $st = $item['size_type'] ?? 'ft';
                                                 $stText = $sizeTypeLabels[$st] ?? $st;
                                                 $nts = $item['notes'] ?? '';
+                                                $itemVendorId = $item['vendor_id'] ?? old('vendor_id');
+                                                $itemVendor = $vendors->firstWhere('id', $itemVendorId);
                                             @endphp
                                             <tr class="item-row" data-index="{{ $idx }}">
                                                 <td class="text-center">
                                                     <span class="badge bg-soft-dark rounded-pill px-2 py-0.5 row-serial-number">{{ $loop->iteration }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                                                        <i class="fe fe-user me-1"></i>{{ $itemVendor ? $itemVendor->name : ($itemVendorId ? 'Vendor #'.$itemVendorId : 'Unassigned') }}
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <div class="d-flex flex-wrap align-items-center gap-1">
@@ -401,6 +408,7 @@
                                                     <button type="button" onclick="removeSteelItem(this)" class="btn btn-sm btn-outline-danger border-0 rounded-2 px-2 py-1" title="Remove Coil">
                                                         <i class="fe fe-trash-2"></i>
                                                     </button>
+                                                    <input type="hidden" name="items[{{ $idx }}][vendor_id]" class="item-vendor-id-input" value="{{ $itemVendorId }}">
                                                     <input type="hidden" name="items[{{ $idx }}][quantity]" class="item-qty-input" value="{{ $qty }}">
                                                     <input type="hidden" name="items[{{ $idx }}][thickness]" value="{{ $thk }}">
                                                     <input type="hidden" name="items[{{ $idx }}][size]" value="{{ $sz }}">
@@ -417,16 +425,15 @@
                                     @endif
 
                                     <tr id="emptyTablePlaceholder" style="{{ (!empty($oldItems) && count($oldItems) > 0) ? 'display: none;' : '' }}">
-                                        <td colspan="8" class="text-center py-5 text-muted">
+                                        <td colspan="9" class="text-center py-5 text-muted">
                                             <i class="fe fe-inbox fs-2 d-block mb-2 text-secondary opacity-50"></i>
                                             <span class="fw-medium">No steel items added to this purchase yet.</span>
-                                            <!-- <div class="small text-muted mt-1">Fill out the specification form above and click <span class="badge bg-primary-subtle text-primary">+ Add to Table</span> to record coils or plates.</div> -->
                                         </td>
                                     </tr>
                                 </tbody>
                                 <tfoot class="table-light fw-bold" id="tableSummaryFooter" style="{{ (!empty($oldItems) && count($oldItems) > 0) ? '' : 'display: none;' }}">
                                     <tr>
-                                        <td colspan="2" class="text-end pe-3">Batch Total:</td>
+                                        <td colspan="3" class="text-end pe-3">Batch Total:</td>
                                         <td class="text-center"><span class="badge bg-dark rounded-pill px-2.5 py-1" id="tfootTotalQty">0</span></td>
                                         <td></td>
                                         <td class="text-end"><span class="badge bg-primary-subtle text-primary px-2.5 py-1 fs-7" id="tfootTotalWeight">0.00 kg</span></td>
@@ -620,43 +627,17 @@
                 $('#existingLotContainer').hide();
                 $('#new_lot_number').attr('required', true);
                 $('#purchase_lot_id').removeAttr('required');
-
-                const newVendorId = $('#new_vendor_id').val();
-                $('#vendor_hidden').val(newVendorId);
             } else {
                 $('#newLotContainer').hide();
                 $('#existingLotContainer').fadeIn(150);
                 $('#new_lot_number').removeAttr('required');
                 $('#purchase_lot_id').attr('required', true);
-
-                const selectedOption = $('#purchase_lot_id').find('option:selected');
-                const vendorId = selectedOption.data('vendor-id') || '';
-                const vendorName = selectedOption.data('vendor-name') || '';
-                $('#vendor_hidden').val(vendorId);
-                $('#vendor_display').val(vendorName || 'No Vendor Linked');
             }
         }
 
         $(document).ready(function () {
             $('.select2').select2({
                 width: '100%'
-            });
-
-            $('#new_vendor_id').on('change select2:select', function () {
-                if ($('#lot_type_new').is(':checked')) {
-                    $('#vendor_hidden').val($(this).val());
-                }
-            });
-
-            $('#purchase_lot_id').on('change select2:select', function () {
-                if ($('#lot_type_existing').is(':checked')) {
-                    const selectedOption = $(this).find('option:selected');
-                    const vendorId = selectedOption.data('vendor-id') || '';
-                    const vendorName = selectedOption.data('vendor-name') || '';
-
-                    $('#vendor_hidden').val(vendorId);
-                    $('#vendor_display').val(vendorName || 'No Vendor Linked');
-                }
             });
 
             // Trigger Enter key in builder fields to add item
@@ -693,6 +674,15 @@
         }
 
         function addSteelItemToTable() {
+            const vendorId = $('#builder_vendor_id').val();
+            const vendorName = $('#builder_vendor_id option:selected').text().trim();
+
+            if (!vendorId) {
+                alert('Please select a Vendor / Supplier for this steel item.');
+                $('#builder_vendor_id').select2('open');
+                return;
+            }
+
             const qty = parseInt($('#builder_quantity').val()) || 0;
             const thickness = $('#builder_thickness').val().trim();
             const size = $('#builder_size').val().trim();
@@ -746,6 +736,11 @@
                         <span class="badge bg-soft-dark rounded-pill px-2 py-0.5 row-serial-number">1</span>
                     </td>
                     <td>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                            <i class="fe fe-user me-1"></i>${escapeHtml(vendorName)}
+                        </span>
+                    </td>
+                    <td>
                         <div class="d-flex flex-wrap align-items-center gap-1">
                             ${specHtml}
                         </div>
@@ -759,6 +754,7 @@
                         <button type="button" onclick="removeSteelItem(this)" class="btn btn-sm btn-outline-danger border-0 rounded-2 px-2 py-1" title="Remove Coil">
                             <i class="fe fe-trash-2"></i>
                         </button>
+                        <input type="hidden" name="items[${itemIndex}][vendor_id]" class="item-vendor-id-input" value="${vendorId}">
                         <input type="hidden" name="items[${itemIndex}][quantity]" class="item-qty-input" value="${qty}">
                         <input type="hidden" name="items[${itemIndex}][thickness]" value="${escapeHtml(thickness)}">
                         <input type="hidden" name="items[${itemIndex}][size]" value="${escapeHtml(size)}">
@@ -776,7 +772,8 @@
             $('#steelTableBody').append(rowHtml);
             itemIndex++;
 
-            // Clean reset of builder form fields so it remains the same every time
+            // Clean reset of builder form fields
+            $('#builder_vendor_id').val('').trigger('change');
             $('#builder_quantity').val('1');
             $('#builder_thickness').val('');
             $('#builder_size').val('');
@@ -787,8 +784,8 @@
             $('#builder_unit_price').val('');
             $('#builder_sub_price').val('');
 
-            // Focus on thickness for immediate next entry
-            $('#builder_thickness').focus();
+            // Focus on vendor select for next entry
+            $('#builder_vendor_id').select2('open');
 
             updateTableNumbers();
             recalculateSummary();
@@ -934,18 +931,29 @@
                 return false;
             }
 
+            // Check if every row has a vendor_id
+            let missingVendor = false;
+            let firstRowVendor = '';
+            $('#steelTableBody tr.item-row').each(function (idx) {
+                const vId = $(this).find('.item-vendor-id-input').val();
+                if (!vId) {
+                    missingVendor = true;
+                } else if (idx === 0) {
+                    firstRowVendor = vId;
+                }
+            });
+
+            if (missingVendor) {
+                e.preventDefault();
+                alert('One or more items in the table are missing a vendor. Please remove and re-add them with a vendor selected.');
+                return false;
+            }
+
             const grandTotal = parseFloat($('#grand_total_hidden').val()) || 0;
             const payment = parseFloat($('#paymentInput').val()) || 0;
 
             if ($('#lot_type_new').is(':checked')) {
-                const newVendor = $('#new_vendor_id').val();
-                if (!newVendor) {
-                    e.preventDefault();
-                    alert('Please select a Vendor / Supplier for the new lot.');
-                    $('#new_vendor_id').select2('open');
-                    return false;
-                }
-                $('#vendor_hidden').val(newVendor);
+                $('#vendor_hidden').val(firstRowVendor);
             } else {
                 const existingLot = $('#purchase_lot_id').val();
                 if (!existingLot) {

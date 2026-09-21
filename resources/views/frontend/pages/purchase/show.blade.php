@@ -191,44 +191,69 @@
                     <h5 class="card-title fw-bold text-dark mb-0">
                         <i class="fe fe-user text-primary me-2"></i>Vendor / Supplier Details
                     </h5>
-                    @if($purchase->vendor)
-                        <a href="{{ route('vendors.show', $purchase->vendor->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                    @php
+                        $consignmentVendors = $consignmentPurchases->map(fn($p) => $p->vendor)->filter()->unique('id');
+                    @endphp
+                    @if($consignmentVendors->count() === 1 && $consignmentVendors->first())
+                        <a href="{{ route('vendors.show', $consignmentVendors->first()->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
                             <i class="fe fe-external-link me-1"></i>View Profile
                         </a>
                     @endif
                 </div>
                 <div class="card-body">
-                    <table class="table table-borderless info-table mb-0">
-                        <tbody>
-                            <tr>
-                                <td class="text-muted" style="width: 35%;">Supplier Name:</td>
-                                <td class="fw-bold text-dark">{{ $purchase->vendor->name ?? 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <td class="text-muted">Contact Phone:</td>
-                                <td class="fw-semibold text-dark">{{ $purchase->vendor->phone ?? 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <td class="text-muted">Email Address:</td>
-                                <td class="text-secondary">{{ $purchase->vendor->email ?? 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <td class="text-muted">Address / Mill Location:</td>
-                                <td class="text-secondary">{{ $purchase->vendor->address ?? 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <td class="text-muted">Overall Vendor Due:</td>
-                                <td>
-                                    @php
-                                        $vendorTotalDue = $purchase->vendor ? $purchase->vendor->purchases()->sum('due') : 0;
-                                    @endphp
-                                    <span class="badge {{ $vendorTotalDue > 0 ? 'badge-soft-danger' : 'badge-soft-success' }} px-3 py-1 rounded-pill fs-7">
-                                        ৳ {{ number_format($vendorTotalDue, 2) }}
-                                    </span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    @if($consignmentVendors->count() > 1)
+                        <div class="mb-3">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 mb-2">
+                                <i class="fe fe-users me-1"></i>Multi-Vendor Consignment ({{ $consignmentVendors->count() }} Vendors)
+                            </span>
+                        </div>
+                        <div class="d-flex flex-column gap-2">
+                            @foreach($consignmentVendors as $v)
+                                <div class="p-2.5 bg-light rounded-3 border border-light-subtle d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ $v->name }}</div>
+                                        <small class="text-muted">{{ $v->phone ?: 'No phone' }} {{ $v->address ? '• '.$v->address : '' }}</small>
+                                    </div>
+                                    <a href="{{ route('vendors.show', $v->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-0.5 fs-8">
+                                        View
+                                    </a>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        @php $primaryVendor = $consignmentVendors->first() ?: $purchase->vendor; @endphp
+                        <table class="table table-borderless info-table mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted" style="width: 35%;">Supplier Name:</td>
+                                    <td class="fw-bold text-dark">{{ $primaryVendor->name ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Contact Phone:</td>
+                                    <td class="fw-semibold text-dark">{{ $primaryVendor->phone ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Email Address:</td>
+                                    <td class="text-secondary">{{ $primaryVendor->email ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Address / Mill Location:</td>
+                                    <td class="text-secondary">{{ $primaryVendor->address ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Overall Vendor Due:</td>
+                                    <td>
+                                        @php
+                                            $vendorTotalDue = $primaryVendor ? $primaryVendor->purchases()->sum('due') : 0;
+                                        @endphp
+                                        <span class="badge {{ $vendorTotalDue > 0 ? 'badge-soft-danger' : 'badge-soft-success' }} px-3 py-1 rounded-pill fs-7">
+                                            ৳ {{ number_format($vendorTotalDue, 2) }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    @endif
                 </div>
             </div>
         </div>
@@ -322,6 +347,7 @@
                     <thead class="bg-light text-secondary fs-8 text-uppercase">
                         <tr>
                             <th class="ps-4" style="width: 40px;">#</th>
+                            <th>Vendor</th>
                             <th>Specifications</th>
                             <th>Coil Tag / Id</th>
                             <th class="text-center">Qty</th>
@@ -337,6 +363,11 @@
                         @foreach($consignmentPurchases as $item)
                             <tr>
                                 <td class="ps-4 text-muted fw-semibold fs-8">{{ $loop->iteration }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border fs-8">
+                                        <i class="fe fe-user text-primary me-1"></i>{{ $item->vendor->name ?? 'N/A' }}
+                                    </span>
+                                </td>
                                 <td>
                                     <div class="d-flex flex-wrap align-items-center gap-1">
                                         @if($item->thickness)

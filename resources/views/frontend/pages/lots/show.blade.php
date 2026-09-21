@@ -113,7 +113,7 @@
                 </div>
                 <p class="text-muted small mb-0 mt-1">
                     Procurement Date: <strong class="text-dark">{{ \Carbon\Carbon::parse($lot->lot_date)->format('d M, Y') }}</strong>
-                    • Vendor: <strong class="text-dark">{{ $lot->vendor ? $lot->vendor->name : 'N/A' }}</strong>
+                    • Vendor(s): <strong class="text-dark">{{ $lot->vendor_names ?: ($lot->vendor ? $lot->vendor->name : 'N/A') }}</strong>
                     • Steel Intake: <span class="text-primary fw-semibold">{{ $totalPurchases }} {{ Str::plural('item', $totalPurchases) }} ({{ $totalCoils }} Coils)</span>
                 </p>
             </div>
@@ -400,6 +400,7 @@
                     <thead class="table-light text-secondary text-uppercase fs-8">
                         <tr>
                             <th class="ps-4" style="width: 50px;">#</th>
+                            <th>Vendor</th>
                             <th>Date</th>
                             <th>Specifications</th>
                             <th>Physical Coils</th>
@@ -414,6 +415,11 @@
                         @forelse($lot->purchases as $purchase)
                             <tr>
                                 <td class="ps-4 text-muted small fw-semibold">{{ $loop->iteration }}</td>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-8">
+                                        <i class="fe fe-user me-1"></i>{{ $purchase->vendor->name ?? 'N/A' }}
+                                    </span>
+                                </td>
                                 <td class="text-dark small">
                                     {{ $purchase->created_at ? $purchase->created_at->format('d M, Y') : 'N/A' }}
                                 </td>

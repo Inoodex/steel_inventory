@@ -257,7 +257,7 @@
                             <tr class="lot-row" data-lot-id="{{ $lot->id }}" onclick="toggleLotDetails({{ $lot->id }}, event)" title="Click to view coils in this lot">
                                 <td class="ps-3">
                                     <div class="d-flex align-items-center gap-2">
-                                        <i class="fe fe-chevron-right expand-icon text-muted fs-8 {{ $loop->first ? 'rotate-90' : '' }}" id="chevron-{{ $lot->id }}"></i>
+                                        <i class="fe fe-chevron-right expand-icon text-muted fs-8" id="chevron-{{ $lot->id }}"></i>
                                         <span class="text-muted fw-semibold small">{{ $loop->iteration + ($lots->currentPage() - 1) * $lots->perPage() }}</span>
                                     </div>
                                 </td>
@@ -273,11 +273,26 @@
                                     </a>
                                 </td>
                                 <td>
-                                    <span class="fw-semibold text-dark d-block">
-                                        {{ Str::limit($lot->vendor->name ?? 'N/A', 18) }}
-                                    </span>
-                                    @if($lot->vendor && $lot->vendor->phone)
-                                        <small class="text-muted fs-8">{{ $lot->vendor->phone }}</small>
+                                    @php
+                                        $uniqueVendors = $lot->vendors_list;
+                                    @endphp
+                                    @if($uniqueVendors->count() > 1)
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-8">
+                                            <i class="fe fe-users me-1"></i>{{ $uniqueVendors->count() }} Vendors
+                                        </span>
+                                        <small class="text-muted d-block fs-8 mt-0.5" title="{{ $lot->vendor_names }}">
+                                            {{ Str::limit($lot->vendor_names, 22) }}
+                                        </small>
+                                    @elseif($uniqueVendors->isNotEmpty())
+                                        @php $singleVendor = $uniqueVendors->first(); @endphp
+                                        <span class="fw-semibold text-dark d-block">
+                                            {{ Str::limit($singleVendor->name ?? 'N/A', 18) }}
+                                        </span>
+                                        @if($singleVendor && $singleVendor->phone)
+                                            <small class="text-muted fs-8">{{ $singleVendor->phone }}</small>
+                                        @endif
+                                    @else
+                                        <span class="text-muted fs-8">No Vendor</span>
                                     @endif
                                 </td>
                                 <td>
@@ -318,25 +333,28 @@
                                         @endif
                                     </div>
                                 </td>
-                                <td onclick="event.stopPropagation()">
+                                <td class="text-end pe-4" onclick="event.stopPropagation()">
                                     <div class="dropdown">
                                         <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
                                             <i class="fas fa-ellipsis-v"></i>
                                         </a>
-                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $lot->id) }}">
+                                                    <i class="fe fe-eye text-primary"></i>
+                                                    <span>View Lot Details</span>
+                                                </a>
+                                            </li>
                                             @if($lotPurchases->isNotEmpty())
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $lotPurchases->first()->id) }}">
-                                                        <i class="fe fe-shopping-cart text-primary"></i>
-                                                        <span>View Consignment</span>
+                                                        <i class="fe fe-shopping-cart text-info"></i>
+                                                        <span>View Consignment PO</span>
                                                     </a>
                                                 </li>
                                             @endif
                                             <li>
-                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $lot->id) }}">
-                                                    <i class="fe fe-eye text-info"></i>
-                                                    <span>View Lot Profile</span>
-                                                </a>
+                                                <hr class="dropdown-divider my-1">
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.create') }}?lot_id={{ $lot->id }}">
@@ -350,7 +368,7 @@
                             </tr>
 
                             <!-- Collapsible Details Row (Shows all steel items/coils for this lot) -->
-                            <tr class="lot-details-row" id="lot-details-{{ $lot->id }}" style="{{ $loop->first ? 'display: table-row;' : 'display: none;' }} background-color: #f8fafc;">
+                            <tr class="lot-details-row" id="lot-details-{{ $lot->id }}" style="display: none; background-color: #f8fafc;">
                                 <td colspan="10" class="p-0 border-0">
                                     <div class="p-3 bg-light-subtle border-start border-4 border-primary shadow-inner">
                                         <div class="d-flex justify-content-between align-items-center mb-2 px-1">
@@ -398,6 +416,7 @@
                                                 <thead class="bg-light fs-8 text-uppercase text-secondary">
                                                     <tr>
                                                         <th class="ps-3" style="width: 40px;">#</th>
+                                                        <th>Vendor</th>
                                                         <th>Specifications & Dimensions</th>
                                                         <th>Coil Tag / ID</th>
                                                         <th class="text-center">Qty</th>
@@ -412,6 +431,11 @@
                                                     @foreach($lotPurchases as $item)
                                                         <tr>
                                                             <td class="ps-3 text-muted fw-semibold fs-8">{{ $loop->iteration }}</td>
+                                                            <td>
+                                                                <span class="badge bg-light text-dark border fs-8">
+                                                                    <i class="fe fe-user text-primary me-1"></i>{{ $item->vendor->name ?? 'N/A' }}
+                                                                </span>
+                                                            </td>
                                                             <td>
                                                                 <div class="d-flex flex-wrap align-items-center gap-1">
                                                                     @if($item->thickness)

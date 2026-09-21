@@ -196,7 +196,9 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="fw-bold text-primary font-monospace">#{{ $service->order_no }}</span>
+                                    <a href="{{ route('sales.show', $service->id) }}" class="fw-bold text-primary font-monospace text-decoration-none">
+                                        #{{ $service->order_no }}
+                                    </a>
                                 </td>
                                 <td>
                                     <div>
@@ -244,6 +246,13 @@
                                              <i class="fas fa-ellipsis-v"></i>
                                         </a>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2"
+                                                    href="{{ route('sales.show', $service->id) }}">
+                                                    <i class="fe fe-eye text-primary"></i>
+                                                    <span>View Details</span>
+                                                </a>
+                                            </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" target="_blank"
                                                     href="{{ route('sales.invoice.pdf', $service->id) }}">

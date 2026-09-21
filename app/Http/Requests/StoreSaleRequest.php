@@ -24,6 +24,8 @@ class StoreSaleRequest extends FormRequest
             'thickness'            => 'nullable|array',
             'size'                 => 'nullable|array',
             'size_type'            => 'nullable|array',
+            'custom_size'          => 'nullable|array',
+            'custom_size.*'        => 'nullable|string|max:255',
             'product'              => 'nullable|array',
             'product.*'            => 'nullable',
             'qty'                  => 'required|array',

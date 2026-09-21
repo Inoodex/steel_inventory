@@ -50,6 +50,30 @@ class Lot extends Model
     }
 
     /**
+     * Get unique collection of all vendors involved in this lot's purchases
+     */
+    public function getVendorsListAttribute()
+    {
+        $vendors = $this->purchases->map(fn($p) => $p->vendor)->filter()->unique('id');
+        if ($vendors->isNotEmpty()) {
+            return $vendors;
+        }
+        return $this->vendor ? collect([$this->vendor]) : collect();
+    }
+
+    /**
+     * Get comma-separated list of vendor names for this lot
+     */
+    public function getVendorNamesAttribute(): string
+    {
+        $names = $this->vendors_list->pluck('name')->toArray();
+        if (empty($names)) {
+            return $this->vendor?->name ?? 'N/A';
+        }
+        return implode(', ', $names);
+    }
+
+    /**
      * Get the primary warehouse for this lot from its purchases
      */
     public function getWarehouseAttribute()

@@ -164,29 +164,82 @@ class SalesController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id) {}
+    public function show(string $id)
+    {
+        $sale = Sale::with([
+            'customer' => function ($q) {
+                $q->withSum('sales', 'due_payment');
+            },
+            'items.coil.warehouse',
+            'items.lot.vendor',
+            'warehouse',
+            'salesPerson',
+            'bankDetail',
+            'payments' => function ($q) {
+                $q->orderBy('id', 'desc');
+            },
+            'returns.items.product'
+        ])->findOrFail($id);
+
+        return view('frontend.pages.sales.show', compact('sale'));
+    }
 
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
     {
-        $sales = Sale::with(['customer', 'items.lot.vendor', 'items.coil', 'bankDetail'])->findOrFail($id);
-        $users  = User::get();
-        $products = collect();
+        $sales = Sale::with([
+            'customer' => function ($q) {
+                $q->withSum('sales', 'due_payment');
+            },
+            'items.lot.vendor',
+            'items.coil.warehouse',
+            'bankDetail'
+        ])->findOrFail($id);
+
+        $users = User::get();
         $customer = $sales->customer;
+        $items = $sales->items;
+
+        $existingClients = Customer::select('id', 'name', 'phone', 'address', 'opening_balance')
+            ->withSum(['sales' => function($q) {
+                $q->whereNull('deleted_at');
+            }], 'due_payment')
+            ->orderBy('name')
+            ->get();
+
         $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
         $lots = Lot::with(['vendor'])->where('status', 'active')->orderBy('id', 'desc')->get();
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
-        $items = $sales->items;
 
-        return view('frontend.pages.sales.edit', compact('sales', 'products', 'items', 'customer', 'warehouses', 'lots', 'users', 'bankAccounts'));
+        // Get all in-stock coils + coils currently present in this sale order
+        $coils = Coil::where(function($q) use ($sales) {
+                $q->where('status', 'in_stock')->where('remaining_weight', '>', 0)
+                  ->orWhereIn('id', $sales->items->pluck('coil_id')->filter());
+            })
+            ->with(['lot', 'warehouse'])
+            ->latest()
+            ->get();
+
+        // Adjust memory available weight for coils already in this order so the user sees effective available stock
+        $itemQuantities = $sales->items->groupBy('coil_id')->map(function ($rows) {
+            return $rows->sum('qty');
+        });
+        foreach ($coils as $c) {
+            if (isset($itemQuantities[$c->id])) {
+                $c->remaining_weight = (float)$c->remaining_weight + (float)$itemQuantities[$c->id];
+            }
+        }
+
+        return view('frontend.pages.sales.edit', compact('sales', 'items', 'customer', 'coils', 'existingClients', 'warehouses', 'lots', 'users', 'bankAccounts'));
     }
 
-    
     public function update(Request $request, string $id)
     {
         $validated = $request->validate([
+            'client_type' => 'nullable|in:new,existing',
+            'existing_client_id' => 'nullable|exists:customers,id',
             'name' => 'required|string',
             'phone' => 'required|string',
             'address' => 'nullable|string',
@@ -195,12 +248,17 @@ class SalesController extends Controller
             'note' => 'nullable|string|max:1000',
             'coil_id' => 'nullable|array',
             'lot_id' => 'nullable|array',
-            'qty' => 'required|array',
+            'thickness' => 'nullable|array',
+            'size' => 'nullable|array',
+            'size_type' => 'nullable|array',
+            'custom_size' => 'nullable|array',
+            'qty' => 'required|array|min:1',
             'qty.*' => 'required|numeric|min:0.01',
-            'unit_price' => 'required|array',
+            'unit_price' => 'required|array|min:1',
             'unit_price.*' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
             'vat' => 'nullable|numeric|min:0',
+            'tax' => 'nullable|numeric|min:0',
             'delivery_charge' => 'nullable|numeric|min:0',
             'labour_cost' => 'nullable|numeric|min:0',
             'weight_scale_cost' => 'nullable|numeric|min:0',
@@ -214,61 +272,127 @@ class SalesController extends Controller
         DB::beginTransaction();
 
         try {
-            // FirstOrCreate customer
-            $customer = Customer::firstOrCreate(
-                ['name' => $validated['name'], 'phone' => $validated['phone']],
-                ['address' => $validated['address'] ?? null]
-            );
+            $sale = Sale::with('items')->findOrFail($id);
 
-            // Fetch sale
-            $sale = Sale::findOrFail($id);
+            // 1. Resolve Customer
+            if (!empty($validated['existing_client_id'])) {
+                $customer = Customer::findOrFail($validated['existing_client_id']);
+            } else {
+                $customer = Customer::firstOrCreate(
+                    ['name' => $validated['name'], 'phone' => $validated['phone']],
+                    ['address' => $validated['address'] ?? null]
+                );
+            }
 
-            // Delete old sale items
+            // 2. Restore coil weight for old sale items
+            foreach ($sale->items as $oldItem) {
+                if ($oldItem->coil_id && $oldItem->qty > 0) {
+                    $oldCoil = Coil::find($oldItem->coil_id);
+                    if ($oldCoil) {
+                        $oldCoil->remaining_weight = (float)$oldCoil->remaining_weight + (float)$oldItem->qty;
+                        if ($oldCoil->status === 'exhausted' && $oldCoil->remaining_weight > 0) {
+                            $oldCoil->status = 'in_stock';
+                        }
+                        $oldCoil->save();
+                    }
+                }
+            }
+
+            // 3. Delete old sale items
             SalesItem::where('order_id', $sale->id)->delete();
 
-            // Create new sale items
+            // 4. Create new sale items and deduct stock
             $totalBill = 0;
+            $totalQty = 0;
 
             foreach ($validated['qty'] as $index => $qty) {
-                $unitPrice = $validated['unit_price'][$index];
+                $unitPrice = (float) $validated['unit_price'][$index];
+                $qty = (float) $qty;
                 $coilId = !empty($validated['coil_id'][$index]) ? $validated['coil_id'][$index] : null;
                 $lotId = !empty($validated['lot_id'][$index]) ? $validated['lot_id'][$index] : null;
+                $thickness = $request->thickness[$index] ?? null;
+                $size = $request->size[$index] ?? null;
+                $sizeType = $request->size_type[$index] ?? 'ft';
+                $customSize = $request->custom_size[$index] ?? null;
+
+                $purchasePrice = 0;
+                if ($coilId) {
+                    $coil = Coil::find($coilId);
+                    if ($coil) {
+                        $purchasePrice = (float) $coil->rate_per_ton;
+                        $thickness = $thickness ?: $coil->thickness;
+                        $size = $size ?: $coil->width;
+                        $sizeType = $sizeType ?: $coil->length;
+                        $lotId = $lotId ?: $coil->lot_id;
+
+                        // Deduct new coil weight
+                        $newRemaining = max(0, (float)$coil->remaining_weight - $qty);
+                        $coil->remaining_weight = $newRemaining;
+                        if ($newRemaining <= 0) {
+                            $coil->status = 'exhausted';
+                        }
+                        $coil->save();
+                    }
+                }
 
                 $total = $unitPrice * $qty;
                 $totalBill += $total;
+                $totalQty += $qty;
+                $profit = ($unitPrice - $purchasePrice) * $qty;
 
                 SalesItem::create([
                     'order_id' => $sale->id,
                     'coil_id' => $coilId,
                     'lot_id' => $lotId,
+                    'thickness' => $thickness,
+                    'size' => $size,
+                    'size_type' => $sizeType,
+                    'custom_size' => $customSize,
                     'unit_price' => $unitPrice,
                     'qty' => $qty,
                     'total_price' => $total,
+                    'purchase_price' => $purchasePrice,
+                    'profit' => $profit,
                 ]);
             }
 
-            // Calculate totals
-            $discount = $validated['discount'] ?? 0;
+            // 5. Calculate totals
+            $discount = (float)($validated['discount'] ?? 0);
             if ($discount > $totalBill) $discount = $totalBill;
 
-            $vatPercent = $validated['vat'] ?? 0;
+            $vatPercent = (float)($validated['vat'] ?? 0);
+            $taxPercent = (float)($validated['tax'] ?? 0);
             $vatAmount = round(($totalBill * $vatPercent) / 100, 2);
+            $taxAmount = round(($totalBill * $taxPercent) / 100, 2);
 
-            $deliveryCharge = $validated['delivery_charge'] ?? 0;
-            $labourCost = $validated['labour_cost'] ?? 0;
-            $weightScaleCost = $validated['weight_scale_cost'] ?? 0;
-            $otherCharges = $validated['other_charges'] ?? 0;
+            $deliveryCharge = (float)($validated['delivery_charge'] ?? 0);
+            $labourCost = (float)($validated['labour_cost'] ?? 0);
+            $weightScaleCost = (float)($validated['weight_scale_cost'] ?? 0);
+            $otherCharges = (float)($validated['other_charges'] ?? 0);
 
-            $payble = max(0, $totalBill - $discount + $vatAmount + $deliveryCharge + $labourCost + $weightScaleCost + $otherCharges);
-            $advancedPayment = min($request->advanced_payment ?? 0, $payble);
-            $duePayment = max(0, $payble - $advancedPayment);
+            $extraCharges = $vatAmount + $taxAmount + $deliveryCharge + $labourCost + $weightScaleCost + $otherCharges;
+            $total = max(0, round($totalBill + $extraCharges, 2));
+            $payble = max(0, round($total - $discount, 2));
 
-            // Update sale
+            $advancedPayment = (float)($request->advanced_payment ?? 0);
+            $duePayment = max(0, round($payble - $advancedPayment, 2));
+
+            $status = match(true) {
+                $duePayment <= 0 => 'paid',
+                $advancedPayment > 0 => 'partial',
+                default => 'credit',
+            };
+
+            // 6. Update sale record
             $sale->update([
+                'customer_id' => $customer->id,
+                'qty' => $totalQty,
+                'subtotal' => $totalBill,
                 'bill' => $totalBill,
-                'total' => $totalBill,
+                'total' => $total,
                 'discount' => $discount,
                 'vat' => $vatPercent,
+                'tax' => $taxPercent,
                 'delivery_charge' => $deliveryCharge,
                 'labour_cost' => $labourCost,
                 'weight_scale_cost' => $weightScaleCost,
@@ -279,18 +403,47 @@ class SalesController extends Controller
                 'payble' => $payble,
                 'advanced_payment' => $advancedPayment,
                 'due_payment' => $duePayment,
+                'status' => $status,
                 'payment_method' => $validated['payment_method'] ?? $sale->payment_method ?? 'cash',
                 'bank_detail_id' => !empty($validated['bank_detail_id']) ? $validated['bank_detail_id'] : null,
                 'transaction_ref' => $validated['transaction_ref'] ?? null,
-                'customer_id' => $customer->id,
             ]);
+
+            // 7. Sync initial payment entry
+            $initialPayment = Payment::where('sale_id', $sale->id)->where('payment_for', 2)->first();
+            if ($advancedPayment > 0) {
+                if ($initialPayment) {
+                    $initialPayment->update([
+                        'customer_id' => $customer->id,
+                        'amount' => $advancedPayment,
+                        'payment_method' => $sale->payment_method,
+                        'bank_detail_id' => $sale->bank_detail_id,
+                        'transaction_ref' => $sale->transaction_ref,
+                    ]);
+                } else {
+                    Payment::create([
+                        'customer_id' => $customer->id,
+                        'sale_id' => $sale->id,
+                        'payment_for' => 2,
+                        'payment_method' => $sale->payment_method ?? 'cash',
+                        'bank_detail_id' => $sale->bank_detail_id,
+                        'transaction_ref' => $sale->transaction_ref,
+                        'amount' => $advancedPayment,
+                        'remarks' => 'Initial receipt for ' . $sale->order_no,
+                        'status' => 1,
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+            } elseif ($initialPayment) {
+                $initialPayment->delete();
+            }
 
             DB::commit();
 
-            return redirect()->route('sales.index')->with('success', 'Sale updated successfully!');
+            return redirect()->route('sales.show', $sale->id)->with('success', 'Sale order #' . $sale->order_no . ' updated successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with(['error' => $e->getMessage()]);
+            return redirect()->back()->with(['error' => $e->getMessage()])->withInput();
         }
     }
 

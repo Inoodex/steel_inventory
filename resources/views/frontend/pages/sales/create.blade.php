@@ -191,9 +191,12 @@
 
                         <!-- 2. Coil Select Dropdown (Filtered by selected Source/Lot) -->
                         <div class="col-lg-3 col-md-6 col-12">
-                            <label class="form-label small text-secondary fw-semibold mb-1">
-                                2. Select In-Stock Coil <span class="text-danger">*</span>
-                            </label>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small text-secondary fw-semibold mb-0">
+                                    2. Select In-Stock Coil <span class="text-danger">*</span>
+                                </label>
+                                <span id="lotAvgRateBadge" class="badge bg-primary-subtle text-primary border" style="display:none; font-size: 11px;"></span>
+                            </div>
                             <select onchange="selectCoil(this)" id="coil_select" class="form-select select2 border-light-subtle" disabled>
                                 <option value="">Select Stock Source first</option>
                             </select>
@@ -213,34 +216,40 @@
 
                         <!-- 5. Cost Rate -->
                         <div class="col-lg-2 col-md-4 col-6">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label class="form-label small text-secondary fw-semibold mb-0">Cost Rate (৳)</label>
-                                <span id="thicknessAvgBadge" class="badge bg-light text-primary border" style="display:none; font-size: 9px;"></span>
-                            </div>
+                            <label class="form-label small text-secondary fw-semibold mb-1">Cost Rate (৳)</label>
                             <input type="number" id="purchase_price1" class="form-control border-light-subtle bg-white" readonly>
                         </div>
 
-                        <!-- 6. Selling Rate -->
-                        <div class="col-lg-3 col-md-4 col-6">
+                        <!-- 6. Custom Size (Admin Only) -->
+                        <div class="col-lg-3 col-md-6 col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small text-secondary fw-semibold mb-0">Custom Size</label>
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle" style="font-size: 9px;"><i class="fe fe-lock me-1"></i>Admin Only</span>
+                            </div>
+                            <input type="text" id="custom_size1" class="form-control border-light-subtle">
+                        </div>
+
+                        <!-- 7. Selling Rate -->
+                        <div class="col-lg-3 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">Selling Rate (৳) <span class="text-danger">*</span></label>
                             <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="unit_price1" class="form-control border-light-subtle" step="0.01" min="0">
                         </div>
 
-                        <!-- 7. Selling Quantity -->
-                        <div class="col-lg-3 col-md-4 col-6">
+                        <!-- 8. Selling Quantity -->
+                        <div class="col-lg-3 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">Selling Qty / Wt (kg) <span class="text-danger">*</span></label>
                             <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="qty1" class="form-control border-light-subtle text-dark" step="0.01" min="0.01">
                         </div>
 
-                        <!-- 8. Line Total Preview -->
-                        <div class="col-lg-3 col-md-4 col-6">
+                        <!-- 9. Line Total Preview -->
+                        <div class="col-lg-3 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">Line Total (৳)</label>
                             <input type="text" id="total1" class="form-control border-light-subtle bg-white fw-bold text-success" readonly value="0.00">
                         </div>
 
-                        <!-- 9. Add Item Button -->
-                        <div class="col-lg-3 col-md-6 col-12 ms-auto">
-                            <button type="button" onclick="addItem()" class="btn btn-success w-100 rounded-3 d-inline-flex align-items-center justify-content-center gap-2 py-2">
+                        <!-- 10. Add Item Button -->
+                        <div class="col-12 text-end pt-1">
+                            <button type="button" onclick="addItem()" class="btn btn-success px-4 rounded-3 d-inline-flex align-items-center justify-content-center gap-2 py-2 shadow-sm">
                                 <i class="fe fe-plus"></i>
                                 <span>Add Steel Item</span>
                             </button>
@@ -528,7 +537,13 @@ function handleLotSelection(lotId) {
     currentSelectedCoil = null;
     resetCoilFields();
 
+    const lotAvgBadge = document.getElementById('lotAvgRateBadge');
+
     if (!lotId) {
+        if (lotAvgBadge) {
+            lotAvgBadge.style.display = 'none';
+            lotAvgBadge.innerHTML = '';
+        }
         coilSelect.append('<option value="">Select Stock Source first</option>');
         coilSelect.prop('disabled', true);
         coilSelect.trigger('change');
@@ -566,6 +581,10 @@ function handleLotSelection(lotId) {
     }
 
     if (filtered.length === 0) {
+        if (lotAvgBadge) {
+            lotAvgBadge.style.display = 'none';
+            lotAvgBadge.innerHTML = '';
+        }
         const msg = lotId === 'opening_stock' ? 'No opening stock coils available' : 'No in-stock coils in this selection';
         coilSelect.append(`<option value="">${msg}</option>`);
         coilSelect.prop('disabled', true);
@@ -573,8 +592,28 @@ function handleLotSelection(lotId) {
         return;
     }
 
+    // Calculate Lot Weighted Average Cost Price based on stock coil amount / kg
+    const totalLotWeight = filtered.reduce((sum, c) => sum + (parseFloat(c.remaining_weight) || 0), 0);
+    const totalLotCost = filtered.reduce((sum, c) => sum + ((parseFloat(c.remaining_weight) || 0) * (parseFloat(c.rate_per_ton) || 0)), 0);
+    const avgLotRate = totalLotWeight > 0 ? (totalLotCost / totalLotWeight) : 0;
+
+    // Display Lot Combined Avg Badge
+    if (lotAvgBadge) {
+        if (avgLotRate > 0) {
+            lotAvgBadge.style.display = 'inline-block';
+            lotAvgBadge.innerHTML = `Avg Cost: ৳${avgLotRate.toFixed(2)}/kg`;
+            lotAvgBadge.title = `Combined Weighted Avg Cost of all ${filtered.length} in-stock coils in this Lot (Total Stock: ${totalLotWeight.toLocaleString()} kg)`;
+        } else {
+            lotAvgBadge.style.display = 'none';
+        }
+    }
+
     coilSelect.prop('disabled', false);
-    coilSelect.append('<option value="">Choose In-Stock Coil / Plate</option>');
+    const defaultOptionText = avgLotRate > 0 
+        ? `Lot Avg: ৳${avgLotRate.toFixed(2)}/kg`
+        : 'Choose In-Stock Coil / Plate';
+    coilSelect.append(`<option value="">${defaultOptionText}</option>`);
+
     filtered.forEach(coil => {
         const remaining = parseFloat(coil.remaining_weight) || 0;
         const thickness = coil.thickness ? ` | Thk: ${coil.thickness}` : '';
@@ -623,14 +662,6 @@ function handleLotSelection(lotId) {
     coilSelect.trigger('change');
 }
 
-function getThicknessAvgRate(thickness) {
-    if (!thickness) return 0;
-    const sameThicknessCoils = allAvailableCoils.filter(c => String(c.thickness || '').trim().toLowerCase() === String(thickness).trim().toLowerCase() && parseFloat(c.remaining_weight) > 0);
-    const totalWeight = sameThicknessCoils.reduce((sum, c) => sum + (parseFloat(c.remaining_weight) || 0), 0);
-    const totalVal = sameThicknessCoils.reduce((sum, c) => sum + ((parseFloat(c.remaining_weight) || 0) * (parseFloat(c.rate_per_ton) || 0)), 0);
-    return totalWeight > 0 ? (totalVal / totalWeight) : 0;
-}
-
 function resetCoilFields() {
     currentSelectedCoil = null;
     const perCoilEl = document.getElementById('per_coil_weight1');
@@ -640,12 +671,9 @@ function resetCoilFields() {
     document.getElementById('unit_price1').value = '';
     document.getElementById('qty1').value = '';
     document.getElementById('total1').value = '0.00';
-
-    const avgBadge = document.getElementById('thicknessAvgBadge');
-    if (avgBadge) {
-        avgBadge.style.display = 'none';
-        avgBadge.innerHTML = '';
-    }
+    
+    const customSizeEl = document.getElementById('custom_size1');
+    if (customSizeEl) customSizeEl.value = '';
 }
 
 function selectCoil(selectEl) {
@@ -691,19 +719,6 @@ function selectCoil(selectEl) {
     document.getElementById('unit_price1').value = rate > 0 ? rate.toFixed(2) : '';
     document.getElementById('qty1').value = '';
     document.getElementById('qty1').focus();
-
-    // Show Thickness Benchmark Weighted Average Rate
-    const avgRate = getThicknessAvgRate(currentSelectedCoil.thickness);
-    const avgBadge = document.getElementById('thicknessAvgBadge');
-    if (avgBadge) {
-        if (avgRate > 0) {
-            avgBadge.style.display = 'inline-block';
-            avgBadge.title = `Weighted Average cost for ${currentSelectedCoil.thickness} mm across all in-stock inventory`;
-            avgBadge.innerHTML = `<i class="fe fe-info me-1"></i>Avg: ৳${avgRate.toFixed(2)}/kg`;
-        } else {
-            avgBadge.style.display = 'none';
-        }
-    }
 
     updatePreviewTotal();
 }
@@ -767,6 +782,8 @@ function addItem() {
         return;
     }
 
+    const customSize = (document.getElementById('custom_size1')?.value || '').trim();
+
     const coil = currentSelectedCoil;
     const coilId = coil.id;
     const thickness = coil.thickness || '';
@@ -794,6 +811,7 @@ function addItem() {
     if (pieceCount > 1) specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1">Qty: ${pieceCount} Coils</span>`;
     if (thickness) specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1">Thickness: ${thickness}</span>`;
     if (size) specBadges += `<span class="badge bg-light text-secondary border px-2 py-1 fs-8 me-1">Size: ${size} ${sizeType}</span>`;
+    if (customSize) specBadges += `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 fs-8 me-1" title="Internal admin custom size - Not printed on customer sales PDF"><i class="fe fe-lock me-1"></i>Custom Size: ${customSize}</span>`;
 
     const html = `
         <tr class="item-coil-${coilId} group-item" data-itemnumber="${itemNumber}" id="form-group-item${itemNumber}">
@@ -803,6 +821,7 @@ function addItem() {
                 <input type="hidden" name="thickness[]" value="${thickness}">
                 <input type="hidden" name="size[]" value="${size}">
                 <input type="hidden" name="size_type[]" value="${sizeType}">
+                <input type="hidden" name="custom_size[]" value="${customSize}">
                 <span class="fw-bold text-dark d-block">Coil No - ${coil.coil_number}</span>
                 <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
                     ${specBadges}

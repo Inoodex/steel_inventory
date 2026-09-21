@@ -16,6 +16,7 @@ class SalesItem extends Model
         'thickness',
         'size',
         'size_type',
+        'custom_size',
         'unit_price',
         'qty',
         'total_price',

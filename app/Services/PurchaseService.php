@@ -26,14 +26,15 @@ class PurchaseService
 
             // 1. Resolve or create Lot on the fly
             $lotType = $data['lot_type'] ?? 'existing';
+            $firstVendorId = $data['vendor_id'] ?? (!empty($items[0]['vendor_id']) ? $items[0]['vendor_id'] : null);
+
             if ($lotType === 'new' || empty($data['lot_id'])) {
                 $lotNumber = !empty($data['new_lot_number']) ? trim($data['new_lot_number']) : Lot::generateLotNumber();
-                $vendorId = $data['vendor_id'];
                 $lotDate = $data['purchase_date'] ?? date('Y-m-d');
                 
                 $lot = Lot::create([
                     'lot_number'     => $lotNumber,
-                    'vendor_id'      => $vendorId,
+                    'vendor_id'      => $firstVendorId,
                     'lot_date'       => $lotDate,
                     'total_quantity' => 0,
                     'total_amount'   => 0,
@@ -45,7 +46,6 @@ class PurchaseService
             } else {
                 $lotId = $data['lot_id'];
                 $lot = Lot::find($lotId);
-                $vendorId = $lot?->vendor_id ?? $data['vendor_id'];
             }
 
             // Calculate total batch bill & extra charges
@@ -90,6 +90,7 @@ class PurchaseService
             $itemCount = count($items);
 
             foreach ($items as $index => $item) {
+                $itemVendorId = $item['vendor_id'] ?? ($data['vendor_id'] ?? $firstVendorId);
                 $coilQty = max(1, (int) ($item['quantity'] ?? 1));
                 $perCoilWeight = (float) ($item['unit_weight'] ?? (!empty($item['net_weight']) ? $item['net_weight'] : 0));
                 $totalWeight = !empty($item['total_weight']) && (float) $item['total_weight'] > 0 
@@ -159,7 +160,7 @@ class PurchaseService
                 // 1. Record Purchase Line
                 $purchase = Purchase::create([
                     'lot_id'            => $lotId,
-                    'vendor_id'         => $vendorId,
+                    'vendor_id'         => $itemVendorId,
                     'warehouse_id'      => $warehouseId,
                     'thickness'         => $thickness,
                     'size'              => $size,
@@ -190,7 +191,7 @@ class PurchaseService
                     'coil_number'      => $coilNumber,
                     'purchase_id'      => $purchase->id,
                     'lot_id'           => $lotId,
-                    'vendor_id'        => $vendorId,
+                    'vendor_id'        => $itemVendorId,
                     'warehouse_id'     => $warehouseId,
                     'thickness'        => $thickness,
                     'width'            => $size,
@@ -210,22 +211,28 @@ class PurchaseService
                 $createdPurchases[] = $purchase;
             }
 
-            // 3. Record ONE consolidated Payment entry for the whole consignment batch
+            // 3. Record Payment entries grouped by Vendor for accurate vendor ledger & due management
             if ($totalPayment > 0 && !empty($createdPurchases)) {
-                $primaryPurchase = $createdPurchases[0];
-                Payment::create([
-                    'vendor_id'       => $vendorId,
-                    'purchase_id'     => $primaryPurchase->id,
-                    'amount'          => $totalPayment,
-                    'payment_for'     => 3, // 3: Purchases / Vendor payment
-                    'payment_method'  => $paymentMethod,
-                    'bank_detail_id'  => $bankDetailId,
-                    'transaction_ref' => $transactionRef,
-                    'payment_date'    => $data['purchase_date'] ?? date('Y-m-d'),
-                    'remarks'         => 'Initial disbursement for ' . (!empty($lotId) ? 'Consignment Lot #' . ($lot->lot_number ?? $lotId) : 'Purchase Order #PO-' . $primaryPurchase->id),
-                    'status'          => '1',
-                    'created_by'      => Auth::id(),
-                ]);
+                $purchasesByVendor = collect($createdPurchases)->groupBy('vendor_id');
+                foreach ($purchasesByVendor as $vId => $vPurchases) {
+                    $vTotalPaid = (float) $vPurchases->sum('payment');
+                    if ($vTotalPaid > 0) {
+                        $primaryPurchase = $vPurchases->first();
+                        Payment::create([
+                            'vendor_id'       => $vId,
+                            'purchase_id'     => $primaryPurchase->id,
+                            'amount'          => $vTotalPaid,
+                            'payment_for'     => 3, // 3: Purchases / Vendor payment
+                            'payment_method'  => $paymentMethod,
+                            'bank_detail_id'  => $bankDetailId,
+                            'transaction_ref' => $transactionRef,
+                            'payment_date'    => $data['purchase_date'] ?? date('Y-m-d'),
+                            'remarks'         => 'Initial disbursement for ' . (!empty($lotId) ? 'Consignment Lot #' . ($lot->lot_number ?? $lotId) : 'Purchase Order #PO-' . $primaryPurchase->id),
+                            'status'          => '1',
+                            'created_by'      => Auth::id(),
+                        ]);
+                    }
+                }
             }
 
             // Recalculate Lot totals if linked
