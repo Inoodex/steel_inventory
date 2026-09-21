@@ -85,64 +85,65 @@ class UserController extends Controller
     // }
 
     public function store(Request $request)
-{
-    $rules = [
-        'user_role' => 'required',
-        'name' => 'required|string',
-        'email' => 'required|email|unique:users,email',
-        'phone' => 'unique:users,phone',
-        'password' => 'required|string|min:6',
-        'status' => 'required|in:0,1',
-    ];
+    {
+        $rules = [
+            'user_role' => 'required',
+            'name' => 'required|string',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|unique:users,phone',
+            'password' => 'required|string|min:6',
+            'status' => 'required|in:0,1',
+        ];
 
-    $validatedData = $request->validate($rules);
+        $validatedData = $request->validate($rules);
 
-    $imageName = "";
-    if ($request->hasFile('images')) {
-        $image = $request->file('images');
-        $destinationPath = public_path('frontend/users/');
-        $imageName = now()->format('YmdHis') . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
-        $image->move($destinationPath, $imageName);
-    }
+        $imageName = "";
+        if ($request->hasFile('images')) {
+            $image = $request->file('images');
+            $destinationPath = public_path('frontend/users/');
+            $imageName = now()->format('YmdHis') . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+            $image->move($destinationPath, $imageName);
+        }
 
-    // Create User
-    $user = new User();
-    $user->type = '1';
-    $user->role_id = $validatedData['user_role'];
-    $user->name = $validatedData['name'];
-    $user->email = $validatedData['email'];
-    $user->phone = $validatedData['phone'];
-    $user->password = bcrypt($validatedData['password']);
-    $user->images = $imageName;
-    $user->status = $validatedData['status'];
-    $user->save();
+        $role = Role::find($validatedData['user_role']);
 
-    // Assign Role
-    $role = Role::find($validatedData['user_role']);
-    if ($role) {
-        $user->assignRole($role);
-    }
+        // Create User
+        $user = new User();
+        $user->type = '1';
+        $user->role = $role ? $role->name : null;
+        $user->name = $validatedData['name'];
+        $user->email = $validatedData['email'];
+        $user->phone = $validatedData['phone'] ?? null;
+        $user->password = bcrypt($validatedData['password']);
+        $user->photo = $imageName;
+        $user->status = $validatedData['status'];
+        $user->save();
 
-    // Create Employee record automatically if role is employee
-    if ($role && $role->name === 'Employee') {
-        Employee::create([
-            'user_id' => $user->id,
-            'employee_id' => 'EMP' . str_pad($user->id, 4, '0', STR_PAD_LEFT), // Example: EMP0001
-            'name' => $user->name,
-            'email' => $user->email,
-            'phone' => $user->phone,
-            'status' => $user->status ? 'active' : 'inactive',
+        // Assign Role
+        if ($role) {
+            $user->assignRole($role);
+        }
+
+        // Create Employee record automatically if role is employee
+        if ($role && $role->name === 'Employee') {
+            Employee::create([
+                'user_id' => $user->id,
+                'employee_id' => 'EMP' . str_pad($user->id, 4, '0', STR_PAD_LEFT), // Example: EMP0001
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'status' => $user->status ? 'active' : 'inactive',
+            ]);
+        }
+
+        session()->flash('sweet_alert', [
+            'type' => 'success',
+            'title' => 'Success!',
+            'text' => 'User and employee record added successfully.',
         ]);
+
+        return redirect()->route('users.index')->with('success', 'User created successfully');
     }
-
-    session()->flash('sweet_alert', [
-        'type' => 'success',
-        'title' => 'Success!',
-        'text' => 'User and employee record added successfully.',
-    ]);
-
-    return redirect()->route('users.index')->with('success', 'User created successfully');
-}
 
 
     /**
@@ -159,7 +160,7 @@ class UserController extends Controller
     public function edit(string $id)
     {
         $roles = Role::get();
-        $user = User::where('id', $id)->first();
+        $user = User::with('roles')->where('id', $id)->firstOrFail();
         return view('frontend.pages.users.edit', compact('roles', 'user'));
     }
 
@@ -167,69 +168,70 @@ class UserController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, $id)
-{
-    $user = User::findOrFail($id);
+    {
+        $user = User::findOrFail($id);
 
-    $rules = [
-        'user_role' => 'required',
-        'name' => 'required|string',
-        'email' => 'required|email|unique:users,email,' . $user->id,
-        'phone' => 'nullable|unique:users,phone,' . $user->id,
-        'password' => 'nullable|string|min:6',
-        'status' => 'required|in:0,1',
-    ];
+        $rules = [
+            'user_role' => 'required',
+            'name' => 'required|string',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|unique:users,phone,' . $user->id,
+            'password' => 'nullable|string|min:6',
+            'status' => 'required|in:0,1',
+        ];
 
-    $validatedData = $request->validate($rules);
+        $validatedData = $request->validate($rules);
 
-    if ($request->hasFile('images')) {
-        $image = $request->file('images');
-        $destinationPath = public_path('frontend/users/');
-        $imageName = now()->format('YmdHis') . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
-        $image->move($destinationPath, $imageName);
-        $user->images = $imageName;
-    }
-
-    $user->name = $validatedData['name'];
-    $user->email = $validatedData['email'];
-    $user->phone = $validatedData['phone'];
-    if (!empty($validatedData['password'])) {
-        $user->password = bcrypt($validatedData['password']);
-    }
-    $user->role_id = $validatedData['user_role'];
-    $user->status = $validatedData['status'];
-    $user->save();
-
-    // Update role
-    $role = Role::find($validatedData['user_role']);
-    if ($role) {
-        $user->syncRoles([$role->name]);
-    }
-
-    // Update Employee record if exists
-    if ($role && $role->name === 'Employee') {
-        $employee = Employee::where('user_id', $user->id)->first();
-        if ($employee) {
-            $employee->update([
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'status' => $user->status ? 'active' : 'inactive',
-            ]);
-        } else {
-            // Create employee if it doesn't exist
-            Employee::create([
-                'user_id' => $user->id,
-                'employee_id' => 'EMP' . str_pad($user->id, 4, '0', STR_PAD_LEFT),
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'status' => $user->status ? 'active' : 'inactive',
-            ]);
+        if ($request->hasFile('images')) {
+            $image = $request->file('images');
+            $destinationPath = public_path('frontend/users/');
+            $imageName = now()->format('YmdHis') . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+            $image->move($destinationPath, $imageName);
+            $user->photo = $imageName;
         }
-    }
 
-    return redirect()->route('users.index')->with('success', 'User updated successfully');
-}
+        $role = Role::find($validatedData['user_role']);
+
+        $user->name = $validatedData['name'];
+        $user->email = $validatedData['email'];
+        $user->phone = $validatedData['phone'] ?? null;
+        if (!empty($validatedData['password'])) {
+            $user->password = bcrypt($validatedData['password']);
+        }
+        $user->role = $role ? $role->name : $user->role;
+        $user->status = $validatedData['status'];
+        $user->save();
+
+        // Update role
+        if ($role) {
+            $user->syncRoles([$role->name]);
+        }
+
+        // Update Employee record if exists
+        if ($role && $role->name === 'Employee') {
+            $employee = Employee::where('user_id', $user->id)->first();
+            if ($employee) {
+                $employee->update([
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'status' => $user->status ? 'active' : 'inactive',
+                ]);
+            } else {
+                // Create employee if it doesn't exist
+                Employee::create([
+                    'user_id' => $user->id,
+                    'employee_id' => 'EMP' . str_pad($user->id, 4, '0', STR_PAD_LEFT),
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'status' => $user->status ? 'active' : 'inactive',
+                ]);
+            }
+        }
+
+        return redirect()->route('users.index')->with('success', 'User updated successfully');
+    }
 
 
     /**

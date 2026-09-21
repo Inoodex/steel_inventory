@@ -58,17 +58,15 @@
                                         <div class="col-xxl-3 col-md-6 mb-3">
                                             <label for="status" class="form-label">Status</label>
                                             <select class="form-select mb-3" name="status">
-                                                <option {{ $user->status == '1' ? 'selected' : '' }} value="1">Actve
-                                                </option>
-                                                <option {{ $user->status == '0' ? 'selected' : '' }} value="0">InActve
-                                                </option>
+                                                <option value="1" {{ $user->status == '1' ? 'selected' : '' }}>Active</option>
+                                                <option value="0" {{ $user->status == '0' ? 'selected' : '' }}>Inactive</option>
                                             </select>
                                         </div>
                                         <div class="col-xxl-3 col-md-6 mb-3">
                                             <label for="name" class="form-label">Role</label>
                                             <select class="form-select mb-3" name="user_role" required>
                                                 @foreach ($roles as $role)
-                                                    <option {{ $user->role_id == $role->id ? 'selected' : '' }}
+                                                    <option {{ ($user->role_id == $role->id || $user->role == $role->name) ? 'selected' : '' }}
                                                         value="{{ $role->id }}">{{ $role->name }}</option>
                                                 @endforeach
                                             </select>

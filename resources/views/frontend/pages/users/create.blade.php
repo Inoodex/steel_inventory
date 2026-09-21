@@ -61,8 +61,8 @@
                                         <div class="col-xxl-3 col-md-6 mb-3">
                                             <label for="status" class="form-label">Status</label>
                                             <select class="form-select mb-3" name="status">
-                                                <option selected="" value="1">Active</option>
-                                                <option value="0">InActive</option>
+                                                <option value="1" {{ old('status', '1') == '1' ? 'selected' : '' }}>Active</option>
+                                                <option value="0" {{ old('status') == '0' ? 'selected' : '' }}>Inactive</option>
                                             </select>
                                         </div>
                                         <div class="col-xxl-3 col-md-6 mb-3">

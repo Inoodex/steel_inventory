@@ -92,6 +92,28 @@
                         </div>
                     </div>
 
+                    <!-- DEFAULT VENDOR SELECTION (OPTIONAL) -->
+                    <div class="row g-3 mb-3 pb-3 border-bottom align-items-center">
+                        <div class="col-lg-5 col-md-6 col-12">
+                            <label for="default_vendor_id" class="form-label fw-semibold small text-secondary mb-1">
+                                <i class="fe fe-user text-primary me-1"></i>Default Vendor / Supplier <span class="text-muted fw-normal">(Optional)</span>
+                            </label>
+                            <select id="default_vendor_id" name="default_vendor_id" class="form-select select2" onchange="handleDefaultVendorChange(this.value)">
+                                <option value="">None (Choose individual vendor per steel item)</option>
+                                @foreach ($vendors as $vendor)
+                                    <option value="{{ $vendor->id }}" {{ old('default_vendor_id', old('vendor_id')) == $vendor->id ? 'selected' : '' }}>
+                                        {{ $vendor->name }} ({{ $vendor->phone }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-lg-7 col-md-6 col-12">
+                            <div class="text-muted small mt-md-4 pt-md-1">
+                                <i class="fe fe-info text-info me-1"></i>If selected, all steel items will automatically use this vendor and per-item vendor selection will be hidden.
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- NEW LOT FIELDS -->
                     <div id="newLotContainer" style="{{ old('lot_type', 'new') === 'new' ? '' : 'display: none;' }}">
                         <div class="row g-3">
@@ -182,7 +204,7 @@
                     </div>
 
                     <!-- Hidden vendor id field for submission fallback -->
-                    <input type="hidden" name="vendor_id" id="vendor_hidden" value="{{ old('vendor_id') }}">
+                    <input type="hidden" name="vendor_id" id="vendor_hidden" value="{{ old('default_vendor_id', old('vendor_id')) }}">
                 </div>
             </div>
 
@@ -202,7 +224,7 @@
                     <div class="builder-card p-3 p-md-4 shadow-sm mb-4">
 
                         <!-- Line 0: Dedicated Vendor Selection Bar -->
-                        <div class="row g-3 mb-3 pb-3 border-bottom align-items-center">
+                        <div class="row g-3 mb-3 pb-3 border-bottom align-items-center" id="builderVendorRow">
                             <div class="col-lg-5 col-md-6 col-12">
                                 <label for="builder_vendor_id" class="form-label small text-secondary fw-bold mb-1">
                                     <i class="fe fe-user text-primary me-1"></i>Vendor / Supplier <span class="text-danger">*</span>
@@ -336,7 +358,7 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th class="text-center" style="width: 50px;">#</th>
-                                        <th>Vendor / Supplier</th>
+                                        <th class="vendor-col" style="{{ old('default_vendor_id') ? 'display: none;' : '' }}">Vendor / Supplier</th>
                                         <th>Specifications & Dimensions</th>
                                         <th class="text-center" style="width: 90px;">Coil Qty</th>
                                         <th class="text-end" style="width: 120px;">Per Coil Wt</th>
@@ -372,15 +394,15 @@
                                                 $st = $item['size_type'] ?? 'ft';
                                                 $stText = $sizeTypeLabels[$st] ?? $st;
                                                 $nts = $item['notes'] ?? '';
-                                                $itemVendorId = $item['vendor_id'] ?? old('vendor_id');
+                                                $itemVendorId = $item['vendor_id'] ?? old('default_vendor_id', old('vendor_id'));
                                                 $itemVendor = $vendors->firstWhere('id', $itemVendorId);
                                             @endphp
                                             <tr class="item-row" data-index="{{ $idx }}">
                                                 <td class="text-center">
                                                     <span class="badge bg-soft-dark rounded-pill px-2 py-0.5 row-serial-number">{{ $loop->iteration }}</span>
                                                 </td>
-                                                <td>
-                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                                                <td class="vendor-col" style="{{ old('default_vendor_id') ? 'display: none;' : '' }}">
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 vendor-col-badge">
                                                         <i class="fe fe-user me-1"></i>{{ $itemVendor ? $itemVendor->name : ($itemVendorId ? 'Vendor #'.$itemVendorId : 'Unassigned') }}
                                                     </span>
                                                 </td>
@@ -635,6 +657,23 @@
             }
         }
 
+        function handleDefaultVendorChange(val) {
+            $('#vendor_hidden').val(val);
+            if (val) {
+                $('#builderVendorRow').slideUp(150);
+                $('.vendor-col').hide();
+                const vendorName = $('#default_vendor_id option:selected').text().trim();
+                // Update all existing items in table to use the new default vendor
+                $('#steelTableBody tr.item-row').each(function () {
+                    $(this).find('.item-vendor-id-input').val(val);
+                    $(this).find('.vendor-col-badge').html(`<i class="fe fe-user me-1"></i>${escapeHtml(vendorName)}`);
+                });
+            } else {
+                $('#builderVendorRow').slideDown(150);
+                $('.vendor-col').show();
+            }
+        }
+
         $(document).ready(function () {
             $('.select2').select2({
                 width: '100%'
@@ -653,6 +692,14 @@
                 toggleLotMode('existing');
             } else {
                 toggleLotMode('new');
+            }
+
+            // Initial default vendor state
+            const initialDefaultVendor = $('#default_vendor_id').val();
+            if (initialDefaultVendor) {
+                $('#builderVendorRow').hide();
+                $('.vendor-col').hide();
+                $('#vendor_hidden').val(initialDefaultVendor);
             }
 
             // Initial payment method trigger (disables bank account inputs if cash)
@@ -674,13 +721,21 @@
         }
 
         function addSteelItemToTable() {
-            const vendorId = $('#builder_vendor_id').val();
-            const vendorName = $('#builder_vendor_id option:selected').text().trim();
+            const defaultVendorId = $('#default_vendor_id').val();
+            let vendorId = defaultVendorId;
+            let vendorName = '';
 
-            if (!vendorId) {
-                alert('Please select a Vendor / Supplier for this steel item.');
-                $('#builder_vendor_id').select2('open');
-                return;
+            if (defaultVendorId) {
+                vendorName = $('#default_vendor_id option:selected').text().trim();
+            } else {
+                vendorId = $('#builder_vendor_id').val();
+                vendorName = $('#builder_vendor_id option:selected').text().trim();
+
+                if (!vendorId) {
+                    alert('Please select a Vendor / Supplier for this steel item.');
+                    $('#builder_vendor_id').select2('open');
+                    return;
+                }
             }
 
             const qty = parseInt($('#builder_quantity').val()) || 0;
@@ -735,8 +790,8 @@
                     <td class="text-center">
                         <span class="badge bg-soft-dark rounded-pill px-2 py-0.5 row-serial-number">1</span>
                     </td>
-                    <td>
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                    <td class="vendor-col" style="${defaultVendorId ? 'display: none;' : ''}">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 vendor-col-badge">
                             <i class="fe fe-user me-1"></i>${escapeHtml(vendorName)}
                         </span>
                     </td>
@@ -773,7 +828,13 @@
             itemIndex++;
 
             // Clean reset of builder form fields
-            $('#builder_vendor_id').val('').trigger('change');
+            if (!defaultVendorId) {
+                $('#builder_vendor_id').val('').trigger('change');
+                $('#builder_vendor_id').select2('open');
+            } else {
+                $('#builder_quantity').focus();
+            }
+
             $('#builder_quantity').val('1');
             $('#builder_thickness').val('');
             $('#builder_size').val('');
@@ -783,9 +844,6 @@
             $('#builder_total_weight').val('');
             $('#builder_unit_price').val('');
             $('#builder_sub_price').val('');
-
-            // Focus on vendor select for next entry
-            $('#builder_vendor_id').select2('open');
 
             updateTableNumbers();
             recalculateSummary();

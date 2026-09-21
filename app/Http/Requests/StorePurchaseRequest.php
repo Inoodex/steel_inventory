@@ -13,7 +13,7 @@ class StorePurchaseRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $defaultVendor = $this->input('vendor_id') ?: $this->input('new_vendor_id');
+        $defaultVendor = $this->input('default_vendor_id') ?: $this->input('vendor_id') ?: $this->input('new_vendor_id');
         $items = $this->input('items', []);
         if (is_array($items)) {
             foreach ($items as $k => $item) {
@@ -34,6 +34,7 @@ class StorePurchaseRequest extends FormRequest
             'lot_type'            => 'nullable|string|in:existing,new',
             'lot_id'              => 'nullable|required_if:lot_type,existing|exists:lots,id',
             'new_lot_number'      => 'nullable|required_if:lot_type,new|string|max:100|unique:lots,lot_number',
+            'default_vendor_id'   => 'nullable|exists:vendors,id',
             'vendor_id'           => 'nullable|exists:vendors,id',
             'new_vendor_id'       => 'nullable|exists:vendors,id',
             'lot_notes'           => 'nullable|string|max:500',

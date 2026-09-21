@@ -22,11 +22,31 @@ class User extends Authenticatable
         'name',
         'email',
         'phone',
+        'address',
         'password',
+        'role',
+        'type',
+        'status',
+        'photo',
+        'pin',
         'verification_code',
-        'role_id',
         'is_verified'
     ];
+
+    public function getRoleIdAttribute()
+    {
+        return $this->roles->first()?->id;
+    }
+
+    public function getImagesAttribute()
+    {
+        return $this->attributes['photo'] ?? null;
+    }
+
+    public function setImagesAttribute($value)
+    {
+        $this->attributes['photo'] = $value;
+    }
 
 
     /**
