@@ -142,16 +142,20 @@
                         $thickness = $item->thickness ?: ($coil ? $coil->thickness : '');
                         $size = $item->size ?: ($coil ? $coil->width : '');
                         $sizeType = $item->size_type ?: ($coil ? ($coil->length ?: $coil->size_type) : 'ft');
+                        $customSize = $item->custom_size ?? '';
                     @endphp
                     <tr>
                         <td style="border: 1px solid #334155; padding: 4px 6px; font-size: 11px; color: #0f172a; text-align: center; height: 21px;">{{ $i + 1 }}</td>
                         <td style="border: 1px solid #334155; padding: 4px 8px; font-size: 11px; color: #0f172a; height: 21px;">
                             <strong>{{ $coilNumber }}</strong>
-                            @if($thickness || $size)
+                            @if(!empty($customSize))
+                                <span style="font-size: 10.5px; color: #0f172a; margin-left: 4px; font-weight: 600;">({{ $customSize }})</span>
+                            @endif
+                            <!-- @if($thickness || $size)
                                 <span style="font-size: 10px; color: #475569; margin-left: 6px;">
                                     ({{ $thickness ? 'Thick: '.$thickness : '' }}{{ ($thickness && $size) ? ' | ' : '' }}{{ $size ? 'Size: '.$size.' '.$sizeType : '' }})
                                 </span>
-                            @endif
+                            @endif -->
                         </td>
                         <td style="border: 1px solid #334155; padding: 4px 6px; font-size: 11px; color: #0f172a; text-align: center; height: 21px;">{{ number_format($item->qty ?? 0) }}</td>
                         <td style="border: 1px solid #334155; padding: 4px 6px; font-size: 11px; color: #0f172a; text-align: right; height: 21px;">{{ $item->unit_price ? number_format($item->unit_price, 2) : '0.00' }}</td>
