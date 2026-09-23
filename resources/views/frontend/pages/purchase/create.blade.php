@@ -80,12 +80,12 @@
                             <p class="text-muted small mb-0">Create a new ship lot on the fly or assign to an existing vessel batch</p>
                         </div>
                         <div class="btn-group shadow-sm rounded-3 gap-2" role="group" aria-label="Lot Mode Selection">
-                            <input type="radio" class="btn-check" name="lot_type" id="lot_type_new" value="new" {{ old('lot_type', 'new') === 'new' ? 'checked' : '' }} onchange="toggleLotMode('new')">
+                            <input type="radio" class="btn-check" name="lot_type" id="lot_type_new" value="new" {{ old('lot_type', request('lot_id') ? 'existing' : 'new') === 'new' ? 'checked' : '' }} onchange="toggleLotMode('new')">
                             <label class="btn btn-outline-primary btn-sm px-3 py-2 fw-semibold" for="lot_type_new">
                                 <i class="fe fe-plus-circle me-1"></i> Create New Lot
                             </label>
 
-                            <input type="radio" class="btn-check" name="lot_type" id="lot_type_existing" value="existing" {{ old('lot_type') === 'existing' ? 'checked' : '' }} onchange="toggleLotMode('existing')">
+                            <input type="radio" class="btn-check" name="lot_type" id="lot_type_existing" value="existing" {{ old('lot_type', request('lot_id') ? 'existing' : 'new') === 'existing' ? 'checked' : '' }} onchange="toggleLotMode('existing')">
                             <label class="btn btn-outline-primary btn-sm px-3 py-2 fw-semibold" for="lot_type_existing">
                                 <i class="fe fe-layers me-1"></i> Select Existing Lot
                             </label>
@@ -115,7 +115,7 @@
                     </div>
 
                     <!-- NEW LOT FIELDS -->
-                    <div id="newLotContainer" style="{{ old('lot_type', 'new') === 'new' ? '' : 'display: none;' }}">
+                    <div id="newLotContainer" style="{{ old('lot_type', request('lot_id') ? 'existing' : 'new') === 'new' ? '' : 'display: none;' }}">
                         <div class="row g-3">
                             <div class="col-lg-4 col-md-6 col-12">
                                 <label for="new_lot_number" class="form-label fw-semibold small text-secondary mb-1">
@@ -162,16 +162,22 @@
                     </div>
 
                     <!-- EXISTING LOT FIELDS -->
-                    <div id="existingLotContainer" style="{{ old('lot_type') === 'existing' ? '' : 'display: none;' }}">
+                    <div id="existingLotContainer" style="{{ old('lot_type', request('lot_id') ? 'existing' : 'new') === 'existing' ? '' : 'display: none;' }}">
                         <div class="row g-3">
                             <div class="col-lg-4 col-md-6 col-12">
                                 <label for="purchase_lot_id" class="form-label fw-semibold small text-secondary mb-1">
                                     Existing Purchase Lot <span class="text-danger">*</span>
                                 </label>
-                                <select id="purchase_lot_id" name="lot_id" class="form-select select2">
+                                <select id="purchase_lot_id" name="lot_id" class="form-select select2" onchange="handleExistingLotChange(this)">
                                     <option value="">Select Existing Purchase Lot</option>
                                     @foreach ($lots as $lot)
+                                        @php
+                                            $lotWarehouseId = $lot->purchases->first()?->warehouse_id;
+                                            $lotVendorId = $lot->vendor_id ?: $lot->purchases->first()?->vendor_id;
+                                        @endphp
                                         <option value="{{ $lot->id }}" 
+                                            data-warehouse-id="{{ $lotWarehouseId }}"
+                                            data-vendor-id="{{ $lotVendorId }}"
                                             {{ old('lot_id', request('lot_id')) == $lot->id ? 'selected' : '' }}>
                                             {{ $lot->lot_number }} {{ $lot->vendor_names ? '('.$lot->vendor_names.')' : '' }}
                                         </option>
@@ -560,62 +566,95 @@
                 <div class="col-lg-5 col-12">
                     <div class="card border-0 shadow-sm rounded-3 h-100">
                         <div class="card-body p-4">
-                            <h6 class="fw-bold text-dark mb-3">
-                                <i class="fe fe-dollar-sign text-success me-2"></i>Payment Settlement
-                            </h6>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-dark mb-0">
+                                    <i class="fe fe-dollar-sign text-success me-2"></i>Payment Settlement
+                                </h6>
+                                <span id="paymentModeBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-8" style="display: none;">
+                                    <i class="fe fe-users me-1"></i>Multi-Vendor Breakdown
+                                </span>
+                            </div>
 
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <label for="paymentInput" class="form-label fw-semibold small text-secondary mb-0">
-                                        Paid Amount (৳) <span class="text-danger">*</span>
+                            <!-- Single Vendor Payment Section -->
+                            <div id="singleVendorPaymentSection">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label for="paymentInput" class="form-label fw-semibold small text-secondary mb-0">
+                                            Paid Amount (৳) <span class="text-danger">*</span>
+                                        </label>
+                                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none fw-semibold fs-8" onclick="setFullPayment()">
+                                            Pay Full Bill
+                                        </button>
+                                    </div>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-success fw-bold">৳</span>
+                                        <input type="number" step="0.01" min="0" name="payment" id="paymentInput"
+                                            class="form-control form-control-lg fw-bold text-success"
+                                            value="{{ old('payment', '0.00') }}" oninput="recalculateSummary()" required>
+                                    </div>
+                                    <div id="paymentErrorMsg" class="text-danger small mt-1 fw-semibold" style="display: none;">
+                                        <i class="fe fe-alert-triangle me-1"></i> Payment cannot exceed the total bill of <span id="maxBillFormatted">৳ 0.00</span>.
+                                    </div>
+                                </div>
+
+                                <!-- Settlement Payment Method & Channel -->
+                                <div class="mb-3 p-3 bg-light rounded-3 border border-light-subtle">
+                                    <label class="form-label fw-semibold small text-secondary mb-1">
+                                        <i class="fe fe-credit-card me-1 text-primary"></i> Settlement Payment Method
                                     </label>
-                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none fw-semibold fs-8" onclick="setFullPayment()">
-                                        Pay Full Bill
-                                    </button>
-                                </div>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light text-success fw-bold">৳</span>
-                                    <input type="number" step="0.01" min="0" name="payment" id="paymentInput"
-                                        class="form-control form-control-lg fw-bold text-success"
-                                        value="{{ old('payment', '0.00') }}" oninput="recalculateSummary()" required>
-                                </div>
-                                <div id="paymentErrorMsg" class="text-danger small mt-1 fw-semibold" style="display: none;">
-                                    <i class="fe fe-alert-triangle me-1"></i> Payment cannot exceed the total bill of <span id="maxBillFormatted">৳ 0.00</span>.
-                                </div>
-                            </div>
-
-                            <!-- Settlement Payment Method & Channel -->
-                            <div class="mb-3 p-3 bg-light rounded-3 border border-light-subtle">
-                                <label class="form-label fw-semibold small text-secondary mb-1">
-                                    <i class="fe fe-credit-card me-1 text-primary"></i> Settlement Payment Method
-                                </label>
-                                <select name="payment_method" id="purchasePaymentMethod" class="form-select border-light-subtle mb-2" onchange="handlePurchasePaymentMethodChange(this.value)">
-                                    <option value="cash" selected>Cash in Hand</option>
-                                    <option value="bank">Bank Transfer / MFS</option>
-                                    <!-- <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option> -->
-                                </select>
-
-                                <!-- Bank Account Selector (conditional) -->
-                                <div id="purchaseBankAccountContainer" class="mb-2" style="display: none;">
-                                    <label class="form-label fw-semibold small text-secondary mb-1">Disbursement Bank Account</label>
-                                    <select name="bank_detail_id" id="purchaseBankDetail" class="form-select border-light-subtle">
-                                        <option value="" selected>Select Bank Account</option>
-                                        @foreach($bankAccounts ?? [] as $bank)
-                                            <option value="{{ $bank->id }}">
-                                                {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                            </option>
-                                        @endforeach
+                                    <select name="payment_method" id="purchasePaymentMethod" class="form-select border-light-subtle mb-2" onchange="handlePurchasePaymentMethodChange(this.value)">
+                                        <option value="cash" selected>Cash in Hand</option>
+                                        <option value="bank">Bank Transfer / MFS</option>
                                     </select>
-                                </div>
 
-                                <!-- Transaction Ref (conditional) -->
-                                <div id="purchaseTransactionRefContainer" style="display: none;">
-                                    <label class="form-label fw-semibold small text-secondary mb-1">Transaction Ref / TrxID</label>
-                                    <input type="text" name="transaction_ref" class="form-control border-light-subtle bg-white">
+                                    <!-- Bank Account Selector (conditional) -->
+                                    <div id="purchaseBankAccountContainer" class="mb-2" style="display: none;">
+                                        <label class="form-label fw-semibold small text-secondary mb-1">Disbursement Bank Account</label>
+                                        <select name="bank_detail_id" id="purchaseBankDetail" class="form-select border-light-subtle">
+                                            <option value="" selected>Select Bank Account</option>
+                                            @foreach($bankAccounts ?? [] as $bank)
+                                                <option value="{{ $bank->id }}">
+                                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <!-- Transaction Ref (conditional) -->
+                                    <div id="purchaseTransactionRefContainer" style="display: none;">
+                                        <label class="form-label fw-semibold small text-secondary mb-1">Transaction Ref / TrxID</label>
+                                        <input type="text" name="transaction_ref" class="form-control border-light-subtle bg-white">
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center mb-4">
+                            <!-- Multi-Vendor Individual Payments Breakdown Section -->
+                            <div id="multiVendorPaymentSection" style="display: none;">
+                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                    <span class="small text-muted fw-semibold">
+                                        <i class="fe fe-info text-info me-1"></i>Pay each vendor individually:
+                                    </span>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-success btn-sm py-0.5 px-2 fs-8 rounded-pill" onclick="setAllVendorsFullPayment()">
+                                            <i class="fe fe-check-circle me-1"></i>Pay All Full
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 fs-8 rounded-pill" onclick="clearAllVendorPayments()">
+                                            Clear All
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="vendorPaymentCardsList" class="mb-3">
+                                    <!-- Dynamic Vendor Payment Cards rendered by JavaScript -->
+                                </div>
+
+                                <div class="p-2.5 bg-light rounded-3 d-flex justify-content-between align-items-center mb-3 border">
+                                    <span class="small text-secondary fw-semibold">Total Paid to All Vendors:</span>
+                                    <span class="fw-bold text-success fs-6" id="displayTotalPaidMulti">৳ 0.00</span>
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center mb-4 border">
                                 <span class="fw-semibold text-secondary">Outstanding Due:</span>
                                 <span class="fs-5 fw-bold text-danger" id="displayDueAmount">৳ 0.00</span>
                                 <input type="hidden" name="due" id="due_hidden" value="0.00">
@@ -657,6 +696,17 @@
             }
         }
 
+        function handleExistingLotChange(selectEl) {
+            const $selected = $(selectEl).find('option:selected');
+            if (!$selected.length || !$selected.val()) return;
+
+            const warehouseId = $selected.attr('data-warehouse-id') || $selected.data('warehouse-id');
+            if (warehouseId) {
+                $('#warehouse_id_existing').val(warehouseId).trigger('change');
+                $('#warehouse_id').val(warehouseId).trigger('change');
+            }
+        }
+
         function handleDefaultVendorChange(val) {
             $('#vendor_hidden').val(val);
             if (val) {
@@ -687,11 +737,21 @@
                 }
             });
 
+            // Existing lot select change listener
+            $('#purchase_lot_id').on('change select2:select', function () {
+                handleExistingLotChange(this);
+            });
+
             // Initial mode trigger
             if ($('#lot_type_existing').is(':checked')) {
                 toggleLotMode('existing');
             } else {
                 toggleLotMode('new');
+            }
+
+            // Auto-fill warehouse if a lot is already selected (e.g. from query param or old input)
+            if ($('#purchase_lot_id').val()) {
+                handleExistingLotChange($('#purchase_lot_id')[0]);
             }
 
             // Initial default vendor state
@@ -855,6 +915,13 @@
             recalculateSummary();
         }
 
+        const vendorsMap = @json($vendors->keyBy('id'));
+        const bankAccountsList = @json($bankAccounts ?? []);
+
+        function roundTo2(num) {
+            return Math.round((num + Number.EPSILON) * 100) / 100;
+        }
+
         function updateTableNumbers() {
             $('#steelTableBody tr.item-row').each(function (index) {
                 $(this).find('.row-serial-number').text(index + 1);
@@ -865,16 +932,27 @@
             let totalCoils = 0;
             let totalWeight = 0;
             let subTotal = 0;
+            let vendorMetrics = {};
             const rows = $('#steelTableBody tr.item-row');
 
             rows.each(function () {
                 const qty = parseInt($(this).find('.item-qty-input').val()) || 0;
                 const rowTotalWeight = parseFloat($(this).find('.item-total-weight-input').val()) || 0;
                 const sub = parseFloat($(this).find('.item-sub-price-input').val()) || 0;
+                const vId = $(this).find('.item-vendor-id-input').val();
 
                 totalCoils += qty;
                 totalWeight += rowTotalWeight;
                 subTotal += sub;
+
+                if (vId) {
+                    if (!vendorMetrics[vId]) {
+                        vendorMetrics[vId] = { qty: 0, weight: 0, subTotal: 0 };
+                    }
+                    vendorMetrics[vId].qty += qty;
+                    vendorMetrics[vId].weight += rowTotalWeight;
+                    vendorMetrics[vId].subTotal += sub;
+                }
             });
 
             // Financial adjustments
@@ -917,22 +995,211 @@
                 $('#tableSummaryFooter').hide();
             }
 
-            // Payment and Due calculation
-            const paymentInput = $('#paymentInput');
-            const payment = parseFloat(paymentInput.val()) || 0;
+            const uniqueVendorIds = Object.keys(vendorMetrics);
 
-            if (payment > grandTotal + 0.009) {
-                $('#paymentErrorMsg').fadeIn(150);
-                paymentInput.addClass('is-invalid border-danger');
-                $('#displayDueAmount').text('৳ 0.00');
-                $('#due_hidden').val('0.00');
+            // Single Vendor vs Multi-Vendor Mode
+            if (uniqueVendorIds.length <= 1) {
+                $('#singleVendorPaymentSection').show();
+                $('#multiVendorPaymentSection').hide();
+                $('#paymentModeBadge').hide();
+                $('#vendorPaymentCardsList').empty();
+
+                const paymentInput = $('#paymentInput');
+                const payment = parseFloat(paymentInput.val()) || 0;
+
+                if (payment > grandTotal + 0.009) {
+                    $('#paymentErrorMsg').fadeIn(150);
+                    paymentInput.addClass('is-invalid border-danger');
+                    $('#displayDueAmount').text('৳ 0.00');
+                    $('#due_hidden').val('0.00');
+                } else {
+                    $('#paymentErrorMsg').hide();
+                    paymentInput.removeClass('is-invalid border-danger');
+                    const due = Math.max(0, grandTotal - payment);
+                    $('#displayDueAmount').text('৳ ' + due.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                    $('#due_hidden').val(due.toFixed(2));
+                }
             } else {
-                $('#paymentErrorMsg').hide();
-                paymentInput.removeClass('is-invalid border-danger');
-                const due = Math.max(0, grandTotal - payment);
-                $('#displayDueAmount').text('৳ ' + due.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
-                $('#due_hidden').val(due.toFixed(2));
+                $('#singleVendorPaymentSection').hide();
+                $('#multiVendorPaymentSection').show();
+                $('#paymentModeBadge').show();
+
+                // Preserve user-entered values
+                let existingVendorPay = {};
+                let existingVendorMethod = {};
+                let existingVendorBank = {};
+                let existingVendorRef = {};
+
+                $('.vendor-payment-card').each(function () {
+                    const vId = $(this).data('vendor-id');
+                    existingVendorPay[vId] = $(this).find('.vendor-pay-input').val();
+                    existingVendorMethod[vId] = $(this).find('.vendor-method-select').val();
+                    existingVendorBank[vId] = $(this).find('.vendor-bank-select').val();
+                    existingVendorRef[vId] = $(this).find('.vendor-ref-input').val();
+                });
+
+                // Calculate each vendor's bill
+                uniqueVendorIds.forEach(vId => {
+                    const vRatio = subTotal > 0 ? (vendorMetrics[vId].subTotal / subTotal) : (1 / uniqueVendorIds.length);
+                    const vNetCharges = (totalCharges - discount) * vRatio;
+                    vendorMetrics[vId].bill = Math.max(0, roundTo2(vendorMetrics[vId].subTotal + vNetCharges));
+                });
+
+                let bankOptionsHtml = '<option value="">Select Bank Account</option>';
+                bankAccountsList.forEach(b => {
+                    bankOptionsHtml += `<option value="${b.id}">${escapeHtml(b.bank_name)} - ${escapeHtml(b.account_name)} (${escapeHtml(b.account_number)})</option>`;
+                });
+
+                let cardsHtml = '';
+                uniqueVendorIds.forEach(vId => {
+                    const vInfo = vendorsMap[vId] || { name: 'Vendor #' + vId, phone: '' };
+                    const m = vendorMetrics[vId];
+                    const prevPay = existingVendorPay[vId] !== undefined ? existingVendorPay[vId] : '0.00';
+                    const prevMethod = existingVendorMethod[vId] || 'cash';
+                    const prevRef = existingVendorRef[vId] || '';
+                    const vPaid = parseFloat(prevPay) || 0;
+                    const vDue = Math.max(0, m.bill - vPaid);
+
+                    cardsHtml += `
+                        <div class="card border border-light-subtle rounded-3 p-3 mb-3 vendor-payment-card bg-white shadow-sm" data-vendor-id="${vId}">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0"><i class="fe fe-user text-primary me-1"></i>${escapeHtml(vInfo.name)}</h6>
+                                    <small class="text-muted">${m.qty} ${m.qty === 1 ? 'item' : 'items'} • ${m.weight.toFixed(2)} kg</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="small text-muted d-block fs-8">Vendor Bill</span>
+                                    <span class="fw-bold text-dark fs-6 v-bill-text">৳ ${m.bill.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                    <input type="hidden" class="v-bill-val" value="${m.bill.toFixed(2)}">
+                                </div>
+                            </div>
+
+                            <div class="row g-2 align-items-center">
+                                <div class="col-sm-6 col-12">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">Paid to Vendor (৳)</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light text-success fw-bold">৳</span>
+                                        <input type="number" step="0.01" min="0" name="vendor_payments[${vId}][amount]" 
+                                            class="form-control fw-bold text-success vendor-pay-input" 
+                                            data-vendor-id="${vId}" value="${prevPay}" oninput="onVendorPaymentChange(this)">
+                                        <button type="button" class="btn btn-outline-success btn-sm px-2" onclick="setVendorPayFull(this)">Pay Full</button>
+                                    </div>
+                                    <div class="vendor-pay-error text-danger small mt-1 fs-8" style="${vPaid > m.bill + 0.009 ? '' : 'display: none;'}">
+                                        <i class="fe fe-alert-triangle me-1"></i>Exceeds bill (৳ ${m.bill.toFixed(2)})
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-12">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">Payment Method</label>
+                                    <select name="vendor_payments[${vId}][payment_method]" class="form-select form-select-sm vendor-method-select" onchange="onVendorMethodChange(this)">
+                                        <option value="cash" ${prevMethod === 'cash' ? 'selected' : ''}>Cash in Hand</option>
+                                        <option value="bank" ${prevMethod === 'bank' ? 'selected' : ''}>Bank Transfer / MFS</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 vendor-bank-row mt-1" style="${prevMethod === 'cash' ? 'display: none;' : ''}">
+                                    <div class="row g-2">
+                                        <div class="col-sm-6 col-12">
+                                            <select name="vendor_payments[${vId}][bank_detail_id]" class="form-select form-select-sm vendor-bank-select">
+                                                ${bankOptionsHtml}
+                                            </select>
+                                        </div>
+                                        <div class="col-sm-6 col-12">
+                                            <input type="text" name="vendor_payments[${vId}][transaction_ref]" class="form-control form-select-sm vendor-ref-input" placeholder="TrxID / Cheque #" value="${escapeHtml(prevRef)}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                                <span class="small text-muted fw-semibold">Vendor Due:</span>
+                                <span class="fw-bold text-danger fs-7 v-due-text">৳ ${vDue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </div>
+                            <input type="hidden" name="vendor_payments[${vId}][vendor_id]" value="${vId}">
+                        </div>
+                    `;
+                });
+
+                $('#vendorPaymentCardsList').html(cardsHtml);
+
+                // Restore selected bank dropdowns
+                uniqueVendorIds.forEach(vId => {
+                    if (existingVendorBank[vId]) {
+                        $(`.vendor-payment-card[data-vendor-id="${vId}"] .vendor-bank-select`).val(existingVendorBank[vId]);
+                    }
+                });
+
+                updateMultiVendorPaymentTotals();
             }
+        }
+
+        function onVendorPaymentChange(input) {
+            const card = $(input).closest('.vendor-payment-card');
+            const vBill = parseFloat(card.find('.v-bill-val').val()) || 0;
+            const vPaid = parseFloat($(input).val()) || 0;
+
+            if (vPaid > vBill + 0.009) {
+                card.find('.vendor-pay-error').show();
+                $(input).addClass('is-invalid border-danger');
+            } else {
+                card.find('.vendor-pay-error').hide();
+                $(input).removeClass('is-invalid border-danger');
+            }
+
+            const vDue = Math.max(0, vBill - vPaid);
+            card.find('.v-due-text').text('৳ ' + vDue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+
+            updateMultiVendorPaymentTotals();
+        }
+
+        function onVendorMethodChange(select) {
+            const card = $(select).closest('.vendor-payment-card');
+            const bankRow = card.find('.vendor-bank-row');
+            if ($(select).val() === 'cash') {
+                bankRow.hide();
+                bankRow.find('.vendor-bank-select').val('');
+                bankRow.find('.vendor-ref-input').val('');
+            } else {
+                bankRow.show();
+            }
+        }
+
+        function setVendorPayFull(btn) {
+            const card = $(btn).closest('.vendor-payment-card');
+            const vBill = parseFloat(card.find('.v-bill-val').val()) || 0;
+            const input = card.find('.vendor-pay-input');
+            input.val(vBill.toFixed(2));
+            onVendorPaymentChange(input[0]);
+        }
+
+        function setAllVendorsFullPayment() {
+            $('.vendor-payment-card').each(function () {
+                const vBill = parseFloat($(this).find('.v-bill-val').val()) || 0;
+                const input = $(this).find('.vendor-pay-input');
+                input.val(vBill.toFixed(2));
+                onVendorPaymentChange(input[0]);
+            });
+        }
+
+        function clearAllVendorPayments() {
+            $('.vendor-payment-card').each(function () {
+                const input = $(this).find('.vendor-pay-input');
+                input.val('0.00');
+                onVendorPaymentChange(input[0]);
+            });
+        }
+
+        function updateMultiVendorPaymentTotals() {
+            let totalPaid = 0;
+            $('.vendor-pay-input').each(function () {
+                totalPaid += parseFloat($(this).val()) || 0;
+            });
+
+            const grandTotal = parseFloat($('#grand_total_hidden').val()) || 0;
+            $('#displayTotalPaidMulti').text('৳ ' + totalPaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $('#paymentInput').val(totalPaid.toFixed(2));
+
+            const totalDue = Math.max(0, grandTotal - totalPaid);
+            $('#displayDueAmount').text('৳ ' + totalDue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $('#due_hidden').val(totalDue.toFixed(2));
         }
 
         function setFullPayment() {
@@ -1025,6 +1292,23 @@
             if (grandTotal <= 0) {
                 e.preventDefault();
                 alert('Please enter valid quantities, weights, and rates for your steel items.');
+                return false;
+            }
+
+            // Check for multi-vendor overpayment errors
+            let vendorOverpaid = false;
+            $('.vendor-payment-card').each(function () {
+                const vBill = parseFloat($(this).find('.v-bill-val').val()) || 0;
+                const vPaid = parseFloat($(this).find('.vendor-pay-input').val()) || 0;
+                if (vPaid > vBill + 0.009) {
+                    vendorOverpaid = true;
+                    $(this).find('.vendor-pay-input').focus();
+                }
+            });
+
+            if (vendorOverpaid) {
+                e.preventDefault();
+                alert('One or more vendor payments exceed their respective bill. Please correct them before submitting.');
                 return false;
             }
 

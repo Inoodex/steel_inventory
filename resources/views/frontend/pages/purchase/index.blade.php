@@ -333,7 +333,7 @@
                                         @endif
                                     </div>
                                 </td>
-                                <td class="text-end pe-4" onclick="event.stopPropagation()">
+                                <td class="text-end pe-4">
                                     <div class="dropdown">
                                         <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
                                             <i class="fas fa-ellipsis-v"></i>
@@ -349,7 +349,7 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $lotPurchases->first()->id) }}">
                                                         <i class="fe fe-shopping-cart text-info"></i>
-                                                        <span>View Consignment PO</span>
+                                                        <span>View Consignment</span>
                                                     </a>
                                                 </li>
                                             @endif
@@ -472,7 +472,7 @@
                                                             <td class="text-end font-monospace fw-bold text-success">
                                                                 ৳{{ number_format($item->sub_price ?: $item->total_price, 2) }}
                                                             </td>
-                                                            <td class="text-end pe-4" onclick="event.stopPropagation()">
+                                                            <td class="text-end pe-4">
                                                                 <div class="dropdown">
                                                                     <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
                                                                         <i class="fas fa-ellipsis-v"></i>
@@ -636,6 +636,26 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         updateToggleAllBtn();
+
+        // Ensure other open dropdowns close whenever any 3-dot dropdown is opened
+        document.addEventListener('show.bs.dropdown', function (event) {
+            document.querySelectorAll('.dropdown-menu.show').forEach(function (menu) {
+                const parentDropdown = menu.closest('.dropdown');
+                if (parentDropdown && !parentDropdown.contains(event.target)) {
+                    const toggleEl = parentDropdown.querySelector('[data-bs-toggle="dropdown"]');
+                    if (toggleEl && window.bootstrap && typeof bootstrap.Dropdown !== 'undefined') {
+                        const instance = bootstrap.Dropdown.getInstance(toggleEl);
+                        if (instance) {
+                            instance.hide();
+                        } else {
+                            menu.classList.remove('show');
+                        }
+                    } else {
+                        menu.classList.remove('show');
+                    }
+                }
+            });
+        });
     });
 
     function openPurchaseDueModal(purchaseId, vendorId, vendorName, maxDue) {

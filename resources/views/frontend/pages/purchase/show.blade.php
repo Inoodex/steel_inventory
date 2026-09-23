@@ -415,7 +415,7 @@
                                         <i class="fe fe-map-pin me-1 text-danger"></i>{{ $item->warehouse ? $item->warehouse->name : 'Main Stockyard' }}
                                     </span>
                                 </td> -->
-                                <td class="text-end pe-4" onclick="event.stopPropagation()">
+                                <td class="text-end pe-4">
                                     <div class="dropdown">
                                         <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
                                             <i class="fas fa-ellipsis-v"></i>

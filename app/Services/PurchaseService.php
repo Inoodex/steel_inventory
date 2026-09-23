@@ -80,8 +80,8 @@ class PurchaseService
 
             $batchGrandTotal = max(0, round($batchSubTotal + $netExtraCharges, 2));
 
-            $createdPurchases = [];
-            $allocatedPayment = 0;
+            // Pre-calculate each item's sub_price, allocated extra charges, and item total
+            $itemDetails = [];
             $allocatedDelivery = 0;
             $allocatedLabour = 0;
             $allocatedScale = 0;
@@ -135,27 +135,97 @@ class PurchaseService
                 $itemNetExtra = ($itemDelivery + $itemLabour + $itemScale + $itemOther) - $itemDiscount;
                 $itemTotal    = max(0, round($itemSub + $itemNetExtra, 2));
 
-                // Proportional payment allocation across batch items
-                if ($itemCount === 1) {
-                    $itemPayment = $totalPayment;
-                } elseif ($index === $itemCount - 1) {
-                    $itemPayment = max(0, round($totalPayment - $allocatedPayment, 2));
-                } else {
-                    $paymentRatio = $batchGrandTotal > 0 ? ($itemTotal / $batchGrandTotal) : (1 / $itemCount);
-                    $itemPayment = min($itemTotal, round($paymentRatio * $totalPayment, 2));
+                $itemDetails[$index] = [
+                    'item'            => $item,
+                    'vendor_id'       => $itemVendorId,
+                    'coil_qty'        => $coilQty,
+                    'per_coil_weight' => $perCoilWeight,
+                    'total_weight'    => $totalWeight,
+                    'rate'            => $rate,
+                    'item_sub'        => $itemSub,
+                    'item_delivery'   => $itemDelivery,
+                    'item_labour'     => $itemLabour,
+                    'item_scale'      => $itemScale,
+                    'item_other'      => $itemOther,
+                    'item_discount'   => $itemDiscount,
+                    'item_net_extra'  => $itemNetExtra,
+                    'item_total'      => $itemTotal,
+                ];
+            }
+
+            // Determine if individual vendor payments were provided
+            $hasVendorPayments = !empty($data['vendor_payments']) && is_array($data['vendor_payments']);
+            $vendorItemPayments = [];
+
+            if ($hasVendorPayments) {
+                // Group item indices by vendor
+                $vendorItemsMap = [];
+                $vendorTotalBills = [];
+                foreach ($itemDetails as $index => $detail) {
+                    $vId = $detail['vendor_id'];
+                    $vendorItemsMap[$vId][] = $index;
+                    $vendorTotalBills[$vId] = ($vendorTotalBills[$vId] ?? 0) + $detail['item_total'];
                 }
 
-                $allocatedPayment += $itemPayment;
+                // Allocate payment individually per vendor
+                foreach ($vendorItemsMap as $vId => $indices) {
+                    $vSpecifiedPaid = (float) ($data['vendor_payments'][$vId]['amount'] ?? 0);
+                    $vBill = $vendorTotalBills[$vId] ?? 0;
+                    $vAllocated = 0;
+                    $vCount = count($indices);
+
+                    foreach ($indices as $iPos => $idx) {
+                        $iTotal = $itemDetails[$idx]['item_total'];
+                        if ($vCount === 1) {
+                            $iPay = min($iTotal, $vSpecifiedPaid);
+                        } elseif ($iPos === $vCount - 1) {
+                            $iPay = max(0, round($vSpecifiedPaid - $vAllocated, 2));
+                        } else {
+                            $pRatio = ($vBill > 0) ? ($iTotal / $vBill) : (1 / $vCount);
+                            $iPay = min($iTotal, round($pRatio * $vSpecifiedPaid, 2));
+                        }
+                        $vAllocated += $iPay;
+                        $vendorItemPayments[$idx] = $iPay;
+                    }
+                }
+            } else {
+                // Global proportional payment allocation
+                $allocatedPayment = 0;
+                foreach ($itemDetails as $index => $detail) {
+                    $iTotal = $detail['item_total'];
+                    if ($itemCount === 1) {
+                        $iPay = $totalPayment;
+                    } elseif ($index === $itemCount - 1) {
+                        $iPay = max(0, round($totalPayment - $allocatedPayment, 2));
+                    } else {
+                        $pRatio = $batchGrandTotal > 0 ? ($iTotal / $batchGrandTotal) : (1 / $itemCount);
+                        $iPay = min($iTotal, round($pRatio * $totalPayment, 2));
+                    }
+                    $allocatedPayment += $iPay;
+                    $vendorItemPayments[$index] = $iPay;
+                }
+            }
+
+            $createdPurchases = [];
+            foreach ($itemDetails as $index => $detail) {
+                $item = $detail['item'];
+                $itemVendorId = $detail['vendor_id'];
+                $itemTotal = $detail['item_total'];
+                $itemPayment = $vendorItemPayments[$index] ?? 0;
                 $itemDue = max(0, round($itemTotal - $itemPayment, 2));
 
                 $thickness = !empty($item['thickness']) ? trim($item['thickness']) : null;
                 $size = !empty($item['size']) ? trim($item['size']) : (!empty($item['width']) ? trim($item['width']) : null);
                 $sizeType = !empty($item['size_type']) ? trim($item['size_type']) : 'ft';
 
-                $paymentMethod = $data['payment_method'] ?? 'cash';
+                $paymentMethod = $data['vendor_payments'][$itemVendorId]['payment_method'] ?? ($data['payment_method'] ?? 'cash');
                 $isBank = ($paymentMethod !== 'cash');
-                $bankDetailId = ($isBank && !empty($data['bank_detail_id'])) ? $data['bank_detail_id'] : null;
-                $transactionRef = ($isBank && !empty($data['transaction_ref'])) ? $data['transaction_ref'] : null;
+                $bankDetailId = ($isBank && !empty($data['vendor_payments'][$itemVendorId]['bank_detail_id'])) 
+                    ? $data['vendor_payments'][$itemVendorId]['bank_detail_id'] 
+                    : (($isBank && !empty($data['bank_detail_id'])) ? $data['bank_detail_id'] : null);
+                $transactionRef = ($isBank && !empty($data['vendor_payments'][$itemVendorId]['transaction_ref']))
+                    ? $data['vendor_payments'][$itemVendorId]['transaction_ref']
+                    : (($isBank && !empty($data['transaction_ref'])) ? $data['transaction_ref'] : null);
 
                 // 1. Record Purchase Line
                 $purchase = Purchase::create([
@@ -165,16 +235,16 @@ class PurchaseService
                     'thickness'         => $thickness,
                     'size'              => $size,
                     'size_type'         => $sizeType,
-                    'quantity'          => $coilQty,
-                    'unit_weight'       => $perCoilWeight,
-                    'total_weight'      => $totalWeight,
-                    'unit_price'        => $rate,
-                    'sub_price'         => $itemSub,
-                    'delivery_charge'   => $itemDelivery,
-                    'labour_cost'       => $itemLabour,
-                    'weight_scale_cost' => $itemScale,
-                    'other_charges'     => $itemOther,
-                    'discount'          => $itemDiscount,
+                    'quantity'          => $detail['coil_qty'],
+                    'unit_weight'       => $detail['per_coil_weight'],
+                    'total_weight'      => $detail['total_weight'],
+                    'unit_price'        => $detail['rate'],
+                    'sub_price'         => $detail['item_sub'],
+                    'delivery_charge'   => $detail['item_delivery'],
+                    'labour_cost'       => $detail['item_labour'],
+                    'weight_scale_cost' => $detail['item_scale'],
+                    'other_charges'     => $detail['item_other'],
+                    'discount'          => $detail['item_discount'],
                     'total_price'       => $itemTotal,
                     'payment'           => $itemPayment,
                     'due'               => $itemDue,
@@ -196,12 +266,12 @@ class PurchaseService
                     'thickness'        => $thickness,
                     'width'            => $size,
                     'length'           => $sizeType,
-                    'piece_count'      => $coilQty,
-                    'gross_weight'     => $totalWeight,
+                    'piece_count'      => $detail['coil_qty'],
+                    'gross_weight'     => $detail['total_weight'],
                     'tare_weight'      => 0,
-                    'net_weight'       => $totalWeight,
-                    'remaining_weight' => $totalWeight,
-                    'rate_per_ton'     => $rate,
+                    'net_weight'       => $detail['total_weight'],
+                    'remaining_weight' => $detail['total_weight'],
+                    'rate_per_ton'     => $detail['rate'],
                     'total_price'      => $itemTotal,
                     'status'           => 'in_stock',
                     'notes'            => $item['notes'] ?? null,
@@ -212,20 +282,26 @@ class PurchaseService
             }
 
             // 3. Record Payment entries grouped by Vendor for accurate vendor ledger & due management
-            if ($totalPayment > 0 && !empty($createdPurchases)) {
+            $actualTotalPaid = 0;
+            if (!empty($createdPurchases)) {
                 $purchasesByVendor = collect($createdPurchases)->groupBy('vendor_id');
                 foreach ($purchasesByVendor as $vId => $vPurchases) {
                     $vTotalPaid = (float) $vPurchases->sum('payment');
+                    $actualTotalPaid += $vTotalPaid;
                     if ($vTotalPaid > 0) {
                         $primaryPurchase = $vPurchases->first();
+                        $vPayMethod = $data['vendor_payments'][$vId]['payment_method'] ?? ($data['payment_method'] ?? 'cash');
+                        $vBankId = ($vPayMethod !== 'cash') ? ($data['vendor_payments'][$vId]['bank_detail_id'] ?? ($data['bank_detail_id'] ?? null)) : null;
+                        $vTrxRef = ($vPayMethod !== 'cash') ? ($data['vendor_payments'][$vId]['transaction_ref'] ?? ($data['transaction_ref'] ?? null)) : null;
+
                         Payment::create([
                             'vendor_id'       => $vId,
                             'purchase_id'     => $primaryPurchase->id,
                             'amount'          => $vTotalPaid,
                             'payment_for'     => 3, // 3: Purchases / Vendor payment
-                            'payment_method'  => $paymentMethod,
-                            'bank_detail_id'  => $bankDetailId,
-                            'transaction_ref' => $transactionRef,
+                            'payment_method'  => $vPayMethod,
+                            'bank_detail_id'  => $vBankId,
+                            'transaction_ref' => $vTrxRef,
                             'payment_date'    => $data['purchase_date'] ?? date('Y-m-d'),
                             'remarks'         => 'Initial disbursement for ' . (!empty($lotId) ? 'Consignment Lot #' . ($lot->lot_number ?? $lotId) : 'Purchase Order #PO-' . $primaryPurchase->id),
                             'status'          => '1',
@@ -251,74 +327,90 @@ class PurchaseService
                 $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
                 $invAcc = \App\Models\ChartOfAccount::where('account_code', '1140')->first();
 
-                // Determine exact Cash or Bank Chart of Account for disbursement
-                $paymentMethod = $data['payment_method'] ?? 'cash';
-                $bankDetailId = !empty($data['bank_detail_id']) ? $data['bank_detail_id'] : null;
-                $transactionRef = $data['transaction_ref'] ?? null;
-
-                $disbursementAcc = $cashAcc;
-                if ($paymentMethod !== 'cash') {
-                    if (!empty($bankDetailId)) {
-                        $bank = \App\Models\BankDetail::find($bankDetailId);
-                        $disbursementAcc = $bank?->resolveChartOfAccount() 
-                            ?? \App\Models\ChartOfAccount::where('account_code', '1120')->first() 
-                            ?? $cashAcc;
-                    } else {
-                        $disbursementAcc = \App\Models\ChartOfAccount::where('account_code', '1120')->first() ?? $cashAcc;
-                    }
-                }
-
                 if ($apAcc && $invAcc) {
-                    $items = [];
-                    $items[] = [
-                        'account_id' => $invAcc->id,
-                        'debit' => $batchGrandTotal,
-                        'credit' => 0.00,
+                    $journalItems = [];
+                    $journalItems[] = [
+                        'account_id'  => $invAcc->id,
+                        'debit'       => $batchGrandTotal,
+                        'credit'      => 0.00,
                         'description' => 'Steel yard stock inventory intake for Purchase Batch (' . count($createdPurchases) . ' items)'
                     ];
 
-                    $methodLabel = match($paymentMethod) {
-                        'bank' => 'Bank Transfer',
-                        'cheque' => 'Cheque',
-                        'mobile_banking' => 'Mobile Banking',
-                        default => 'Cash'
-                    };
-                    $refText = $transactionRef ? " [Ref/Cheque: {$transactionRef}]" : "";
+                    // Track disbursements per account (Cash vs individual Bank accounts)
+                    $disbursements = [];
+                    if (!empty($createdPurchases)) {
+                        $purchasesByVendor = collect($createdPurchases)->groupBy('vendor_id');
+                        foreach ($purchasesByVendor as $vId => $vPurchases) {
+                            $vPaid = (float) $vPurchases->sum('payment');
+                            if ($vPaid > 0) {
+                                $vMethod = $data['vendor_payments'][$vId]['payment_method'] ?? ($data['payment_method'] ?? 'cash');
+                                $vBankId = ($vMethod !== 'cash') ? ($data['vendor_payments'][$vId]['bank_detail_id'] ?? ($data['bank_detail_id'] ?? null)) : null;
+                                
+                                $accKey = 'cash';
+                                $accModel = $cashAcc;
+                                if ($vMethod !== 'cash' && !empty($vBankId)) {
+                                    $bank = \App\Models\BankDetail::find($vBankId);
+                                    $accModel = $bank?->resolveChartOfAccount() 
+                                        ?? \App\Models\ChartOfAccount::where('account_code', '1120')->first() 
+                                        ?? $cashAcc;
+                                    $accKey = 'bank_' . $accModel->id;
+                                } elseif ($vMethod !== 'cash') {
+                                    $accModel = \App\Models\ChartOfAccount::where('account_code', '1120')->first() ?? $cashAcc;
+                                    $accKey = 'bank_' . $accModel->id;
+                                }
 
-                    if ($totalPayment > 0 && $disbursementAcc) {
-                        $items[] = [
-                            'account_id' => $disbursementAcc->id,
-                            'debit' => 0.00,
-                            'credit' => $totalPayment,
-                            'description' => "{$methodLabel} disbursement for Purchase Batch{$refText}"
-                        ];
+                                if (!isset($disbursements[$accKey])) {
+                                    $disbursements[$accKey] = [
+                                        'account_id'  => $accModel->id,
+                                        'amount'      => 0,
+                                        'method'      => $vMethod,
+                                    ];
+                                }
+                                $disbursements[$accKey]['amount'] += $vPaid;
+                            }
+                        }
                     }
 
-                    $totalBatchDue = max(0, round($batchGrandTotal - $totalPayment, 2));
+                    foreach ($disbursements as $disb) {
+                        if ($disb['amount'] > 0) {
+                            $methodLabel = match($disb['method']) {
+                                'bank'           => 'Bank Transfer',
+                                'cheque'         => 'Cheque',
+                                'mobile_banking' => 'Mobile Banking',
+                                default          => 'Cash'
+                            };
+                            $journalItems[] = [
+                                'account_id'  => $disb['account_id'],
+                                'debit'       => 0.00,
+                                'credit'      => round($disb['amount'], 2),
+                                'description' => "{$methodLabel} disbursement for Purchase Batch"
+                            ];
+                        }
+                    }
+
+                    $totalBatchDue = max(0, round($batchGrandTotal - $actualTotalPaid, 2));
                     if ($totalBatchDue > 0) {
-                        $items[] = [
-                            'account_id' => $apAcc->id,
-                            'debit' => 0.00,
-                            'credit' => $totalBatchDue,
-                            'description' => 'Payable balance to Vendor #' . $vendorId
+                        $journalItems[] = [
+                            'account_id'  => $apAcc->id,
+                            'debit'       => 0.00,
+                            'credit'      => $totalBatchDue,
+                            'description' => 'Payable balance to Accounts Payable (Vendor Batch)'
                         ];
                     }
 
                     postJournalEntry([
-                        'entry_date' => date('Y-m-d'),
+                        'entry_date'     => date('Y-m-d'),
                         'reference_type' => 'purchase',
-                        'reference_id' => $createdPurchases[0]->id ?? null,
-                        'description' => 'Purchase Inward Batch — ' . count($createdPurchases) . ' steel items from Vendor #' . $vendorId,
-                        'items' => $items
+                        'reference_id'   => $createdPurchases[0]->id ?? null,
+                        'description'    => 'Purchase Inward Batch — ' . count($createdPurchases) . ' steel items (' . count($purchasesByVendor) . ' vendors)',
+                        'items'          => $journalItems
                     ]);
                 }
             } catch (\Throwable $e) {
                 Log::error('Auto-post journal voucher failed for purchase batch: ' . $e->getMessage(), [
                     'exception' => $e,
-                    'vendor_id' => $vendorId,
                 ]);
             }
-
             return $createdPurchases;
         });
     }

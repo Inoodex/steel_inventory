@@ -103,14 +103,11 @@ class PurchaseController extends Controller
         ));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $products   = collect();
         $vendors    = Vendor::where('status', '1')->latest()->get();
-        $lots       = Lot::where('status', 'active')->latest()->get();
+        $lots       = Lot::with(['vendor', 'purchases.warehouse'])->where('status', 'active')->latest()->get();
         $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
         $suggestedLotNumber = Lot::generateLotNumber();

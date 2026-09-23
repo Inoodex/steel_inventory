@@ -157,11 +157,11 @@
                         </li>
                     @endif
 
-                    {{-- Bookkeeping & Ledger --}}
+                    {{-- Accounting & Ledger --}}
                     @if($isAdmin)
                         <li class="submenu {{ $active(['chart-of-accounts.*','journal-entries.*','ledger.*','fiscal-years.*']) ? 'active' : '' }}">
                             <a href="javascript:void(0)">
-                                <i class="fe fe-book"></i><span> Bookkeeping &amp; Ledger</span>
+                                <i class="fe fe-book"></i><span> Accounting &amp; Ledger</span>
                                 <span class="menu-arrow"></span>
                             </a>
                             <ul style="{{ $active(['chart-of-accounts.*','journal-entries.*','ledger.*','fiscal-years.*']) ? 'display:block' : '' }}">
