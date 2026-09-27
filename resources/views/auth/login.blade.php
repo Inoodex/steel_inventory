@@ -8,7 +8,7 @@
     <title>Sign In — Inoodex Inventory</title>
 
     <!-- Favicon -->
-    <link rel="shortcut icon" href="{{ asset('assets') }}/img/logo.jpg">
+    <link rel="shortcut icon" href="{{ asset('assets') }}/img/logo.png">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

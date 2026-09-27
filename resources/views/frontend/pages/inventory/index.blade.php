@@ -93,7 +93,7 @@
     <div class="page-header mb-4">
         <div class="content-page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-                <h4 class="card-title fw-bold text-dark mb-1">Steel Inventory</h4>
+                <h4 class="card-title fw-bold text-dark mb-1">Steel Stock Inventory</h4>
                 <p class="text-muted small mb-0">Unified tracking of ship steel coils &amp; plates, consignment lot sources, stockyard locations &amp; yard valuation</p>
             </div>
             <div class="d-flex align-items-center gap-2">
@@ -102,7 +102,7 @@
                     <i class="fe fe-file-text fs-6"></i>
                     <span>Export PDF Report</span>
                 </a>
-                <div class="dropdown">
+                <!-- <div class="dropdown">
                     <button class="btn btn-outline-success px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2 dropdown-toggle" 
                             type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fe fe-layers"></i>
@@ -126,6 +126,11 @@
                 <a href="{{ route('purchase.create') }}" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
                     <i class="fe fe-plus-circle"></i>
                     <span>Receive Ship Steel</span>
+                </a> -->
+                <!-- back button -->
+                <a href="{{ route('index') }}" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
+                    <i class="fe fe-arrow-left"></i>
+                    <span>Back</span>
                 </a>
             </div>
         </div>
@@ -206,9 +211,9 @@
                         <input type="text" name="search" class="form-control border-light-subtle" value="{{ request('search') }}">
                     </div>
                 </div>
-                <div class="col-xl-3 col-lg-2 col-md-3 col-6">
+                <div class="col-xl-2 col-lg-2 col-md-2 col-6">
                     <select name="lot_id" class="form-select form-select-sm border-light-subtle">
-                        <option value="">All Lots / Vessels</option>
+                        <option value="">All Lots</option>
                         @foreach($lots as $lot)
                             <option value="{{ $lot->id }}" {{ request('lot_id') == $lot->id ? 'selected' : '' }}>
                                 {{ $lot->lot_number }}
@@ -216,7 +221,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-xl-2 col-lg-2 col-md-3 col-6">
+                <div class="col-xl-2 col-lg-2 col-md-2 col-6">
                     <select name="warehouse_id" class="form-select form-select-sm border-light-subtle">
                         <option value="">All Yards</option>
                         @foreach($warehouses as $wh)
@@ -226,7 +231,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-xl-2 col-lg-2 col-md-6 col-6">
+                <!-- <div class="col-xl-2 col-lg-2 col-md-2 col-6">
                     <select name="status" class="form-select form-select-sm border-light-subtle">
                         <option value="in_stock" {{ request('status', 'in_stock') == 'in_stock' ? 'selected' : '' }}>In Stock (Active)</option>
                         <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>In Processing / Cutting</option>
@@ -234,7 +239,7 @@
                         <option value="exhausted" {{ request('status') == 'exhausted' ? 'selected' : '' }}>Exhausted / Consumed</option>
                         <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All Batches (Lifetime)</option>
                     </select>
-                </div>
+                </div> -->
                 <div class="col-xl-1 col-lg-2 col-md-6 col-6 d-flex gap-1">
                     <button type="submit" class="btn btn-sm btn-primary flex-fill rounded-2" title="Apply Filter">
                         <i class="fe fe-filter"></i> Filter
@@ -249,7 +254,7 @@
         </div>
     </div>
     <!-- Thickness & Weighted Average Price Breakdown Card -->
-    @if(isset($thicknessBreakdown) && $thicknessBreakdown->isNotEmpty())
+    <!-- @if(isset($thicknessBreakdown) && $thicknessBreakdown->isNotEmpty())
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-header bg-white py-3 border-bottom border-light d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div class="d-flex align-items-center gap-2">
@@ -346,7 +351,7 @@
                 </div>
             </div>
         </div>
-    @endif
+    @endif -->
 
     <!-- Inventory Table Card -->
     <div class="card border-0 shadow-sm rounded-3">

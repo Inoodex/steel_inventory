@@ -33,6 +33,7 @@ class UpdateSaleRequest extends FormRequest
             'vat'                  => 'nullable|numeric|min:0',
             'tax'                  => 'nullable|numeric|min:0',
             'delivery_charge'      => 'nullable|numeric|min:0',
+            'transport_payer'      => 'nullable|string|in:me,vendor',
         ];
     }
 

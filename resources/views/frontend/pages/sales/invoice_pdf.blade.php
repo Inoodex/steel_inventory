@@ -147,10 +147,11 @@
                     <tr>
                         <td style="border: 1px solid #334155; padding: 4px 6px; font-size: 11px; color: #0f172a; text-align: center; height: 21px;">{{ $i + 1 }}</td>
                         <td style="border: 1px solid #334155; padding: 4px 8px; font-size: 11px; color: #0f172a; height: 21px;">
-                            <strong>{{ $coilNumber }}</strong>
-                            @if(!empty($customSize))
-                                <span style="font-size: 10.5px; color: #0f172a; margin-left: 4px; font-weight: 600;">({{ $customSize }})</span>
-                            @endif
+                            <strong>
+                            
+                                <span style="font-size: 10.5px; color: #0f172a; margin-left: 4px; font-weight: 600;">({{ $customSize ?? 'N/A' }})</span>
+                            
+                            </strong>
                             <!-- @if($thickness || $size)
                                 <span style="font-size: 10px; color: #475569; margin-left: 6px;">
                                     ({{ $thickness ? 'Thick: '.$thickness : '' }}{{ ($thickness && $size) ? ' | ' : '' }}{{ $size ? 'Size: '.$size.' '.$sizeType : '' }})
@@ -182,9 +183,11 @@
                 $weightScale = (float)($sales->weight_scale_cost ?? 0);
                 $labourCost = (float)($sales->labour_cost ?? 0);
                 $deliveryCharge = (float)($sales->delivery_charge ?? 0);
+                $transportPayer = $sales->transport_payer ?? 'me';
+                $billedDelivery = ($transportPayer === 'vendor') ? $deliveryCharge : 0;
                 $otherCharges = (float)($sales->other_charges ?? 0);
                 $prevDue = (float)($sales->previous_due ?? 0);
-                $grandPayable = (float)($sales->payble ?? ($subTotal - $discount + $vatAmount + $taxAmount + $weightScale + $labourCost + $deliveryCharge + $otherCharges)) + $prevDue;
+                $grandPayable = (float)($sales->payble ?? ($subTotal - $discount + $vatAmount + $taxAmount + $weightScale + $labourCost + $billedDelivery + $otherCharges)) + $prevDue;
                 $paidAmount = (float)($sales->advanced_payment ?? 0);
                 $finalDue = (float)($sales->due_payment ?? ($grandPayable - $prevDue - $paidAmount)) + $prevDue;
             @endphp
@@ -258,7 +261,7 @@
                 </td>
             </tr>
             @endif
-            @if($deliveryCharge > 0)
+            @if($deliveryCharge > 0 && $transportPayer === 'vendor')
             <tr>
                 <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
                 <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">
@@ -268,7 +271,7 @@
                     {{ number_format($deliveryCharge, 2) }}
                 </td>
             </tr>
-            @endif()
+            @endif
             @if($otherCharges > 0)
             <tr>
                 <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>

@@ -113,7 +113,7 @@
     <div class="summary-card">
         <strong>Total In-Stock Coils:</strong> {{ count($coils) }} &nbsp;|&nbsp;
         <strong>Available Weight:</strong> <span style="color: #15803d; font-weight: bold;">{{ number_format($coils->sum('remaining_weight'), 2) }} kg</span> &nbsp;|&nbsp;
-        <strong>Stock Valuation:</strong> <span style="color: #4f46e5; font-weight: bold;">{{ number_format($coils->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton), 2) }}</span>
+        <!-- <strong>Stock Valuation:</strong> <span style="color: #4f46e5; font-weight: bold;">{{ number_format($coils->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton), 2) }}</span> -->
     </div>
 
     <!-- Main Data Table -->
@@ -137,7 +137,7 @@
                 @endphp
                 <tr style="background-color: {{ $loop->even ? '#f8fafc' : '#ffffff' }};">
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td class="fw-bold">Coil No - {{ $coil->coil_number }}</td>
+                    <td class="fw-bold">{{ $coil->coil_number }}</td>
                     <td>
                         <strong>{{ $lotNo }}</strong>
                         <div style="font-size: 9px; color: #64748b;">{{ $vendorName }}</div>

@@ -477,9 +477,17 @@
                                 <tr>
                                     <td class="text-muted">
                                         <i class="fe fe-truck me-2 text-primary"></i>Delivery / Transport Charge:
+                                        <span class="badge {{ ($sale->transport_payer === 'vendor') ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-success-subtle text-success border border-success-subtle' }} ms-1 px-2 py-0.5" style="font-size: 11px;">
+                                            {{ ($sale->transport_payer === 'vendor') ? 'Paid by Vendor' : 'Paid by Me (Company)' }}
+                                        </span>
                                     </td>
                                     <td class="text-end font-monospace fw-semibold text-dark">
-                                        + ৳ {{ number_format($sale->delivery_charge, 2) }}
+                                        @if(($sale->transport_payer ?? 'me') === 'vendor')
+                                            + ৳ {{ number_format($sale->delivery_charge, 2) }}
+                                        @else
+                                            <span class="text-muted text-decoration-line-through">৳ {{ number_format($sale->delivery_charge, 2) }}</span>
+                                            <span class="text-success ms-1 fw-bold">৳ 0.00</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @endif

@@ -34,6 +34,7 @@ class Sale extends Model
         'vat', 
         'tax',
         'delivery_charge',
+        'transport_payer',
         'labour_cost',
         'weight_scale_cost',
         'other_charges',
@@ -68,6 +69,31 @@ class Sale extends Model
     public function getPaidAmountAttribute(): float
     {
         return (float)($this->attributes['advanced_payment'] ?? 0);
+    }
+
+    /**
+     * Generate dynamic sequential Invoice Number in format: INV-27Sep2026-01
+     */
+    public static function generateInvoiceNumber($date = null): string
+    {
+        $parsedDate = $date ? \Carbon\Carbon::parse($date) : now();
+        $dateStr = $parsedDate->format('dMY');
+        $prefix = "INV-{$dateStr}-";
+
+        $latest = self::withTrashed()
+            ->where('order_no', 'like', "{$prefix}%")
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($latest) {
+            $lastPart = substr($latest->order_no, strlen($prefix));
+            $lastNum = (int) $lastPart;
+            $nextNum = str_pad($lastNum + 1, 2, '0', STR_PAD_LEFT);
+        } else {
+            $nextNum = '01';
+        }
+
+        return "{$prefix}{$nextNum}";
     }
 
     protected $casts = [

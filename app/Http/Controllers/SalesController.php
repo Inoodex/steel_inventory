@@ -260,6 +260,7 @@ class SalesController extends Controller
             'vat' => 'nullable|numeric|min:0',
             'tax' => 'nullable|numeric|min:0',
             'delivery_charge' => 'nullable|numeric|min:0',
+            'transport_payer' => 'nullable|string|in:me,vendor',
             'labour_cost' => 'nullable|numeric|min:0',
             'weight_scale_cost' => 'nullable|numeric|min:0',
             'other_charges' => 'nullable|numeric|min:0',
@@ -366,11 +367,13 @@ class SalesController extends Controller
             $taxAmount = round(($totalBill * $taxPercent) / 100, 2);
 
             $deliveryCharge = (float)($validated['delivery_charge'] ?? 0);
+            $transportPayer = $request->input('transport_payer', 'me');
+            $billedDelivery = ($transportPayer === 'vendor') ? $deliveryCharge : 0;
             $labourCost = (float)($validated['labour_cost'] ?? 0);
             $weightScaleCost = (float)($validated['weight_scale_cost'] ?? 0);
             $otherCharges = (float)($validated['other_charges'] ?? 0);
 
-            $extraCharges = $vatAmount + $taxAmount + $deliveryCharge + $labourCost + $weightScaleCost + $otherCharges;
+            $extraCharges = $vatAmount + $taxAmount + $billedDelivery + $labourCost + $weightScaleCost + $otherCharges;
             $total = max(0, round($totalBill + $extraCharges, 2));
             $payble = max(0, round($total - $discount, 2));
 
@@ -394,6 +397,7 @@ class SalesController extends Controller
                 'vat' => $vatPercent,
                 'tax' => $taxPercent,
                 'delivery_charge' => $deliveryCharge,
+                'transport_payer' => $transportPayer,
                 'labour_cost' => $labourCost,
                 'weight_scale_cost' => $weightScaleCost,
                 'other_charges' => $otherCharges,

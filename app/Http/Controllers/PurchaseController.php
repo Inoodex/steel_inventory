@@ -225,6 +225,7 @@ class PurchaseController extends Controller
             'unit_price'        => 'required|numeric|min:0',
             'sub_price'         => 'nullable|numeric',
             'delivery_charge'   => 'nullable|numeric|min:0',
+            'transport_payer'   => 'nullable|string|in:me,vendor',
             'labour_cost'       => 'nullable|numeric|min:0',
             'weight_scale_cost' => 'nullable|numeric|min:0',
             'other_charges'     => 'nullable|numeric|min:0',
@@ -263,11 +264,13 @@ class PurchaseController extends Controller
         $subPrice = (float) ($request->sub_price ?: ($totalWeight * $rate));
 
         $deliveryCharge  = (float) ($request->delivery_charge ?? 0);
+        $transportPayer  = $request->input('transport_payer', 'me');
+        $vendorDelivery  = ($transportPayer === 'vendor') ? $deliveryCharge : 0;
         $labourCost      = (float) ($request->labour_cost ?? 0);
         $weightScaleCost = (float) ($request->weight_scale_cost ?? 0);
         $otherCharges    = (float) ($request->other_charges ?? 0);
         $discount        = (float) ($request->discount ?? 0);
-        $netExtraCharges = ($deliveryCharge + $labourCost + $weightScaleCost + $otherCharges) - $discount;
+        $netExtraCharges = ($vendorDelivery + $labourCost + $weightScaleCost + $otherCharges) - $discount;
 
         $totalPrice = max(0, round($subPrice + $netExtraCharges, 2));
         $payment = (float) $request->payment;
@@ -285,6 +288,7 @@ class PurchaseController extends Controller
         $purchase->unit_price        = $rate;
         $purchase->sub_price         = $subPrice;
         $purchase->delivery_charge   = $deliveryCharge;
+        $purchase->transport_payer   = $transportPayer;
         $purchase->labour_cost       = $labourCost;
         $purchase->weight_scale_cost = $weightScaleCost;
         $purchase->other_charges     = $otherCharges;

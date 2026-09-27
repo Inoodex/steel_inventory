@@ -30,7 +30,8 @@ class SaleService
             $financials = $this->calculateFinancials($data);
 
             // 3. Generate invoice number
-            $invoiceNumber = 'INV-' . strtoupper(uniqid());
+            $orderDate = !empty($data['order_date']) ? $data['order_date'] : now()->toDateString();
+            $invoiceNumber = !empty($data['order_no']) ? $data['order_no'] : Sale::generateInvoiceNumber($orderDate);
 
             // 4. Create Sale record
             $sale = Sale::create([
@@ -55,6 +56,7 @@ class SaleService
                 'vat'              => $data['vat'] ?? 0,
                 'tax'              => $data['tax'] ?? 0,
                 'delivery_charge'  => $data['delivery_charge'] ?? 0,
+                'transport_payer'  => $data['transport_payer'] ?? 'me',
                 'labour_cost'      => $data['labour_cost'] ?? 0,
                 'weight_scale_cost'=> $data['weight_scale_cost'] ?? 0,
                 'other_charges'    => $data['other_charges'] ?? 0,
@@ -124,7 +126,9 @@ class SaleService
                     $vatAmount = round(($subtotal * $vatPercent) / 100, 2);
                     $taxAmount = round(($subtotal * $taxPercent) / 100, 2);
 
-                    $extraCharges = (float)$sale->delivery_charge
+                    $transportPayer = $sale->transport_payer ?? 'me';
+                    $billedDelivery = ($transportPayer === 'vendor') ? (float)$sale->delivery_charge : 0;
+                    $extraCharges = $billedDelivery
                                   + (float)$sale->labour_cost
                                   + (float)$sale->weight_scale_cost
                                   + (float)$sale->other_charges
@@ -220,7 +224,9 @@ class SaleService
         $vatAmount  = round(($subtotal * $vatPercent) / 100, 2);
         $taxAmount  = round(($subtotal * $taxPercent) / 100, 2);
 
-        $otherCharges = (float)($data['delivery_charge'] ?? 0)
+        $transportPayer = $data['transport_payer'] ?? 'me';
+        $billedDelivery = ($transportPayer === 'vendor') ? (float)($data['delivery_charge'] ?? 0) : 0;
+        $otherCharges = $billedDelivery
                       + (float)($data['labour_cost'] ?? 0)
                       + (float)($data['weight_scale_cost'] ?? 0)
                       + (float)($data['other_charges'] ?? 0)

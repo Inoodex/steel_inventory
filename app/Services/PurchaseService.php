@@ -153,20 +153,28 @@ class PurchaseService
                 ];
             }
 
+            $transportPayer = $data['transport_payer'] ?? 'me';
+
             // Determine if individual vendor payments were provided
             $hasVendorPayments = !empty($data['vendor_payments']) && is_array($data['vendor_payments']);
             $vendorItemPayments = [];
 
-            if ($hasVendorPayments) {
-                // Group item indices by vendor
-                $vendorItemsMap = [];
-                $vendorTotalBills = [];
-                foreach ($itemDetails as $index => $detail) {
-                    $vId = $detail['vendor_id'];
-                    $vendorItemsMap[$vId][] = $index;
-                    $vendorTotalBills[$vId] = ($vendorTotalBills[$vId] ?? 0) + $detail['item_total'];
-                }
+            // Calculate vendor-specific bills (excluding delivery if paid by me)
+            $vendorItemsMap = [];
+            $vendorTotalBills = [];
+            foreach ($itemDetails as $index => $detail) {
+                $vId = $detail['vendor_id'];
+                $vendorItemsMap[$vId][] = $index;
+                
+                $vendorItemNetCharges = ($transportPayer === 'vendor' ? $detail['item_delivery'] : 0)
+                    + $detail['item_labour'] + $detail['item_scale'] + $detail['item_other'] - $detail['item_discount'];
+                $vendorItemBill = max(0, round($detail['item_sub'] + $vendorItemNetCharges, 2));
+                $itemDetails[$index]['vendor_item_bill'] = $vendorItemBill;
 
+                $vendorTotalBills[$vId] = ($vendorTotalBills[$vId] ?? 0) + $vendorItemBill;
+            }
+
+            if ($hasVendorPayments) {
                 // Allocate payment individually per vendor
                 foreach ($vendorItemsMap as $vId => $indices) {
                     $vSpecifiedPaid = (float) ($data['vendor_payments'][$vId]['amount'] ?? 0);
@@ -175,31 +183,32 @@ class PurchaseService
                     $vCount = count($indices);
 
                     foreach ($indices as $iPos => $idx) {
-                        $iTotal = $itemDetails[$idx]['item_total'];
+                        $iVendorBill = $itemDetails[$idx]['vendor_item_bill'];
                         if ($vCount === 1) {
-                            $iPay = min($iTotal, $vSpecifiedPaid);
+                            $iPay = min($iVendorBill, $vSpecifiedPaid);
                         } elseif ($iPos === $vCount - 1) {
                             $iPay = max(0, round($vSpecifiedPaid - $vAllocated, 2));
                         } else {
-                            $pRatio = ($vBill > 0) ? ($iTotal / $vBill) : (1 / $vCount);
-                            $iPay = min($iTotal, round($pRatio * $vSpecifiedPaid, 2));
+                            $pRatio = ($vBill > 0) ? ($iVendorBill / $vBill) : (1 / $vCount);
+                            $iPay = min($iVendorBill, round($pRatio * $vSpecifiedPaid, 2));
                         }
                         $vAllocated += $iPay;
                         $vendorItemPayments[$idx] = $iPay;
                     }
                 }
             } else {
-                // Global proportional payment allocation
+                // Global proportional payment allocation across vendor bills
+                $totalVendorBills = array_sum($vendorTotalBills);
                 $allocatedPayment = 0;
                 foreach ($itemDetails as $index => $detail) {
-                    $iTotal = $detail['item_total'];
+                    $iVendorBill = $detail['vendor_item_bill'];
                     if ($itemCount === 1) {
-                        $iPay = $totalPayment;
+                        $iPay = min($iVendorBill, $totalPayment);
                     } elseif ($index === $itemCount - 1) {
                         $iPay = max(0, round($totalPayment - $allocatedPayment, 2));
                     } else {
-                        $pRatio = $batchGrandTotal > 0 ? ($iTotal / $batchGrandTotal) : (1 / $itemCount);
-                        $iPay = min($iTotal, round($pRatio * $totalPayment, 2));
+                        $pRatio = $totalVendorBills > 0 ? ($iVendorBill / $totalVendorBills) : (1 / $itemCount);
+                        $iPay = min($iVendorBill, round($pRatio * $totalPayment, 2));
                     }
                     $allocatedPayment += $iPay;
                     $vendorItemPayments[$index] = $iPay;
@@ -211,8 +220,9 @@ class PurchaseService
                 $item = $detail['item'];
                 $itemVendorId = $detail['vendor_id'];
                 $itemTotal = $detail['item_total'];
+                $itemVendorBill = $detail['vendor_item_bill'] ?? $itemTotal;
                 $itemPayment = $vendorItemPayments[$index] ?? 0;
-                $itemDue = max(0, round($itemTotal - $itemPayment, 2));
+                $itemDue = max(0, round($itemVendorBill - $itemPayment, 2));
 
                 $thickness = !empty($item['thickness']) ? trim($item['thickness']) : null;
                 $size = !empty($item['size']) ? trim($item['size']) : (!empty($item['width']) ? trim($item['width']) : null);
@@ -241,6 +251,7 @@ class PurchaseService
                     'unit_price'        => $detail['rate'],
                     'sub_price'         => $detail['item_sub'],
                     'delivery_charge'   => $detail['item_delivery'],
+                    'transport_payer'   => $transportPayer,
                     'labour_cost'       => $detail['item_labour'],
                     'weight_scale_cost' => $detail['item_scale'],
                     'other_charges'     => $detail['item_other'],

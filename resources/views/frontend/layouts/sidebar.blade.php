@@ -81,7 +81,7 @@
                         </a>
                         <ul style="{{ $active(['inventory.*', 'coils.*']) ? 'display:block' : '' }}">
                             <li class="{{ $active(['inventory.index', 'coils.index']) ? 'active' : '' }}">
-                                <a href="{{ route('inventory.index') }}"><i class="fe fe-list"></i> Steel Inventory</a>
+                                <a href="{{ route('inventory.index') }}"><i class="fe fe-list"></i> Steel Stock Inventory</a>
                             </li>
                             <li class="{{ $active(['inventory.opening-stock.create']) ? 'active' : '' }}">
                                 <a href="{{ route('inventory.opening-stock.create') }}"><i class="fe fe-plus-circle"></i> Opening Stock Intake</a>

@@ -32,6 +32,7 @@ class Purchase extends Model
         'payment',
         'due',
         'delivery_charge',
+        'transport_payer',
         'labour_cost',
         'weight_scale_cost',
         'other_charges',

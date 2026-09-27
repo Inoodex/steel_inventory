@@ -206,29 +206,10 @@
                         <!-- 1. Stock / Lot Source Select Dropdown -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">
-                                1. Select Stock / Lot Source
+                                1. Select Stock / Lot Source <span class="text-danger">*</span>
                             </label>
                             <select id="builder_lot_id" class="form-select select2 border-light-subtle" onchange="handleLotSelection(this.value)">
-                                <option value="">Select Stock / Lot Source</option>
-                                <optgroup label="Direct / Opening Warehouse Stock">
-                                    <option value="opening_stock" data-vendor="Direct Yard Stock" data-lot-number="Opening Stock">
-                                        📦 Opening Stock / Direct Inventory
-                                    </option>
-                                    <option value="all_stock" data-vendor="All Inventory" data-lot-number="All Stock">
-                                        🌐 All In-Stock Coils (All Sources)
-                                    </option>
-                                </optgroup>
-                                @if($lots->isNotEmpty())
-                                    <optgroup label="Purchase Mill Lots">
-                                        @foreach ($lots as $lot)
-                                            <option value="{{ $lot->id }}" 
-                                                data-vendor="{{ $lot->vendor ? $lot->vendor->name : 'No Vendor' }}"
-                                                data-lot-number="{{ $lot->lot_number }}">
-                                                {{ $lot->lot_number }} {{ $lot->vendor ? '('.$lot->vendor->name.')' : '' }}
-                                            </option>
-                                        @endforeach
-                                    </optgroup>
-                                @endif
+                                <option value="">Select Warehouse first</option>
                             </select>
                         </div>
 
@@ -404,8 +385,20 @@
                         <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" id="vat" name="vat" class="form-control border-light-subtle" value="{{ number_format((float)$sales->vat, 2, '.', '') }}" min="0" step="0.01">
                     </div>
 
-                    <div class="col-lg-2 col-md-4 col-6">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Delivery / Transport (৳)</label>
+                    <div class="col-lg-3 col-md-4 col-6">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small text-secondary fw-semibold mb-0">Delivery / Transport (৳)</label>
+                            <div class="d-inline-flex gap-2">
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_me" value="me" {{ old('transport_payer', $sales->transport_payer ?? 'me') === 'me' ? 'checked' : '' }} onchange="calculateTotal()">
+                                    <label class="form-check-label small fw-semibold text-muted" for="transport_payer_me" style="font-size: 0.75rem;">Paid by Me</label>
+                                </div>
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_vendor" value="vendor" {{ old('transport_payer', $sales->transport_payer) === 'vendor' ? 'checked' : '' }} onchange="calculateTotal()">
+                                    <label class="form-check-label small fw-semibold text-muted" for="transport_payer_vendor" style="font-size: 0.75rem;">Paid by Vendor</label>
+                                </div>
+                            </div>
+                        </div>
                         <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" id="delivery_charge" name="delivery_charge" class="form-control border-light-subtle" value="{{ number_format((float)$sales->delivery_charge, 2, '.', '') }}" min="0" step="0.01">
                     </div>
 
@@ -528,6 +521,10 @@ $(document).ready(function () {
         width: '100%'
     });
 
+    $('#warehouse_id').on('change select2:select', function () {
+        populateWarehouseLotSources($(this).val());
+    });
+
     $('#clientSelect').on('change select2:select', function () {
         handleCustomerChange(this);
     });
@@ -560,7 +557,15 @@ $(document).ready(function () {
         newClientRadio.addEventListener('change', toggleClientForms);
         existingClientRadio.addEventListener('change', toggleClientForms);
     }
+
+    // Populate initial stock/lot source based on default selected warehouse
+    populateWarehouseLotSources($('#warehouse_id').val());
 });
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return $('<div>').text(text).html();
+}
 
 function handleCustomerChange(selectEl) {
     const selectedOption = selectEl.options[selectEl.selectedIndex];
@@ -629,8 +634,116 @@ function updateCustomerBalanceCard(totalDue, name, details, openingDue = 0, sale
 }
 
 const allAvailableCoils = @json($coils);
+const allAvailableLots = @json($lots->keyBy('id'));
+const allWarehouses = @json($warehouses->keyBy('id'));
 let currentSelectedLot = null;
 let currentSelectedCoil = null;
+
+function populateWarehouseLotSources(selectedWhId) {
+    const lotSelect = $('#builder_lot_id');
+    const currentLotVal = lotSelect.val();
+    lotSelect.empty();
+
+    const whCoils = selectedWhId 
+        ? allAvailableCoils.filter(c => String(c.warehouse_id) === String(selectedWhId) && parseFloat(c.remaining_weight) > 0)
+        : allAvailableCoils.filter(c => parseFloat(c.remaining_weight) > 0);
+
+    const whName = selectedWhId && allWarehouses[selectedWhId] ? allWarehouses[selectedWhId].name : 'All Warehouses';
+
+    if (!selectedWhId) {
+        lotSelect.append('<option value="">Please select a Warehouse / Dispatch Yard first</option>');
+        lotSelect.prop('disabled', true);
+        if ($.fn.select2 && lotSelect.hasClass('select2-hidden-accessible')) {
+            lotSelect.select2('destroy').select2({ width: '100%' });
+        }
+        handleLotSelection('');
+        return;
+    }
+
+    lotSelect.prop('disabled', false);
+    lotSelect.append('<option value="">Select Stock / Lot Source</option>');
+
+    // Direct / Opening Stock optgroup
+    const openingCoils = whCoils.filter(c => (c.purchase_id === null || !c.lot_id));
+    const openingCount = openingCoils.length;
+    const openingWeight = openingCoils.reduce((sum, c) => sum + (parseFloat(c.remaining_weight) || 0), 0);
+
+    const totalCount = whCoils.length;
+    const totalWeight = whCoils.reduce((sum, c) => sum + (parseFloat(c.remaining_weight) || 0), 0);
+
+    let directOptgroup = $('<optgroup label="Direct / Opening Yard Stock"></optgroup>');
+    if (openingCount > 0) {
+        directOptgroup.append(`
+            <option value="opening_stock" data-vendor="Direct Yard Stock" data-lot-number="Opening Stock">
+                📦 Opening Stock (${openingCount} coils, ${openingWeight.toLocaleString()} kg)
+            </option>
+        `);
+    }
+    if (totalCount > 0) {
+        directOptgroup.append(`
+            <option value="all_stock" data-vendor="All Inventory" data-lot-number="All Stock">
+                🌐 All In-Stock in ${escapeHtml(whName)} (${totalCount} coils, ${totalWeight.toLocaleString()} kg)
+            </option>
+        `);
+    }
+    if (openingCount > 0 || totalCount > 0) {
+        lotSelect.append(directOptgroup);
+    }
+
+    // Purchase Mill Lots optgroup
+    const lotGroups = {};
+    whCoils.forEach(c => {
+        if (c.lot_id) {
+            if (!lotGroups[c.lot_id]) {
+                lotGroups[c.lot_id] = {
+                    coilsCount: 0,
+                    weight: 0,
+                    lot: c.lot || allAvailableLots[c.lot_id] || { id: c.lot_id, lot_number: 'Lot #' + c.lot_id }
+                };
+            }
+            lotGroups[c.lot_id].coilsCount++;
+            lotGroups[c.lot_id].weight += (parseFloat(c.remaining_weight) || 0);
+        }
+    });
+
+    const lotIds = Object.keys(lotGroups);
+    if (lotIds.length > 0) {
+        let millOptgroup = $('<optgroup label="Purchase Mill Lots in this Yard"></optgroup>');
+        lotIds.forEach(lId => {
+            const g = lotGroups[lId];
+            const lotObj = g.lot;
+            const vendorName = (lotObj.vendor && lotObj.vendor.name) ? lotObj.vendor.name : (lotObj.vendor_name || '');
+            const vendorLabel = vendorName ? ` (${vendorName})` : '';
+            const text = `${lotObj.lot_number}${vendorLabel} — ${g.coilsCount} ${g.coilsCount === 1 ? 'coil' : 'coils'} (${g.weight.toLocaleString()} kg)`;
+            millOptgroup.append(`
+                <option value="${lId}" data-vendor="${escapeHtml(vendorName || 'Mill Lot')}" data-lot-number="${escapeHtml(lotObj.lot_number)}">
+                    ${escapeHtml(text)}
+                </option>
+            `);
+        });
+        lotSelect.append(millOptgroup);
+    }
+
+    if (totalCount === 0) {
+        lotSelect.append('<option value="" disabled>No in-stock steel coils found in this warehouse</option>');
+    }
+
+    // Restore previously selected lot if it exists in this warehouse
+    if (currentLotVal && lotSelect.find(`option[value="${currentLotVal}"]`).length) {
+        lotSelect.val(currentLotVal);
+    } else {
+        lotSelect.val('');
+    }
+
+    if ($.fn.select2) {
+        if (lotSelect.hasClass('select2-hidden-accessible')) {
+            lotSelect.select2('destroy');
+        }
+        lotSelect.select2({ width: '100%' });
+    }
+
+    handleLotSelection(lotSelect.val());
+}
 
 function handleLotSelection(lotId) {
     const coilSelect = $('#coil_select');
@@ -641,17 +754,25 @@ function handleLotSelection(lotId) {
     resetCoilFields();
 
     const lotAvgBadge = document.getElementById('lotAvgRateBadge');
+    const selectedWhId = $('#warehouse_id').val();
 
-    if (!lotId) {
+    if (!lotId || !selectedWhId) {
         if (lotAvgBadge) {
             lotAvgBadge.style.display = 'none';
             lotAvgBadge.innerHTML = '';
         }
-        coilSelect.append('<option value="">Select Stock Source first</option>');
+        const promptMsg = !selectedWhId ? 'Select Warehouse / Dispatch Yard first' : 'Select Stock Source first';
+        coilSelect.append(`<option value="">${promptMsg}</option>`);
         coilSelect.prop('disabled', true);
+        if ($.fn.select2 && coilSelect.hasClass('select2-hidden-accessible')) {
+            coilSelect.select2('destroy').select2({ width: '100%' });
+        }
         coilSelect.trigger('change');
         return;
     }
+
+    // Filter coils in this warehouse
+    const whCoils = allAvailableCoils.filter(c => String(c.warehouse_id) === String(selectedWhId) && parseFloat(c.remaining_weight) > 0);
 
     let filtered = [];
 
@@ -661,14 +782,14 @@ function handleLotSelection(lotId) {
             lot_number: 'Opening Stock',
             vendor: 'Direct Yard Stock'
         };
-        filtered = allAvailableCoils.filter(c => (c.purchase_id === null || !c.lot_id) && parseFloat(c.remaining_weight) > 0);
+        filtered = whCoils.filter(c => (c.purchase_id === null || !c.lot_id));
     } else if (lotId === 'all_stock') {
         currentSelectedLot = {
             id: '',
             lot_number: 'All Stock',
             vendor: 'All Inventory'
         };
-        filtered = allAvailableCoils.filter(c => parseFloat(c.remaining_weight) > 0);
+        filtered = whCoils;
     } else {
         const lotOption = $(`#builder_lot_id option[value="${lotId}"]`);
         if (lotOption.length) {
@@ -678,7 +799,7 @@ function handleLotSelection(lotId) {
                 vendor: lotOption.data('vendor') || ''
             };
         }
-        filtered = allAvailableCoils.filter(c => String(c.lot_id) === String(lotId) && parseFloat(c.remaining_weight) > 0);
+        filtered = whCoils.filter(c => String(c.lot_id) === String(lotId));
     }
 
     if (filtered.length === 0) {
@@ -716,20 +837,22 @@ function handleLotSelection(lotId) {
 
     filtered.forEach(coil => {
         const remaining = parseFloat(coil.remaining_weight) || 0;
-        const thickness = coil.thickness ? ` | Thk: ${coil.thickness}` : '';
+        const thickness = coil.thickness || '';
         const sizeVal = coil.width || coil.size || '';
         const sizeUnit = (coil.length && coil.length !== 'N/A') ? coil.length : (coil.size_type || '');
-        const sizeText = sizeVal ? ` | Size: ${sizeVal}${sizeUnit ? ' ' + sizeUnit : ''}` : '';
-        const yard = coil.warehouse ? ` (${coil.warehouse.name})` : '';
         const isOpening = (coil.purchase_id === null || !coil.lot_id);
-        const sourceTag = isOpening ? ' [Opening Stock]' : (coil.lot ? ` [Lot: ${coil.lot.lot_number}]` : '');
+        const lotName = isOpening 
+            ? 'Opening Stock' 
+            : ((coil.lot && coil.lot.lot_number) ? coil.lot.lot_number : (allAvailableLots[coil.lot_id] ? allAvailableLots[coil.lot_id].lot_number : ('Lot #' + coil.lot_id)));
         const pieceCount = coil.piece_count ? Number(coil.piece_count) : 1;
         const grossWeight = parseFloat(coil.gross_weight || coil.net_weight || 0);
         const unitWeight = pieceCount > 0 && grossWeight > 0 ? (grossWeight / pieceCount) : remaining;
         const remainingCoils = unitWeight > 0 ? (remaining / unitWeight) : (pieceCount > 0 ? pieceCount : 1);
         const formattedRemCoils = (Math.round(remainingCoils * 100) / 100).toFixed(remainingCoils % 1 === 0 ? 0 : (remainingCoils * 10 % 1 === 0 ? 1 : 2));
         const remainingPct = grossWeight > 0 ? Math.min(100, Math.max(0, (remaining / grossWeight) * 100)).toFixed(1) : '100.0';
-        const text = `${coil.coil_number}${sourceTag} | Stock: ${formattedRemCoils}/${pieceCount} Coils (${remainingPct}%) ${thickness}${sizeText}${yard} | Avail: ${remaining.toLocaleString()} kg`;
+        
+        const thicknessDisplay = thickness ? thickness : 'N/A';
+        const text = `${lotName} | ${thicknessDisplay} | ${remaining.toLocaleString()} kg`;
 
         const opt = $('<option></option>')
             .val(coil.id)
@@ -986,12 +1109,14 @@ function calculateTotal() {
     const discount = parseFloat(document.getElementById('discount')?.value) || 0;
     const vatPercent = parseFloat(document.getElementById('vat')?.value) || 0;
     const deliveryCharge = parseFloat(document.getElementById('delivery_charge')?.value) || 0;
+    const transportPayer = document.querySelector('input[name="transport_payer"]:checked')?.value || 'me';
+    const billedDelivery = (transportPayer === 'vendor') ? deliveryCharge : 0;
     const labourCost = parseFloat(document.getElementById('labour_cost')?.value) || 0;
     const weightScaleCost = parseFloat(document.getElementById('weight_scale_cost')?.value) || 0;
     const otherCharges = parseFloat(document.getElementById('other_charges')?.value) || 0;
 
     const vatAmount = (subTotal * vatPercent) / 100;
-    const grandTotal = Math.max(0, subTotal - discount + vatAmount + deliveryCharge + labourCost + weightScaleCost + otherCharges);
+    const grandTotal = Math.max(0, subTotal - discount + vatAmount + billedDelivery + labourCost + weightScaleCost + otherCharges);
     
     document.getElementById('subTotal').value = subTotal.toFixed(2);
     document.getElementById('grandTotal').value = grandTotal.toFixed(2);

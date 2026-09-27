@@ -192,7 +192,7 @@
                 <h5 class="fw-bold text-dark mb-0">
                     <i class="fe fe-shield me-2 text-primary"></i>Financial Health & Balances
                 </h5>
-                <div class="d-flex gap-2">
+                <!-- <div class="d-flex gap-2">
                     <a href="{{ route('chart-of-accounts.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
                         <i class="fe fe-folder me-1"></i> Chart of Accounts
                     </a>
@@ -205,7 +205,7 @@
                     <a href="{{ route('trial-balance.index') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
                         <i class="fe fe-check-square me-1"></i> Trial Balance
                     </a>
-                </div>
+                </div> -->
             </div>
             <div class="row g-3">
                 <div class="col-xl-3 col-md-6 col-12">

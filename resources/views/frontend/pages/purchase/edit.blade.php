@@ -324,8 +324,20 @@
                             <input oninput="calculateFinancials()" onchange="calculateFinancials()" type="number" id="discount" name="discount" class="form-control border-light-subtle text-end" value="{{ old('discount', $purchase->discount ?? 0) }}" min="0" step="0.01">
                         </div>
 
-                        <div class="col-lg-2 col-md-4 col-6">
-                            <label class="form-label small text-secondary fw-semibold mb-1">Delivery / Transport (৳)</label>
+                        <div class="col-lg-3 col-md-4 col-6">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small text-secondary fw-semibold mb-0">Delivery / Transport (৳)</label>
+                                <div class="d-inline-flex gap-2">
+                                    <div class="form-check form-check-inline m-0">
+                                        <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_me" value="me" {{ old('transport_payer', $purchase->transport_payer ?? 'me') === 'me' ? 'checked' : '' }} onchange="calculateFinancials()">
+                                        <label class="form-check-label small fw-semibold text-muted" for="transport_payer_me" style="font-size: 0.75rem;">Paid by Me</label>
+                                    </div>
+                                    <div class="form-check form-check-inline m-0">
+                                        <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_vendor" value="vendor" {{ old('transport_payer', $purchase->transport_payer) === 'vendor' ? 'checked' : '' }} onchange="calculateFinancials()">
+                                        <label class="form-check-label small fw-semibold text-muted" for="transport_payer_vendor" style="font-size: 0.75rem;">Paid by Vendor</label>
+                                    </div>
+                                </div>
+                            </div>
                             <input oninput="calculateFinancials()" onchange="calculateFinancials()" type="number" id="delivery_charge" name="delivery_charge" class="form-control border-light-subtle text-end" value="{{ old('delivery_charge', $purchase->delivery_charge ?? 0) }}" min="0" step="0.01">
                         </div>
 
@@ -507,12 +519,15 @@
             const subTotal = parseFloat($('#subPriceInput').val()) || 0;
             const discount = parseFloat($('#discount').val()) || 0;
             const delivery = parseFloat($('#delivery_charge').val()) || 0;
+            const transportPayer = $('input[name="transport_payer"]:checked').val() || 'me';
+            const vendorDelivery = (transportPayer === 'vendor') ? delivery : 0;
             const labour = parseFloat($('#labour_cost').val()) || 0;
             const scale = parseFloat($('#weight_scale_cost').val()) || 0;
             const other = parseFloat($('#other_charges').val()) || 0;
 
             const totalCharges = delivery + labour + scale + other;
-            const grandTotal = Math.max(0, (subTotal + totalCharges) - discount);
+            const vendorTotalCharges = vendorDelivery + labour + scale + other;
+            const grandTotal = Math.max(0, (subTotal + vendorTotalCharges) - discount);
 
             $('#totalPriceInput').val(grandTotal.toFixed(2));
             $('#purchaseSubTotalDisplay').val(subTotal.toFixed(2));

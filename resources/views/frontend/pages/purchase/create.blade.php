@@ -498,8 +498,20 @@
                             <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="discount" name="discount" class="form-control border-light-subtle text-end" value="{{ old('discount', 0) }}" min="0" step="0.01">
                         </div>
 
-                        <div class="col-lg-2 col-md-4 col-6">
-                            <label class="form-label small text-secondary fw-semibold mb-1">Transport Charge (৳)</label>
+                        <div class="col-lg-3 col-md-4 col-6">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small text-secondary fw-semibold mb-0">Transport (৳)</label>
+                                <div class="d-inline-flex gap-2">
+                                    <div class="form-check form-check-inline m-0">
+                                        <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_me" value="me" {{ old('transport_payer', 'me') === 'me' ? 'checked' : '' }} onchange="recalculateSummary()">
+                                        <label class="form-check-label small fw-semibold text-muted" for="transport_payer_me" style="font-size: 0.75rem;">Paid by Me</label>
+                                    </div>
+                                    <div class="form-check form-check-inline m-0">
+                                        <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_vendor" value="vendor" {{ old('transport_payer') === 'vendor' ? 'checked' : '' }} onchange="recalculateSummary()">
+                                        <label class="form-check-label small fw-semibold text-muted" for="transport_payer_vendor" style="font-size: 0.75rem;">Paid by Vendor</label>
+                                    </div>
+                                </div>
+                            </div>
                             <input oninput="recalculateSummary()" onchange="recalculateSummary()" type="number" id="delivery_charge" name="delivery_charge" class="form-control border-light-subtle text-end" value="{{ old('delivery_charge', 0) }}" min="0" step="0.01">
                         </div>
 
@@ -958,16 +970,21 @@
             // Financial adjustments
             const discount = parseFloat($('#discount').val()) || 0;
             const delivery = parseFloat($('#delivery_charge').val()) || 0;
+            const transportPayer = $('input[name="transport_payer"]:checked').val() || 'me';
+            const vendorDelivery = (transportPayer === 'vendor') ? delivery : 0;
             const labour = parseFloat($('#labour_cost').val()) || 0;
             const scale = parseFloat($('#weight_scale_cost').val()) || 0;
             const other = parseFloat($('#other_charges').val()) || 0;
 
             const totalCharges = delivery + labour + scale + other;
             const grandTotal = Math.max(0, (subTotal + totalCharges) - discount);
+            const vendorTotalCharges = vendorDelivery + labour + scale + other;
+            const vendorGrandTotal = Math.max(0, (subTotal + vendorTotalCharges) - discount);
 
             const formattedSubTotal = subTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             const formattedTotalCharges = totalCharges.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             const formattedGrandTotal = grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const formattedVendorGrandTotal = vendorGrandTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             const formattedTotalWeight = totalWeight.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             // Update subtotal display input
@@ -980,7 +997,7 @@
             $('#displayTotalCharges').text('৳ ' + formattedTotalCharges);
             $('#displayGrandTotal').text('৳ ' + formattedGrandTotal);
             $('#grand_total_hidden').val(grandTotal.toFixed(2));
-            $('#maxBillFormatted').text('৳ ' + formattedGrandTotal);
+            $('#maxBillFormatted').text('৳ ' + formattedVendorGrandTotal).data('vendor-grand-total', vendorGrandTotal);
 
             // Update Table Badges & Footers
             $('#itemsCountBadge').text(rows.length + (rows.length === 1 ? ' Item' : ' Items'));
@@ -1007,7 +1024,7 @@
                 const paymentInput = $('#paymentInput');
                 const payment = parseFloat(paymentInput.val()) || 0;
 
-                if (payment > grandTotal + 0.009) {
+                if (payment > vendorGrandTotal + 0.009) {
                     $('#paymentErrorMsg').fadeIn(150);
                     paymentInput.addClass('is-invalid border-danger');
                     $('#displayDueAmount').text('৳ 0.00');
@@ -1015,7 +1032,7 @@
                 } else {
                     $('#paymentErrorMsg').hide();
                     paymentInput.removeClass('is-invalid border-danger');
-                    const due = Math.max(0, grandTotal - payment);
+                    const due = Math.max(0, vendorGrandTotal - payment);
                     $('#displayDueAmount').text('৳ ' + due.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
                     $('#due_hidden').val(due.toFixed(2));
                 }
@@ -1041,7 +1058,7 @@
                 // Calculate each vendor's bill
                 uniqueVendorIds.forEach(vId => {
                     const vRatio = subTotal > 0 ? (vendorMetrics[vId].subTotal / subTotal) : (1 / uniqueVendorIds.length);
-                    const vNetCharges = (totalCharges - discount) * vRatio;
+                    const vNetCharges = (vendorTotalCharges - discount) * vRatio;
                     vendorMetrics[vId].bill = Math.max(0, roundTo2(vendorMetrics[vId].subTotal + vNetCharges));
                 });
 
@@ -1203,8 +1220,8 @@
         }
 
         function setFullPayment() {
-            const grandTotal = parseFloat($('#grand_total_hidden').val()) || 0;
-            $('#paymentInput').val(grandTotal.toFixed(2));
+            const vendorGrandTotal = parseFloat($('#maxBillFormatted').data('vendor-grand-total')) || parseFloat($('#grand_total_hidden').val()) || 0;
+            $('#paymentInput').val(vendorGrandTotal.toFixed(2));
             recalculateSummary();
         }
 

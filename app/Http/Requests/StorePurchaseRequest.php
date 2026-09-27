@@ -56,6 +56,7 @@ class StorePurchaseRequest extends FormRequest
             'due'                 => 'nullable|numeric',
             'grand_total'         => 'nullable|numeric|min:0',
             'delivery_charge'     => 'nullable|numeric|min:0',
+            'transport_payer'     => 'nullable|string|in:me,vendor',
             'labour_cost'         => 'nullable|numeric|min:0',
             'weight_scale_cost'   => 'nullable|numeric|min:0',
             'other_charges'       => 'nullable|numeric|min:0',
@@ -137,13 +138,19 @@ class StorePurchaseRequest extends FormRequest
             }
 
             $deliveryCharge  = (float) $this->input('delivery_charge', 0);
+            $transportPayer  = $this->input('transport_payer', 'me');
             $labourCost      = (float) $this->input('labour_cost', 0);
             $weightScaleCost = (float) $this->input('weight_scale_cost', 0);
             $otherCharges    = (float) $this->input('other_charges', 0);
             $discount        = (float) $this->input('discount', 0);
-            $netExtraCharges = ($deliveryCharge + $labourCost + $weightScaleCost + $otherCharges) - $discount;
 
+            // Total batch landed cost always includes transport
+            $netExtraCharges = ($deliveryCharge + $labourCost + $weightScaleCost + $otherCharges) - $discount;
             $totalBill = max(0, round($calculatedGrandTotal + $netExtraCharges, 2));
+
+            // Vendor extra charges (only includes transport if paid by vendor)
+            $vendorDelivery = ($transportPayer === 'vendor') ? $deliveryCharge : 0;
+            $netExtraVendorCharges = ($vendorDelivery + $labourCost + $weightScaleCost + $otherCharges) - $discount;
 
             // Validate individual vendor payments if provided
             $vendorPayments = $this->input('vendor_payments', []);
@@ -154,7 +161,7 @@ class StorePurchaseRequest extends FormRequest
                     $totalVendorPay += $vpAmount;
                     $vSub = $vendorBills[$vId] ?? 0;
                     $vRatio = $calculatedGrandTotal > 0 ? ($vSub / $calculatedGrandTotal) : 0;
-                    $vEstimatedBill = max(0, round($vSub + ($netExtraCharges * $vRatio), 2));
+                    $vEstimatedBill = max(0, round($vSub + ($netExtraVendorCharges * $vRatio), 2));
 
                     if ($vpAmount > $vEstimatedBill + 0.05) {
                         $validator->errors()->add(
