@@ -777,16 +777,17 @@
         }
 
         /* Summary / Stat Card Icons (Sleek, Compact Size) */
+        /* Summary / Stat Card Icons (Sleek, Compact Size) */
         .stat-card .avatar, 
         .stat-card .avatar-lg, 
         .stat-card .avatar-md,
         .stat-card .avatar-xl,
         .card-body > .avatar,
         .card-body > .avatar-lg {
-            width: 38px !important;
-            height: 38px !important;
-            min-width: 38px !important;
-            min-height: 38px !important;
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            min-height: 36px !important;
         }
         .stat-card .avatar i, 
         .stat-card .avatar-lg i, 
@@ -794,36 +795,213 @@
         .stat-card .avatar-xl i,
         .card-body > .avatar i,
         .card-body > .avatar-lg i {
-            font-size: 1.1rem !important;
+            font-size: 1.05rem !important;
         }
 
-        /* Responsive Laptop & Screen Optimization */
+        /* ==========================================================================
+           LAPTOP & HIGH-DENSITY SCREEN RESPONSIVE SYSTEM (1200px - 1440px / 768px - 900px)
+           ========================================================================== */
+
+        /* Main Layout, Paddings & Heights for Laptops */
         @media (max-width: 1440px) {
-            .card-title {
-                font-size: 1.15rem;
+            .page-wrapper .content,
+            .content.container-fluid {
+                padding: 14px 18px !important;
+            }
+            .page-header {
+                margin-bottom: 0.85rem !important;
             }
             .content-page-header {
-                gap: 0.75rem !important;
+                margin-bottom: 0.85rem !important;
+                gap: 0.5rem !important;
             }
+            .content-page-header h4,
+            .content-page-header h5,
+            .card-title {
+                font-size: 1.18rem !important;
+                line-height: 1.3 !important;
+            }
+            .content-page-header p.text-muted,
+            .page-header p.text-muted {
+                font-size: 0.8rem !important;
+                margin-bottom: 0 !important;
+            }
+
+            /* Cards & Spacing */
+            .card {
+                margin-bottom: 0.85rem !important;
+            }
+            .card .card-body {
+                padding: 0.9rem 1.1rem !important;
+            }
+            .card-header, .pos-card-header {
+                padding: 9px 13px !important;
+                font-size: 0.85rem !important;
+            }
+
+            /* Form Controls, Inputs & Select2 */
+            .form-control,
+            .form-select,
+            .input-group .form-control,
+            .input-group .input-group-text {
+                height: 37px !important;
+                min-height: 37px !important;
+                font-size: 12.5px !important;
+                padding: 0.35rem 0.65rem !important;
+            }
+            .select2-container--default .select2-selection--single {
+                height: 37px !important;
+                min-height: 37px !important;
+            }
+            .select2-container--default .select2-selection--single .select2-selection__rendered {
+                line-height: 35px !important;
+                font-size: 12.5px !important;
+            }
+            .select2-container--default .select2-selection--single .select2-selection__arrow {
+                height: 35px !important;
+            }
+            .form-label {
+                font-size: 12px !important;
+                margin-bottom: 3px !important;
+                font-weight: 600 !important;
+            }
+            .input-group-text {
+                font-size: 12px !important;
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+            }
+
+            /* Compact Buttons & Badges */
+            .btn {
+                padding: 0.38rem 0.75rem !important;
+                font-size: 0.82rem !important;
+            }
+            .btn-sm {
+                padding: 0.22rem 0.5rem !important;
+                font-size: 0.75rem !important;
+            }
+            .badge {
+                font-size: 0.73rem !important;
+                padding: 0.3em 0.55em !important;
+            }
+
+            /* Tables & Cell Padding */
+            .table th,
+            .table td,
+            .table-custom th,
+            .table-custom td {
+                padding: 6px 9px !important;
+                font-size: 12px !important;
+            }
+            .table thead th,
+            .table-custom thead th {
+                font-size: 11px !important;
+                letter-spacing: 0.2px !important;
+            }
+            .btn-action-icon {
+                width: 30px !important;
+                height: 30px !important;
+                font-size: 0.85rem !important;
+            }
+
+            /* KPI / Stat Cards */
             .stat-card .card-body {
-                padding: 1rem !important;
+                padding: 0.75rem 0.9rem !important;
             }
-            .stat-card h4 {
+            .stat-card h4, .stat-card h3 {
                 font-size: 1.15rem !important;
             }
-            .stat-card h6 {
-                font-size: 0.75rem !important;
+            .stat-card h6, .stat-card p {
+                font-size: 0.74rem !important;
+            }
+            .stat-card .avatar, 
+            .stat-card .avatar-lg, 
+            .stat-card .avatar-md,
+            .card-body > .avatar {
+                width: 32px !important;
+                height: 32px !important;
+                min-width: 32px !important;
+                min-height: 32px !important;
+            }
+            .stat-card .avatar i,
+            .card-body > .avatar i {
+                font-size: 0.95rem !important;
+            }
+
+            /* Side-by-Side Sticky Panels (POS & Purchases & Ledgers) */
+            .sticky-summary {
+                position: sticky !important;
+                top: 15px !important;
+                max-height: calc(100vh - 40px) !important;
+                overflow-y: auto !important;
+            }
+            .sticky-summary::-webkit-scrollbar {
+                width: 4px;
+            }
+            .sticky-summary::-webkit-scrollbar-thumb {
+                background-color: #cbd5e1;
+                border-radius: 4px;
+            }
+            .grand-total-display {
+                padding: 12px !important;
+                border-radius: 10px !important;
+            }
+            .grand-total-display h3,
+            .grand-total-display h2 {
+                font-size: 1.35rem !important;
             }
         }
 
+        /* Extra Tightening for Smaller Laptops (1280px - 1366px / 125%-150% Scaling) */
+        @media (max-width: 1366px) {
+            .page-wrapper .content,
+            .content.container-fluid {
+                padding: 12px 14px !important;
+            }
+            .row.g-4 {
+                --bs-gutter-x: 0.85rem !important;
+                --bs-gutter-y: 0.85rem !important;
+            }
+            .row.g-3 {
+                --bs-gutter-x: 0.65rem !important;
+                --bs-gutter-y: 0.65rem !important;
+            }
+            .card .card-body {
+                padding: 0.75rem 0.95rem !important;
+            }
+            .btn {
+                padding: 0.32rem 0.65rem !important;
+                font-size: 0.8rem !important;
+            }
+        }
+
+        /* Height-based Viewport Optimization (768px - 850px Laptop Heights) */
         @media (max-height: 850px) {
+            .modal-dialog {
+                margin: 0.75rem auto !important;
+            }
             .modal-dialog-centered {
-                margin-top: 1.5rem;
-                margin-bottom: 1.5rem;
+                min-height: calc(100% - 1.5rem) !important;
+                margin: 0.75rem auto !important;
+            }
+            .modal-content {
+                max-height: calc(100vh - 1.5rem) !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            .modal-header {
+                padding: 0.65rem 1rem !important;
             }
             .modal-body {
-                max-height: calc(85vh - 120px);
-                overflow-y: auto;
+                max-height: calc(100vh - 125px) !important;
+                overflow-y: auto !important;
+                padding: 0.85rem 1rem !important;
+            }
+            .modal-footer {
+                padding: 0.5rem 1rem !important;
+            }
+            .sticky-summary {
+                max-height: calc(100vh - 30px) !important;
             }
         }
     </style>

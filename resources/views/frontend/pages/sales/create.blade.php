@@ -74,7 +74,8 @@
                                     @php
                                         $openingDue = (float)($client->opening_balance ?? 0);
                                         $salesDue = (float)($client->sales_sum_due_payment ?? 0);
-                                        $totalDue = $openingDue + $salesDue;
+                                        $advanceCredit = (float)($client->advance_credit ?? 0);
+                                        $netDue = (float)($client->net_due ?? ($openingDue + $salesDue));
                                     @endphp
                                     <option value="{{ $client->id }}" 
                                         data-name="{{ $client->name }}"
@@ -82,33 +83,42 @@
                                         data-address="{{ $client->address }}" 
                                         data-opening-due="{{ $openingDue }}"
                                         data-sales-due="{{ $salesDue }}"
-                                        data-previous-due="{{ $totalDue }}">
-                                        {{ $client->name }} — {{ $client->phone }} {{ $totalDue > 0 ? '(Due: ৳'.number_format($totalDue, 2).')' : '' }}
+                                        data-advance-credit="{{ $advanceCredit }}"
+                                        data-net-due="{{ $netDue }}"
+                                        data-previous-due="{{ $netDue }}">
+                                        {{ $client->name }} — {{ $client->phone }} {{ $advanceCredit > 0 ? '(Advance: ৳'.number_format($advanceCredit, 2).')' : ($netDue > 0 ? '(Due: ৳'.number_format($netDue, 2).')' : '') }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
                         
-                        <!-- Customer Profile & Due Widget (Opening Due + Sales Due + Total) -->
+                        <!-- Customer Profile & Due Widget (Opening Due + Sales Due + Advance Credit / Total) -->
                         <div class="col-lg-6 col-md-6 col-12">
                             <div id="customerBalanceCard" class="p-3 bg-light rounded-3 border h-100 d-flex flex-wrap align-items-center justify-content-between gap-2">
                                 <div>
                                     <div class="fw-semibold text-dark mb-0" id="custNameText">No Customer Selected</div>
-                                    <div class="small text-muted" id="custContactText" style="font-size: 11px;">Select customer to view previous balance</div>
+                                    <div class="small text-muted" id="custContactText" style="font-size: 11px;">Select customer to view previous balance &amp; advance credits</div>
                                 </div>
                                 <div class="d-flex align-items-center gap-2 text-end flex-wrap">
-                                    <div class="bg-white px-2 py-1 rounded border">
+                                    <div class="bg-white px-2 py-1 rounded border" id="custOpeningDueWrapper">
                                         <span class="text-muted d-block" style="font-size: 9px; text-transform: uppercase;">Opening Due</span>
                                         <span id="custOpeningDueBadge" class="fw-bold text-warning fs-7">৳ 0.00</span>
                                     </div>
-                                    <div class="bg-white px-2 py-1 rounded border">
+                                    <div class="bg-white px-2 py-1 rounded border" id="custSalesDueWrapper">
                                         <span class="text-muted d-block" style="font-size: 9px; text-transform: uppercase;">Sales Due</span>
                                         <span id="custSalesDueBadge" class="fw-bold text-info fs-7">৳ 0.00</span>
                                     </div>
-                                    <div class="bg-white px-2 py-1 rounded border">
+                                    <div class="bg-white px-2 py-1 rounded border" id="custBalanceWrapper">
                                         <span class="text-muted d-block" style="font-size: 9px; text-transform: uppercase;">Total Prev Due</span>
                                         <span id="custBalanceBadge" class="fw-bold text-secondary fs-7">৳ 0.00</span>
                                     </div>
+                                    <div class="bg-success-subtle px-2 py-1 rounded border border-success-subtle" id="custAdvanceWrapper" style="display: none;">
+                                        <span class="text-success d-block" style="font-size: 9px; text-transform: uppercase; font-weight: 700;">Advance Credit</span>
+                                        <span id="custAdvanceCreditBadge" class="fw-bold text-success fs-7">৳ 0.00</span>
+                                    </div>
+                                    <button type="button" id="btnApplyAdvance" class="btn btn-sm btn-success px-2.5 py-1.5 rounded-2 fw-bold shadow-sm" style="display: none; font-size: 11px;" onclick="applyCustomerAdvanceCredit()">
+                                        ⚡ Apply Advance
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -120,24 +130,39 @@
                 <!-- Order & Dispatch Meta Row -->
                 <div class="row g-3">
                     <div class="col-lg-3 col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Warehouse / Dispatch Yard <span class="text-danger">*</span></label>
-                        <select name="warehouse_id" id="warehouse_id" class="form-select select2" required>
-                            <option value="">Select Warehouse / Yard</option>
-                            @foreach ($warehouses as $wh)
-                                <option value="{{ $wh->id }}" {{ $loop->first ? 'selected' : '' }}>
-                                    {{ $wh->name }} {{ $wh->code ? '('.$wh->code.')' : '' }}
-                                </option>
-                            @endforeach
-                        </select>
+                        @php
+                            $targetWhId = request('warehouse_id', old('warehouse_id'));
+                            $isLocked = request('locked') || request('is_shop') || request('from') === 'shop';
+                            $selectedWh = $targetWhId ? $warehouses->firstWhere('id', $targetWhId) : null;
+                        @endphp
+                        <label class="form-label small text-secondary fw-semibold mb-1">
+                            Warehouse / Dispatch Yard <span class="text-danger">*</span>
+                            @if($isLocked && $selectedWh)
+                                <span class="badge bg-primary-subtle text-primary border ms-1"><i class="fe fe-shopping-cart me-1"></i>Shop Locked</span>
+                            @endif
+                        </label>
+                        @if($isLocked && $selectedWh)
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-primary border-primary-subtle"><i class="fe fe-home"></i></span>
+                                <input type="text" class="form-control bg-light fw-bold text-dark border-primary-subtle" value="{{ $selectedWh->name }} {{ $selectedWh->code ? '('.$selectedWh->code.')' : '' }}" readonly>
+                                <input type="hidden" name="warehouse_id" id="warehouse_id" value="{{ $selectedWh->id }}">
+                            </div>
+                        @else
+                            <select name="warehouse_id" id="warehouse_id" class="form-select select2" required>
+                                <option value="">Select Warehouse / Yard</option>
+                                @foreach ($warehouses as $wh)
+                                    <option value="{{ $wh->id }}" {{ (string)$targetWhId === (string)$wh->id || ($loop->first && !$targetWhId) ? 'selected' : '' }}>
+                                        {{ $wh->name }} {{ $wh->code ? '('.$wh->code.')' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
                     </div>
 
                     <div class="col-lg-3 col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">Delivery Status <span class="text-danger">*</span></label>
                         <select name="delivery_status" id="delivery_status" class="form-select border-light-subtle" required>
-                            <option value="pending" selected>Pending (Order Received)</option>
-                            <option value="dispatched">Dispatched (In Transit / Truck Loaded)</option>
-                            <option value="delivered">Delivered (Received at Site)</option>
-                            <option value="partial_delivered">Partial Delivered</option>
+                            <option value="delivered" selected>Delivered</option>
                         </select>
                     </div>
 
@@ -153,82 +178,66 @@
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-4">
                 <div class="mb-3">
-                    <h6 class="fw-bold text-dark mb-0"><i class="fe fe-shopping-cart me-2 text-primary"></i>Steel Items & In-Stock Coils Selection</h6>
-                    <small class="text-muted">1. Select Lot &rarr; 2. Select Coil from that Lot &rarr; 3. Enter desired selling quantity and rate</small>
+                    <h6 class="fw-bold text-dark mb-0"><i class="fe fe-shopping-cart me-2 text-primary"></i>Steel Items & Stock Selection</h6>
+                    <small class="text-muted">1. Select Stock / Lot Source &rarr; 2. System automatically combines all in-stock coils with total weight and cost rate &rarr; 3. Enter selling rate and selling quantity</small>
                 </div>
 
                 <!-- Product Add Builder Card -->
                 <div class="p-3 bg-light rounded-3 mb-4 border" id="form-group-item1">
                     <div class="row g-3 align-items-end">
                         <!-- 1. Stock / Lot Source Select Dropdown -->
-                        <div class="col-lg-3 col-md-6 col-12">
-                            <label class="form-label small text-secondary fw-semibold mb-1">
-                                1. Select Stock / Lot Source <span class="text-danger">*</span>
-                            </label>
+                        <div class="col-lg-4 col-md-6 col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small text-secondary fw-semibold mb-0">
+                                    1. Select Stock / Lot Source <span class="text-danger">*</span>
+                                </label>
+                                <span id="lotAvgRateBadge" class="badge bg-primary-subtle text-primary border" style="display:none; font-size: 11px;"></span>
+                            </div>
                             <select id="builder_lot_id" class="form-select select2 border-light-subtle" onchange="handleLotSelection(this.value)">
                                 <option value="">Select Warehouse first</option>
                             </select>
                         </div>
 
-                        <!-- 2. Coil Select Dropdown (Filtered by selected Source/Lot) -->
+                        <!-- 2. Available Total Weight -->
+                        <div class="col-lg-4 col-md-3 col-6">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Total Available Stock</label>
+                            <input type="text" id="stock1" class="form-control border-light-subtle bg-white fw-bold text-primary" readonly placeholder="0.00 kg">
+                        </div>
+
+                        <!-- 3. Cost Rate -->
+                        <div class="col-lg-4 col-md-3 col-6">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Avg Cost Rate (৳)</label>
+                            <input type="number" id="purchase_price1" class="form-control border-light-subtle bg-white" readonly placeholder="0.00">
+                        </div>
+
+                        <!-- 4. Custom Size / Specs (Admin Only) -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label class="form-label small text-secondary fw-semibold mb-0">
-                                    2. Select In-Stock Coil <span class="text-danger">*</span>
-                                </label>
-                                <span id="lotAvgRateBadge" class="badge bg-primary-subtle text-primary border" style="display:none; font-size: 11px;"></span>
-                            </div>
-                            <select onchange="selectCoil(this)" id="coil_select" class="form-select select2 border-light-subtle" disabled>
-                                <option value="">Select Stock Source first</option>
-                            </select>
-                        </div>
-
-                        <!-- 3. Per Coil Weight (Readonly) -->
-                        <div class="col-lg-2 col-md-4 col-6">
-                            <label class="form-label small text-secondary fw-semibold mb-1">Per Coil Wt (kg)</label>
-                            <input type="text" id="per_coil_weight1" class="form-control border-light-subtle bg-white fw-bold text-dark" readonly>
-                        </div>
-
-                        <!-- 4. Available Coil Weight -->
-                        <div class="col-lg-2 col-md-4 col-6">
-                            <label class="form-label small text-secondary fw-semibold mb-1">Available Weight</label>
-                            <input type="text" id="stock1" class="form-control border-light-subtle bg-white fw-bold text-primary" readonly>
-                        </div>
-
-                        <!-- 5. Cost Rate -->
-                        <div class="col-lg-2 col-md-4 col-6">
-                            <label class="form-label small text-secondary fw-semibold mb-1">Cost Rate (৳)</label>
-                            <input type="number" id="purchase_price1" class="form-control border-light-subtle bg-white" readonly>
-                        </div>
-
-                        <!-- 6. Custom Size (Admin Only) -->
-                        <div class="col-lg-3 col-md-6 col-12">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label class="form-label small text-secondary fw-semibold mb-0">Custom Size</label>
+                                <label class="form-label small text-secondary fw-semibold mb-0">Custom Size / Specs</label>
                                 <span class="badge bg-warning-subtle text-warning border border-warning-subtle" style="font-size: 9px;"><i class="fe fe-lock me-1"></i>Admin Only</span>
                             </div>
-                            <input type="text" id="custom_size1" class="form-control border-light-subtle">
+                            <input type="text" id="custom_size1" class="form-control border-light-subtle" placeholder="e.g. 4x8 ft cut (Internal note)">
                         </div>
 
-                        <!-- 7. Selling Rate -->
+                        <!-- 5. Selling Rate -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">Selling Rate (৳) <span class="text-danger">*</span></label>
-                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="unit_price1" class="form-control border-light-subtle" step="0.01" min="0">
+                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="unit_price1" class="form-control border-light-subtle" step="0.01" min="0" placeholder="0.00">
                         </div>
 
-                        <!-- 8. Selling Quantity -->
+                        <!-- 6. Selling Quantity -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">Selling Qty / Wt (kg) <span class="text-danger">*</span></label>
-                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="qty1" class="form-control border-light-subtle text-dark" step="0.01" min="0.01">
+                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="qty1" class="form-control border-light-subtle text-dark fw-bold" step="0.01" min="0.01" placeholder="0.00">
                         </div>
 
-                        <!-- 9. Line Total Preview -->
+                        <!-- 7. Line Total Preview -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">Line Total (৳)</label>
                             <input type="text" id="total1" class="form-control border-light-subtle bg-white fw-bold text-success" readonly value="0.00">
                         </div>
 
-                        <!-- 10. Add Item Button -->
+                        <!-- 8. Add Item Button -->
                         <div class="col-12 text-end pt-1">
                             <button type="button" onclick="addItem()" class="btn btn-success px-4 rounded-3 d-inline-flex align-items-center justify-content-center gap-2 py-2 shadow-sm">
                                 <i class="fe fe-plus"></i>
@@ -243,11 +252,12 @@
                     <table class="table table-hover align-middle mb-0" id="cartItemsTable">
                         <thead class="bg-light text-secondary fs-7 text-uppercase">
                             <tr>
-                                <th style="width: 35%;">Product & Specifications</th>
-                                <th style="width: 20%;">Lot Source</th>
-                                <th style="width: 15%;">Unit Price</th>
-                                <th style="width: 12%;">Quantity</th>
-                                <th style="width: 13%;">Total Price</th>
+                                <th style="width: 32%;">Product & Specifications</th>
+                                <th style="width: 18%;">Lot Source</th>
+                                <th style="width: 15%;">Custom Size (Admin)</th>
+                                <th style="width: 12%;">Unit Price</th>
+                                <th style="width: 10%;">Quantity</th>
+                                <th style="width: 8%;">Total Price</th>
                                 <th style="width: 5%;" class="text-end">Action</th>
                             </tr>
                         </thead>
@@ -367,6 +377,7 @@
                             </label>
                             <select name="payment_method" id="paymentMethodSelect" class="form-select border-light-subtle" onchange="handlePaymentMethodChange(this.value)">
                                 <option value="cash" selected>Cash in Hand</option>
+                                <option value="advance_credit">💰 Advance Balance / Deposit Adjustment</option>
                                 <option value="bank">Bank Transfer / Deposit</option>
                                 <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
                             </select>
@@ -474,40 +485,55 @@ function handleCustomerChange(selectEl) {
     if (selectedOption && selectedOption.value) {
         const openingDue = parseFloat(selectedOption.dataset.openingDue) || 0;
         const salesDue = parseFloat(selectedOption.dataset.salesDue) || 0;
-        const totalDue = parseFloat(selectedOption.dataset.previousDue) || (openingDue + salesDue);
+        const advanceCredit = parseFloat(selectedOption.dataset.advanceCredit) || 0;
+        const netDue = parseFloat(selectedOption.dataset.netDue) || 0;
+        const totalDue = parseFloat(selectedOption.dataset.previousDue) || netDue;
         const name = selectedOption.dataset.name || selectedOption.text.split('—')[0].trim();
         const phone = selectedOption.dataset.phone || 'N/A';
         const address = selectedOption.dataset.address || 'N/A';
         window.selectedCustomerPreviousDue = totalDue;
         window.selectedCustomerOpeningDue = openingDue;
         window.selectedCustomerSalesDue = salesDue;
-        updateCustomerBalanceCard(totalDue, name, `Phone: ${phone} | Addr: ${address}`, openingDue, salesDue);
+        window.selectedCustomerAdvanceCredit = advanceCredit;
+        updateCustomerBalanceCard(totalDue, name, `Phone: ${phone} | Addr: ${address}`, openingDue, salesDue, advanceCredit);
     } else {
         window.selectedCustomerPreviousDue = 0;
         window.selectedCustomerOpeningDue = 0;
         window.selectedCustomerSalesDue = 0;
-        updateCustomerBalanceCard(0, null, null, 0, 0);
+        window.selectedCustomerAdvanceCredit = 0;
+        updateCustomerBalanceCard(0, null, null, 0, 0, 0);
     }
     calculateTotal();
 }
 
-function updateCustomerBalanceCard(totalDue, name, details, openingDue = 0, salesDue = 0) {
+function updateCustomerBalanceCard(totalDue, name, details, openingDue = 0, salesDue = 0, advanceCredit = 0) {
     const nameText = document.getElementById('custNameText');
     const contactText = document.getElementById('custContactText');
     const totalBadge = document.getElementById('custBalanceBadge');
+    const totalWrapper = document.getElementById('custBalanceWrapper');
     const openingBadge = document.getElementById('custOpeningDueBadge');
+    const openingWrapper = document.getElementById('custOpeningDueWrapper');
     const salesBadge = document.getElementById('custSalesDueBadge');
+    const salesWrapper = document.getElementById('custSalesDueWrapper');
+    const advanceWrapper = document.getElementById('custAdvanceWrapper');
+    const advanceBadge = document.getElementById('custAdvanceCreditBadge');
+    const btnApplyAdv = document.getElementById('btnApplyAdvance');
 
     if (!nameText || !totalBadge) return;
 
     if (!name) {
         nameText.innerText = 'No Customer Selected';
         nameText.className = 'fw-semibold text-dark mb-0';
-        contactText.innerText = 'Select customer to view previous balance';
+        contactText.innerText = 'Select customer to view previous balance & advance credits';
         totalBadge.innerText = '৳ 0.00';
         totalBadge.className = 'fw-bold text-secondary fs-7';
         if (openingBadge) openingBadge.innerText = '৳ 0.00';
         if (salesBadge) salesBadge.innerText = '৳ 0.00';
+        if (advanceWrapper) advanceWrapper.style.display = 'none';
+        if (btnApplyAdv) btnApplyAdv.style.display = 'none';
+        if (openingWrapper) openingWrapper.style.display = 'block';
+        if (salesWrapper) salesWrapper.style.display = 'block';
+        if (totalWrapper) totalWrapper.style.display = 'block';
         return;
     }
 
@@ -521,13 +547,43 @@ function updateCustomerBalanceCard(totalDue, name, details, openingDue = 0, sale
         salesBadge.innerText = '৳ ' + salesDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
 
-    if (totalDue > 0) {
-        totalBadge.className = 'fw-bold text-danger fs-7';
-        totalBadge.innerText = '৳ ' + totalDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    if (advanceCredit > 0) {
+        if (advanceWrapper) advanceWrapper.style.display = 'block';
+        if (advanceBadge) advanceBadge.innerText = '৳ ' + advanceCredit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        if (btnApplyAdv) btnApplyAdv.style.display = 'inline-block';
+        if (totalBadge) {
+            totalBadge.className = 'fw-bold text-success fs-7';
+            totalBadge.innerText = '৳ 0.00 (Has Advance)';
+        }
     } else {
-        totalBadge.className = 'fw-bold text-success fs-7';
-        totalBadge.innerText = '৳ 0.00 (Clear)';
+        if (advanceWrapper) advanceWrapper.style.display = 'none';
+        if (btnApplyAdv) btnApplyAdv.style.display = 'none';
+        if (totalDue > 0) {
+            totalBadge.className = 'fw-bold text-danger fs-7';
+            totalBadge.innerText = '৳ ' + totalDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        } else {
+            totalBadge.className = 'fw-bold text-success fs-7';
+            totalBadge.innerText = '৳ 0.00 (Clear)';
+        }
     }
+}
+
+function applyCustomerAdvanceCredit() {
+    const adv = parseFloat(window.selectedCustomerAdvanceCredit || 0);
+    if (adv <= 0) return;
+    const grandTotal = parseFloat(document.getElementById('grandTotal')?.value || 0);
+    const applyAmt = grandTotal > 0 ? Math.min(grandTotal, adv) : adv;
+    
+    const advInput = document.getElementById('advancedPayment');
+    if (advInput) {
+        advInput.value = applyAmt.toFixed(2);
+    }
+    const methodSelect = document.getElementById('paymentMethodSelect');
+    if (methodSelect) {
+        methodSelect.value = 'advance_credit';
+        handlePaymentMethodChange('advance_credit');
+    }
+    calculateTotal();
 }
 
 const allAvailableCoils = @json($coils);
@@ -643,12 +699,8 @@ function populateWarehouseLotSources(selectedWhId) {
 }
 
 function handleLotSelection(lotId) {
-    const coilSelect = $('#coil_select');
-    coilSelect.empty();
-    
     currentSelectedLot = null;
-    currentSelectedCoil = null;
-    resetCoilFields();
+    resetLotFields();
 
     const lotAvgBadge = document.getElementById('lotAvgRateBadge');
     const selectedWhId = $('#warehouse_id').val();
@@ -658,43 +710,28 @@ function handleLotSelection(lotId) {
             lotAvgBadge.style.display = 'none';
             lotAvgBadge.innerHTML = '';
         }
-        const promptMsg = !selectedWhId ? 'Select Warehouse / Dispatch Yard first' : 'Select Stock Source first';
-        coilSelect.append(`<option value="">${promptMsg}</option>`);
-        coilSelect.prop('disabled', true);
-        if ($.fn.select2 && coilSelect.hasClass('select2-hidden-accessible')) {
-            coilSelect.select2('destroy').select2({ width: '100%' });
-        }
-        coilSelect.trigger('change');
         return;
     }
 
-    // Filter coils in this warehouse
+    // Filter in-stock coils in this warehouse
     const whCoils = allAvailableCoils.filter(c => String(c.warehouse_id) === String(selectedWhId) && parseFloat(c.remaining_weight) > 0);
 
     let filtered = [];
+    let lotNumberDisplay = '';
+    let vendorDisplay = '';
+
     if (lotId === 'opening_stock') {
-        currentSelectedLot = {
-            id: '',
-            lot_number: 'Opening Stock',
-            vendor: 'Direct Yard Stock'
-        };
+        lotNumberDisplay = 'Opening Stock';
+        vendorDisplay = 'Direct Yard Stock';
         filtered = whCoils.filter(c => (c.purchase_id === null || !c.lot_id));
     } else if (lotId === 'all_stock') {
-        currentSelectedLot = {
-            id: '',
-            lot_number: 'All Stock',
-            vendor: 'All Inventory'
-        };
+        lotNumberDisplay = 'All Stock';
+        vendorDisplay = 'All Inventory';
         filtered = whCoils;
     } else {
         const lotOption = $(`#builder_lot_id option[value="${lotId}"]`);
-        if (lotOption.length) {
-            currentSelectedLot = {
-                id: lotId,
-                lot_number: lotOption.data('lot-number') || lotOption.text().trim(),
-                vendor: lotOption.data('vendor') || ''
-            };
-        }
+        lotNumberDisplay = lotOption.data('lot-number') || lotOption.text().trim();
+        vendorDisplay = lotOption.data('vendor') || '';
         filtered = whCoils.filter(c => String(c.lot_id) === String(lotId));
     }
 
@@ -703,147 +740,62 @@ function handleLotSelection(lotId) {
             lotAvgBadge.style.display = 'none';
             lotAvgBadge.innerHTML = '';
         }
-        const msg = lotId === 'opening_stock' ? 'No opening stock coils in this warehouse' : 'No in-stock coils in this selection';
-        coilSelect.append(`<option value="">${msg}</option>`);
-        coilSelect.prop('disabled', true);
-        if ($.fn.select2 && coilSelect.hasClass('select2-hidden-accessible')) {
-            coilSelect.select2('destroy').select2({ width: '100%' });
-        }
-        coilSelect.trigger('change');
         return;
     }
 
-    // Calculate Lot Weighted Average Cost Price based on stock coil amount / kg
+    // Calculate Lot Weighted Average Cost Price and total combined weight
     const totalLotWeight = filtered.reduce((sum, c) => sum + (parseFloat(c.remaining_weight) || 0), 0);
     const totalLotCost = filtered.reduce((sum, c) => sum + ((parseFloat(c.remaining_weight) || 0) * (parseFloat(c.rate_per_ton) || 0)), 0);
     const avgLotRate = totalLotWeight > 0 ? (totalLotCost / totalLotWeight) : 0;
+
+    // Determine representative thickness and sizes
+    const thicknessList = [...new Set(filtered.map(c => c.thickness).filter(Boolean))];
+    const sizeList = [...new Set(filtered.map(c => c.width || c.size).filter(Boolean))];
+    const sizeTypeList = [...new Set(filtered.map(c => (c.length && c.length !== 'N/A') ? c.length : (c.size_type || '')).filter(Boolean))];
+
+    currentSelectedLot = {
+        id: (lotId === 'opening_stock' || lotId === 'all_stock') ? '' : lotId,
+        raw_source: lotId,
+        lot_number: lotNumberDisplay,
+        vendor: vendorDisplay,
+        availableWeight: totalLotWeight,
+        avgRate: avgLotRate,
+        coilsCount: filtered.length,
+        thickness: thicknessList.join(', '),
+        size: sizeList.join(', '),
+        size_type: sizeTypeList[0] || 'ft'
+    };
 
     // Display Lot Combined Avg Badge
     if (lotAvgBadge) {
         if (avgLotRate > 0) {
             lotAvgBadge.style.display = 'inline-block';
             lotAvgBadge.innerHTML = `Avg Cost: ৳${avgLotRate.toFixed(2)}/kg`;
-            lotAvgBadge.title = `Combined Weighted Avg Cost of all ${filtered.length} in-stock coils in this Lot (Total Stock: ${totalLotWeight.toLocaleString()} kg)`;
+            lotAvgBadge.title = `Combined Weighted Avg Cost of ${filtered.length} in-stock coils in this Lot (Total Stock: ${totalLotWeight.toLocaleString()} kg)`;
         } else {
             lotAvgBadge.style.display = 'none';
         }
     }
 
-    coilSelect.prop('disabled', false);
-    const defaultOptionText = avgLotRate > 0 
-        ? `Lot Avg: ৳${avgLotRate.toFixed(2)}/kg`
-        : 'Choose In-Stock Coil / Plate';
-    coilSelect.append(`<option value="">${defaultOptionText}</option>`);
+    document.getElementById('stock1').value = totalLotWeight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg';
+    document.getElementById('purchase_price1').value = avgLotRate.toFixed(2);
+    document.getElementById('unit_price1').value = avgLotRate > 0 ? avgLotRate.toFixed(2) : '';
+    document.getElementById('qty1').value = '';
+    document.getElementById('qty1').setAttribute('max', totalLotWeight);
+    document.getElementById('qty1').focus();
 
-    filtered.forEach(coil => {
-        const remaining = parseFloat(coil.remaining_weight) || 0;
-        const thickness = coil.thickness || '';
-        const sizeVal = coil.width || coil.size || '';
-        const sizeUnit = (coil.length && coil.length !== 'N/A') ? coil.length : (coil.size_type || '');
-        const isOpening = (coil.purchase_id === null || !coil.lot_id);
-        const lotName = isOpening 
-            ? 'Opening Stock' 
-            : ((coil.lot && coil.lot.lot_number) ? coil.lot.lot_number : (allAvailableLots[coil.lot_id] ? allAvailableLots[coil.lot_id].lot_number : ('Lot #' + coil.lot_id)));
-        const pieceCount = coil.piece_count ? Number(coil.piece_count) : 1;
-        const grossWeight = parseFloat(coil.gross_weight || coil.net_weight || 0);
-        const unitWeight = pieceCount > 0 && grossWeight > 0 ? (grossWeight / pieceCount) : remaining;
-        const remainingCoils = unitWeight > 0 ? (remaining / unitWeight) : (pieceCount > 0 ? pieceCount : 1);
-        const formattedRemCoils = (Math.round(remainingCoils * 100) / 100).toFixed(remainingCoils % 1 === 0 ? 0 : (remainingCoils * 10 % 1 === 0 ? 1 : 2));
-        const remainingPct = grossWeight > 0 ? Math.min(100, Math.max(0, (remaining / grossWeight) * 100)).toFixed(1) : '100.0';
-        
-        const thicknessDisplay = thickness ? thickness : 'N/A';
-        const text = `${lotName} | ${thicknessDisplay} | ${remaining.toLocaleString()} kg`;
-
-        const opt = $('<option></option>')
-            .val(coil.id)
-            .text(text)
-            .attr('data-coil-number', coil.coil_number)
-            .attr('data-thickness', coil.thickness || '')
-            .attr('data-size', sizeVal)
-            .attr('data-size-type', sizeUnit || 'ft')
-            .attr('data-piece-count', pieceCount)
-            .attr('data-remaining-coils', formattedRemCoils)
-            .attr('data-remaining-pct', remainingPct)
-            .attr('data-unit-weight', unitWeight)
-            .attr('data-gross-weight', grossWeight)
-            .attr('data-remaining', remaining)
-            .attr('data-rate', coil.rate_per_ton || 0)
-            .attr('data-is-opening', isOpening ? '1' : '0')
-            .attr('data-lot-id', coil.lot_id || '')
-            .attr('data-lot-number', coil.lot ? coil.lot.lot_number : (isOpening ? 'Opening Stock' : (currentSelectedLot ? currentSelectedLot.lot_number : '')))
-            .attr('data-warehouse', coil.warehouse ? coil.warehouse.name : '');
-
-        coilSelect.append(opt);
-    });
-
-    if ($.fn.select2) {
-        if (coilSelect.hasClass('select2-hidden-accessible')) {
-            coilSelect.select2('destroy');
-        }
-        coilSelect.select2({ width: '100%' });
-    }
-    coilSelect.trigger('change');
+    updatePreviewTotal();
 }
 
-function resetCoilFields() {
-    currentSelectedCoil = null;
-    const perCoilEl = document.getElementById('per_coil_weight1');
-    if (perCoilEl) perCoilEl.value = '';
+function resetLotFields() {
+    currentSelectedLot = null;
     document.getElementById('stock1').value = '';
     document.getElementById('purchase_price1').value = '';
     document.getElementById('unit_price1').value = '';
     document.getElementById('qty1').value = '';
     document.getElementById('total1').value = '0.00';
-    
     const customSizeEl = document.getElementById('custom_size1');
     if (customSizeEl) customSizeEl.value = '';
-}
-
-function selectCoil(selectEl) {
-    const selectedOption = selectEl.options[selectEl.selectedIndex];
-    if (!selectedOption || !selectedOption.value) {
-        resetCoilFields();
-        return;
-    }
-
-    const remaining = parseFloat(selectedOption.dataset.remaining) || 0;
-    const rate = parseFloat(selectedOption.dataset.rate) || 0;
-    const unitWeight = parseFloat(selectedOption.dataset.unitWeight) || 0;
-    const pieceCount = parseFloat(selectedOption.dataset.pieceCount) || 1;
-    const remainingCoils = selectedOption.dataset.remainingCoils || '1';
-    const remainingPct = selectedOption.dataset.remainingPct || '100.0';
-    const lotId = selectedOption.dataset.lotId || '';
-    const isOpening = selectedOption.dataset.isOpening === '1';
-
-    currentSelectedCoil = {
-        id: selectedOption.value,
-        coil_number: selectedOption.dataset.coilNumber,
-        thickness: selectedOption.dataset.thickness,
-        size: selectedOption.dataset.size,
-        size_type: selectedOption.dataset.sizeType,
-        piece_count: pieceCount,
-        remaining_coils: remainingCoils,
-        remaining_pct: remainingPct,
-        unit_weight: unitWeight,
-        remaining: remaining,
-        rate: rate,
-        is_opening: isOpening,
-        lot_id: lotId,
-        lot_number: selectedOption.dataset.lotNumber,
-        warehouse: selectedOption.dataset.warehouse
-    };
-
-    const perCoilEl = document.getElementById('per_coil_weight1');
-    if (perCoilEl) {
-        perCoilEl.value = unitWeight > 0 ? (unitWeight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg') : '—';
-    }
-    document.getElementById('stock1').value = remaining.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ` kg`;
-    document.getElementById('purchase_price1').value = rate.toFixed(2);
-    document.getElementById('unit_price1').value = rate > 0 ? rate.toFixed(2) : '';
-    document.getElementById('qty1').value = '';
-    document.getElementById('qty1').focus();
-
-    updatePreviewTotal();
 }
 
 function updatePreviewTotal() {
@@ -860,12 +812,6 @@ function addItem() {
         return;
     }
 
-    if (!currentSelectedCoil) {
-        alert('Please select an In-Stock Coil from the selected source.');
-        $('#coil_select').focus();
-        return;
-    }
-
     const qtyInput = document.getElementById('qty1');
     const qty = parseFloat(qtyInput.value) || 0;
     if (qty <= 0) {
@@ -874,23 +820,25 @@ function addItem() {
         return;
     }
 
-    const availableStock = currentSelectedCoil.remaining;
+    const availableStock = currentSelectedLot.availableWeight;
     if (qty > availableStock) {
-        alert(`Cannot sell more than available coil stock!\n\nRequested: ${qty.toLocaleString()} kg\nAvailable Stock: ${availableStock.toLocaleString()} kg`);
+        alert(`Cannot sell more than available lot stock!\n\nRequested: ${qty.toLocaleString()} kg\nAvailable Stock: ${availableStock.toLocaleString()} kg`);
         qtyInput.value = availableStock;
         qtyInput.focus();
         updatePreviewTotal();
         return;
     }
 
-    // Check if coil is already added in another row in the cart
+    // Check if this lot is already added in another row in the cart
+    const lotRawSource = currentSelectedLot.raw_source;
     let alreadyAddedQty = 0;
-    document.querySelectorAll(`#item_container tr.item-coil-${currentSelectedCoil.id}`).forEach(row => {
+    document.querySelectorAll(`#item_container tr[data-lot-source="${lotRawSource}"]`).forEach(row => {
         alreadyAddedQty += parseFloat(row.querySelector('.qty')?.value) || 0;
     });
+
     if ((alreadyAddedQty + qty) > (availableStock + 0.0001)) {
         const remainingAllowed = Math.max(0, availableStock - alreadyAddedQty);
-        alert(`Cannot exceed available coil stock!\n\nCoil: ${currentSelectedCoil.coil_number}\nTotal Available: ${availableStock.toLocaleString()} kg\nAlready in Cart: ${alreadyAddedQty.toLocaleString()} kg\nRemaining Allowed: ${remainingAllowed.toLocaleString()} kg`);
+        alert(`Cannot exceed available lot stock!\n\nLot: ${currentSelectedLot.lot_number}\nTotal Available: ${availableStock.toLocaleString()} kg\nAlready in Cart: ${alreadyAddedQty.toLocaleString()} kg\nRemaining Allowed: ${remainingAllowed.toLocaleString()} kg`);
         qtyInput.value = remainingAllowed > 0 ? remainingAllowed : '';
         qtyInput.focus();
         updatePreviewTotal();
@@ -906,58 +854,55 @@ function addItem() {
     }
 
     const customSize = (document.getElementById('custom_size1')?.value || '').trim();
-
-    const coil = currentSelectedCoil;
-    const coilId = coil.id;
-    const thickness = coil.thickness || '';
-    const size = coil.size || '';
-    const sizeType = coil.size_type || 'ft';
+    const lot = currentSelectedLot;
+    const lotId = lot.id;
+    const thickness = lot.thickness || '';
+    const size = lot.size || '';
+    const sizeType = lot.size_type || 'ft';
     const rowTotal = (qty * unitPrice).toFixed(2);
 
-    const lot = currentSelectedLot;
-    const lotId = coil.lot_id || (lot && lot.id && lot.id !== 'opening_stock' && lot.id !== 'all_stock' ? lot.id : '');
-    
-    let lotLabel = '';
-    if (coil.is_opening || (!lotId && coil.lot_number === 'Opening Stock') || (lot && lot.lot_number === 'Opening Stock' && !lotId)) {
-        lotLabel = `<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-8"><i class="fe fe-archive me-1"></i>Opening Stock</span>`;
-    } else if (coil.lot_number && coil.lot_number !== 'All Stock') {
-        lotLabel = `<span class="badge bg-light text-dark border px-2 py-1 fs-8"><i class="fe fe-package text-primary me-1"></i>${coil.lot_number}</span>`;
-    } else if (lot && lot.lot_number && lot.lot_number !== 'All Stock') {
-        lotLabel = `<span class="badge bg-light text-dark border px-2 py-1 fs-8"><i class="fe fe-package text-primary me-1"></i>${lot.lot_number}</span>`;
+    let lotBadge = '';
+    if (!lotId || lot.lot_number === 'Opening Stock') {
+        lotBadge = `<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-8"><i class="fe fe-archive me-1"></i>Opening Stock</span>`;
     } else {
-        lotLabel = `<span class="badge bg-light text-secondary border px-2 py-1 fs-8">Direct Stock</span>`;
+        lotBadge = `<span class="badge bg-light text-dark border px-2 py-1 fs-8"><i class="fe fe-package text-primary me-1"></i>${escapeHtml(lot.lot_number)}</span>`;
     }
 
-    const pieceCount = coil.piece_count ? Number(coil.piece_count) : 1;
     let specBadges = ``;
-    if (coil.is_opening) specBadges += `<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-8 me-1">Opening Stock</span>`;
-    if (pieceCount > 1) specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1">Qty: ${pieceCount} Coils</span>`;
-    if (thickness) specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1">Thickness: ${thickness}</span>`;
-    if (size) specBadges += `<span class="badge bg-light text-secondary border px-2 py-1 fs-8 me-1">Size: ${size} ${sizeType}</span>`;
-    if (customSize) specBadges += `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 fs-8 me-1" title="Internal admin custom size - Not printed on customer sales PDF"><i class="fe fe-lock me-1"></i>Custom Size: ${customSize}</span>`;
+    if (lot.coilsCount > 1) {
+        specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1"><i class="fe fe-layers me-1 text-primary"></i>${lot.coilsCount} Coils Consolidated</span>`;
+    }
+    if (thickness) {
+        specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1">Thickness: ${escapeHtml(thickness)}</span>`;
+    }
+    if (size) {
+        specBadges += `<span class="badge bg-light text-secondary border px-2 py-1 fs-8 me-1">Size: ${escapeHtml(size)} ${escapeHtml(sizeType)}</span>`;
+    }
 
     const html = `
-        <tr class="item-coil-${coilId} group-item" data-itemnumber="${itemNumber}" id="form-group-item${itemNumber}">
+        <tr data-lot-source="${escapeHtml(lotRawSource)}" class="group-item" data-itemnumber="${itemNumber}" id="form-group-item${itemNumber}">
             <td>
-                <input type="hidden" name="coil_id[]" value="${coilId}">
-                <input type="hidden" name="lot_id[]" value="${lotId}">
-                <input type="hidden" name="thickness[]" value="${thickness}">
-                <input type="hidden" name="size[]" value="${size}">
-                <input type="hidden" name="size_type[]" value="${sizeType}">
-                <input type="hidden" name="custom_size[]" value="${customSize}">
-                <span class="fw-bold text-dark d-block">Coil No - ${coil.coil_number}</span>
+                <input type="hidden" name="coil_id[]" value="">
+                <input type="hidden" name="lot_id[]" value="${escapeHtml(lotId)}">
+                <input type="hidden" name="thickness[]" value="${escapeHtml(thickness)}">
+                <input type="hidden" name="size[]" value="${escapeHtml(size)}">
+                <input type="hidden" name="size_type[]" value="${escapeHtml(sizeType)}">
+                <span class="fw-bold text-dark d-block">${escapeHtml(lot.lot_number)} ${lot.vendor ? '(' + escapeHtml(lot.vendor) + ')' : ''}</span>
                 <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
                     ${specBadges}
                 </div>
             </td>
             <td>
-                ${lotLabel}
+                ${lotBadge}
+            </td>
+            <td>
+                <input type="text" name="custom_size[]" class="form-control form-control-sm border-light-subtle" value="${escapeHtml(customSize)}" placeholder="Admin custom size...">
             </td>
             <td>
                 <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" step="0.01" name="unit_price[]" id="unit_price${itemNumber}" class="form-control border-light-subtle unit-price" value="${unitPrice.toFixed(2)}">
             </td>
             <td>
-                <input oninput="validateRowQty(this); calculateTotal()" onchange="validateRowQty(this); calculateTotal()" type="number" step="0.01" name="qty[]" id="qty${itemNumber}" class="form-control border-light-subtle qty fw-bold" min="0.01" max="${availableStock}" data-available="${availableStock}" data-coil-id="${coilId}" data-coil-number="${coil.coil_number}" value="${qty}">
+                <input oninput="validateLotRowQty(this); calculateTotal()" onchange="validateLotRowQty(this); calculateTotal()" type="number" step="0.01" name="qty[]" id="qty${itemNumber}" class="form-control border-light-subtle qty fw-bold" min="0.01" max="${availableStock}" data-available="${availableStock}" data-lot-source="${escapeHtml(lotRawSource)}" data-lot-number="${escapeHtml(lot.lot_number)}" value="${qty}">
             </td>
             <td>
                 <input type="number" step="0.01" name="total" id="total${itemNumber}" class="form-control border-light-subtle bg-light total fw-bold text-dark" readonly value="${rowTotal}">
@@ -973,9 +918,9 @@ function addItem() {
     $('#item_container').append(html);
     itemNumber++;
 
-    // Reset coil inputs for next addition
-    $('#coil_select').val('').trigger('change');
-    resetCoilFields();
+    // Reset builder inputs
+    $('#builder_lot_id').val('').trigger('change');
+    resetLotFields();
 
     toggleSummarySection();
     calculateTotal();
@@ -1052,20 +997,20 @@ function calculateTotal() {
     toggleSummarySection();
 }
 
-function validateRowQty(inputEl) {
-    const coilId = inputEl.getAttribute('data-coil-id');
-    const availableStock = parseFloat(inputEl.getAttribute('data-available')) || 0;
-    const coilNumber = inputEl.getAttribute('data-coil-number') || '';
+function validateLotRowQty(inputEl) {
+    const lotSource = inputEl.getAttribute('data-lot-source');
+    const max = parseFloat(inputEl.getAttribute('data-available')) || 0;
+    const lotName = inputEl.getAttribute('data-lot-number') || 'Stock Lot';
     
-    let totalCoilInCart = 0;
-    document.querySelectorAll(`#item_container tr.item-coil-${coilId}`).forEach(row => {
-        totalCoilInCart += parseFloat(row.querySelector('.qty')?.value) || 0;
+    let totalLotInCart = 0;
+    document.querySelectorAll(`#item_container tr[data-lot-source="${lotSource}"]`).forEach(row => {
+        totalLotInCart += parseFloat(row.querySelector('.qty')?.value) || 0;
     });
 
-    if (totalCoilInCart > (availableStock + 0.0001)) {
-        alert(`Quantity exceeds available stock for Coil ${coilNumber}!\n\nAvailable: ${availableStock.toLocaleString()} kg\nTotal In Cart: ${totalCoilInCart.toLocaleString()} kg`);
-        const otherRowsQty = totalCoilInCart - (parseFloat(inputEl.value) || 0);
-        const maxForThisRow = Math.max(0.01, availableStock - otherRowsQty);
+    if (totalLotInCart > (max + 0.0001)) {
+        alert(`Quantity exceeds available stock for ${lotName}!\n\nAvailable: ${max.toLocaleString()} kg\nTotal In Cart: ${totalLotInCart.toLocaleString()} kg`);
+        const otherRowsQty = totalLotInCart - (parseFloat(inputEl.value) || 0);
+        const maxForThisRow = Math.max(0.01, max - otherRowsQty);
         inputEl.value = maxForThisRow.toFixed(2);
         inputEl.classList.add('is-invalid');
         setTimeout(() => inputEl.classList.remove('is-invalid'), 2000);
@@ -1082,29 +1027,29 @@ function validateSaleFormSubmission(e) {
 
     let hasError = false;
     let errorMsg = '';
-    const coilTotals = {};
-    const coilMax = {};
-    const coilNames = {};
+    const lotTotals = {};
+    const lotMax = {};
+    const lotNames = {};
 
     rows.forEach(row => {
         const qtyInput = row.querySelector('.qty');
-        const coilId = qtyInput?.getAttribute('data-coil-id');
+        const lotSource = qtyInput?.getAttribute('data-lot-source') || row.getAttribute('data-lot-source');
         const qty = parseFloat(qtyInput?.value) || 0;
         const maxStock = parseFloat(qtyInput?.getAttribute('data-available')) || 0;
-        const coilNum = qtyInput?.getAttribute('data-coil-number') || '';
+        const lotNum = qtyInput?.getAttribute('data-lot-number') || 'Stock Lot';
 
-        if (coilId) {
-            coilTotals[coilId] = (coilTotals[coilId] || 0) + qty;
-            coilMax[coilId] = maxStock;
-            coilNames[coilId] = coilNum;
+        if (lotSource) {
+            lotTotals[lotSource] = (lotTotals[lotSource] || 0) + qty;
+            lotMax[lotSource] = maxStock;
+            lotNames[lotSource] = lotNum;
         }
     });
 
-    for (const [coilId, totalQty] of Object.entries(coilTotals)) {
-        const maxStock = coilMax[coilId];
+    for (const [lotSource, totalQty] of Object.entries(lotTotals)) {
+        const maxStock = lotMax[lotSource];
         if (totalQty > (maxStock + 0.0001)) {
             hasError = true;
-            errorMsg += `• Coil ${coilNames[coilId]}: Total selling weight (${totalQty.toLocaleString()} kg) exceeds available stock (${maxStock.toLocaleString()} kg).\n`;
+            errorMsg += `• ${lotNames[lotSource]}: Total selling weight (${totalQty.toLocaleString()} kg) exceeds available stock (${maxStock.toLocaleString()} kg).\n`;
         }
     }
 
@@ -1123,7 +1068,7 @@ function handlePaymentMethodChange(method) {
     const refContainer = document.getElementById('transactionRefContainer');
     if (!bankContainer || !refContainer) return;
 
-    if (method === 'cash') {
+    if (method === 'cash' || method === 'advance_credit') {
         bankContainer.style.display = 'none';
         refContainer.style.display = 'none';
     } else {

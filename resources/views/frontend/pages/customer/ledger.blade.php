@@ -11,7 +11,7 @@
                 <p class="text-muted small mb-0">Chronological transaction history, invoices, payments, and running receivable balance</p>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <a href="{{ route('customers.ledger.pdf', array_merge(['id' => $customer->id], request()->all())) }}" target="_blank" class="btn btn-primary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2 shadow-sm">
+                <a href="{{ route('customers.ledger.pdf', array_merge(['id' => $customer->id], request()->all())) }}" target="_blank" class="btn btn-outline-primary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2">
                     <i class="fe fe-download"></i>
                     <span>Download Statement PDF</span>
                 </a>
@@ -124,8 +124,12 @@
                         <i class="fe fe-dollar-sign fs-5"></i>
                     </div>
                     <div>
-                        <span class="{{ $closingBalance > 0 ? 'text-danger' : 'text-success' }} fw-semibold small d-block">Net Outstanding Due</span>
-                        <h5 class="mb-0 fw-bold {{ $closingBalance > 0 ? 'text-danger' : 'text-success' }}">৳{{ number_format($closingBalance, 2) }}</h5>
+                        <span class="{{ $closingBalance > 0 ? 'text-danger' : 'text-success' }} fw-semibold small d-block">
+                            {{ $closingBalance < 0 ? 'Customer Advance Credit' : ($closingBalance > 0 ? 'Net Outstanding Due' : 'Account Balance') }}
+                        </span>
+                        <h5 class="mb-0 fw-bold {{ $closingBalance > 0 ? 'text-danger' : 'text-success' }}">
+                            {{ $closingBalance < 0 ? '৳' . number_format(abs($closingBalance), 2) . ' (Advance)' : '৳' . number_format($closingBalance, 2) }}
+                        </h5>
                     </div>
                 </div>
             </div>
@@ -203,6 +207,9 @@
                                 </td>
                                 <td class="pe-4 text-end fw-bold {{ $row['balance'] > 0 ? 'text-danger' : 'text-success' }}">
                                     ৳{{ number_format($row['balance'], 2) }}
+                                    @if($row['balance'] < 0)
+                                        <small class="badge bg-success-subtle text-success border ms-1 px-1 py-0 fs-8">ADVANCE</small>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -221,6 +228,9 @@
                             <td class="text-end text-success">৳{{ number_format($totalCredit, 2) }}</td>
                             <td class="pe-4 text-end fs-6 {{ $closingBalance > 0 ? 'text-danger' : 'text-success' }}">
                                 ৳{{ number_format($closingBalance, 2) }}
+                                @if($closingBalance < 0)
+                                    <span class="badge bg-success text-white ms-1 px-2 py-1 fs-7">Advance Credit</span>
+                                @endif
                             </td>
                         </tr>
                     </tfoot>

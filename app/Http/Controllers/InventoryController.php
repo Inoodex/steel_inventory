@@ -395,7 +395,7 @@ class InventoryController extends Controller
 
         $query = Coil::where('status', 'in_stock')
             ->where('remaining_weight', '>', 0)
-            ->with(['lot.vendor', 'warehouse'])
+            ->with(['lot.vendor', 'warehouse', 'purchase', 'vendor'])
             ->latest();
 
         if ($request->filled('lot_id')) {

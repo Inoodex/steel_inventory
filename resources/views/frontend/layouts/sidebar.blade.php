@@ -95,6 +95,34 @@
                     </li>
                 @endif
 
+                {{-- ===== SHOP OPERATIONS ===== --}}
+                @if($canView('Inventory Management') || $canView('Sales Management'))
+                    <li class="menu-title"><span>Shop Operations</span></li>
+                    <li class="submenu {{ $active(['shops.*']) ? 'active' : '' }}">
+                        <a href="javascript:void(0)">
+                            <i class="fe fe-shopping-cart"></i><span> Shop Operations</span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <ul style="{{ $active(['shops.*']) ? 'display:block' : '' }}">
+                            <li class="{{ $active(['shops.sales.*']) ? 'active' : '' }}">
+                                <a href="{{ route('shops.sales.index') }}"><i class="fe fe-shopping-bag"></i> Shop Sales</a>
+                            </li>
+                            <li class="{{ $active(['shops.purchases.*']) ? 'active' : '' }}">
+                                <a href="{{ route('shops.purchases.index') }}"><i class="fe fe-download"></i> Shop Purchases</a>
+                            </li>
+                            <li class="{{ $active(['shops.returns.*']) ? 'active' : '' }}">
+                                <a href="{{ route('shops.returns.index') }}"><i class="fe fe-refresh-cw"></i> Shop Returns</a>
+                            </li>
+                            <li class="{{ $active(['shops.stock.*']) ? 'active' : '' }}">
+                                <a href="{{ route('shops.stock.index') }}"><i class="fe fe-pie-chart"></i> Shop Stock Report</a>
+                            </li>
+                            <li class="{{ $active(['shops.settings', 'shops.edit']) ? 'active' : '' }}">
+                                <a href="{{ route('shops.settings') }}"><i class="fe fe-settings"></i> Shop Settings</a>
+                            </li>
+                        </ul>
+                    </li>
+                @endif
+
                 {{-- ===== 4. COMMERCIAL & SALES (Outflow & Customers) ===== --}}
                 @if($canView('Sales Management') || $canView('Customer Management') || $canView('Payment Management'))
                     <li class="menu-title"><span>Commercial &amp; Sales</span></li>
@@ -259,6 +287,11 @@
                 {{-- ===== 7. REPORTS & ANALYTICS (Direct 1-Click Access) ===== --}}
                 @if($canView('Report Management'))
                     <li class="menu-title"><span>Reports &amp; Analytics</span></li>
+                    <li class="{{ $active(['reports.master', 'reports.master.pdf']) ? 'active' : '' }}">
+                        <a href="{{ route('reports.master') }}">
+                            <i class="fe fe-activity"></i><span> Master Activity Logs</span>
+                        </a>
+                    </li>
                     <li class="{{ $active(['sales.report']) ? 'active' : '' }}">
                         <a href="{{ route('sales.report') }}">
                             <i class="fe fe-shopping-bag"></i><span> Sales Report</span>

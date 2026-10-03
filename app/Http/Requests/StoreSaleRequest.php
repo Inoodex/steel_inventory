@@ -37,7 +37,7 @@ class StoreSaleRequest extends FormRequest
             'grandTotal'           => 'required|numeric|min:0',
             'advanced_payment'     => 'nullable|numeric|min:0',
             'duePayment'           => 'nullable|numeric|min:0',
-            'payment_method'       => 'nullable|string|in:cash,bank,cheque,mobile_banking',
+            'payment_method'       => 'nullable|string|in:cash,bank,cheque,mobile_banking,advance_credit',
             'bank_detail_id'       => 'nullable|exists:bank_details,id',
             'transaction_ref'      => 'nullable|string|max:255',
             'vat'                  => 'nullable|numeric|min:0',
@@ -73,13 +73,21 @@ class StoreSaleRequest extends FormRequest
         $validator->after(function ($validator) {
             $quantities = $this->input('qty', []);
             $coilIds = $this->input('coil_id', []);
+            $lotIds = $this->input('lot_id', []);
+            $warehouseId = $this->input('warehouse_id');
 
-            // Aggregate requested weight per coil
+            // Aggregate requested weight per coil and per lot
             $aggregatedPerCoil = [];
+            $aggregatedPerLot = [];
+
             foreach ($quantities as $index => $qty) {
                 $coilId = $coilIds[$index] ?? null;
+                $lotId = $lotIds[$index] ?? null;
                 if ($coilId) {
                     $aggregatedPerCoil[$coilId] = ($aggregatedPerCoil[$coilId] ?? 0) + (float)$qty;
+                } else {
+                    $lotKey = $lotId ? (string)$lotId : 'opening_stock';
+                    $aggregatedPerLot[$lotKey] = ($aggregatedPerLot[$lotKey] ?? 0) + (float)$qty;
                 }
             }
 
@@ -93,6 +101,30 @@ class StoreSaleRequest extends FormRequest
                             "Selling quantity (" . number_format($totalRequestedQty, 2) . " kg) exceeds available stock for Coil #{$coil->coil_number} (Available: " . number_format($available, 2) . " kg)."
                         );
                     }
+                }
+            }
+
+            foreach ($aggregatedPerLot as $lotKey => $totalRequestedQty) {
+                $query = \App\Models\Coil::where('status', 'in_stock')->where('remaining_weight', '>', 0);
+                if ($warehouseId) {
+                    $query->where('warehouse_id', $warehouseId);
+                }
+                if ($lotKey === 'opening_stock') {
+                    $query->where(function ($q) {
+                        $q->whereNull('lot_id')->orWhereNull('purchase_id');
+                    });
+                    $lotName = 'Opening Stock';
+                } else {
+                    $query->where('lot_id', $lotKey);
+                    $lotObj = \App\Models\Lot::find($lotKey);
+                    $lotName = $lotObj ? "Lot #{$lotObj->lot_number}" : "Lot #{$lotKey}";
+                }
+                $availableWeight = (float) $query->sum('remaining_weight');
+                if ($totalRequestedQty > ($availableWeight + 0.0001)) {
+                    $validator->errors()->add(
+                        'qty',
+                        "Selling quantity (" . number_format($totalRequestedQty, 2) . " kg) exceeds available stock for {$lotName} in the selected warehouse (Available: " . number_format($availableWeight, 2) . " kg)."
+                    );
                 }
             }
         });

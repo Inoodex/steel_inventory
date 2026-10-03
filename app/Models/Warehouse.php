@@ -13,6 +13,7 @@ class Warehouse extends Model
 
     protected $fillable = [
         'name',
+        'type',
         'code',
         'location',
         'contact_person',
@@ -21,6 +22,21 @@ class Warehouse extends Model
         'status',
         'notes',
     ];
+
+    public function scopeShops($query)
+    {
+        return $query->where('type', 'shop');
+    }
+
+    public function scopeWarehouses($query)
+    {
+        return $query->where('type', '!=', 'shop')->orWhereNull('type');
+    }
+
+    public function isShop(): bool
+    {
+        return $this->type === 'shop';
+    }
 
     public function sales()
     {

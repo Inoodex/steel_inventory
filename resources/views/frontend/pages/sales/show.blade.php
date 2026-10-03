@@ -340,7 +340,7 @@
                         @foreach($items as $item)
                             @php
                                 $coil = $item->coil ?? $item->product;
-                                $coilNumber = $coil ? $coil->coil_number : ($item->name ?? 'Steel Coil');
+                                $coilNumber = $coil ? $coil->coil_number : ($item->lot ? $item->lot->lot_number : ($item->name ?? 'Opening Stock'));
                                 $thickness = $item->thickness ?: ($coil ? $coil->thickness : '');
                                 $size = $item->size ?: ($coil ? $coil->width : '');
                                 $sizeType = $item->size_type ?: ($coil ? ($coil->length ?: $coil->size_type) : 'ft');
@@ -352,10 +352,12 @@
                                         <a href="{{ route('inventory.index', ['search' => $coil->coil_number]) }}" class="fw-bold font-monospace text-primary text-decoration-none" title="View in Steel Inventory">
                                             #{{ $coilNumber }}
                                         </a>
+                                    @elseif($item->lot)
+                                        <span class="fw-bold text-dark">{{ $item->lot->lot_number }}</span>
                                     @else
-                                        <span class="fw-bold text-dark">#{{ $coilNumber }}</span>
+                                        <span class="fw-bold text-dark">{{ $coilNumber }}</span>
                                     @endif
-                                    @if($coil && ($coil->purchase_id === null || !$coil->lot_id))
+                                    @if((!$item->lot_id && !$coil) || ($coil && ($coil->purchase_id === null || !$coil->lot_id)))
                                         <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-0 fs-8 ms-1">Opening Stock</span>
                                     @endif
                                 </td>

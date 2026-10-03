@@ -52,7 +52,7 @@ class SaleService
                 'sales_by'         => Auth::id(),
                 'status'           => $financials['status'],
                 'warehouse_id'     => $data['warehouse_id'] ?? null,
-                'delivery_status'  => $data['delivery_status'] ?? 'pending',
+                'delivery_status'  => $data['delivery_status'] ?? 'delivered',
                 'vat'              => $data['vat'] ?? 0,
                 'tax'              => $data['tax'] ?? 0,
                 'delivery_charge'  => $data['delivery_charge'] ?? 0,
@@ -66,21 +66,81 @@ class SaleService
             // 5. Create line items and deduct inventory
             $this->createSaleItems($sale, $data);
 
-            // 6. Record Initial Payment entry if paid > 0
+            // 6. Record Initial Payment entry or allocate existing customer Advance Prepayment
             $paid = (float) $sale->advanced_payment;
+            $isAdvanceCredit = ($sale->payment_method === 'advance_credit');
             if ($paid > 0) {
-                Payment::create([
-                    'customer_id'    => $customer->id,
-                    'sale_id'        => $sale->id,
-                    'payment_for'    => 2,
-                    'payment_method' => $sale->payment_method ?? 'cash',
-                    'bank_detail_id' => $sale->bank_detail_id,
-                    'transaction_ref'=> $sale->transaction_ref,
-                    'amount'         => $paid,
-                    'remarks'        => 'Initial receipt for ' . $sale->order_no,
-                    'status'         => 1,
-                    'created_by'     => Auth::id(),
-                ]);
+                if ($isAdvanceCredit) {
+                    $remainingToAllocate = $paid;
+                    $unallocatedPayments = Payment::where('customer_id', $customer->id)
+                        ->whereNull('sale_id')
+                        ->where('payment_for', 2)
+                        ->orderBy('created_at', 'asc')
+                        ->get();
+
+                    foreach ($unallocatedPayments as $advP) {
+                        if ($remainingToAllocate <= 0) break;
+                        $advAmt = (float) $advP->amount;
+
+                        if ($advAmt <= ($remainingToAllocate + 0.0001)) {
+                            // Fully consumed by this sale
+                            $advP->sale_id = $sale->id;
+                            $advP->remarks = ($advP->remarks ? $advP->remarks . ' — ' : '') . 'Applied to ' . $sale->order_no;
+                            $advP->save();
+                            $remainingToAllocate -= $advAmt;
+                        } else {
+                            // Partially consumed: split payment
+                            $remainingAdvAmt = $advAmt - $remainingToAllocate;
+                            $advP->amount = $remainingAdvAmt;
+                            $advP->save();
+
+                            // Create the allocated portion for this sale
+                            Payment::create([
+                                'customer_id'    => $customer->id,
+                                'sale_id'        => $sale->id,
+                                'payment_for'    => 2,
+                                'payment_method' => $advP->payment_method ?? 'advance_credit',
+                                'bank_detail_id' => $advP->bank_detail_id,
+                                'transaction_ref'=> $advP->transaction_ref,
+                                'payment_date'   => $advP->payment_date ?: $sale->order_date,
+                                'amount'         => $remainingToAllocate,
+                                'remarks'        => ($advP->remarks ? $advP->remarks . ' — ' : '') . 'Applied to ' . $sale->order_no,
+                                'status'         => 1,
+                                'created_by'     => Auth::id(),
+                            ]);
+                            $remainingToAllocate = 0;
+                        }
+                    }
+
+                    // If any portion of the advance adjustment had no unallocated record
+                    if ($remainingToAllocate > 0) {
+                        Payment::create([
+                            'customer_id'    => $customer->id,
+                            'sale_id'        => $sale->id,
+                            'payment_for'    => 2,
+                            'payment_method' => 'advance_credit',
+                            'payment_date'   => $sale->order_date,
+                            'amount'         => $remainingToAllocate,
+                            'remarks'        => 'Advance credit adjustment for ' . $sale->order_no,
+                            'status'         => 1,
+                            'created_by'     => Auth::id(),
+                        ]);
+                    }
+                } else {
+                    Payment::create([
+                        'customer_id'    => $customer->id,
+                        'sale_id'        => $sale->id,
+                        'payment_for'    => 2,
+                        'payment_method' => $sale->payment_method ?? 'cash',
+                        'bank_detail_id' => $sale->bank_detail_id,
+                        'transaction_ref'=> $sale->transaction_ref,
+                        'payment_date'   => $sale->order_date,
+                        'amount'         => $paid,
+                        'remarks'        => 'Initial receipt for ' . $sale->order_no,
+                        'status'         => 1,
+                        'created_by'     => Auth::id(),
+                    ]);
+                }
             }
 
             // 7. Auto-post double-entry journal voucher for Sale
@@ -91,7 +151,7 @@ class SaleService
 
                 // Determine exact Cash or Bank Chart of Account based on Payment Method
                 $collectionAcc = $cashAcc;
-                if ($sale->payment_method !== 'cash') {
+                if ($sale->payment_method !== 'cash' && !$isAdvanceCredit) {
                     if (!empty($sale->bank_detail_id)) {
                         $bank = \App\Models\BankDetail::find($sale->bank_detail_id);
                         $collectionAcc = $bank?->resolveChartOfAccount() 
@@ -142,18 +202,28 @@ class SaleService
                         'bank' => 'Bank Transfer',
                         'cheque' => 'Cheque',
                         'mobile_banking' => 'Mobile Banking',
+                        'advance_credit' => 'Advance Credit Adjustment',
                         default => 'Cash'
                     };
                     $refText = $sale->transaction_ref ? " [Ref/Cheque: {$sale->transaction_ref}]" : "";
 
-                    // 1. Debits: Cash / Bank / Receivable
-                    if ($paid > 0 && $collectionAcc) {
-                        $items[] = [
-                            'account_id' => $collectionAcc->id,
-                            'debit' => $paid,
-                            'credit' => 0.00,
-                            'description' => "{$methodLabel} collected for Sale {$sale->order_no}{$refText}"
-                        ];
+                    // 1. Debits: Cash / Bank / Advance Adjustment / Receivable
+                    if ($paid > 0) {
+                        if ($isAdvanceCredit) {
+                            $items[] = [
+                                'account_id' => $arAcc->id,
+                                'debit' => $paid,
+                                'credit' => 0.00,
+                                'description' => "Advance deposit credit applied for Sale {$sale->order_no}"
+                            ];
+                        } elseif ($collectionAcc) {
+                            $items[] = [
+                                'account_id' => $collectionAcc->id,
+                                'debit' => $paid,
+                                'credit' => 0.00,
+                                'description' => "{$methodLabel} collected for Sale {$sale->order_no}{$refText}"
+                            ];
+                        }
                     }
                     if ($due > 0) {
                         $items[] = ['account_id' => $arAcc->id, 'debit' => $due, 'credit' => 0.00, 'description' => 'Receivable due for Sale ' . $sale->order_no];
@@ -260,6 +330,9 @@ class SaleService
         }
 
         foreach ($data['qty'] as $index => $qty) {
+            $qty = (float) $qty;
+            if ($qty <= 0) continue;
+
             $unitPrice  = (float) ($data['unit_price'][$index] ?? 0);
             $total      = $unitPrice * $qty;
             $coilId     = !empty($data['coil_id'][$index]) ? $data['coil_id'][$index] : null;
@@ -274,20 +347,60 @@ class SaleService
             if ($coilId) {
                 $coil = Coil::find($coilId);
                 if ($coil) {
-                    $purchasePrice = $coil->rate_per_ton;
+                    $purchasePrice = (float)$coil->rate_per_ton;
                     $thickness = $thickness ?: $coil->thickness;
                     $size = $size ?: $coil->width;
                     $sizeType = $sizeType ?: $coil->length;
                     $lotId = $lotId ?: $coil->lot_id;
 
                     // Deduct coil weight
-                    $newRemaining = max(0, (float)$coil->remaining_weight - (float)$qty);
+                    $newRemaining = max(0, (float)$coil->remaining_weight - $qty);
                     $coil->remaining_weight = $newRemaining;
                     if ($newRemaining <= 0) {
                         $coil->status = 'exhausted';
                     }
                     $coil->save();
                 }
+            } else {
+                // Consolidated Lot / Opening Stock deduction (FIFO progressive across in-stock coils in this warehouse)
+                $warehouseId = $sale->warehouse_id;
+                $coilQuery = Coil::where('remaining_weight', '>', 0);
+                if ($warehouseId) {
+                    $coilQuery->where('warehouse_id', $warehouseId);
+                }
+
+                if ($lotId) {
+                    $coilQuery->where('lot_id', $lotId);
+                } else {
+                    $coilQuery->where(function ($q) {
+                        $q->whereNull('lot_id')->orWhereNull('purchase_id');
+                    });
+                }
+
+                $coils = $coilQuery->orderBy('id', 'asc')->get();
+                $remainingToDeduct = $qty;
+                $totalCostOfDeducted = 0;
+
+                foreach ($coils as $c) {
+                    if ($remainingToDeduct <= 0) break;
+                    $remWt = (float) $c->remaining_weight;
+                    $deduct = min($remWt, $remainingToDeduct);
+
+                    $c->remaining_weight = max(0, $remWt - $deduct);
+                    if ($c->remaining_weight <= 0) {
+                        $c->status = 'exhausted';
+                    }
+                    $c->save();
+
+                    $totalCostOfDeducted += ($deduct * (float)$c->rate_per_ton);
+                    $remainingToDeduct -= $deduct;
+
+                    if (!$thickness && $c->thickness) $thickness = $c->thickness;
+                    if (!$size && $c->width) $size = $c->width;
+                    if (!$sizeType && $c->length) $sizeType = $c->length;
+                }
+
+                $purchasePrice = $qty > 0 ? ($totalCostOfDeducted / $qty) : 0;
             }
 
             $itemProfit = ($unitPrice - $purchasePrice) * $qty;

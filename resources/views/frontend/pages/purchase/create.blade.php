@@ -130,17 +130,33 @@
                             </div>
 
                             <div class="col-lg-4 col-md-6 col-12">
+                                @php
+                                    $targetWhId = request('warehouse_id', old('warehouse_id'));
+                                    $isLocked = request('locked') || request('is_shop') || request('from') === 'shop';
+                                    $selectedWh = $targetWhId ? $warehouses->firstWhere('id', $targetWhId) : null;
+                                @endphp
                                 <label for="warehouse_id" class="form-label fw-semibold small text-secondary mb-1">
                                     Stockyard Location <span class="text-danger">*</span>
+                                    @if($isLocked && $selectedWh)
+                                        <span class="badge bg-primary-subtle text-primary border ms-1"><i class="fe fe-shopping-cart me-1"></i>Shop Locked</span>
+                                    @endif
                                 </label>
-                                <select id="warehouse_id" name="warehouse_id" class="form-select select2" required>
-                                    <option value="">Select Stockyard Depot</option>
-                                    @foreach ($warehouses as $wh)
-                                        <option value="{{ $wh->id }}" {{ $loop->first ? 'selected' : '' }}>
-                                            {{ $wh->name }} {{ $wh->code ? '('.$wh->code.')' : '' }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                @if($isLocked && $selectedWh)
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-primary border-primary-subtle"><i class="fe fe-home"></i></span>
+                                        <input type="text" class="form-control bg-light fw-bold text-dark border-primary-subtle" value="{{ $selectedWh->name }} {{ $selectedWh->code ? '('.$selectedWh->code.')' : '' }}" readonly>
+                                        <input type="hidden" name="warehouse_id" id="warehouse_id" value="{{ $selectedWh->id }}">
+                                    </div>
+                                @else
+                                    <select id="warehouse_id" name="warehouse_id" class="form-select select2" required>
+                                        <option value="">Select Stockyard Depot</option>
+                                        @foreach ($warehouses as $wh)
+                                            <option value="{{ $wh->id }}" {{ (string)$targetWhId === (string)$wh->id || ($loop->first && !$targetWhId) ? 'selected' : '' }}>
+                                                {{ $wh->name }} {{ $wh->code ? '('.$wh->code.')' : '' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                @endif
                             </div>
 
                             <div class="col-lg-4 col-md-6 col-12">

@@ -18,8 +18,33 @@ class CustomerController extends Controller
     {
         $customers = Customer::withSum(['sales' => function($q) {
             $q->whereNull('deleted_at');
-        }], 'due_payment')->latest()->get();
-        return view('frontend.pages.customer.index', compact('customers'));
+        }], 'due_payment')
+        ->withSum(['sales' => function($q) {
+            $q->whereNull('deleted_at');
+        }], 'payble')
+        ->withSum('payments', 'amount')
+        ->withSum(['payments as unallocated_payments_sum' => function($q) {
+            $q->whereNull('sale_id');
+        }], 'amount')
+        ->withSum(['returns' => function($q) {
+            $q->where('status', '!=', 'rejected');
+        }], 'total_refund_amount')
+        ->latest()
+        ->get()
+        ->map(function ($c) {
+            $opening = (float)($c->opening_balance ?? 0);
+            $salesTotal = (float)($c->sales_sum_payble ?? 0);
+            $paymentsTotal = (float)($c->payments_sum_amount ?? 0);
+            $returnsTotal = (float)($c->returns_sum_total_refund_amount ?? 0);
+            $net = $opening + $salesTotal - $paymentsTotal - $returnsTotal;
+            $c->advance_credit = $net < 0 ? abs($net) : 0.00;
+            $c->net_due = $net > 0 ? $net : 0.00;
+            return $c;
+        });
+
+        $bankAccounts = \App\Models\BankDetail::where('is_active', true)->orderBy('bank_name')->get();
+
+        return view('frontend.pages.customer.index', compact('customers', 'bankAccounts'));
     }
 
     public function downloadPdf()
@@ -27,7 +52,27 @@ class CustomerController extends Controller
         ini_set('memory_limit', '512M');
         $customers = Customer::withSum(['sales' => function($q) {
             $q->whereNull('deleted_at');
-        }], 'due_payment')->latest()->get();
+        }], 'due_payment')
+        ->withSum(['sales' => function($q) {
+            $q->whereNull('deleted_at');
+        }], 'payble')
+        ->withSum('payments', 'amount')
+        ->withSum(['returns' => function($q) {
+            $q->where('status', '!=', 'rejected');
+        }], 'total_refund_amount')
+        ->latest()
+        ->get()
+        ->map(function ($c) {
+            $opening = (float)($c->opening_balance ?? 0);
+            $salesTotal = (float)($c->sales_sum_payble ?? 0);
+            $paymentsTotal = (float)($c->payments_sum_amount ?? 0);
+            $returnsTotal = (float)($c->returns_sum_total_refund_amount ?? 0);
+            $net = $opening + $salesTotal - $paymentsTotal - $returnsTotal;
+            $c->advance_credit = $net < 0 ? abs($net) : 0.00;
+            $c->net_due = $net > 0 ? $net : 0.00;
+            return $c;
+        });
+
         $html = view('pdf.customers', compact('customers'))->render();
         $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8',
@@ -51,15 +96,19 @@ class CustomerController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
-    
         $attributes = $request->all();
         $rules = [
             'name'            => 'required|string|max:255',
             'phone'           => 'required|numeric|unique:customers,phone',
             'email'           => 'nullable|email|max:255',
-            'opening_balance' => 'nullable|numeric|min:0',
+            'opening_balance' => 'nullable|numeric',
+            'opening_due'     => 'nullable|numeric|min:0',
+            'opening_advance' => 'nullable|numeric|min:0',
             'address'         => 'required|string',
         ];
         $validation = Validator::make($attributes, $rules);
@@ -72,12 +121,24 @@ class CustomerController extends Controller
         $customer->phone = $request->phone;
         $customer->email = $request->email;
         $customer->address = $request->address;
-        $customer->opening_balance = $request->filled('opening_balance') ? (float)$request->opening_balance : 0.00;
+        
+        $openingDue = $request->filled('opening_due') ? (float)$request->opening_due : 0.0;
+        $openingAdv = $request->filled('opening_advance') ? (float)$request->opening_advance : 0.0;
+
+        if ($openingDue > 0) {
+            $customer->opening_balance = abs($openingDue);
+        } elseif ($openingAdv > 0) {
+            $customer->opening_balance = -1 * abs($openingAdv);
+        } elseif ($request->filled('opening_balance')) {
+            $customer->opening_balance = (float)$request->opening_balance;
+        } else {
+            $customer->opening_balance = 0.00;
+        }
+
         $customer->status = $request->status ?? '1';
         $customer->save();
     
         return redirect()->route('customers.index')->with(['success' => getNotify(1)]);
-
     }
 
     /**
@@ -87,7 +148,9 @@ class CustomerController extends Controller
     {
         $customer = Customer::findOrFail($id);
         $sales = \App\Models\Sale::where('customer_id', $id)->latest()->get();
-        return view('frontend.pages.customer.show', compact('customer', 'sales'));
+        $advancePayments = \App\Models\Payment::where('customer_id', $id)->whereNull('sale_id')->latest()->get();
+        $bankAccounts = \App\Models\BankDetail::where('is_active', true)->orderBy('bank_name')->get();
+        return view('frontend.pages.customer.show', compact('customer', 'sales', 'advancePayments', 'bankAccounts'));
     }
 
     /**
@@ -97,7 +160,6 @@ class CustomerController extends Controller
     {
         $customer = Customer::findOrFail($id);
         return view('frontend.pages.customer.edit',compact('customer'));
-        
     }
 
     /**
@@ -110,7 +172,9 @@ class CustomerController extends Controller
             'name'            => 'required|string|max:255',
             'phone'           => 'required|numeric|unique:customers,phone,'. $id,
             'email'           => 'nullable|email|max:255',
-            'opening_balance' => 'nullable|numeric|min:0',
+            'opening_balance' => 'nullable|numeric',
+            'opening_due'     => 'nullable|numeric|min:0',
+            'opening_advance' => 'nullable|numeric|min:0',
             'address'         => 'required|string',
         ];
         $validation = Validator::make($attributes, $rules);
@@ -123,9 +187,20 @@ class CustomerController extends Controller
         $customer->phone = $request->phone;
         $customer->email = $request->email;
         $customer->address = $request->address;
-        if ($request->has('opening_balance')) {
-            $customer->opening_balance = $request->filled('opening_balance') ? (float)$request->opening_balance : 0.00;
+
+        $openingDue = $request->filled('opening_due') ? (float)$request->opening_due : 0.0;
+        $openingAdv = $request->filled('opening_advance') ? (float)$request->opening_advance : 0.0;
+
+        if ($openingDue > 0) {
+            $customer->opening_balance = abs($openingDue);
+        } elseif ($openingAdv > 0) {
+            $customer->opening_balance = -1 * abs($openingAdv);
+        } elseif ($request->filled('opening_balance')) {
+            $customer->opening_balance = (float)$request->opening_balance;
+        } else {
+            $customer->opening_balance = 0.00;
         }
+
         if ($request->has('status')) {
             $customer->status = $request->status;
         }
@@ -154,6 +229,7 @@ class CustomerController extends Controller
         $toDate = $request->input('to_date');
 
         $ledgerData = $this->getCustomerLedgerData($customer, $fromDate, $toDate);
+        $ledgerData['bankAccounts'] = \App\Models\BankDetail::where('is_active', true)->orderBy('bank_name')->get();
 
         return view('frontend.pages.customer.ledger', $ledgerData);
     }
@@ -257,16 +333,21 @@ class CustomerController extends Controller
         }
 
         foreach ($payments as $p) {
-            $methodLabel = ucfirst($p->payment_method ?? 'cash');
+            $methodLabel = ucfirst(str_replace('_', ' ', $p->payment_method ?? 'cash'));
             $refStr = $p->transaction_ref ? " [Ref: {$p->transaction_ref}]" : "";
+            $isAdvance = empty($p->sale_id);
+            $typeLabel = $isAdvance ? 'Advance Deposit' : 'Payment Receipt';
+            $typeBadge = $isAdvance ? 'info' : 'success';
+            $refPrefix = $isAdvance ? 'ADV' : 'RCPT';
+
             $transactions->push([
                 'date' => $p->payment_date ? $p->payment_date : $p->created_at->format('Y-m-d'),
                 'created_at' => $p->created_at,
-                'type' => 'Payment Receipt',
-                'badge' => 'success',
-                'ref' => "RCPT-{$p->id}" . $refStr,
+                'type' => $typeLabel,
+                'badge' => $typeBadge,
+                'ref' => "{$refPrefix}-{$p->id}" . $refStr,
                 'url' => $p->sale_id ? route('sales.show', $p->sale_id) : null,
-                'description' => ($p->remarks ?: "Collection via {$methodLabel}") . $refStr,
+                'description' => ($p->remarks ?: ($isAdvance ? "Advance deposit via {$methodLabel}" : "Collection via {$methodLabel}")) . $refStr,
                 'debit' => 0.00,
                 'credit' => (float)$p->amount,
             ]);

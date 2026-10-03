@@ -77,15 +77,28 @@
                         @enderror
                     </div>
 
-                    <!-- Opening Balance / Previous Due -->
+                    <!-- Opening Due Balance -->
                     <div class="col-md-6 col-lg-4">
-                        <label class="form-label fw-semibold text-secondary small mb-1">Opening Balance / Previous Due (৳)</label>
+                        <label class="form-label fw-semibold text-secondary small mb-1">Opening Due Balance (৳)</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-light-subtle text-muted">৳</span>
-                            <input type="number" step="0.01" min="0" class="form-control @error('opening_balance') is-invalid @enderror" name="opening_balance" value="{{ old('opening_balance', '0.00') }}" placeholder="0.00">
+                            <input type="number" step="0.01" min="0" class="form-control @error('opening_due') is-invalid @enderror" name="opening_due" id="opening_due" value="{{ old('opening_due', '0.00') }}" placeholder="0.00">
                         </div>
-                        <small class="text-muted d-block mt-1" style="font-size: 11px;">Customer's existing receivable / previous due before this system</small>
-                        @error('opening_balance')
+                        <small class="text-muted d-block mt-1" style="font-size: 11px;">Existing receivable due from customer before this system</small>
+                        @error('opening_due')
+                            <div class="text-danger fs-7 mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Advance Balance -->
+                    <div class="col-md-6 col-lg-4">
+                        <label class="form-label fw-semibold text-success small mb-1">Advance Balance / Prepayment (৳)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-success-subtle text-success border-light-subtle fw-bold">৳</span>
+                            <input type="number" step="0.01" min="0" class="form-control text-success fw-bold @error('opening_advance') is-invalid @enderror" name="opening_advance" id="opening_advance" value="{{ old('opening_advance', '0.00') }}" placeholder="0.00">
+                        </div>
+                        <small class="text-muted d-block mt-1" style="font-size: 11px;">Existing advance credit / prepayment deposited by customer</small>
+                        @error('opening_advance')
                             <div class="text-danger fs-7 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
@@ -121,3 +134,25 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const dueInput = document.getElementById('opening_due');
+    const advInput = document.getElementById('opening_advance');
+
+    if (dueInput && advInput) {
+        dueInput.addEventListener('input', function() {
+            if (parseFloat(this.value) > 0) {
+                advInput.value = '0.00';
+            }
+        });
+        advInput.addEventListener('input', function() {
+            if (parseFloat(this.value) > 0) {
+                dueInput.value = '0.00';
+            }
+        });
+    }
+});
+</script>
+@endpush

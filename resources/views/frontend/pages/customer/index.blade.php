@@ -63,7 +63,7 @@
         <div class="content-page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
                 <h4 class="card-title fw-bold text-dark mb-1">Customer Directory</h4>
-                <p class="text-muted small mb-0">Manage customer records, contact information, and account status</p>
+                <p class="text-muted small mb-0">Manage customer records, prepayments, advance deposits, and account dues</p>
             </div>
             <div class="list-btn d-flex align-items-center gap-2">
                 <a class="btn btn-outline-danger px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2" href="{{ route('customers.pdf') }}" target="_blank">
@@ -98,13 +98,13 @@
         <div class="col-xl-3 col-md-6 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-body d-flex align-items-center">
-                    <div class="avatar avatar-lg bg-warning-light text-warning rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-layers fs-4"></i>
+                    <div class="avatar avatar-lg bg-success-light text-success rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                        <i class="fe fe-arrow-down-left fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Opening Dues</h6>
-                        <h4 class="mb-0 fw-bold text-warning">
-                            ৳{{ number_format($customers->sum('opening_balance'), 2) }}
+                        <h6 class="text-muted fw-normal mb-1">Customer Advance Credits</h6>
+                        <h4 class="mb-0 fw-bold text-success">
+                            ৳{{ number_format($customers->sum('advance_credit'), 2) }}
                         </h4>
                     </div>
                 </div>
@@ -134,9 +134,9 @@
                         <i class="fe fe-dollar-sign fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Total Outstanding Dues</h6>
+                        <h6 class="text-muted fw-normal mb-1">Net Outstanding Dues</h6>
                         <h4 class="mb-0 fw-bold text-danger">
-                            ৳{{ number_format($customers->sum(fn($c) => (float)($c->opening_balance ?? 0) + (float)($c->sales_sum_due_payment ?? 0)), 2) }}
+                            ৳{{ number_format($customers->sum('net_due'), 2) }}
                         </h4>
                     </div>
                 </div>
@@ -170,7 +170,7 @@
 
         <!-- Table Body -->
         <div class="card-body p-0">
-            <div class="table-responsive">
+            <div class="table-responsive" style="overflow: visible !important;">
                 <table class="table table-hover table-custom align-middle mb-0" id="customersTable">
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
@@ -180,7 +180,7 @@
                             <th>Address</th>
                             <th>Opening Due</th>
                             <th>Sales Due</th>
-                            <th>Total Due</th>
+                            <th>Account Balance</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -191,7 +191,8 @@
                                 $isActive = in_array($customer->status, ['active', '1', 1]);
                                 $openingDue = (float)($customer->opening_balance ?? 0);
                                 $salesDue = (float)($customer->sales_sum_due_payment ?? 0);
-                                $totalDue = $openingDue + $salesDue;
+                                $advanceCredit = (float)($customer->advance_credit ?? 0);
+                                $netDue = (float)($customer->net_due ?? 0);
                             @endphp
                             <tr class="customer-row" data-status="{{ $isActive ? 'active' : 'inactive' }}" data-search="{{ strtolower($customer->name . ' ' . $customer->phone . ' ' . $customer->email . ' ' . $customer->address) }}">
                                 <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
@@ -239,13 +240,17 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($totalDue > 0)
+                                    @if($advanceCredit > 0)
+                                        <span class="badge badge-soft-success px-2.5 py-1 rounded-pill fs-7 fw-bold" title="Customer has Prepayment / Advance Deposit balance">
+                                            <i class="fe fe-arrow-down-left me-1"></i>Advance: ৳{{ number_format($advanceCredit, 2) }}
+                                        </span>
+                                    @elseif($netDue > 0)
                                         <span class="badge badge-soft-danger px-2.5 py-1 rounded-pill fs-7 fw-bold">
-                                            ৳{{ number_format($totalDue, 2) }}
+                                            <i class="fe fe-alert-circle me-1"></i>Due: ৳{{ number_format($netDue, 2) }}
                                         </span>
                                     @else
                                         <span class="badge badge-soft-success px-2.5 py-1 rounded-pill fs-7 fw-semibold">
-                                            ৳0.00
+                                            ৳0.00 (Clear)
                                         </span>
                                     @endif
                                 </td>
@@ -337,8 +342,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const visibleCountSpan = document.getElementById('visibleCustomerCount');
 
     function filterTable() {
-        const query = searchInput.value.toLowerCase().trim();
-        const statusFilter = statusSelect.value;
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const statusFilter = statusSelect ? statusSelect.value : 'all';
         let visibleCount = 0;
 
         rows.forEach(row => {

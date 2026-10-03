@@ -116,8 +116,25 @@ class SalesController extends Controller
             ->withSum(['sales' => function($q) {
                 $q->whereNull('deleted_at');
             }], 'due_payment')
+            ->withSum(['sales' => function($q) {
+                $q->whereNull('deleted_at');
+            }], 'payble')
+            ->withSum('payments', 'amount')
+            ->withSum(['returns' => function($q) {
+                $q->where('status', '!=', 'rejected');
+            }], 'total_refund_amount')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function ($c) {
+                $opening = (float)($c->opening_balance ?? 0);
+                $salesTotal = (float)($c->sales_sum_payble ?? 0);
+                $paymentsTotal = (float)($c->payments_sum_amount ?? 0);
+                $returnsTotal = (float)($c->returns_sum_total_refund_amount ?? 0);
+                $net = $opening + $salesTotal - $paymentsTotal - $returnsTotal;
+                $c->advance_credit = $net < 0 ? abs($net) : 0.00;
+                $c->net_due = $net > 0 ? $net : 0.00;
+                return $c;
+            });
         $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
         $lots = Lot::with(['vendor'])->where('status', 'active')->orderBy('id', 'desc')->get();
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
@@ -240,8 +257,8 @@ class SalesController extends Controller
         $validated = $request->validate([
             'client_type' => 'nullable|in:new,existing',
             'existing_client_id' => 'nullable|exists:customers,id',
-            'name' => 'required|string',
-            'phone' => 'required|string',
+            'name' => 'nullable|string',
+            'phone' => 'nullable|string',
             'address' => 'nullable|string',
             'warehouse_id' => 'nullable|exists:warehouses,id',
             'delivery_status' => 'nullable|string|in:pending,dispatched,delivered,partial_delivered',
@@ -287,14 +304,44 @@ class SalesController extends Controller
 
             // 2. Restore coil weight for old sale items
             foreach ($sale->items as $oldItem) {
-                if ($oldItem->coil_id && $oldItem->qty > 0) {
-                    $oldCoil = Coil::find($oldItem->coil_id);
-                    if ($oldCoil) {
-                        $oldCoil->remaining_weight = (float)$oldCoil->remaining_weight + (float)$oldItem->qty;
-                        if ($oldCoil->status === 'exhausted' && $oldCoil->remaining_weight > 0) {
-                            $oldCoil->status = 'in_stock';
+                if ($oldItem->qty > 0) {
+                    if ($oldItem->coil_id) {
+                        $oldCoil = Coil::find($oldItem->coil_id);
+                        if ($oldCoil) {
+                            $oldCoil->remaining_weight = (float)$oldCoil->remaining_weight + (float)$oldItem->qty;
+                            if ($oldCoil->status === 'exhausted' && $oldCoil->remaining_weight > 0) {
+                                $oldCoil->status = 'in_stock';
+                            }
+                            $oldCoil->save();
                         }
-                        $oldCoil->save();
+                    } elseif ($oldItem->lot_id || $sale->warehouse_id) {
+                        // Restore across coils of that lot in warehouse (LIFO)
+                        $restoreQuery = Coil::query();
+                        if ($sale->warehouse_id) {
+                            $restoreQuery->where('warehouse_id', $sale->warehouse_id);
+                        }
+                        if ($oldItem->lot_id) {
+                            $restoreQuery->where('lot_id', $oldItem->lot_id);
+                        } else {
+                            $restoreQuery->where(function ($q) {
+                                $q->whereNull('lot_id')->orWhereNull('purchase_id');
+                            });
+                        }
+                        $lotCoils = $restoreQuery->orderBy('id', 'desc')->get();
+                        $toRestore = (float) $oldItem->qty;
+                        foreach ($lotCoils as $lc) {
+                            if ($toRestore <= 0) break;
+                            $maxCapacity = (float)($lc->gross_weight ?: $lc->net_weight ?: 0);
+                            $currentRem = (float)$lc->remaining_weight;
+                            $room = $maxCapacity > 0 ? max(0, $maxCapacity - $currentRem) : $toRestore;
+                            $add = min($room > 0 ? $room : $toRestore, $toRestore);
+                            $lc->remaining_weight = $currentRem + $add;
+                            if ($lc->remaining_weight > 0) {
+                                $lc->status = 'in_stock';
+                            }
+                            $lc->save();
+                            $toRestore -= $add;
+                        }
                     }
                 }
             }
@@ -309,6 +356,8 @@ class SalesController extends Controller
             foreach ($validated['qty'] as $index => $qty) {
                 $unitPrice = (float) $validated['unit_price'][$index];
                 $qty = (float) $qty;
+                if ($qty <= 0) continue;
+
                 $coilId = !empty($validated['coil_id'][$index]) ? $validated['coil_id'][$index] : null;
                 $lotId = !empty($validated['lot_id'][$index]) ? $validated['lot_id'][$index] : null;
                 $thickness = $request->thickness[$index] ?? null;
@@ -334,6 +383,46 @@ class SalesController extends Controller
                         }
                         $coil->save();
                     }
+                } else {
+                    // Consolidated Lot / Opening Stock deduction (FIFO progressive across in-stock coils in this warehouse)
+                    $warehouseId = $validated['warehouse_id'] ?? $sale->warehouse_id;
+                    $coilQuery = Coil::where('remaining_weight', '>', 0);
+                    if ($warehouseId) {
+                        $coilQuery->where('warehouse_id', $warehouseId);
+                    }
+
+                    if ($lotId) {
+                        $coilQuery->where('lot_id', $lotId);
+                    } else {
+                        $coilQuery->where(function ($q) {
+                            $q->whereNull('lot_id')->orWhereNull('purchase_id');
+                        });
+                    }
+
+                    $coils = $coilQuery->orderBy('id', 'asc')->get();
+                    $remainingToDeduct = $qty;
+                    $totalCostOfDeducted = 0;
+
+                    foreach ($coils as $c) {
+                        if ($remainingToDeduct <= 0) break;
+                        $remWt = (float) $c->remaining_weight;
+                        $deduct = min($remWt, $remainingToDeduct);
+
+                        $c->remaining_weight = max(0, $remWt - $deduct);
+                        if ($c->remaining_weight <= 0) {
+                            $c->status = 'exhausted';
+                        }
+                        $c->save();
+
+                        $totalCostOfDeducted += ($deduct * (float)$c->rate_per_ton);
+                        $remainingToDeduct -= $deduct;
+
+                        if (!$thickness && $c->thickness) $thickness = $c->thickness;
+                        if (!$size && $c->width) $size = $c->width;
+                        if (!$sizeType && $c->length) $sizeType = $c->length;
+                    }
+
+                    $purchasePrice = $qty > 0 ? ($totalCostOfDeducted / $qty) : 0;
                 }
 
                 $total = $unitPrice * $qty;

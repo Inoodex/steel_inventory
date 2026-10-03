@@ -291,6 +291,20 @@
             <p>Enter your credentials to access dashboard</p>
         </div>
 
+        @if (session('error'))
+            <div class="alert-custom d-flex align-items-center gap-2">
+                <i class="fas fa-circle-exclamation"></i>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
+
+        @if (session('status'))
+            <div class="alert alert-success d-flex align-items-center gap-2 py-2 px-3 rounded-3 mb-3" style="font-size: 0.84rem;">
+                <i class="fas fa-circle-check"></i>
+                <span>{{ session('status') }}</span>
+            </div>
+        @endif
+
         @if ($errors->any())
             <div class="alert-custom d-flex align-items-center gap-2">
                 <i class="fas fa-circle-exclamation"></i>
@@ -304,19 +318,29 @@
             <div class="form-group">
                 <label class="form-label" for="email">Email Address</label>
                 <div class="input-wrapper">
-                    <input type="email" name="email" id="email" class="form-control"
-                        value="{{ old('email') }}" required autofocus>
+                    <input type="email" name="email" id="email" class="form-control @error('email') is-invalid @enderror"
+                        value="{{ old('email') }}" required autofocus placeholder="name@company.com">
                     <i class="fas fa-envelope input-icon"></i>
                 </div>
+                @error('email')
+                    <div class="text-danger small mt-1" style="font-size: 0.8rem; font-weight: 500;">
+                        {{ $message }}
+                    </div>
+                @enderror
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="password">Password</label>
                 <div class="input-wrapper pass-input-wrapper">
-                    <input type="password" name="password" id="password" class="form-control pass-input" required>
+                    <input type="password" name="password" id="password" class="form-control pass-input @error('password') is-invalid @enderror" required placeholder="Enter password">
                     <i class="fas fa-lock input-icon"></i>
                     <i class="fas fa-eye toggle-password" id="togglePassword"></i>
                 </div>
+                @error('password')
+                    <div class="text-danger small mt-1" style="font-size: 0.8rem; font-weight: 500;">
+                        {{ $message }}
+                    </div>
+                @enderror
             </div>
 
             <div class="form-options">

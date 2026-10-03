@@ -13,7 +13,7 @@ class WarehouseController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Warehouse::withCount(['purchases', 'sales', 'coils']);
+        $query = Warehouse::warehouses()->withCount(['purchases', 'sales', 'coils']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -28,10 +28,14 @@ class WarehouseController extends Controller
 
         $warehouses = $query->latest()->paginate(15)->withQueryString();
 
-        $totalWarehouses = Warehouse::count();
-        $activeWarehouses = Warehouse::where('status', 'active')->count();
-        $totalCoilsStored = Coil::where('status', 'in_stock')->count();
-        $totalYardWeightTon = (float) (Coil::where('status', 'in_stock')->sum('remaining_weight') / 1000);
+        $totalWarehouses = Warehouse::warehouses()->count();
+        $activeWarehouses = Warehouse::warehouses()->where('status', 'active')->count();
+        $totalCoilsStored = Coil::whereHas('warehouse', function($q) {
+            $q->warehouses();
+        })->where('status', 'in_stock')->count();
+        $totalYardWeightTon = (float) (Coil::whereHas('warehouse', function($q) {
+            $q->warehouses();
+        })->where('status', 'in_stock')->sum('remaining_weight') / 1000);
 
         return view('frontend.pages.warehouses.index', compact(
             'warehouses',

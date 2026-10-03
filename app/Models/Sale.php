@@ -147,6 +147,11 @@ class Sale extends Model
         return $this->belongsTo(User::class, 'sales_by');
     }
 
+    public function salesBy()
+    {
+        return $this->belongsTo(User::class, 'sales_by');
+    }
+
     public function payoutUser()
     {
         return $this->belongsTo(User::class, 'charges_payout_by');

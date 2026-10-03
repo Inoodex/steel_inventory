@@ -12,7 +12,7 @@ use App\Http\Controllers\{
     ChartOfAccountController, JournalEntryController, LedgerController,
     TrialBalanceController, FinancialStatementController, ContraEntryController,
     ReconciliationController, FiscalYearController, CoilController, WarehouseController,
-    WorkerPayoutController
+    WorkerPayoutController, ShopController, MasterLogReportController
 };
 
 use Illuminate\Support\Facades\{Auth, Route};
@@ -60,6 +60,17 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::post('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.update_status');
     Route::resource('warehouses', WarehouseController::class);
 
+    // === Shop & Retail Outlets Module ===
+    Route::get('shops/stock-report', [ShopController::class, 'stockReport'])->name('shops.stock.index');
+    Route::get('shops/stock-report/pdf', [ShopController::class, 'stockReportPdf'])->name('shops.stock.pdf');
+    Route::get('shops/sales/create', [ShopController::class, 'createSale'])->name('shops.sales.create');
+    Route::get('shops/sales', [ShopController::class, 'sales'])->name('shops.sales.index');
+    Route::get('shops/purchases/create', [ShopController::class, 'createPurchase'])->name('shops.purchases.create');
+    Route::get('shops/purchases', [ShopController::class, 'purchases'])->name('shops.purchases.index');
+    Route::get('shops/returns', [ShopController::class, 'returns'])->name('shops.returns.index');
+    Route::get('shops/settings', [ShopController::class, 'settings'])->name('shops.settings');
+    Route::resource('shops', ShopController::class);
+
     // Backward-compatibility aliases for coils
     Route::get('coils', [InventoryController::class, 'index'])->name('coils.index');
     Route::post('coils/{id}/status', [InventoryController::class, 'updateStatus'])->name('coils.update_status');
@@ -96,6 +107,8 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('/employee/{id}/advance-sum', [ExpenseController::class, 'getAdvanceSum']);
 
     // === Reports & Analytics ===
+    Route::get('master-report', [MasterLogReportController::class, 'index'])->name('reports.master');
+    Route::get('master-report/pdf', [MasterLogReportController::class, 'pdf'])->name('reports.master.pdf');
     Route::get('purchase-report', [PurchaseController::class, 'reportIndex'])->name('purchase.report');
     Route::get('purchase/report', [PurchaseController::class, 'report'])->name('purchase.report.get');
     Route::get('purchase/report/pdf', [PurchaseController::class, 'reportPdf'])->name('purchase.report.pdf');
