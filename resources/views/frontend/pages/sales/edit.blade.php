@@ -225,13 +225,12 @@
                             <input type="number" id="purchase_price1" class="form-control border-light-subtle bg-white" readonly placeholder="0.00">
                         </div>
 
-                        <!-- 4. Custom Size / Specs (Admin Only) -->
+                        <!-- 4. Custom Size / Specs (Required) -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label class="form-label small text-secondary fw-semibold mb-0">Custom Size / Specs</label>
-                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle" style="font-size: 9px;"><i class="fe fe-lock me-1"></i>Admin Only</span>
+                                <label class="form-label small text-secondary fw-semibold mb-0">Custom Size / Specs <span class="text-danger">*</span></label>
                             </div>
-                            <input type="text" id="custom_size1" class="form-control border-light-subtle" placeholder="e.g. 4x8 ft cut (Internal note)">
+                            <input type="text" id="custom_size1" class="form-control border-light-subtle" placeholder="e.g. 4x8 ft cut" required>
                         </div>
 
                         <!-- 5. Selling Rate -->
@@ -859,7 +858,13 @@ function addItem() {
         return;
     }
 
-    const customSize = (document.getElementById('custom_size1')?.value || '').trim();
+    const customSizeInput = document.getElementById('custom_size1');
+    const customSize = (customSizeInput?.value || '').trim();
+    if (!customSize) {
+        alert('Please enter Custom Size / Specs.');
+        customSizeInput?.focus();
+        return;
+    }
     const unitPriceInput = document.getElementById('unit_price1');
     const unitPrice = parseFloat(unitPriceInput.value) || 0;
     if (unitPrice < 0) {
@@ -911,7 +916,7 @@ function addItem() {
                 ${lotBadge}
             </td>
             <td>
-                <input type="text" name="custom_size[]" class="form-control form-control-sm border-light-subtle" value="${escapeHtml(customSize)}" placeholder="Admin custom size...">
+                <input type="text" name="custom_size[]" class="form-control form-control-sm border-light-subtle" value="${escapeHtml(customSize)}" required placeholder="Custom size...">
             </td>
             <td>
                 <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" step="0.01" name="unit_price[]" id="unit_price${itemNumber}" class="form-control border-light-subtle unit-price" value="${unitPrice.toFixed(2)}">

@@ -95,31 +95,43 @@
                     </li>
                 @endif
 
-                {{-- ===== SHOP OPERATIONS ===== --}}
+                {{-- ===== SHOP OPERATIONS (Direct 1-Click Access) ===== --}}
                 @if($canView('Inventory Management') || $canView('Sales Management'))
                     <li class="menu-title"><span>Shop Operations</span></li>
-                    <li class="submenu {{ $active(['shops.*']) ? 'active' : '' }}">
-                        <a href="javascript:void(0)">
-                            <i class="fe fe-shopping-cart"></i><span> Shop Operations</span>
-                            <span class="menu-arrow"></span>
+                    <li class="{{ $active(['shops.sales.create']) ? 'active' : '' }}">
+                        <a href="{{ route('shops.sales.create') }}">
+                            <i class="fe fe-shopping-cart"></i><span> Shop Sale</span>
                         </a>
-                        <ul style="{{ $active(['shops.*']) ? 'display:block' : '' }}">
-                            <li class="{{ $active(['shops.sales.*']) ? 'active' : '' }}">
-                                <a href="{{ route('shops.sales.index') }}"><i class="fe fe-shopping-bag"></i> Shop Sales</a>
-                            </li>
-                            <li class="{{ $active(['shops.purchases.*']) ? 'active' : '' }}">
-                                <a href="{{ route('shops.purchases.index') }}"><i class="fe fe-download"></i> Shop Purchases</a>
-                            </li>
-                            <li class="{{ $active(['shops.returns.*']) ? 'active' : '' }}">
-                                <a href="{{ route('shops.returns.index') }}"><i class="fe fe-refresh-cw"></i> Shop Returns</a>
-                            </li>
-                            <li class="{{ $active(['shops.stock.*']) ? 'active' : '' }}">
-                                <a href="{{ route('shops.stock.index') }}"><i class="fe fe-pie-chart"></i> Shop Stock Report</a>
-                            </li>
-                            <li class="{{ $active(['shops.settings', 'shops.edit']) ? 'active' : '' }}">
-                                <a href="{{ route('shops.settings') }}"><i class="fe fe-settings"></i> Shop Settings</a>
-                            </li>
-                        </ul>
+                    </li>
+                    <li class="{{ $active(['shops.sales.index']) ? 'active' : '' }}">
+                        <a href="{{ route('shops.sales.index') }}">
+                            <i class="fe fe-shopping-bag"></i><span> Shop Sales List</span>
+                        </a>
+                    </li>
+                    <li class="{{ $active(['shops.purchases.create']) ? 'active' : '' }}">
+                        <a href="{{ route('shops.purchases.create') }}">
+                            <i class="fe fe-plus-circle"></i><span> Shop Purchase</span>
+                        </a>
+                    </li>
+                    <li class="{{ $active(['shops.purchases.index']) ? 'active' : '' }}">
+                        <a href="{{ route('shops.purchases.index') }}">
+                            <i class="fe fe-download"></i><span> Shop Purchases List</span>
+                        </a>
+                    </li>
+                    <li class="{{ $active(['shops.returns.*']) ? 'active' : '' }}">
+                        <a href="{{ route('shops.returns.index') }}">
+                            <i class="fe fe-refresh-cw"></i><span> Shop Returns</span>
+                        </a>
+                    </li>
+                    <li class="{{ $active(['shops.stock.*']) ? 'active' : '' }}">
+                        <a href="{{ route('shops.stock.index') }}">
+                            <i class="fe fe-pie-chart"></i><span> Shop Stock Report</span>
+                        </a>
+                    </li>
+                    <li class="{{ $active(['shops.settings', 'shops.edit']) ? 'active' : '' }}">
+                        <a href="{{ route('shops.settings') }}">
+                            <i class="fe fe-settings"></i><span> Shop Settings</span>
+                        </a>
                     </li>
                 @endif
 

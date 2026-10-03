@@ -5,20 +5,23 @@
 > **PHP Requirement:** ^8.2 (PHP 8.2+ / PHP 8.3)  
 > **Database:** MySQL (`steel_inventory`)  
 > **Environment:** Local (Laragon / `127.0.0.1:8000`)  
-> **Last Updated:** September 2026  
+> **Last Updated:** October 2026  
 
 ---
 
 ## 1. 🗂️ Project Overview
 
-**Steel Inventory** is an industrial-grade enterprise ERP, double-entry accounting system, and **ship steel coil/plate yard management system** built on **Laravel 11**. Designed specifically for steel manufacturing mills, ship-breaking steel re-rollers, plate stockists, and heavy industrial distribution yards:
+**Steel Inventory** is an industrial-grade enterprise ERP, double-entry accounting system, and **ship steel coil/plate yard management system** built on **Laravel 11**. Designed specifically for steel manufacturing mills, ship-breaking steel re-rollers, plate stockists, retail outlets, and heavy industrial distribution yards:
 
 - **Ship Steel Coils & Heavy Plates Registry**: Physical continuous stock tracked at the individual piece/coil level (`COIL-YYYYMMDD-####`), recording dimensional specifications (thickness, width, length/size, piece count, intake net weight in kg, remaining weight in kg, rate per ton, and real-time status: `in_stock`, `in_processing`, `exhausted`, `scrapped`).
 - **Mill Lot Procurement Management**: Batch procurement linked to Mill/Consignment Lots (`LOT-YYYYMMDD-####`), recording multi-row physical intake with vendor locking, quick AJAX lot registration, row weight calculations (kg and metric tons), proportional batch payment allocation, and automatic yard coil registration.
 - **Dedicated Creation & Editing Interfaces**: Full-width dedicated interfaces for Purchase Creation (`/purchases/create`) and Purchase Editing (`/purchases/{id}/edit`) with **Sold Weight Protection Checks** ensuring intake weight cannot be reduced below already sold/dispatched quantities.
-- **Commercial Sales & Weight Deduction**: Sales order fulfillment (`INV-####`) with fractional coil weight deduction, line-item profit tracking against acquisition rates, pass-through logistics charges (labour, weigh scale, freight), third-party handler payout workflow, and real-time WebSocket broadcasting (`SaleCreatedEvent`).
+- **Commercial Sales & Required Custom Sizing**: Sales order fulfillment (`INV-####`) with fractional coil weight deduction, mandatory custom cutting specifications (`custom_size`), line-item profit tracking against acquisition rates, pass-through logistics charges (labour, weigh scale, freight), third-party handler payout workflow, and real-time WebSocket broadcasting (`SaleCreatedEvent`).
+- **Dedicated Retail Shop Module**: Side-by-side Point-of-Sale (POS) direct retail sales interface (`/shops/sales/create`), side-by-side shop stock procurement intake (`/shops/purchases/create`), and dedicated Shop Profile & Settings management (`/shops/settings`).
+- **All-in-One Master Transaction & Activity Logs**: Comprehensive consolidated audit trail (`/reports/master-logs`) tracking sales, purchases, customer/vendor payments, inventory movements, expenses, and returns with date and module filtering.
 - **Product Returns & Restocking**: Structured return authorization (`returns`, `return_items`) with return condition assessment, refund settlement, and yard restocking.
 - **Full Double-Entry Accounting & Bookkeeping**: 5-Class Chart of Accounts (Asset 1000, Liability 2000, Equity 3000, Revenue 4000, Expense 5000), self-balancing journal vouchers (`JV-YYYYMMDD-####`), General Ledger, Trial Balance, Profit & Loss (P&L), Balance Sheet, Cash Flow Statement, Fiscal Year closing, and Customer/Vendor Party Ledgers.
+- **Laptop & High-Density Screen Responsiveness**: Global ergonomic optimization for standard laptops (1200px–1440px / 768px–900px), with compact form controls, height-constrained modals, sticky summary calculators, and an **auto-collapsing 62px mini-sidebar** with hover-to-expand drawer navigation.
 - **mPDF Vector Report Standard**: High-fidelity vector PDF generation matching the application design system with base64 letterhead watermarks, dark slate header typography, zebra striping, and authorized signature blocks.
 - **Role-Based Access Control (RBAC)**: Spatie Permission (`spatie/laravel-permission ^6.4`) with granular permissions across 11 functional modules and two core roles (`Super Admin` and `Employee`).
 
@@ -39,11 +42,11 @@ steel_inventory/
 │   │   ├── NumberToWords.php         # Number to words converter (for invoices and vouchers)
 │   │   └── helpers.php               # Global accounting helpers (postJournalEntry, getAccountBalance, getInvoicePadBase64)
 │   ├── Http/
-│   │   ├── Controllers/              # 30 domain controllers (Sales, Purchase, Coil, Lot, Accounts, etc.)
+│   │   ├── Controllers/              # 32 domain controllers (Sales, Purchase, Shop, MasterLogReport, Coil, Lot, Accounts, etc.)
 │   │   ├── Middleware/               # Spatie RBAC, auth guards
-│   │   └── Requests/                 # Form requests (StorePurchaseRequest, UpdatePurchaseRequest, etc.)
+│   │   └── Requests/                 # Form requests (StoreSaleRequest, StorePurchaseRequest, UpdatePurchaseRequest, etc.)
 │   ├── Mail/                         # Mailable classes (e.g. CreateSalesMail)
-│   ├── Models/                       # 29 Eloquent models (Coil, Purchase, Lot, Sale, ChartOfAccount, JournalEntry, etc.)
+│   ├── Models/                       # 29 Eloquent models (Coil, Purchase, Lot, Sale, Customer, Vendor, ChartOfAccount, JournalEntry, etc.)
 │   └── Services/                     # Dedicated business services (PurchaseService, SaleService, InventoryService)
 ├── database/
 │   ├── migrations/                   # 8 domain-consolidated database migrations
@@ -53,14 +56,14 @@ steel_inventory/
 │   ├── views/
 │   │   ├── frontend/                 # ERP views (Blade templates)
 │   │   │   ├── layouts/              # app, head, header, sidebar, right_sidebar
-│   │   │   └── pages/                # 22 module sections (coils, purchase, lots, sales, accounts, etc.)
-│   │   ├── pdf/                      # mPDF invoice, ledger, and statement templates
+│   │   │   └── pages/                # 24 module sections (shops, sales, purchase, reports, inventory, lots, accounts, etc.)
+│   │   ├── pdf/                      # mPDF invoice, ledger, and statement templates (master_logs, sales, purchases, inventory, etc.)
 │   │   │   └── accounts/             # Voucher, Ledger, Trial Balance, P&L, Balance Sheet templates
 │   │   ├── auth/                     # Authentication views
 │   │   └── errors/
 │   ├── css/, js/, sass/
 ├── routes/
-│   ├── web.php                       # Main application routes (209 active routes)
+│   ├── web.php                       # Main application routes (215+ active routes)
 │   ├── api.php                       # API endpoints (Sanctum protected)
 │   └── console.php
 ├── public/                           # Assets, letterhead pads (assets/invoice/pad.png), uploads
@@ -72,6 +75,8 @@ steel_inventory/
 - **MVC Architecture** — Clean separation between Eloquent Models, Blade Views, and Controllers.
 - **Service Layer Pattern** — Complex transactions isolated into dedicated services (`PurchaseService`, `SaleService`) with database transaction safety and automated accounting voucher creation.
 - **Weight-Based Inventory Integrity** — The physical stock is maintained in `coils` as decimal weights (kg/tons). Sales transactions decrement remaining weight and update status flags atomically.
+- **Side-by-Side Ergonomic Layouts** — Point-of-Sale direct sales and direct stock purchases provide dual-pane workflows (left: items builder; right: sticky live financial calculator).
+- **Auto-Collapsing Navigation** — Non-intrusive 62px sidebar expands on mouse hover and automatically collapses on mouse leave, dedicating 95%+ screen space to operational data.
 - **Double-Entry Accounting Engine** — Self-balancing journal voucher posting with debit/credit equilibrium guarantees (`postJournalEntry()`), Storno error reversals (`reverseJournalEntry()`), and strict fiscal period guards.
 - **Dual PDF Engine** — High-performance vector PDF rendering with `mpdf/mpdf ^8.3` using authenticated signature blocks, exact millimeter margins, and base64 letterhead pads.
 
@@ -90,7 +95,7 @@ Managed by **Spatie Laravel Permission** (`spatie/laravel-permission ^6.4`):
 
 | Role | Access Scope |
 |------|--------------|
-| **Super Admin** | Full access to all 11 modules: Administration, Sales, Customers, Payments, Purchases, Inventory/Coils, Vendors, Accounts & Finance, HR & Payroll, Company Profile, Reports |
+| **Super Admin** | Full access to all 11 modules: Administration, Sales, Customers, Payments, Purchases, Inventory/Coils, Shops, Vendors, Accounts & Finance, HR & Payroll, Company Profile, Reports |
 | **Employee** | Dedicated Employee Dashboard (`/dashboard`) + personal TA/DA self-service portal (`/employee/tada`) |
 
 ---
@@ -121,33 +126,46 @@ Designed for industrial steel procurement where goods are sourced in mill batche
 
 ---
 
-### 4.2 ⚙️ Ship Steel Coils & Plates Registry
+### 4.2 🏪 Retail Shop Module (Side-by-Side POS & Intake)
+A specialized module built for retail outlet operations distinct from the main yard:
+
+| Section | Route | Layout & Capabilities |
+|---------|-------|------------------------|
+| **Shop POS Direct Sale** | `/shops/sales/create` | Side-by-side layout: Left side coil picker & product builder; Right side sticky live calculator for Subtotal, Discount, Delivery, Labour, Advance payment, and Due. |
+| **Shop Direct Purchase** | `/shops/purchases/create` | Side-by-side layout: Left side Lot & intake item builder; Right side sticky Landed Cost, Advance payment, and Net Due calculator. |
+| **Shop Settings & Profile** | `/shops/settings` | Profile management to update shop name, contact phone, email, and outlet address. |
+| **Shop Sales & Purchases Lists** | `/shops/sales`, `/shops/purchases` | Dedicated filtered listings of retail outlet transactions. |
+
+---
+
+### 4.3 ⚙️ Ship Steel Coils & Plates Registry
 The single source of truth for physical inventory in the yard:
 
 | Model | Table | Key Fields & Capabilities |
 |-------|-------|--------------------------|
 | `Coil` | `coils` | `coil_number` (`COIL-YYYYMMDD-0001`), `purchase_id`, `lot_id`, `vendor_id`, `warehouse_id`, `thickness`, `width`, `length`, `piece_count`, `gross_weight`, `tare_weight`, `net_weight`, `remaining_weight`, `rate_per_ton`, `total_price`, `status` (`in_stock`, `in_processing`, `exhausted`, `scrapped`) |
-| `Warehouse` | `warehouses` | Storage yards, locations, and warehouse capacity tracking |
+| `Warehouse` | `warehouses` | Storage yards, retail shops (`type: shop`), and warehouse capacity tracking |
 
 #### Key Coil Features:
 - **Sequential Coil Tagging**: Unique auto-generated coil identifiers (`COIL-YYYYMMDD-####`).
 - **Computed Attributes**:
-  - `remaining_coils`: Converts remaining weight into remaining physical pieces (e.g. 5 coils @ 500kg, sold 150kg = 3.5 coils).
+  - `remaining_coils`: Converts remaining weight into remaining physical pieces.
   - `remaining_percentage`: Real-time percentage of remaining weight relative to intake net weight.
   - `unit_weight`: Weight per piece/plate.
 - **Stock Overview & PDF Export**: Filterable by Lot, Vendor, Warehouse Yard, and Status, with instant mPDF stock inventory report generation (`/inventory/pdf`).
 
 ---
 
-### 4.3 💰 Sales, Commercial Logistics & Extra Charges
+### 4.4 💰 Sales, Commercial Logistics & Extra Charges
 | Model | Table | Key Fields & Capabilities |
 |-------|-------|--------------------------|
 | `Sale` | `sales` | `order_no` (`INV-####`), `order_date`, `customer_id`, `subtotal`, `discount`, `vat`, `tax`, `total`, `payble`, `advanced_payment`, `due_payment`, `payment_method`, `bank_detail_id`, `delivery_status`, `delivery_charge`, `labour_cost`, `weight_scale_cost`, `other_charges`, `charges_payout_status`, `status` |
-| `SalesItem` | `sales_items` | `order_id`, `coil_id`, `lot_id`, `thickness`, `size`, `size_type`, `qty` (weight), `unit_price`, `total_price`, `purchase_price`, `profit`, `returned_qty` |
+| `SalesItem` | `sales_items` | `order_id`, `coil_id`, `lot_id`, `thickness`, `size`, `size_type`, `custom_size` (required custom specs), `qty` (weight), `unit_price`, `total_price`, `purchase_price`, `profit`, `returned_qty` |
 | `Customer` | `customers` | Client records with opening balances and ledger history |
 | `Payment` | `payments` | Customer receipts and vendor disbursements |
 
 #### Key Sales Features:
+- **Mandatory Custom Sizing (`custom_size`)**: Requires entry of custom slitting/cutting dimensions for every line item, enforced via front-end validation and backend `StoreSaleRequest`.
 - **Fractional Weight Deductions**: Selling deducts sold weight from `coils.remaining_weight`. When remaining weight reaches 0, status transitions to `exhausted`.
 - **Pass-Through Extra Charges**: Captures crane/labour fees (`labour_cost`), certified bridge scale fees (`weight_scale_cost`), and transport freight (`delivery_charge`).
 - **Handler Payout Tracking**: Tracks whether collected pass-through charges have been disbursed to third-party drivers or labour gangs (`charges_payout_status`: `unpaid`/`paid`).
@@ -156,7 +174,20 @@ The single source of truth for physical inventory in the yard:
 
 ---
 
-### 4.4 📒 Double-Entry Accounting & Financial Statements
+### 4.5 📑 All-in-One Master Activity & Transaction Logs Report
+A central consolidation report located at `/reports/master-logs` (`reports.master`):
+- **Unified Event Ledger**: Merges and chronological sequences 6 core business flows:
+  1. Sales Orders (`Sale`)
+  2. Purchase Inwards (`Purchase`)
+  3. Customer & Vendor Payments (`Payment`)
+  4. Coil Stock Inward Movements (`Coil`)
+  5. Daily Operating Expenses (`DailyExpense`)
+  6. Product Restocking & Returns (`ProductReturn`)
+- **Filterable & Auditable**: Filter by Date Range, Module Type, and Search query, displaying clean transaction dates, reference IDs, and financial/weight summaries.
+
+---
+
+### 4.6 📒 Double-Entry Accounting & Financial Statements
 A complete GAAP/IFRS-compliant double-entry accounting engine fully integrated with operational transactions:
 
 | Model | Table | Purpose |
@@ -179,7 +210,7 @@ A complete GAAP/IFRS-compliant double-entry accounting engine fully integrated w
 
 ---
 
-### 4.5 🔄 Returns, HR & Personnel
+### 4.7 🔄 Returns, HR & Personnel
 - **Product Returns (`returns`, `return_items`)**: Structured return workflow with condition recording, inventory restocking, and refund tracking.
 - **HR & Payroll (`employees`, `salaries`, `ta_das`)**: Monthly salary generation, advance salary deductions, and employee self-service TA/DA request portal.
 - **Operational Expense Tracking (`daily_expenses`, `expense_categories`)**: Categorized petty cash and yard expense tracking.
@@ -232,7 +263,9 @@ database/migrations/
 
 ### Frontend & UI Guidelines
 - **Blade Templating Engine** with Bootstrap 5 layout components.
-- **Select2 & Custom Badges** for styled form controls.
+- **Laptop & Responsive Density Engine**: Media queries for 1200px–1440px widths and 768px–850px heights.
+- **Hover-to-Expand Mini-Sidebar**: 62px default mini-sidebar with 0.92rem crisp icons; expands to 248px on hover and auto-collapses on mouse leave.
+- **Select2 & Custom Badges**: Standardized compact 37px input heights and styled form controls.
 - **No Breadcrumbs Policy**: Strict project guideline (`.agents/AGENTS.md`) eliminating `<ul class="breadcrumb">` navigation tags for modern, clean headers.
 - **3-Dot Table Action Dropdowns**: Configured with `data-bs-popper-config='{"strategy":"fixed"}'` to ensure dropdown menus float freely above table containers without viewport clipping.
 
@@ -240,17 +273,18 @@ database/migrations/
 
 ## 7. 🛣️ Route Structure & Navigation
 
-The application registers **209 active routes** organized into 8 main workflow sections:
+The application registers **215+ active routes** organized into 9 main workflow sections:
 
 | Section | Key Routes | Primary Controller | Functionality |
 |---------|------------|--------------------|---------------|
 | **Dashboard** | `/dashboard` | `FrontendController` | Executive metrics, financial KPI cards, stock summary, recent activities |
+| **Retail Shop** | `/shops/sales/create`, `/shops/purchases/create`, `/shops/settings`, `/shops/sales`, `/shops/purchases` | `ShopController` | Side-by-side POS sales, side-by-side shop stock procurement intake, shop profile configuration |
 | **Procurement** | `/purchase`, `/purchase/create`, `/purchase/{id}/edit`, `/lots`, `/vendors` | `PurchaseController`, `LotController`, `VendorController` | Batch purchase orders, lot consignment tracking, vendor profiles, vendor dues & party ledgers |
 | **Inventory & Yard** | `/inventory`, `/coils`, `/warehouses` | `InventoryController`, `CoilController`, `WarehouseController` | Stock overview, ship steel coils & plates registry, warehouse/yard management |
-| **Sales & Commercial** | `/sales`, `/sales/create`, `/sales/invoice/{id}/pdf`, `/due-payments`, `/returns` | `SalesController`, `PaymentController`, `ReturnController` | Sales orders, vector PDF invoices, customer receivables, sales returns |
+| **Sales & Commercial** | `/sales`, `/sales/create`, `/sales/invoice/{id}/pdf`, `/due-payments`, `/returns` | `SalesController`, `PaymentController`, `ReturnController` | Sales orders, mandatory custom sizing specs, vector PDF invoices, customer receivables, sales returns |
 | **Accounts & Finance** | `/accounts/chart-of-accounts`, `/accounts/journal-entries`, `/accounts/ledger`, `/accounts/trial-balance`, `/accounts/reports/*` | `ChartOfAccountController`, `JournalEntryController`, `LedgerController`, `TrialBalanceController`, `FinancialStatementController` | Double-entry bookkeeping, general ledger, trial balance, P&L, balance sheet, cash flow |
 | **HR & Payroll** | `/employees`, `/salary`, `/daily-expenses`, `/employee/tada` | `EmployeeController`, `SalaryController`, `ExpenseController`, `EmployeeTaDaController` | Staff records, monthly payroll, petty cash expenses, employee self-service TA/DA |
-| **Reports** | `/sales-report`, `/purchase-report`, `/extra-charges-report`, `/revenues` | `SalesController`, `PurchaseController`, `RevenueController` | Sales analytics, purchase analytics, freight & charges report, revenue margins |
+| **Reports & Analytics** | `/reports/master-logs`, `/sales-report`, `/purchase-report`, `/extra-charges-report`, `/revenues` | `MasterLogReportController`, `SalesController`, `PurchaseController`, `RevenueController` | Consolidated all-in-one transaction logs, sales analytics, purchase analytics, freight & charges report |
 | **Administration** | `/users`, `/role`, `/permission`, `/company-details`, `/bank-details` | `UserController`, `RoleController`, `PermissionController`, `CompanyDetailController`, `BankDetailController` | User access, RBAC security, corporate profile, bank accounts |
 
 ---
@@ -268,19 +302,29 @@ graph TD
     Save --> JV[7. Auto-Post JV: Dr. 1140 Inventory Asset, Cr. 1110/1120 Cash/Bank, Cr. 2110 AP]
 ```
 
-### Steel Sales & Fractional Cutting Flow
+### Steel Sales & Custom Sizing Flow
 ```mermaid
 graph TD
-    Select[1. Select Customer & Target Coil from Yard Stock] --> Cut[2. Enter Cutting/Sold Weight in kg]
-    Cut --> Pricing[3. Enter Unit Selling Rate -> Computes Subtotal & Profit Margin]
-    Pricing --> Charges[4. Add Logistics Charges: Labour, Weigh Scale, Freight]
-    Charges --> SaveSale[5. Save Sale Order INV-####]
-    SaveSale --> DeductCoil[6. Atomically Decrement Coil Remaining Weight]
+    Select[1. Select Customer & Target Lot/Coil] --> Specs[2. Enter Required Custom Size/Specs]
+    Specs --> Cut[3. Enter Selling Weight in kg & Selling Rate]
+    Cut --> Pricing[4. Computes Subtotal & Profit Margin]
+    Pricing --> Charges[5. Add Logistics Charges: Labour, Weigh Scale, Freight]
+    Charges --> SaveSale[6. Save Sale Order INV-####]
+    SaveSale --> DeductCoil[7. Atomically Decrement Coil Remaining Weight]
     DeductCoil --> CheckZero{Remaining <= 0?}
     CheckZero -- Yes --> Exhaust[Mark Coil Status = exhausted]
     CheckZero -- No --> InStock[Retain Coil Status = in_stock]
-    SaveSale --> JV2[7. Auto-Post JV: Dr. Cash/Bank/AR, Cr. 4110 Steel Revenue, Cr. 2140 Charges Payable]
-    SaveSale --> PDF[8. Generate Print-Ready Vector PDF Invoice on Letterhead]
+    SaveSale --> JV2[8. Auto-Post JV: Dr. Cash/Bank/AR, Cr. 4110 Steel Revenue, Cr. 2140 Charges Payable]
+    SaveSale --> PDF[9. Generate Print-Ready Vector PDF Invoice on Letterhead]
+```
+
+### Retail Shop POS Workflow
+```mermaid
+graph TD
+    Shop[1. Open Shop POS: /shops/sales/create] --> Pick[2. Select Walk-in / Existing Client & In-Stock Coil]
+    Pick --> LiveCalc[3. Live Right-Side Calculator: Grand Total, Discount & Dues]
+    LiveCalc --> Settle[4. Record Immediate Cash/Bank Payment & Complete Sale]
+    Settle --> StockUpdate[5. Decrement Shop Coil Stock & Record Sale]
 ```
 
 ---
@@ -304,7 +348,7 @@ DB_DATABASE=steel_inventory
 DB_USERNAME=root
 DB_PASSWORD=
 
-# 4. Run database migrations
+# 4. Run database migrations (Do NOT run on production without permission)
 php artisan migrate
 
 # 5. Seed initial data (Users, Roles, Permissions, Master Chart of Accounts)
@@ -321,5 +365,5 @@ php artisan serve
 
 ---
 
-*Document updated: September 2026*  
+*Document updated: October 2026*  
 *Maintained by: Antigravity AI Engineering Assistant*

@@ -92,12 +92,12 @@
                             </select>
                         </div>
                         
-                        <!-- Customer Profile & Due Widget (Opening Due + Sales Due + Advance Credit / Total) -->
+                        <!-- Customer Profile & Due Widget (Opening Due + Sales Due + Advance Amount / Total) -->
                         <div class="col-lg-6 col-md-6 col-12">
                             <div id="customerBalanceCard" class="p-3 bg-light rounded-3 border h-100 d-flex flex-wrap align-items-center justify-content-between gap-2">
                                 <div>
                                     <div class="fw-semibold text-dark mb-0" id="custNameText">No Customer Selected</div>
-                                    <div class="small text-muted" id="custContactText" style="font-size: 11px;">Select customer to view previous balance &amp; advance credits</div>
+                                    <div class="small text-muted" id="custContactText" style="font-size: 11px;">Select customer to view previous balance &amp; advance amount</div>
                                 </div>
                                 <div class="d-flex align-items-center gap-2 text-end flex-wrap">
                                     <div class="bg-white px-2 py-1 rounded border" id="custOpeningDueWrapper">
@@ -113,7 +113,7 @@
                                         <span id="custBalanceBadge" class="fw-bold text-secondary fs-7">৳ 0.00</span>
                                     </div>
                                     <div class="bg-success-subtle px-2 py-1 rounded border border-success-subtle" id="custAdvanceWrapper" style="display: none;">
-                                        <span class="text-success d-block" style="font-size: 9px; text-transform: uppercase; font-weight: 700;">Advance Credit</span>
+                                        <span class="text-success d-block" style="font-size: 9px; text-transform: uppercase; font-weight: 700;">Advance Amount</span>
                                         <span id="custAdvanceCreditBadge" class="fw-bold text-success fs-7">৳ 0.00</span>
                                     </div>
                                     <button type="button" id="btnApplyAdvance" class="btn btn-sm btn-success px-2.5 py-1.5 rounded-2 fw-bold shadow-sm" style="display: none; font-size: 11px;" onclick="applyCustomerAdvanceCredit()">
@@ -210,13 +210,12 @@
                             <input type="number" id="purchase_price1" class="form-control border-light-subtle bg-white" readonly placeholder="0.00">
                         </div>
 
-                        <!-- 4. Custom Size / Specs (Admin Only) -->
+                        <!-- 4. Custom Size / Specs (Required) -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label class="form-label small text-secondary fw-semibold mb-0">Custom Size / Specs</label>
-                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle" style="font-size: 9px;"><i class="fe fe-lock me-1"></i>Admin Only</span>
+                                <label class="form-label small text-secondary fw-semibold mb-0">Custom Size / Specs <span class="text-danger">*</span></label>
                             </div>
-                            <input type="text" id="custom_size1" class="form-control border-light-subtle" placeholder="e.g. 4x8 ft cut (Internal note)">
+                            <input type="text" id="custom_size1" class="form-control border-light-subtle" placeholder="e.g. 4x8 ft cut" required>
                         </div>
 
                         <!-- 5. Selling Rate -->
@@ -524,7 +523,7 @@ function updateCustomerBalanceCard(totalDue, name, details, openingDue = 0, sale
     if (!name) {
         nameText.innerText = 'No Customer Selected';
         nameText.className = 'fw-semibold text-dark mb-0';
-        contactText.innerText = 'Select customer to view previous balance & advance credits';
+        contactText.innerText = 'Select customer to view previous balance & advance amount';
         totalBadge.innerText = '৳ 0.00';
         totalBadge.className = 'fw-bold text-secondary fs-7';
         if (openingBadge) openingBadge.innerText = '৳ 0.00';
@@ -853,7 +852,13 @@ function addItem() {
         return;
     }
 
-    const customSize = (document.getElementById('custom_size1')?.value || '').trim();
+    const customSizeInput = document.getElementById('custom_size1');
+    const customSize = (customSizeInput?.value || '').trim();
+    if (!customSize) {
+        alert('Please enter Custom Size / Specs.');
+        customSizeInput?.focus();
+        return;
+    }
     const lot = currentSelectedLot;
     const lotId = lot.id;
     const thickness = lot.thickness || '';
@@ -896,7 +901,7 @@ function addItem() {
                 ${lotBadge}
             </td>
             <td>
-                <input type="text" name="custom_size[]" class="form-control form-control-sm border-light-subtle" value="${escapeHtml(customSize)}" placeholder="Admin custom size...">
+                <input type="text" name="custom_size[]" class="form-control form-control-sm border-light-subtle" value="${escapeHtml(customSize)}" required placeholder="Custom size...">
             </td>
             <td>
                 <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" step="0.01" name="unit_price[]" id="unit_price${itemNumber}" class="form-control border-light-subtle unit-price" value="${unitPrice.toFixed(2)}">

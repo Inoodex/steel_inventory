@@ -1004,6 +1004,116 @@
                 max-height: calc(100vh - 30px) !important;
             }
         }
+
+        /* ==========================================================================
+           AUTO-COLLAPSE & HOVER-EXPAND MINI-SIDEBAR SYSTEM
+           ========================================================================== */
+        @media (min-width: 992px) {
+            body.mini-sidebar .page-wrapper {
+                margin-left: 62px !important;
+                transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            body.mini-sidebar .sidebar {
+                width: 62px !important;
+                transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+                z-index: 1002 !important;
+                overflow-x: hidden;
+            }
+
+            body.mini-sidebar .header .header-left {
+                width: 62px !important;
+                transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            /* Idle Mini State: Smaller, Clean & Centered Icons */
+            body.mini-sidebar:not(.expand-menu) .sidebar:not(:hover) .sidebar-menu ul > li > a {
+                padding: 6px 0 !important;
+                margin: 2px 6px !important;
+                border-radius: 6px !important;
+                text-align: center !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                height: 34px !important;
+            }
+            body.mini-sidebar:not(.expand-menu) .sidebar:not(:hover) .sidebar-menu ul > li > a i {
+                font-size: 0.92rem !important; /* Smaller, delicate icon */
+                margin: 0 !important;
+                margin-left: 0 !important;
+                line-height: 1 !important;
+            }
+            body.mini-sidebar:not(.expand-menu) .sidebar:not(:hover) .sidebar-menu ul > li > a span,
+            body.mini-sidebar:not(.expand-menu) .sidebar:not(:hover) .sidebar-menu .menu-title,
+            body.mini-sidebar:not(.expand-menu) .sidebar:not(:hover) .sidebar-menu ul > li.submenu .menu-arrow {
+                display: none !important;
+                opacity: 0;
+            }
+            body.mini-sidebar:not(.expand-menu) .sidebar:not(:hover) .sidebar-menu ul > li.submenu > ul {
+                display: none !important;
+            }
+
+            /* Hovered / Expanded State */
+            body.mini-sidebar.expand-menu .sidebar,
+            body.mini-sidebar .sidebar:hover {
+                width: 248px !important;
+                box-shadow: 6px 0 25px rgba(0, 0, 0, 0.12) !important;
+            }
+            body.mini-sidebar.expand-menu .header .header-left,
+            body.mini-sidebar .header .header-left:hover {
+                width: 248px !important;
+            }
+            body.mini-sidebar.expand-menu .sidebar .sidebar-menu ul > li > a,
+            body.mini-sidebar .sidebar:hover .sidebar-menu ul > li > a {
+                padding: 9px 18px !important;
+                text-align: left !important;
+                justify-content: flex-start !important;
+                margin: 0 !important;
+                height: auto !important;
+            }
+            body.mini-sidebar.expand-menu .sidebar .sidebar-menu ul > li > a i,
+            body.mini-sidebar .sidebar:hover .sidebar-menu ul > li > a i {
+                margin-right: 12px !important;
+                margin-left: 0 !important;
+                font-size: 1.12rem !important;
+            }
+            body.mini-sidebar.expand-menu .sidebar .sidebar-menu ul > li > a span,
+            body.mini-sidebar .sidebar:hover .sidebar-menu ul > li > a span {
+                display: inline-block !important;
+                opacity: 1;
+                white-space: nowrap !important;
+            }
+            body.mini-sidebar.expand-menu .sidebar .sidebar-menu .menu-title,
+            body.mini-sidebar .sidebar:hover .sidebar-menu .menu-title {
+                display: block !important;
+                opacity: 1;
+                padding: 10px 18px 4px !important;
+            }
+            body.mini-sidebar.expand-menu .sidebar .sidebar-menu ul > li.submenu .menu-arrow,
+            body.mini-sidebar .sidebar:hover .sidebar-menu ul > li.submenu .menu-arrow {
+                display: inline-block !important;
+                opacity: 1;
+            }
+            body.mini-sidebar.expand-menu .sidebar .sidebar-menu ul > li.submenu.active > ul,
+            body.mini-sidebar .sidebar:hover .sidebar-menu ul > li.submenu.active > ul {
+                display: block !important;
+            }
+            body.mini-sidebar.expand-menu .sidebar .sidebar-menu ul > li.submenu.subdrop > ul,
+            body.mini-sidebar .sidebar:hover .sidebar-menu ul > li.submenu.subdrop > ul {
+                display: block !important;
+            }
+            body.mini-sidebar.expand-menu .sidebar .sidebar-menu ul > li.submenu > ul li a,
+            body.mini-sidebar .sidebar:hover .sidebar-menu ul > li.submenu > ul li a {
+                padding: 7px 18px 7px 42px !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+            body.mini-sidebar.expand-menu .sidebar .sidebar-menu ul > li.submenu > ul li a i,
+            body.mini-sidebar .sidebar:hover .sidebar-menu ul > li.submenu > ul li a i {
+                margin-right: 8px !important;
+                font-size: 0.95rem !important;
+            }
+        }
     </style>
 
     <!-- Layout JS -->

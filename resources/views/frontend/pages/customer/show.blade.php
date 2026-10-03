@@ -208,7 +208,7 @@
                     </div>
                     <div>
                         <small class="{{ $advanceCredit > 0 ? 'text-success fw-bold' : ($netOutstandingDue > 0 ? 'text-danger fw-bold' : 'text-muted') }} d-block">
-                            {{ $advanceCredit > 0 ? 'Customer Advance Credit' : ($netOutstandingDue > 0 ? 'Net Outstanding Due' : 'Account Balance') }}
+                            {{ $advanceCredit > 0 ? 'Customer Advance Amount' : ($netOutstandingDue > 0 ? 'Net Outstanding Due' : 'Account Balance') }}
                         </small>
                         <h5 class="fw-bold {{ $advanceCredit > 0 ? 'text-success' : ($netOutstandingDue > 0 ? 'text-danger' : 'text-dark') }} mb-0">
                             {{ $advanceCredit > 0 ? '৳' . number_format($advanceCredit, 2) : '৳' . number_format($netOutstandingDue, 2) }}

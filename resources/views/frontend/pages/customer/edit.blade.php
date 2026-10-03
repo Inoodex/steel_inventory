@@ -104,7 +104,7 @@
                             @endphp
                             <input type="number" step="0.01" min="0" class="form-control text-success fw-bold @error('opening_advance') is-invalid @enderror" name="opening_advance" id="opening_advance" value="{{ old('opening_advance', $advVal) }}" placeholder="0.00">
                         </div>
-                        <small class="text-muted d-block mt-1" style="font-size: 11px;">Existing advance credit / prepayment deposited by customer</small>
+                        <small class="text-muted d-block mt-1" style="font-size: 11px;">Existing advance amount / prepayment deposited by customer</small>
                         @error('opening_advance')
                             <div class="text-danger fs-7 mt-1">{{ $message }}</div>
                         @enderror

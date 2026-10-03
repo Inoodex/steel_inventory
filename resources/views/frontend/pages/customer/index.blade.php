@@ -102,7 +102,7 @@
                         <i class="fe fe-arrow-down-left fs-4"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted fw-normal mb-1">Customer Advance Credits</h6>
+                        <h6 class="text-muted fw-normal mb-1">Customer Advance Amount</h6>
                         <h4 class="mb-0 fw-bold text-success">
                             ৳{{ number_format($customers->sum('advance_credit'), 2) }}
                         </h4>

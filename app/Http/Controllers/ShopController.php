@@ -104,7 +104,18 @@ class ShopController extends Controller
     {
         $shop = $this->getShop();
         $vendors = Vendor::where('status', '1')->orderBy('name')->get();
-        $lots = Lot::with('vendor')->where('status', 'active')->orderBy('id', 'desc')->get();
+        // Only load lots associated with / created under this specific shop
+        $lots = Lot::where('status', 'active')
+            ->where(function ($q) use ($shop) {
+                $q->whereHas('purchases', function ($pq) use ($shop) {
+                    $pq->where('warehouse_id', $shop->id);
+                })->orWhereHas('coils', function ($cq) use ($shop) {
+                    $cq->where('warehouse_id', $shop->id);
+                });
+            })
+            ->with(['vendor', 'purchases.vendor'])
+            ->orderBy('id', 'desc')
+            ->get();
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
         
         $todayCount = Purchase::whereDate('created_at', Carbon::today())->count() + 1;

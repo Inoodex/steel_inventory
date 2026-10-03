@@ -125,7 +125,7 @@
                     </div>
                     <div>
                         <span class="{{ $closingBalance > 0 ? 'text-danger' : 'text-success' }} fw-semibold small d-block">
-                            {{ $closingBalance < 0 ? 'Customer Advance Credit' : ($closingBalance > 0 ? 'Net Outstanding Due' : 'Account Balance') }}
+                            {{ $closingBalance < 0 ? 'Customer Advance Amount' : ($closingBalance > 0 ? 'Net Outstanding Due' : 'Account Balance') }}
                         </span>
                         <h5 class="mb-0 fw-bold {{ $closingBalance > 0 ? 'text-danger' : 'text-success' }}">
                             {{ $closingBalance < 0 ? '৳' . number_format(abs($closingBalance), 2) . ' (Advance)' : '৳' . number_format($closingBalance, 2) }}
@@ -229,7 +229,7 @@
                             <td class="pe-4 text-end fs-6 {{ $closingBalance > 0 ? 'text-danger' : 'text-success' }}">
                                 ৳{{ number_format($closingBalance, 2) }}
                                 @if($closingBalance < 0)
-                                    <span class="badge bg-success text-white ms-1 px-2 py-1 fs-7">Advance Credit</span>
+                                    <span class="badge bg-success text-white ms-1 px-2 py-1 fs-7">Advance Amount</span>
                                 @endif
                             </td>
                         </tr>

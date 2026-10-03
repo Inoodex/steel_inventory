@@ -80,7 +80,7 @@
             <div class="col-lg-8 col-12">
 
                 <!-- 1. Lot & Vendor Intake Setup Card -->
-                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card border-0 shadow-sm rounded-3 mb-4 p-2">
                     <div class="pos-card-header d-flex flex-wrap justify-content-between align-items-center rounded-top-3 gap-2">
                         <span><i class="fe fe-anchor text-primary me-2"></i>Lot &amp; Shop Intake Details</span>
                         <div class="btn-group shadow-sm rounded-3 gap-1" role="group" aria-label="Lot Mode">
@@ -139,7 +139,7 @@
                                     </label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light text-primary"><i class="fe fe-shopping-cart"></i></span>
-                                        <input type="text" class="form-control bg-light fw-bold text-dark" value="{{ $shop->name }} (Shop Outlet)" readonly>
+                                        <input type="text" class="form-control bg-light fw-bold text-dark" value="{{ $shop->name }}" readonly>
                                     </div>
                                 </div>
 
@@ -169,7 +169,7 @@
                                         Existing Purchase Lot <span class="text-danger">*</span>
                                     </label>
                                     <select id="purchase_lot_id" name="lot_id" class="form-select select2">
-                                        <option value="">Select Existing Lot</option>
+                                        <option value="">{{ $lots->isEmpty() ? 'No existing lots created for this shop yet (Use New Lot)' : 'Select Existing Shop Lot' }}</option>
                                         @foreach ($lots as $lot)
                                             <option value="{{ $lot->id }}" {{ old('lot_id') == $lot->id ? 'selected' : '' }}>
                                                 {{ $lot->lot_number }} {{ $lot->vendor_names ? '('.$lot->vendor_names.')' : '' }}
@@ -194,10 +194,9 @@
                 </div>
 
                 <!-- 2. Steel Items & Coil Intake Builder -->
-                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card border-0 shadow-sm rounded-3 mb-4 p-2">
                     <div class="pos-card-header d-flex justify-content-between align-items-center rounded-top-3">
                         <span><i class="fe fe-disc text-primary me-2"></i>Shop Steel Coils &amp; Material Intake</span>
-                        <small class="text-muted">Enter specifications &amp; weight, then click "+ Add to Table"</small>
                     </div>
 
                     <div class="card-body p-3 bg-light-subtle">
@@ -243,7 +242,7 @@
 
                                 <div class="col-md-3 col-6">
                                     <label for="builder_size" class="form-label small text-secondary fw-semibold mb-1">
-                                        Size / Width
+                                        Size / Specs
                                     </label>
                                     <input type="text" id="builder_size" class="form-control form-control-sm text-center" placeholder="e.g. 4x8 / 1250mm">
                                 </div>
@@ -284,7 +283,7 @@
 
                                 <div class="col-md-2 col-6">
                                     <label for="builder_total_weight" class="form-label small text-secondary fw-semibold mb-1">
-                                        Total Wt (kg)
+                                        Total Weight (kg)
                                     </label>
                                     <div class="input-group input-group-sm">
                                         <input type="number" step="0.01" id="builder_total_weight" class="form-control bg-white text-end fw-bold text-dark" readonly tabindex="-1">
@@ -304,7 +303,7 @@
 
                                 <div class="col-md-2 col-6">
                                     <label for="builder_sub_price" class="form-label small text-secondary fw-semibold mb-1">
-                                        Sub Total (৳)
+                                        Line Sub Total (৳)
                                     </label>
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text bg-white text-muted">৳</span>
@@ -402,7 +401,7 @@
                             
                             <!-- Steel Subtotal -->
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-secondary small fw-semibold">Steel Sub Total:</span>
+                                <span class="text-secondary small fw-semibold">Steel Sub Total (৳):</span>
                                 <span class="fw-bold text-dark" id="displaySubTotal">৳ 0.00</span>
                                 <input type="hidden" id="purchaseSubTotalDisplay" value="0.00">
                             </div>
@@ -410,7 +409,7 @@
                             <!-- Transport Freight with Two-Tick Toggle -->
                             <div class="border rounded-2 p-2 bg-light mb-2">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="small fw-semibold text-secondary">Transport Freight:</span>
+                                    <span class="small fw-semibold text-secondary">Transport (৳):</span>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="form-check form-check-inline m-0">
                                             <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_me" value="me" checked onchange="recalculateSummary()">
@@ -430,23 +429,23 @@
 
                             <!-- Cutting / Labour, Scale, Other Charges -->
                             <div class="row g-2 mb-2">
-                                <div class="col-4">
-                                    <label class="form-label fs-8 text-secondary fw-semibold mb-1">Labour (৳)</label>
+                                <div class="col-12">
+                                    <label class="form-label fs-8 text-secondary fw-semibold mb-1">Cutting &amp; Load-Unload (৳)</label>
                                     <input type="number" name="labour_cost" id="labour_cost" class="form-control form-control-sm text-end" value="0.00" min="0" step="0.01" oninput="recalculateSummary()">
                                 </div>
-                                <div class="col-4">
-                                    <label class="form-label fs-8 text-secondary fw-semibold mb-1">Scale (৳)</label>
+                                <div class="col-6">
+                                    <label class="form-label fs-8 text-secondary fw-semibold mb-1">Scale &amp; Labour Charge (৳)</label>
                                     <input type="number" name="weight_scale_cost" id="weight_scale_cost" class="form-control form-control-sm text-end" value="0.00" min="0" step="0.01" oninput="recalculateSummary()">
                                 </div>
-                                <div class="col-4">
-                                    <label class="form-label fs-8 text-secondary fw-semibold mb-1">Other (৳)</label>
+                                <div class="col-6">
+                                    <label class="form-label fs-8 text-secondary fw-semibold mb-1">Other Charges (৳)</label>
                                     <input type="number" name="other_charges" id="other_charges" class="form-control form-control-sm text-end" value="0.00" min="0" step="0.01" oninput="recalculateSummary()">
                                 </div>
                             </div>
 
                             <!-- Discount -->
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-secondary small fw-semibold">Discount (৳):</span>
+                                <span class="text-secondary small fw-semibold">Discount Amount (৳):</span>
                                 <div class="input-group input-group-sm" style="max-width: 140px;">
                                     <span class="input-group-text bg-white">৳</span>
                                     <input type="number" name="discount" id="discount" class="form-control text-end" value="0.00" min="0" step="0.01" oninput="recalculateSummary()">
@@ -455,7 +454,7 @@
 
                             <!-- Landed Grand Total Display -->
                             <div class="grand-total-display mb-3 text-center">
-                                <small class="text-white-50 text-uppercase fw-semibold d-block fs-8 mb-1">Grand Purchase Bill (Landed Cost)</small>
+                                <small class="text-white-50 text-uppercase fw-semibold d-block fs-8 mb-1">Grand Purchase Bill (৳)</small>
                                 <h3 class="fw-bold mb-0 text-white" id="displayGrandTotal">৳ 0.00</h3>
                                 <input type="hidden" name="grand_total" id="grand_total_hidden" value="0.00">
                                 <small class="text-white-50 fs-8 d-block mt-1">Extra Charges: <span id="displayTotalCharges" class="text-warning">৳ 0.00</span></small>

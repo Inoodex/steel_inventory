@@ -121,7 +121,7 @@ class SaleService
                             'payment_method' => 'advance_credit',
                             'payment_date'   => $sale->order_date,
                             'amount'         => $remainingToAllocate,
-                            'remarks'        => 'Advance credit adjustment for ' . $sale->order_no,
+                            'remarks'        => 'Advance amount adjustment for ' . $sale->order_no,
                             'status'         => 1,
                             'created_by'     => Auth::id(),
                         ]);
@@ -202,7 +202,7 @@ class SaleService
                         'bank' => 'Bank Transfer',
                         'cheque' => 'Cheque',
                         'mobile_banking' => 'Mobile Banking',
-                        'advance_credit' => 'Advance Credit Adjustment',
+                        'advance_credit' => 'Advance Amount Adjustment',
                         default => 'Cash'
                     };
                     $refText = $sale->transaction_ref ? " [Ref/Cheque: {$sale->transaction_ref}]" : "";

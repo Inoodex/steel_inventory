@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-layout="vertical" data-topbar="light" data-sidebar="light" data-sidebar-size="lg"
+<html lang="en" data-layout="vertical" data-topbar="light" data-sidebar="light" data-sidebar-size="sm-hover"
     data-sidebar-image="none">
 
 @include('frontend.layouts.head')
 
-<body>
+<body class="mini-sidebar">
 
     <!-- Main Wrapper -->
     <div class="main-wrapper">
@@ -53,6 +53,30 @@
 
     <script>
         $(document).ready(function() {
+            // Mini-Sidebar Hover to Expand & Auto-Collapse on Mouse Leave
+            if ($(window).width() >= 992) {
+                $('body').addClass('mini-sidebar');
+
+                $('#sidebar, .header .main-logo').on('mouseenter', function() {
+                    $('body').addClass('expand-menu');
+                });
+
+                $('#sidebar, .header .main-logo').on('mouseleave', function() {
+                    $('body').removeClass('expand-menu');
+                    // Collapse any opened non-active submenus when mouse leaves
+                    $('#sidebar-menu .submenu:not(.active) > ul').slideUp(150);
+                    $('#sidebar-menu .submenu:not(.active) > a').removeClass('subdrop');
+                });
+
+                // Auto collapse when clicking an active menu link and moving away
+                $('#sidebar-menu a').on('click', function() {
+                    var href = $(this).attr('href');
+                    if (href && href !== 'javascript:void(0);' && href !== '#' && href !== 'javascript:void(0)') {
+                        $('body').removeClass('expand-menu');
+                    }
+                });
+            }
+
             if ($.fn.select2) {
                 $('.select2').each(function() {
                     const $select = $(this);
