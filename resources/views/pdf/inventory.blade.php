@@ -145,7 +145,7 @@
             </td>
             <td style="width: 50%;" class="report-title">
                 <h1>INVENTORY STOCK REPORT</h1>
-                <p>Printed: {{ now()->format('d M Y, h:i A') }}</p>
+                <p>Printed: {{ now()->format('d M Y') }}</p>
             </td>
         </tr>
     </table>
@@ -181,7 +181,7 @@
                 <th style="width: 12%;">Thickness</th>
                 <th style="width: 9%;">Size</th>
                 <th style="width: 13%;">Weight (Kg)</th>
-                <th style="width: 8%;">DIS</th>
+                <!-- <th style="width: 8%;">DIS</th> -->
                 <th style="width: 15%;">Lot Name</th>
                 <th style="width: 16%;">Cutting Name</th>
                 <th style="width: 11%;">Status</th>
@@ -233,20 +233,8 @@
                         $lotName = 'Opening Stock';
                     }
 
-                    // 8. Cutting Name / Brand / Yard Source
-                    $notes = trim($coil->notes ?? '');
-                    $pNotes = trim($coil->purchase?->notes ?? '');
-                    if ($notes !== '' && $notes !== 'Opening Stock' && $notes !== 'Opening Stock Intake') {
-                        $cuttingName = $notes;
-                    } elseif ($pNotes !== '') {
-                        $cuttingName = $pNotes;
-                    } elseif ($coil->vendor) {
-                        $cuttingName = $coil->vendor->name;
-                    } elseif ($coil->warehouse) {
-                        $cuttingName = $coil->warehouse->name;
-                    } else {
-                        $cuttingName = 'SB CUTTING';
-                    }
+                    // 8. Cutting Name -> Warehouse / Yard Location
+                    $cuttingName = $coil->warehouse?->name ?? ($coil->lot?->warehouse?->name ?? 'Main Yard');
 
                     // 9. Status
                     $rawStatus = $coil->status ?? 'in_stock';
@@ -262,7 +250,7 @@
                     <td>{{ $thickness }}</td>
                     <td>{{ $size }}</td>
                     <td class="fw-bold">{{ $weight }}</td>
-                    <td>{{ $dis }}</td>
+                    <!-- <td>{{ $dis }}</td> -->
                     <td>{{ $lotName }}</td>
                     <td>{{ $cuttingName }}</td>
                     <td>
@@ -279,19 +267,10 @@
                 </tr>
             @endforelse
         </tbody>
-        @if($coils->isNotEmpty())
-        <tfoot>
-            <tr>
-                <td colspan="4" style="text-align: right; text-transform: uppercase;">Total Available Stock:</td>
-                <td class="fw-bold" style="color: #103567;">{{ number_format($coils->sum('remaining_weight'), 0) }}</td>
-                <td colspan="4" style="color: #475569;">({{ count($coils) }} Coils)</td>
-            </tr>
-        </tfoot>
-        @endif
     </table>
 
     <!-- Signature Block -->
-    <table class="signature-table">
+    <!-- <table class="signature-table">
         <tr>
             <td style="width: 50%; text-align: center;">
                 <div class="signature-line"></div>
@@ -302,7 +281,7 @@
                 <div style="font-size: 9.5px; font-weight: 700; color: #475569; text-transform: uppercase;">Authorized Signature</div>
             </td>
         </tr>
-    </table>
+    </table> -->
 
 </body>
 </html>

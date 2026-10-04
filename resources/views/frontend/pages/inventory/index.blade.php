@@ -50,6 +50,28 @@
         color: #6c757d !important;
         font-weight: 600;
     }
+    .lot-parent-row {
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+    .lot-parent-row:hover {
+        background-color: #f1f5f9 !important;
+    }
+    .hover-primary:hover {
+        color: #4f46e5 !important;
+    }
+    .nested-coil-table th {
+        background-color: #e2e8f0 !important;
+        color: #475569 !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+    }
+    .nested-coil-table td {
+        background-color: #ffffff;
+    }
+    .nested-coil-table tbody tr:hover td {
+        background-color: #f8fafc !important;
+    }
     #coilDetailModal .modal-body {
         overflow-x: hidden;
         word-break: break-word;
@@ -102,32 +124,6 @@
                     <i class="fe fe-file-text fs-6"></i>
                     <span>Export PDF Report</span>
                 </a>
-                <!-- <div class="dropdown">
-                    <button class="btn btn-outline-success px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2 dropdown-toggle" 
-                            type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fe fe-layers"></i>
-                        <span>Opening Stock</span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                        <li>
-                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#quickOpeningStockModal">
-                                <i class="fe fe-plus text-success"></i>
-                                <span>Quick Single Entry</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('inventory.opening-stock.create') }}">
-                                <i class="fe fe-grid text-primary"></i>
-                                <span>Batch Intake Grid</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <a href="{{ route('purchase.create') }}" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
-                    <i class="fe fe-plus-circle"></i>
-                    <span>Receive Ship Steel</span>
-                </a> -->
-                <!-- back button -->
                 <a href="{{ route('index') }}" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
                     <i class="fe fe-arrow-left"></i>
                     <span>Back</span>
@@ -169,7 +165,7 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 col-12">
+        <!-- <div class="col-xl-3 col-md-6 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0 p-3" style="border-left: 4px solid #f59e0b !important;">
                 <div class="d-flex align-items-center">
                     <div class="avatar avatar-lg bg-warning-light text-warning rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
@@ -182,7 +178,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
 
         <div class="col-xl-3 col-md-6 col-12">
             <div class="card stat-card bg-white shadow-sm rounded-3 h-100 mb-0 p-3" style="border-left: 4px solid #0ea5e9 !important;">
@@ -231,15 +227,6 @@
                         @endforeach
                     </select>
                 </div>
-                <!-- <div class="col-xl-2 col-lg-2 col-md-2 col-6">
-                    <select name="status" class="form-select form-select-sm border-light-subtle">
-                        <option value="in_stock" {{ request('status', 'in_stock') == 'in_stock' ? 'selected' : '' }}>In Stock (Active)</option>
-                        <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>In Processing / Cutting</option>
-                        <option value="reserved" {{ request('status') == 'reserved' ? 'selected' : '' }}>Reserved</option>
-                        <option value="exhausted" {{ request('status') == 'exhausted' ? 'selected' : '' }}>Exhausted / Consumed</option>
-                        <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All Batches (Lifetime)</option>
-                    </select>
-                </div> -->
                 <div class="col-xl-1 col-lg-2 col-md-6 col-6 d-flex gap-1">
                     <button type="submit" class="btn btn-sm btn-primary flex-fill rounded-2" title="Apply Filter">
                         <i class="fe fe-filter"></i> Filter
@@ -253,114 +240,31 @@
             </form>
         </div>
     </div>
-    <!-- Thickness & Weighted Average Price Breakdown Card -->
-    <!-- @if(isset($thicknessBreakdown) && $thicknessBreakdown->isNotEmpty())
-        <div class="card border-0 shadow-sm rounded-3 mb-4">
-            <div class="card-header bg-white py-3 border-bottom border-light d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="avatar avatar-sm bg-primary-light text-primary rounded-circle d-flex align-items-center justify-content-center">
-                        <i class="fe fe-layers fs-5"></i>
-                    </span>
-                    <div>
-                        <h6 class="fw-bold text-dark mb-0">Thickness &amp; Weighted Average Cost Breakdown</h6>
-                        <small class="text-muted">Calculated as Total Valuation ÷ Available Weight (AVCO) for active yard stock</small>
-                    </div>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    @php
-                        $overallWeight = $thicknessBreakdown->sum('total_weight');
-                        $overallVal = $thicknessBreakdown->sum('total_valuation');
-                        $overallAvg = $overallWeight > 0 ? ($overallVal / $overallWeight) : 0;
-                    @endphp
-                    <span class="badge bg-primary-light text-primary font-monospace px-3 py-2 fs-7 fw-bold">
-                        Overall Avg: ৳ {{ number_format($overallAvg, 2) }} / kg
-                    </span>
-                    <button class="btn btn-sm btn-light border rounded-2" type="button" data-bs-toggle="collapse" data-bs-target="#thicknessBreakdownCollapse" aria-expanded="true" aria-controls="thicknessBreakdownCollapse">
-                        <i class="fe fe-chevron-down"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="collapse show" id="thicknessBreakdownCollapse">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-custom align-middle mb-0">
-                            <thead class="bg-light text-secondary fs-7 text-uppercase">
-                                <tr>
-                                    <th class="ps-4">Thickness</th>
-                                    <th>Dimensions in Stock</th>
-                                    <th class="text-center">Batches / Qty</th>
-                                    <th class="text-end">Available Stock (kg)</th>
-                                    <th class="text-end">Total Valuation</th>
-                                    <th class="text-end">Weighted Avg Price</th>
-                                    <th class="text-end pe-4">Filter</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($thicknessBreakdown as $row)
-                                    <tr>
-                                        <td class="ps-4">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="fw-bold text-dark fs-6">{{ $row['thickness'] }}</span>
-                                                <span class="badge bg-light text-secondary border fs-8">Thickness</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            @if(!empty($row['sizes']))
-                                                <div class="d-flex flex-wrap gap-1">
-                                                    @foreach($row['sizes'] as $sz)
-                                                        <span class="badge bg-light text-dark border px-2 py-1 fs-8">{{ $sz }}</span>
-                                                    @endforeach
-                                                </div>
-                                            @else
-                                                <span class="text-muted small">Standard Coil</span>
-                                            @endif
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="fw-bold text-dark font-monospace">{{ $row['coils_count'] }}</span>
-                                            <small class="text-muted d-block" style="font-size: 10px;">{{ $row['pieces_count'] }} pcs</small>
-                                        </td>
-                                        <td class="text-end">
-                                            <span class="fw-bold text-primary font-monospace">{{ number_format($row['total_weight'], 2) }} kg</span>
-                                            <small class="text-muted d-block" style="font-size: 10px;">{{ number_format($row['total_weight_mt'], 3) }} MT</small>
-                                        </td>
-                                        <td class="text-end">
-                                            <span class="fw-bold text-success font-monospace">৳ {{ number_format($row['total_valuation'], 2) }}</span>
-                                        </td>
-                                        <td class="text-end">
-                                            <div class="d-inline-block text-end">
-                                                <span class="badge bg-primary-light text-primary fs-7 fw-bold px-3 py-1 font-monospace d-block">
-                                                    ৳ {{ number_format($row['avg_price_per_kg'], 2) }} / kg
-                                                </span>
-                                                <small class="text-muted fw-semibold" style="font-size: 10px;">
-                                                    (৳ {{ number_format($row['avg_price_per_ton'], 0) }} / MT)
-                                                </small>
-                                            </div>
-                                        </td>
-                                        <td class="text-end pe-4">
-                                            <a href="{{ route('inventory.index', array_merge(request()->except(['page', 'search']), ['search' => $row['thickness']])) }}" class="btn btn-sm btn-outline-primary rounded-2 px-2 py-1 d-inline-flex align-items-center gap-1" title="Filter this thickness">
-                                                <i class="fe fe-filter"></i>
-                                                <span class="fs-8">View</span>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif -->
 
     <!-- Inventory Table Card -->
     <div class="card border-0 shadow-sm rounded-3">
-        <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
-            <h6 class="fw-bold text-dark mb-0">
-                <i class="fe fe-database me-2 text-primary"></i>Live Steel Inventory Registry
-            </h6>
-            <div class="text-muted small">
-                Showing <span class="fw-bold text-dark">{{ $coils->count() }}</span> of {{ $coils->total() }} records
+        <div class="card-header bg-white py-3 border-bottom border-light d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <span class="avatar avatar-sm bg-primary-light text-primary rounded-circle d-flex align-items-center justify-content-center">
+                    <i class="fe fe-layers fs-5"></i>
+                </span>
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">
+                        Lot-Wise Steel Inventory &amp; Consignments
+                    </h6>
+                    <small class="text-muted">Click any lot to view and expand its coils &amp; physical batches</small>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-dark border px-2.5 py-1.5 fs-7">
+                    <strong>{{ $lotGroups->count() }}</strong> Lots &bull; <strong>{{ $totalCoilsCount }}</strong> Coils
+                </span>
+                <button type="button" class="btn btn-sm btn-outline-primary rounded-2 px-2.5 py-1 d-inline-flex align-items-center gap-1" onclick="expandAllLots()">
+                    <i class="fe fe-maximize-2 fs-8"></i> Expand All
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 px-2.5 py-1 d-inline-flex align-items-center gap-1" onclick="collapseAllLots()">
+                    <i class="fe fe-minimize-2 fs-8"></i> Collapse All
+                </button>
             </div>
         </div>
 
@@ -369,107 +273,82 @@
                 <table class="table table-hover table-custom align-middle mb-0" id="inventoryTable">
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
-                            <th>#</th>
-                            <th>Coil &amp; Specifications</th>
-                            <th>Lot Source &amp; Vendor</th>
-                            <!-- <th>Warehouse / Yard</th> -->
-                            <th>Available Weight</th>
-                            <th>Remaining Coils &amp; Stock %</th>
-                            <th>Action</th>
+                            <th style="width: 40px;" class="ps-3 text-center"></th>
+                            <th>Lot / Consignment Details</th>
+                            <th>Vendor / Supplier</th>
+                            <th class="text-center">Coils in Lot</th>
+                            <th>Available Weight &amp; Stock %</th>
+                            <th class="text-end">Estimated Valuation</th>
+                            <th class="text-center pe-3" style="width: 100px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
-                        @forelse ($coils as $coil)
+                        @forelse ($lotGroups as $index => $group)
                             @php
-                                $rem = (float) $coil->remaining_weight;
-                                $pct = $coil->remaining_percentage;
-                                $vendorName = $coil->lot && $coil->lot->vendor ? $coil->lot->vendor->name : ($coil->vendor->name ?? 'N/A');
-                                $lotNo = $coil->lot ? $coil->lot->lot_number : 'N/A';
-                                $whName = $coil->warehouse ? $coil->warehouse->name : 'Main Yard';
-                                $spec = trim(($coil->thickness ? 'Thk: '.$coil->thickness : '') . ' ' . ($coil->width ? 'Size: '.$coil->width . ' ' . ($coil->length ?? 'ft') : ''));
-                                $coilData = [
-                                    'id' => $coil->id,
-                                    'coil_number' => $coil->coil_number,
-                                    'created_at' => $coil->created_at->format('d M Y, h:i A'),
-                                    'lot_number' => $lotNo,
-                                    'lot_url' => $coil->lot ? route('lots.show', $coil->lot->id) : '',
-                                    'vendor_name' => $vendorName,
-                                    'vendor_url' => $coil->vendor ? route('vendors.show', $coil->vendor->id) : '',
-                                    'warehouse_name' => $whName,
-                                    'warehouse_location' => $coil->warehouse->location ?? '',
-                                    'thickness' => $coil->thickness ?: 'N/A',
-                                    'dimensions' => ($coil->width || $coil->length) ? ($coil->width . ($coil->length ? ' × ' . $coil->length : '')) : 'N/A',
-                                    'piece_count' => (int)($coil->piece_count ?? 1),
-                                    'remaining_coils' => $coil->formatted_remaining_coils,
-                                    'unit_weight' => number_format($coil->unit_weight, 2) . ' kg',
-                                    'initial_weight' => number_format($coil->initial_weight, 2) . ' kg',
-                                    'remaining_weight' => number_format($coil->remaining_weight, 2) . ' kg',
-                                    'consumed_weight' => number_format(max(0, $coil->initial_weight - $coil->remaining_weight), 2) . ' kg',
-                                    'remaining_pct' => $pct,
-                                    'rate_per_ton' => '৳ ' . number_format($coil->rate_per_ton, 2),
-                                    'total_price' => '৳ ' . number_format((float)$coil->remaining_weight * (float)$coil->rate_per_ton, 2),
-                                    'initial_total' => '৳ ' . number_format($coil->total_price, 2),
-                                    'status' => $coil->status,
-                                    'status_label' => ucfirst(str_replace('_', ' ', $coil->status)),
-                                    'notes' => $coil->notes ?: 'No additional notes recorded for this coil.'
-                                ];
+                                $lotKey = $group['lot_key'];
+                                $isDirect = ($lotKey === 'direct_stock');
+                                $remWt = $group['total_remaining_weight'];
+                                $intakeWt = $group['total_intake_weight'];
+                                $pct = $group['pct_remaining'];
+                                $inStockCount = $group['in_stock_coils'];
+                                $totalCoils = $group['total_coils'];
                             @endphp
-                            <tr>
-                                <td class="ps-4 text-muted fw-semibold">{{ $coils->firstItem() + $loop->index }}</td>
+                            <!-- PARENT LOT ROW -->
+                            <tr class="lot-parent-row {{ $remWt > 0 ? '' : 'opacity-75' }}" onclick="toggleLot('{{ $lotKey }}')" id="row-lot-{{ $lotKey }}">
+                                <td class="ps-3 text-center" onclick="event.stopPropagation(); toggleLot('{{ $lotKey }}')">
+                                    <button type="button" class="btn btn-sm btn-light border p-1 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px;" title="Expand/Collapse">
+                                        <i class="fe fe-chevron-right text-primary lot-chevron-{{ $lotKey }} transition-transform" style="transition: transform 0.2s ease;"></i>
+                                    </button>
+                                </td>
                                 <td>
-                                    <a href="javascript:void(0)" class="fw-bold text-primary text-decoration-none d-block" onclick='openCoilModal(@json($coilData))'>
-                                        {{ $coil->coil_number }}
-                                    </a>
-                                    <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
-                                        @if($coil->thickness)
-                                            <span class="badge bg-light text-dark border px-2 py-0 fs-8">Thk: {{ $coil->thickness }}</span>
-                                        @endif
-                                        @if($coil->width)
-                                            <span class="badge bg-light text-secondary border px-2 py-0 fs-8">Size: {{ $coil->width }} {{ $coil->length ?? 'ft' }}</span>
-                                        @endif
-                                        @if($coil->status !== 'in_stock')
-                                            <span class="badge {{ $coil->status == 'in_processing' ? 'badge-soft-warning' : 'badge-soft-secondary' }} px-2 py-0 fs-8">
-                                                {{ ucfirst(str_replace('_', ' ', $coil->status)) }}
-                                            </span>
-                                        @endif
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div>
+                                            @if(!$isDirect && $group['lot'])
+                                                <a href="{{ route('lots.show', $group['lot_id']) }}" class="fw-bold text-dark fs-6 text-decoration-none d-block hover-primary" onclick="event.stopPropagation()">
+                                                    {{ $group['lot_number'] }}
+                                                </a>
+                                            @else
+                                                <span class="fw-bold text-dark fs-6 d-block">
+                                                    <i class="fe fe-box text-primary me-1"></i>{{ $group['lot_number'] }}
+                                                </span>
+                                            @endif
+                                            <div class="d-flex flex-wrap align-items-center gap-1 mt-0.5">
+                                                <span class="text-muted small fs-8"><i class="fe fe-calendar me-1"></i>{{ $group['lot_date'] }}</span>
+                                                @if($group['warehouses']->isNotEmpty())
+                                                    <span class="badge bg-light text-secondary border fs-8">
+                                                        <i class="fe fe-map-pin me-1"></i>{{ $group['warehouses']->join(', ') }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <div>
-                                        @if($coil->lot)
-                                            <a href="{{ route('lots.show', $coil->lot->id) }}" class="fw-bold text-dark text-decoration-none d-block">
-                                                {{ $lotNo }}
-                                            </a>
-                                        @elseif(!$coil->purchase_id)
-                                            <span class="badge badge-soft-info border px-2 py-0 fs-8 d-inline-block mb-1">
-                                                <i class="fe fe-layers me-1"></i>Opening Stock
-                                            </span>
-                                        @else
-                                            <span class="fw-bold text-dark d-block">{{ $lotNo }}</span>
-                                        @endif
-                                        <small class="text-muted fs-7"><i class="fe fe-truck me-1"></i>{{ Str::limit($vendorName, 22) }}</small>
-                                    </div>
+                                    @if($group['vendor'])
+                                        <a href="{{ route('vendors.show', $group['vendor']->id) }}" class="fw-semibold text-secondary text-decoration-none d-block" onclick="event.stopPropagation()">
+                                            <i class="fe fe-truck me-1 text-primary"></i>{{ Str::limit($group['vendor_name'], 25) }}
+                                        </a>
+                                    @else
+                                        <span class="text-secondary small"><i class="fe fe-truck me-1 text-muted"></i>{{ $group['vendor_name'] }}</span>
+                                    @endif
                                 </td>
-                                <!-- <td>
-                                    <span class="badge bg-light text-dark border px-2 py-1 fs-7">
-                                        <i class="fe fe-map-pin text-primary me-1"></i>{{ Str::limit($whName, 18) }}
+                                <td class="text-center">
+                                    <span class="badge {{ $inStockCount > 0 ? 'bg-primary-light text-primary' : 'bg-light text-secondary' }} px-2.5 py-1 rounded-pill fs-7 font-monospace fw-bold">
+                                        {{ $inStockCount }} / {{ $totalCoils }} Coils
                                     </span>
-                                </td> -->
-                                <td>
-                                    <span class="badge {{ $rem > 0 ? 'badge-soft-success' : 'badge-soft-secondary' }} px-3 py-2 rounded-pill fs-7 fw-bold">
-                                        <i class="fe {{ $rem > 0 ? 'fe-check-circle' : 'fe-alert-circle' }} me-1"></i> {{ number_format($rem, 2) }} kg
-                                    </span>
+                                    <small class="text-muted d-block fs-8 mt-1">{{ $group['in_stock_pieces'] }} pcs in yard</small>
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2 mb-1">
-                                        <span class="badge bg-light text-dark border px-2 py-0 fs-8 fw-semibold">
-                                            <i class="fe fe-disc text-primary me-1"></i>{{ $coil->formatted_remaining_coils }} / {{ $coil->formatted_piece_count }} Coils
+                                        <span class="badge {{ $remWt > 0 ? 'badge-soft-success' : 'badge-soft-secondary' }} px-2.5 py-1 rounded-pill fs-7 fw-bold font-monospace">
+                                            {{ number_format($remWt, 2) }} kg
                                         </span>
-                                        <span class="badge {{ $pct > 50 ? 'badge-soft-success' : ($pct > 20 ? 'badge-soft-warning' : 'badge-soft-danger') }} rounded-pill px-2 py-0 fs-8">
+                                        <small class="text-muted">/ {{ number_format($intakeWt, 0) }} kg</small>
+                                        <span class="badge {{ $pct > 50 ? 'bg-success' : ($pct > 20 ? 'bg-warning' : 'bg-danger') }} text-white rounded-pill px-2 py-0 fs-8 ms-auto">
                                             {{ $pct }}% Left
                                         </span>
                                     </div>
-                                    <div class="progress mt-2" style="height: 4px; background-color: #e2e8f0;">
+                                    <div class="progress" style="height: 5px; background-color: #e2e8f0;">
                                         <div class="progress-bar {{ $pct > 50 ? 'bg-success' : ($pct > 20 ? 'bg-warning' : 'bg-danger') }}" 
                                              role="progressbar" 
                                              style="width: {{ $pct }}%;" 
@@ -479,44 +358,190 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td>
-                                    <div class="dropdown">
-                                        <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </a>
-                                        <div class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" onclick='openCoilModal(@json($coilData))'>
-                                                <i class="fe fe-eye text-primary"></i>
-                                                <span>View Coil Details</span>
+                                <td class="text-end">
+                                    <span class="fw-bold text-dark font-monospace fs-6">৳ {{ number_format($group['total_valuation'], 2) }}</span>
+                                    @if($remWt >= 1000)
+                                        <small class="text-muted d-block fs-8">{{ number_format($remWt / 1000, 3) }} MT</small>
+                                    @endif
+                                </td>
+                                <td class="text-center pe-3" onclick="event.stopPropagation()">
+                                    <div class="d-flex align-items-center justify-content-center gap-1">
+                                        <!-- <button type="button" class="btn btn-sm btn-outline-primary px-2 py-1 rounded-2" onclick="toggleLot('{{ $lotKey }}')" title="View Coils in Lot">
+                                            <i class="fe fe-eye me-1"></i><span class="fs-8">Coils</span>
+                                        </button> -->
+
+                                        <div class="dropdown">
+                                            <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
                                             </a>
-
-                                            @if($coil->lot_id)
-                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $coil->lot_id) }}">
-                                                    <i class="fe fe-layers text-secondary"></i>
-                                                    <span>View Lot Details</span>
+                                            <div class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                                @if(!$isDirect && $group['lot'])
+                                                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $group['lot_id']) }}">
+                                                        <i class="fe fe-layers text-primary"></i>
+                                                        <span>View Lot Profile</span>
+                                                    </a>
+                                                @endif
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('inventory.pdf', ['lot_id' => $group['lot_id']]) }}" target="_blank">
+                                                    <i class="fe fe-file-text text-danger"></i>
+                                                    <span>Export PDF</span>
                                                 </a>
-                                            @endif
-
-                                            @if(!$coil->purchase_id)
-                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-primary" href="{{ route('inventory.opening-stock.edit', $coil->id) }}">
-                                                    <i class="fe fe-edit"></i>
-                                                    <span>Edit Opening Stock</span>
-                                                </a>
-                                            @endif
-
-                                            @if(!$coil->purchase_id && (float)$coil->remaining_weight >= (float)$coil->net_weight)
-                                                <div class="dropdown-divider my-1"></div>
-                                                <form action="{{ route('inventory.opening-stock.destroy', $coil->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to remove this opening stock coil from inventory?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger">
-                                                        <i class="fe fe-trash-2"></i>
-                                                        <span>Delete Opening Stock</span>
-                                                    </button>
-                                                </form>
-                                            @endif
-
+                                            </div>
                                         </div>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- CHILD NESTED COILS DRAWER (ACCORDION) -->
+                            <tr id="drawer-lot-{{ $lotKey }}" class="lot-coil-drawer" style="display: none;">
+                                <td colspan="7" class="p-0 border-0 bg-light">
+                                    <div class="p-3 bg-light border-bottom border-top" style="border-left: 4px solid #4f46e5 !important;">
+                                        
+                                        <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                                            <div>
+                                                <span class="fw-bold text-dark fs-7">
+                                                    <i class="fe fe-disc text-primary me-1"></i>Physical Steel Coils &amp; Plates in {{ $group['lot_number'] }}
+                                                </span>
+                                                <span class="badge bg-secondary-subtle text-secondary ms-2">{{ $group['coils']->count() }} Batches</span>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted fs-8">Click any Coil No to view complete weight specs and stock logs</small>
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive bg-white rounded-3 border shadow-sm">
+                                            <table class="table table-sm table-hover align-middle mb-0 nested-coil-table">
+                                                <thead class="bg-light text-secondary fs-8 text-uppercase">
+                                                    <tr>
+                                                        <th class="ps-3" style="width: 130px;">Coil No</th>
+                                                        <th>Thickness</th>
+                                                        <th>Dimensions</th>
+                                                        <th class="text-center">Pieces</th>
+                                                        <th class="text-end">Intake Wt</th>
+                                                        <th class="text-end">Available Wt</th>
+                                                        <th class="text-end">Rate (৳/Ton)</th>
+                                                        <th>Yard / Warehouse</th>
+                                                        <th class="text-center">Status</th>
+                                                        <th class="text-center pe-3" style="width: 50px;">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="fs-7">
+                                                    @foreach ($group['coils'] as $coil)
+                                                        @php
+                                                            $cRem = (float) $coil->remaining_weight;
+                                                            $cPct = $coil->remaining_percentage;
+                                                            $whName = $coil->warehouse ? $coil->warehouse->name : 'Main Yard';
+                                                            $vendorName = $group['vendor_name'];
+                                                            $coilData = [
+                                                                'id' => $coil->id,
+                                                                'coil_number' => $coil->coil_number,
+                                                                'created_at' => $coil->created_at ? $coil->created_at->format('d M Y, h:i A') : '—',
+                                                                'lot_number' => $group['lot_number'],
+                                                                'lot_url' => $group['lot'] ? route('lots.show', $group['lot']->id) : '',
+                                                                'vendor_name' => $vendorName,
+                                                                'vendor_url' => $group['vendor'] ? route('vendors.show', $group['vendor']->id) : '',
+                                                                'warehouse_name' => $whName,
+                                                                'warehouse_location' => $coil->warehouse->location ?? '',
+                                                                'thickness' => $coil->thickness ?: 'N/A',
+                                                                'dimensions' => ($coil->width || $coil->length) ? ($coil->width . ($coil->length ? ' × ' . $coil->length : '')) : 'N/A',
+                                                                'piece_count' => (int)($coil->piece_count ?? 1),
+                                                                'remaining_coils' => $coil->formatted_remaining_coils,
+                                                                'unit_weight' => number_format($coil->unit_weight, 2) . ' kg',
+                                                                'initial_weight' => number_format($coil->initial_weight, 2) . ' kg',
+                                                                'remaining_weight' => number_format($coil->remaining_weight, 2) . ' kg',
+                                                                'consumed_weight' => number_format(max(0, $coil->initial_weight - $coil->remaining_weight), 2) . ' kg',
+                                                                'remaining_pct' => $cPct,
+                                                                'rate_per_ton' => '৳ ' . number_format($coil->rate_per_ton, 2),
+                                                                'total_price' => '৳ ' . number_format((float)$coil->remaining_weight * (float)$coil->rate_per_ton, 2),
+                                                                'initial_total' => '৳ ' . number_format($coil->total_price, 2),
+                                                                'status' => $coil->status,
+                                                                'status_label' => ucfirst(str_replace('_', ' ', $coil->status)),
+                                                                'notes' => $coil->notes ?: 'No additional notes recorded for this coil.'
+                                                            ];
+                                                        @endphp
+                                                        <tr>
+                                                            <td class="ps-3">
+                                                                <a href="javascript:void(0)" class="fw-bold text-primary text-decoration-none font-monospace d-inline-flex align-items-center gap-1" onclick='openCoilModal(@json($coilData))'>
+                                                                    <i class="fe fe-disc fs-8"></i>
+                                                                    <span>{{ $coil->coil_number }}</span>
+                                                                </a>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge bg-light text-dark border px-2 py-0.5 fs-8">
+                                                                    {{ $coil->thickness ?: 'Standard' }}
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                <span class="text-secondary">{{ $coil->width ?: '—' }} {{ $coil->length ? '× ' . $coil->length : '' }}</span>
+                                                            </td>
+                                                            <td class="text-center font-monospace">
+                                                                <span class="fw-semibold">{{ $coil->formatted_remaining_coils }}</span>
+                                                                <small class="text-muted">/ {{ $coil->piece_count ?: 1 }}</small>
+                                                            </td>
+                                                            <td class="text-end text-muted font-monospace">
+                                                                {{ number_format($coil->net_weight, 2) }}
+                                                            </td>
+                                                            <td class="text-end">
+                                                                <span class="fw-bold {{ $cRem > 0 ? 'text-success' : 'text-danger' }} font-monospace">
+                                                                    {{ number_format($cRem, 2) }} kg
+                                                                </span>
+                                                            </td>
+                                                            <td class="text-end font-monospace text-secondary">
+                                                                ৳ {{ number_format($coil->rate_per_ton, 2) }}
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge bg-light text-dark border px-2 py-0.5 fs-8">
+                                                                    <i class="fe fe-map-pin text-primary me-1"></i>{{ $whName }}
+                                                                </span>
+                                                            </td>
+                                                            <td class="text-center">
+                                                                @if($cRem > 0)
+                                                                    <span class="badge badge-soft-success px-2 py-0.5 rounded-pill fs-8">
+                                                                        In Stock
+                                                                    </span>
+                                                                @else
+                                                                    <span class="badge badge-soft-secondary px-2 py-0.5 rounded-pill fs-8">
+                                                                        Exhausted
+                                                                    </span>
+                                                                @endif
+                                                            </td>
+                                                            <td class="text-center pe-3">
+                                                                <div class="dropdown">
+                                                                    <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                                                                        <i class="fas fa-ellipsis-v"></i>
+                                                                    </a>
+                                                                    <div class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                                                        <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" onclick='openCoilModal(@json($coilData))'>
+                                                                            <i class="fe fe-eye text-primary"></i>
+                                                                            <span>View Coil Specs</span>
+                                                                        </a>
+
+                                                                        @if(!$coil->purchase_id)
+                                                                            <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-primary" href="{{ route('inventory.opening-stock.edit', $coil->id) }}">
+                                                                                <i class="fe fe-edit"></i>
+                                                                                <span>Edit Opening Stock</span>
+                                                                            </a>
+
+                                                                            @if((float)$coil->remaining_weight >= (float)$coil->net_weight)
+                                                                                <div class="dropdown-divider my-1"></div>
+                                                                                <form action="{{ route('inventory.opening-stock.destroy', $coil->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this opening stock coil?');">
+                                                                                    @csrf
+                                                                                    @method('DELETE')
+                                                                                    <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger">
+                                                                                        <i class="fe fe-trash-2"></i>
+                                                                                        <span>Delete Coil</span>
+                                                                                    </button>
+                                                                                </form>
+                                                                            @endif
+                                                                        @endif
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+
                                     </div>
                                 </td>
                             </tr>
@@ -525,9 +550,9 @@
                                 <td colspan="7" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
                                         <div class="avatar avatar-xl bg-primary-light text-primary rounded-circle mb-3 d-flex align-items-center justify-content-center">
-                                            <i class="fe fe-disc fs-1"></i>
+                                            <i class="fe fe-layers fs-1"></i>
                                         </div>
-                                        <h5 class="fw-bold text-dark mb-1">No Steel Coils Found</h5>
+                                        <h5 class="fw-bold text-dark mb-1">No Stock Lots Found</h5>
                                         <p class="text-muted small mb-3">No inventory items matched your selected filter criteria.</p>
                                         <div class="d-flex gap-2">
                                             @if(request()->hasAny(['search', 'lot_id', 'warehouse_id', 'status']))
@@ -546,17 +571,6 @@
                     </tbody>
                 </table>
             </div>
-
-            @if($coils->hasPages())
-                <div class="p-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <div class="text-muted small">
-                        Showing {{ $coils->firstItem() ?? 0 }} to {{ $coils->lastItem() ?? 0 }} of {{ $coils->total() }} coils
-                    </div>
-                    <div>
-                        {{ $coils->links() }}
-                    </div>
-                </div>
-            @endif
         </div>
     </div>
 </div>
@@ -897,6 +911,47 @@ $(document).ready(function() {
     }
 
     $('#quickModalWeight, #quickModalRate').on('input', calcQuickModal);
+
+    // Auto-expand if search filter is active
+    @if(request()->filled('search') || request()->filled('lot_id'))
+        expandAllLots();
+    @endif
 });
+
+function toggleLot(key) {
+    const drawer = document.getElementById('drawer-lot-' + key);
+    const chevron = document.querySelector('.lot-chevron-' + key);
+    if (!drawer) return;
+
+    if (drawer.style.display === 'none' || drawer.style.display === '') {
+        drawer.style.display = 'table-row';
+        if (chevron) {
+            chevron.style.transform = 'rotate(90deg)';
+        }
+    } else {
+        drawer.style.display = 'none';
+        if (chevron) {
+            chevron.style.transform = 'rotate(0deg)';
+        }
+    }
+}
+
+function expandAllLots() {
+    document.querySelectorAll('.lot-coil-drawer').forEach(function(drawer) {
+        drawer.style.display = 'table-row';
+    });
+    document.querySelectorAll('[class*="lot-chevron-"]').forEach(function(chevron) {
+        chevron.style.transform = 'rotate(90deg)';
+    });
+}
+
+function collapseAllLots() {
+    document.querySelectorAll('.lot-coil-drawer').forEach(function(drawer) {
+        drawer.style.display = 'none';
+    });
+    document.querySelectorAll('[class*="lot-chevron-"]').forEach(function(chevron) {
+        chevron.style.transform = 'rotate(0deg)';
+    });
+}
 </script>
 @endpush

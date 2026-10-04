@@ -294,7 +294,43 @@ class InventoryController extends Controller
             $query->where('status', $status);
         }
 
-        $coils = $query->latest()->paginate(25)->withQueryString();
+        $coils = $query->latest()->get();
+
+        // Group coils by lot_id for Lot-Wise expandable view
+        $lotGroups = $coils->groupBy(function ($c) {
+            return $c->lot_id ? (string)$c->lot_id : 'direct_stock';
+        })->map(function ($items, $key) {
+            $first = $items->first();
+            $lot = $key !== 'direct_stock' ? $first->lot : null;
+            $vendor = $lot?->vendor ?? $first->vendor;
+            $totalIntake = (float) $items->sum('net_weight');
+            $totalRemaining = (float) $items->sum('remaining_weight');
+            $pctRemaining = $totalIntake > 0 ? round(($totalRemaining / $totalIntake) * 100, 1) : ($totalRemaining > 0 ? 100 : 0);
+            $totalValuation = (float) $items->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton);
+            $totalPieces = (int) $items->sum(fn($c) => (float)($c->piece_count ?: 1));
+            $inStockPieces = (int) $items->where('remaining_weight', '>', 0)->sum(fn($c) => (float)($c->piece_count ?: 1));
+            $warehouses = $items->map(fn($c) => $c->warehouse?->name)->filter()->unique()->values();
+
+            return [
+                'lot_key'              => $key,
+                'lot_id'               => $lot?->id,
+                'lot'                  => $lot,
+                'lot_number'           => $lot ? $lot->lot_number : 'Direct Stock / Opening Stock',
+                'lot_date'             => $lot?->lot_date ? $lot->lot_date->format('d M Y') : ($first->created_at ? $first->created_at->format('d M Y') : '—'),
+                'vendor'               => $vendor,
+                'vendor_name'          => $vendor ? $vendor->name : ($lot ? 'Consignment' : 'Direct Stock'),
+                'coils'                => $items,
+                'total_coils'          => $items->count(),
+                'in_stock_coils'       => $items->where('remaining_weight', '>', 0)->count(),
+                'total_pieces'         => $totalPieces,
+                'in_stock_pieces'      => $inStockPieces,
+                'total_intake_weight'  => $totalIntake,
+                'total_remaining_weight'=> $totalRemaining,
+                'pct_remaining'        => $pctRemaining,
+                'total_valuation'      => $totalValuation,
+                'warehouses'           => $warehouses,
+            ];
+        })->values();
 
         // Auxiliary data for filters
         $lots = Lot::where('status', 'active')->latest()->get();
@@ -355,6 +391,7 @@ class InventoryController extends Controller
 
         return view('frontend.pages.inventory.index', compact(
             'coils',
+            'lotGroups',
             'lots',
             'warehouses',
             'vendors',

@@ -73,7 +73,7 @@
             <div class="col-lg-8 col-12">
 
                 <!-- 1. Customer & Invoice Meta Box -->
-                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card border-0 shadow-sm rounded-3 mb-4 p-2">
                     <div class="pos-card-header d-flex justify-content-between align-items-center rounded-top-3">
                         <span><i class="fe fe-user text-primary me-2"></i>Customer &amp; Invoice Details</span>
                         <!-- <span class="badge bg-light text-dark border font-monospace">{{ $orderNo }}</span>
@@ -180,7 +180,7 @@
                 </div>
 
                 <!-- 2. Shop Steel Items Picker & Line Items Grid -->
-                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card border-0 shadow-sm rounded-3 mb-4 p-2">
                     <div class="pos-card-header d-flex justify-content-between align-items-center rounded-top-3">
                         <span><i class="fe fe-box text-primary me-2"></i>Select Items From Shop Inventory</span>
                         <span class="badge bg-primary-subtle text-primary">{{ $coils->count() }} Items In Stock</span>
@@ -279,7 +279,7 @@
                 </div>
 
                 <!-- 3. Dispatch Note -->
-                <div class="card border-0 shadow-sm rounded-3">
+                <div class="card border-0 shadow-sm rounded-3 p-2">
                     <div class="pos-card-header rounded-top-3">
                         <span><i class="fe fe-file-text text-primary me-2"></i>Dispatch Note &amp; Delivery Transport Details</span>
                     </div>
@@ -359,17 +359,17 @@
                             </div>
 
                             <!-- Cutting & Labour Load-Unload (৳), Scale & Labour Charge (৳), Other Charges (৳) -->
-                            <div class="row g-2 mb-3">
+                            <div class="row g-2 mb-3 align-items-end">
                                 <div class="col-4">
-                                    <label class="form-label fs-8 text-secondary fw-semibold mb-1" title="Cutting & Labour Load-Unload">Cutting & Labour Load-Unload (৳)</label>
+                                    <label class="form-label fs-8 text-secondary fw-semibold mb-1" style="min-height: 30px; display: flex; align-items: flex-end;" title="Cutting & Labour Load-Unload">Cutting &amp; Labour (৳)</label>
                                     <input type="number" name="labour_cost" id="labour_cost" class="form-control form-control-sm text-end" value="0.00" min="0" step="0.01" oninput="recalculateShopSummary()" placeholder="0.00">
                                 </div>
                                 <div class="col-4">
-                                    <label class="form-label fs-8 text-secondary fw-semibold mb-1" title="Scale & Labour Charge">Scale & Labour Charge (৳)</label>
+                                    <label class="form-label fs-8 text-secondary fw-semibold mb-1" style="min-height: 30px; display: flex; align-items: flex-end;" title="Scale & Labour Charge">Scale &amp; Charge (৳)</label>
                                     <input type="number" name="weight_scale_cost" id="weight_scale_cost" class="form-control form-control-sm text-end" value="0.00" min="0" step="0.01" oninput="recalculateShopSummary()" placeholder="0.00">
                                 </div>
                                 <div class="col-4">
-                                    <label class="form-label fs-8 text-secondary fw-semibold mb-1" title="Other Charges">Other (৳)</label>
+                                    <label class="form-label fs-8 text-secondary fw-semibold mb-1" style="min-height: 30px; display: flex; align-items: flex-end;" title="Other Charges">Other Charges (৳)</label>
                                     <input type="number" name="other_charges" id="other_charges" class="form-control form-control-sm text-end" value="0.00" min="0" step="0.01" oninput="recalculateShopSummary()" placeholder="0.00">
                                 </div>
                             </div>
