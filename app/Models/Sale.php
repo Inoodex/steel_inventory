@@ -175,6 +175,9 @@ class Sale extends Model
 
     public function getPaidLabourCostAttribute(): float
     {
+        if ($this->relationLoaded('workerPayoutItems')) {
+            return (float) $this->workerPayoutItems->where('charge_type', 'labour')->sum('amount');
+        }
         return (float) $this->workerPayoutItems()->where('charge_type', 'labour')->sum('amount');
     }
 
@@ -185,6 +188,9 @@ class Sale extends Model
 
     public function getPaidDeliveryChargeAttribute(): float
     {
+        if ($this->relationLoaded('workerPayoutItems')) {
+            return (float) $this->workerPayoutItems->where('charge_type', 'delivery')->sum('amount');
+        }
         return (float) $this->workerPayoutItems()->where('charge_type', 'delivery')->sum('amount');
     }
 
@@ -195,6 +201,9 @@ class Sale extends Model
 
     public function getPaidWeightScaleCostAttribute(): float
     {
+        if ($this->relationLoaded('workerPayoutItems')) {
+            return (float) $this->workerPayoutItems->where('charge_type', 'weight_scale')->sum('amount');
+        }
         return (float) $this->workerPayoutItems()->where('charge_type', 'weight_scale')->sum('amount');
     }
 
@@ -205,6 +214,9 @@ class Sale extends Model
 
     public function getPaidOtherChargesAttribute(): float
     {
+        if ($this->relationLoaded('workerPayoutItems')) {
+            return (float) $this->workerPayoutItems->where('charge_type', 'other')->sum('amount');
+        }
         return (float) $this->workerPayoutItems()->where('charge_type', 'other')->sum('amount');
     }
 
@@ -220,6 +232,9 @@ class Sale extends Model
 
     public function getTotalChargesPaidAttribute(): float
     {
+        if ($this->relationLoaded('workerPayoutItems')) {
+            return (float) $this->workerPayoutItems->sum('amount');
+        }
         return (float) $this->workerPayoutItems()->sum('amount');
     }
 

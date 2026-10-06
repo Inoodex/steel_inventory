@@ -34,76 +34,86 @@ class PaymentController extends Controller
             return redirect()->back()->with(['error' => 'Sale not found.']);
         }
 
-        $payment = new Payment;
-        $payment->payment_for = $request->payment_for ?? 2;
-        $payment->customer_id = $bill->customer_id;
-        $payment->sale_id = $bill->id;
-        $paymentMethod = $request->payment_method ?? ($request->payment_method_id ?? 'cash');
-        $isBank = ($paymentMethod !== 'cash');
-        $payment->payment_method = $paymentMethod;
-        $payment->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
-        $payment->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
-        $payment->amount = $request->amount;
-        $payment->remarks = $request->remarks;
-        $payment->created_by = \Illuminate\Support\Facades\Auth::id();
-        $payment->status = 1;
-        $payment->save();
-
-        $bill->advanced_payment = ($bill->advanced_payment ?? 0) + $request->amount;
-        $bill->due_payment = max(0, ($bill->payble ?? $bill->total) - $bill->advanced_payment);
-        $bill->status = $bill->due_payment <= 0 ? 'paid' : 'partial';
-        $bill->update();
-
-        // Auto-post double-entry journal voucher for due collection
+        \Illuminate\Support\Facades\DB::beginTransaction();
         try {
-            $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
-            $arAcc = \App\Models\ChartOfAccount::where('account_code', '1130')->first();
-            
-            $collectionAcc = $cashAcc;
-            if ($payment->payment_method !== 'cash') {
-                if (!empty($payment->bank_detail_id)) {
-                    $bank = \App\Models\BankDetail::find($payment->bank_detail_id);
-                    $collectionAcc = $bank?->resolveChartOfAccount() 
-                        ?? \App\Models\ChartOfAccount::where('account_code', '1120')->first() 
-                        ?? $cashAcc;
-                } else {
-                    $collectionAcc = \App\Models\ChartOfAccount::where('account_code', '1120')->first() ?? $cashAcc;
+            $payment = new Payment;
+            $payment->payment_for = $request->payment_for ?? 2;
+            $payment->customer_id = $bill->customer_id;
+            $payment->sale_id = $bill->id;
+            $paymentMethod = $request->payment_method ?? ($request->payment_method_id ?? 'cash');
+            $isBank = ($paymentMethod !== 'cash');
+            $payment->payment_method = $paymentMethod;
+            $payment->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
+            $payment->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
+            $payment->amount = $request->amount;
+            $payment->remarks = $request->remarks;
+            $payment->created_by = \Illuminate\Support\Facades\Auth::id();
+            $payment->status = 1;
+            $payment->save();
+
+            $bill->advanced_payment = ($bill->advanced_payment ?? 0) + $request->amount;
+            $bill->due_payment = max(0, ($bill->payble ?? $bill->total) - $bill->advanced_payment);
+            $bill->status = $bill->due_payment <= 0 ? 'paid' : 'partial';
+            $bill->update();
+
+            // Auto-post double-entry journal voucher for due collection
+            try {
+                $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
+                $arAcc = \App\Models\ChartOfAccount::where('account_code', '1130')->first();
+                
+                $collectionAcc = $cashAcc;
+                if ($payment->payment_method !== 'cash') {
+                    if (!empty($payment->bank_detail_id)) {
+                        $bank = \App\Models\BankDetail::find($payment->bank_detail_id);
+                        $collectionAcc = $bank?->resolveChartOfAccount() 
+                            ?? \App\Models\ChartOfAccount::where('account_code', '1120')->first() 
+                            ?? $cashAcc;
+                    } else {
+                        $collectionAcc = \App\Models\ChartOfAccount::where('account_code', '1120')->first() ?? $cashAcc;
+                    }
                 }
-            }
 
-            if ($collectionAcc && $arAcc && (float) $payment->amount > 0) {
-                $methodLabel = match($payment->payment_method) {
-                    'bank' => 'Bank Transfer',
-                    'cheque' => 'Cheque',
-                    'mobile_banking' => 'Mobile Banking',
-                    default => 'Cash'
-                };
-                $refText = $payment->transaction_ref ? " [Ref/Cheque: {$payment->transaction_ref}]" : "";
+                if ($collectionAcc && $arAcc && (float) $payment->amount > 0 && function_exists('postJournalEntry')) {
+                    $methodLabel = match($payment->payment_method) {
+                        'bank' => 'Bank Transfer',
+                        'cheque' => 'Cheque',
+                        'mobile_banking' => 'Mobile Banking',
+                        default => 'Cash'
+                    };
+                    $refText = $payment->transaction_ref ? " [Ref/Cheque: {$payment->transaction_ref}]" : "";
 
-                postJournalEntry([
-                    'entry_date' => date('Y-m-d'),
-                    'reference_type' => 'sale',
-                    'reference_id' => $bill->id,
-                    'description' => "Due collection for {$bill->order_no} via {$methodLabel}{$refText}",
-                    'items' => [
-                        [
-                            'account_id' => $collectionAcc->id,
-                            'debit' => (float) $payment->amount,
-                            'credit' => 0.00,
-                            'description' => "Due collected for {$bill->order_no} via {$methodLabel}{$refText}"
-                        ],
-                        [
-                            'account_id' => $arAcc->id,
-                            'debit' => 0.00,
-                            'credit' => (float) $payment->amount,
-                            'description' => "Accounts Receivable credit for {$bill->order_no}"
+                    postJournalEntry([
+                        'entry_date' => date('Y-m-d'),
+                        'reference_type' => 'sale',
+                        'reference_id' => $bill->id,
+                        'description' => "Due collection for {$bill->order_no} via {$methodLabel}{$refText}",
+                        'items' => [
+                            [
+                                'account_id' => $collectionAcc->id,
+                                'debit' => (float) $payment->amount,
+                                'credit' => 0.00,
+                                'description' => "Due collected for {$bill->order_no} via {$methodLabel}{$refText}"
+                            ],
+                            [
+                                'account_id' => $arAcc->id,
+                                'debit' => 0.00,
+                                'credit' => (float) $payment->amount,
+                                'description' => "Accounts Receivable credit for {$bill->order_no}"
+                            ]
                         ]
-                    ]
-                ]);
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Customer sale payment journal posting failed for sale #{$bill->id}: " . $e->getMessage());
             }
-        } catch (\Throwable $e) {}
 
-        return redirect()->back()->with(['success' => 'Payment added successfully.']);
+            \Illuminate\Support\Facades\DB::commit();
+            return redirect()->back()->with(['success' => 'Payment added successfully.']);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            \Illuminate\Support\Facades\Log::error("Failed to add payment for sale #{$bill->id}: " . $e->getMessage());
+            return redirect()->back()->with(['error' => 'Failed to add payment: ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -401,8 +411,9 @@ class PaymentController extends Controller
                             ]
                         ]
                     ]);
-                }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Vendor payment journal posting failed for payment #{$payment->id}: " . $e->getMessage());
+            }
 
             \Illuminate\Support\Facades\DB::commit();
 

@@ -201,7 +201,7 @@ class VendorController extends Controller
             $openingBalance += ($priorPurchases - $priorPayments);
         }
 
-        $purchasesQuery = \App\Models\Purchase::where('vendor_id', $vendor->id);
+        $purchasesQuery = \App\Models\Purchase::with('lot')->where('vendor_id', $vendor->id);
         $paymentsQuery = \App\Models\Payment::where('vendor_id', $vendor->id);
 
         if ($fromDate) {

@@ -32,13 +32,13 @@ class CustomerController extends Controller
         ->latest()
         ->get()
         ->map(function ($c) {
-            $opening = (float)($c->opening_balance ?? 0);
-            $salesTotal = (float)($c->sales_sum_payble ?? 0);
-            $paymentsTotal = (float)($c->payments_sum_amount ?? 0);
-            $returnsTotal = (float)($c->returns_sum_total_refund_amount ?? 0);
-            $net = $opening + $salesTotal - $paymentsTotal - $returnsTotal;
-            $c->advance_credit = $net < 0 ? abs($net) : 0.00;
-            $c->net_due = $net > 0 ? $net : 0.00;
+            $fin = $c->calculateFinancials(
+                (float)($c->sales_sum_payble ?? 0),
+                (float)($c->payments_sum_amount ?? 0),
+                (float)($c->returns_sum_total_refund_amount ?? 0)
+            );
+            $c->advance_credit = $fin['advance_credit'];
+            $c->net_due = $fin['effective_due'];
             return $c;
         });
 
@@ -282,16 +282,31 @@ class CustomerController extends Controller
         // If fromDate is set, compute prior transactions before fromDate
         if ($fromDate) {
             $priorSales = \App\Models\Sale::where('customer_id', $customer->id)
-                ->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(order_date, created_at)'), '<', $fromDate)
+                ->where(function ($q) use ($fromDate) {
+                    $q->where('order_date', '<', $fromDate)
+                      ->orWhere(function ($sq) use ($fromDate) {
+                          $sq->whereNull('order_date')->whereDate('created_at', '<', $fromDate);
+                      });
+                })
                 ->sum('payble');
 
             $priorPayments = \App\Models\Payment::where('customer_id', $customer->id)
-                ->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(payment_date, created_at)'), '<', $fromDate)
+                ->where(function ($q) use ($fromDate) {
+                    $q->where('payment_date', '<', $fromDate)
+                      ->orWhere(function ($sq) use ($fromDate) {
+                          $sq->whereNull('payment_date')->whereDate('created_at', '<', $fromDate);
+                      });
+                })
                 ->sum('amount');
 
             $priorReturns = \App\Models\ProductReturn::where('customer_id', $customer->id)
                 ->where('status', '!=', 'rejected')
-                ->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(return_date, created_at)'), '<', $fromDate)
+                ->where(function ($q) use ($fromDate) {
+                    $q->where('return_date', '<', $fromDate)
+                      ->orWhere(function ($sq) use ($fromDate) {
+                          $sq->whereNull('return_date')->whereDate('created_at', '<', $fromDate);
+                      });
+                })
                 ->sum('total_refund_amount');
 
             $openingBalance += ($priorSales - $priorPayments - $priorReturns);
@@ -302,14 +317,44 @@ class CustomerController extends Controller
         $returnsQuery = \App\Models\ProductReturn::where('customer_id', $customer->id)->where('status', '!=', 'rejected');
 
         if ($fromDate) {
-            $salesQuery->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(order_date, created_at)'), '>=', $fromDate);
-            $paymentsQuery->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(payment_date, created_at)'), '>=', $fromDate);
-            $returnsQuery->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(return_date, created_at)'), '>=', $fromDate);
+            $salesQuery->where(function ($q) use ($fromDate) {
+                $q->where('order_date', '>=', $fromDate)
+                  ->orWhere(function ($sq) use ($fromDate) {
+                      $sq->whereNull('order_date')->whereDate('created_at', '>=', $fromDate);
+                  });
+            });
+            $paymentsQuery->where(function ($q) use ($fromDate) {
+                $q->where('payment_date', '>=', $fromDate)
+                  ->orWhere(function ($sq) use ($fromDate) {
+                      $sq->whereNull('payment_date')->whereDate('created_at', '>=', $fromDate);
+                  });
+            });
+            $returnsQuery->where(function ($q) use ($fromDate) {
+                $q->where('return_date', '>=', $fromDate)
+                  ->orWhere(function ($sq) use ($fromDate) {
+                      $sq->whereNull('return_date')->whereDate('created_at', '>=', $fromDate);
+                  });
+            });
         }
         if ($toDate) {
-            $salesQuery->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(order_date, created_at)'), '<=', $toDate);
-            $paymentsQuery->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(payment_date, created_at)'), '<=', $toDate);
-            $returnsQuery->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(return_date, created_at)'), '<=', $toDate);
+            $salesQuery->where(function ($q) use ($toDate) {
+                $q->where('order_date', '<=', $toDate)
+                  ->orWhere(function ($sq) use ($toDate) {
+                      $sq->whereNull('order_date')->whereDate('created_at', '<=', $toDate);
+                  });
+            });
+            $paymentsQuery->where(function ($q) use ($toDate) {
+                $q->where('payment_date', '<=', $toDate)
+                  ->orWhere(function ($sq) use ($toDate) {
+                      $sq->whereNull('payment_date')->whereDate('created_at', '<=', $toDate);
+                  });
+            });
+            $returnsQuery->where(function ($q) use ($toDate) {
+                $q->where('return_date', '<=', $toDate)
+                  ->orWhere(function ($sq) use ($toDate) {
+                      $sq->whereNull('return_date')->whereDate('created_at', '<=', $toDate);
+                  });
+            });
         }
 
         $sales = $salesQuery->get();

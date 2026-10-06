@@ -130,16 +130,53 @@ class ProductReturn extends Model
         }
 
         try {
-            // Debit 5120 (Sales Returns) | Credit 1110 (Cash in Hand)
             $returnsAcc = \App\Models\ChartOfAccount::where('account_code', '5120')->first()
                        ?? \App\Models\ChartOfAccount::where('account_name', 'like', '%Sales Return%')->first();
-
+            $arAcc = \App\Models\ChartOfAccount::where('account_code', '1130')->first();
             $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first()
                     ?? \App\Models\ChartOfAccount::where('account_name', 'like', '%Cash%')->first();
 
-            if ($returnsAcc && $cashAcc && function_exists('postJournalEntry')) {
+            if ($returnsAcc && function_exists('postJournalEntry')) {
                 $orderNo = $this->sale ? $this->sale->order_no : ('Sale #' . $this->sale_id);
                 $customerName = $this->customer ? $this->customer->name : ('Customer #' . $this->customer_id);
+
+                $saleDue = $this->sale ? (float)$this->sale->due_payment : 0;
+                $arCreditPortion = min($refundAmount, $saleDue);
+                $cashCreditPortion = max(0, $refundAmount - $arCreditPortion);
+
+                $creditItems = [];
+                if ($arCreditPortion > 0 && $arAcc) {
+                    $creditItems[] = [
+                        'account_id'  => $arAcc->id,
+                        'debit'       => 0.00,
+                        'credit'      => $arCreditPortion,
+                        'description' => "Accounts Receivable reduction on Order #{$orderNo} for Return #{$this->id}"
+                    ];
+                }
+                if ($cashCreditPortion > 0 && $cashAcc) {
+                    $creditItems[] = [
+                        'account_id'  => $cashAcc->id,
+                        'debit'       => 0.00,
+                        'credit'      => $cashCreditPortion,
+                        'description' => "Cash refund paid to {$customerName} for Return #{$this->id}"
+                    ];
+                } elseif (empty($creditItems) && $cashAcc) {
+                    $creditItems[] = [
+                        'account_id'  => $cashAcc->id,
+                        'debit'       => 0.00,
+                        'credit'      => $refundAmount,
+                        'description' => "Credit adjustment for Return #{$this->id}"
+                    ];
+                }
+
+                $journalItems = array_merge([
+                    [
+                        'account_id'  => $returnsAcc->id,
+                        'debit'       => $refundAmount,
+                        'credit'      => 0.00,
+                        'description' => "Sales Return allowance for Order #{$orderNo}"
+                    ]
+                ], $creditItems);
 
                 postJournalEntry([
                     'entry_date'     => $this->return_date ? (\Carbon\Carbon::parse($this->return_date)->format('Y-m-d')) : date('Y-m-d'),
@@ -148,20 +185,7 @@ class ProductReturn extends Model
                     'description'    => "Sales Return #{$this->id} — Refund for Invoice #{$orderNo} ({$customerName})",
                     'status'         => 'approved',
                     'created_by'     => $userId,
-                    'items'          => [
-                        [
-                            'account_id'  => $returnsAcc->id,
-                            'debit'       => $refundAmount,
-                            'credit'      => 0.00,
-                            'description' => "Sales Return allowance for Order #{$orderNo}"
-                        ],
-                        [
-                            'account_id'  => $cashAcc->id,
-                            'debit'       => 0.00,
-                            'credit'      => $refundAmount,
-                            'description' => "Cash refund paid to {$customerName} for Return #{$this->id}"
-                        ]
-                    ]
+                    'items'          => $journalItems
                 ]);
             }
         } catch (\Throwable $e) {
@@ -204,11 +228,9 @@ class ProductReturn extends Model
     private function updateSalesItemsReturnedQty()
     {
         foreach ($this->items as $returnItem) {
-            if ($returnItem->sales_item_id) {
-                $salesItem = SalesItem::find($returnItem->sales_item_id);
-                if ($salesItem) {
-                    $salesItem->increment('returned_qty', $returnItem->quantity);
-                }
+            $salesItem = $returnItem->salesItem ?? ($returnItem->sales_item_id ? SalesItem::find($returnItem->sales_item_id) : null);
+            if ($salesItem) {
+                $salesItem->increment('returned_qty', $returnItem->quantity);
             }
         }
     }
@@ -217,11 +239,8 @@ class ProductReturn extends Model
     // For steel coil system: increases Coil remaining_weight, restores in_stock status if was exhausted, and syncs Inventory.
     private function addToStock($item)
     {
-        $coilId = $item->product_id;
-        if (!$coilId && $item->sales_item_id) {
-            $sItem = \App\Models\SalesItem::find($item->sales_item_id);
-            $coilId = $sItem->coil_id ?? $sItem->product_id ?? null;
-        }
+        $salesItem = $item->salesItem ?? ($item->sales_item_id ? \App\Models\SalesItem::find($item->sales_item_id) : null);
+        $coilId = $item->product_id ?: ($salesItem?->coil_id ?? $salesItem?->product_id ?? null);
 
         if ($coilId) {
             $coil = \App\Models\Coil::find($coilId);

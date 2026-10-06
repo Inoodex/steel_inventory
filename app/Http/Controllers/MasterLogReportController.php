@@ -147,7 +147,16 @@ class MasterLogReportController extends Controller
         if (in_array($eventType, ['all', 'sales', 'financial'])) {
             $salesQ = Sale::whereBetween('created_at', [$start, $end])
                 ->whereNull('deleted_at')
-                ->with(['customer', 'warehouse', 'salesBy']);
+                ->select([
+                    'id', 'order_no', 'customer_id', 'warehouse_id', 'sales_by',
+                    'payble', 'total', 'advanced_payment', 'due_payment', 'qty',
+                    'payment_method', 'created_at'
+                ])
+                ->with([
+                    'customer:id,name,phone',
+                    'warehouse:id,name,type',
+                    'salesBy:id,name'
+                ]);
 
             if ($warehouseId !== 'all') {
                 $salesQ->where('warehouse_id', $warehouseId);
@@ -156,10 +165,10 @@ class MasterLogReportController extends Controller
             $sales = $salesQ->get();
             foreach ($sales as $s) {
                 $isShop = $s->warehouse && $s->warehouse->type === 'shop';
-                $totalBill = (float)($s->payble ?? $s->payable_amount ?? $s->total ?? 0);
-                $paid = (float)($s->advanced_payment ?? $s->paid_amount ?? 0);
-                $due = (float)($s->due_payment ?? $s->due_amount ?? 0);
-                $weight = (float)($s->weight ?? 0);
+                $totalBill = (float)($s->payble ?? $s->total ?? 0);
+                $paid = (float)($s->advanced_payment ?? 0);
+                $due = (float)($s->due_payment ?? 0);
+                $weight = (float)($s->qty ?? 0);
 
                 $logs->push([
                     'id'             => 'sale-' . $s->id,
@@ -191,7 +200,16 @@ class MasterLogReportController extends Controller
         if (in_array($eventType, ['all', 'purchases', 'financial'])) {
             $purchaseQ = Purchase::whereBetween('created_at', [$start, $end])
                 ->whereNull('deleted_at')
-                ->with(['vendor', 'lot', 'warehouse']);
+                ->select([
+                    'id', 'lot_id', 'vendor_id', 'warehouse_id',
+                    'total_price', 'payment', 'due', 'total_weight', 'quantity',
+                    'payment_method', 'created_at'
+                ])
+                ->with([
+                    'vendor:id,name,phone',
+                    'lot:id,lot_number',
+                    'warehouse:id,name,type'
+                ]);
 
             if ($warehouseId !== 'all') {
                 $purchaseQ->where('warehouse_id', $warehouseId);
@@ -212,7 +230,7 @@ class MasterLogReportController extends Controller
                     'type_label'     => $isShop ? 'Shop Stock Intake' : 'Ship Lot Purchase',
                     'badge_class'    => $isShop ? 'bg-indigo' : 'bg-purple',
                     'icon'           => 'fe fe-download',
-                    'reference_no'   => $p->lot?->lot_number ?: ($p->lot_number ?: 'LOT-' . $p->id),
+                    'reference_no'   => $p->lot?->lot_number ?: ('LOT-' . $p->id),
                     'party_name'     => $p->vendor?->name ?: 'Multiple / Direct Supplier',
                     'party_role'     => 'Vendor / Supplier',
                     'party_phone'    => $p->vendor?->phone,
@@ -234,7 +252,15 @@ class MasterLogReportController extends Controller
         // 3. PAYMENTS & MONEY COLLECTIONS
         if (in_array($eventType, ['all', 'payments', 'financial'])) {
             $paymentsQ = Payment::whereBetween('created_at', [$start, $end])
-                ->with(['customer', 'vendor', 'sale', 'purchase']);
+                ->select([
+                    'id', 'customer_id', 'vendor_id', 'sale_id', 'purchase_id',
+                    'amount', 'payment_for', 'payment_method', 'transaction_ref',
+                    'transaction_id', 'remarks', 'notes', 'created_at'
+                ])
+                ->with([
+                    'customer:id,name,phone',
+                    'vendor:id,name,phone'
+                ]);
 
             $payments = $paymentsQ->get();
             foreach ($payments as $pm) {
@@ -271,12 +297,20 @@ class MasterLogReportController extends Controller
         // 4. SALES RETURNS & REFUNDS
         if (in_array($eventType, ['all', 'returns', 'financial'])) {
             $returnsQ = ProductReturn::whereBetween('created_at', [$start, $end])
-                ->with(['sale', 'customer', 'items']);
+                ->select([
+                    'id', 'sale_id', 'customer_id', 'return_date', 'total_refund_amount',
+                    'status', 'reason', 'notes', 'created_at'
+                ])
+                ->with([
+                    'customer:id,name,phone',
+                    'sale:id,order_no',
+                    'items:id,return_id,quantity,total_price'
+                ]);
 
             $returns = $returnsQ->get();
             foreach ($returns as $ret) {
                 $refund = (float)($ret->total_refund_amount ?? 0);
-                $retWeight = (float)($ret->items ? $ret->items->sum('return_weight') : 0);
+                $retWeight = (float)($ret->items ? $ret->items->sum('quantity') : 0);
 
                 $logs->push([
                     'id'             => 'return-' . $ret->id,
@@ -285,7 +319,7 @@ class MasterLogReportController extends Controller
                     'type_label'     => 'Sales Return & Restock',
                     'badge_class'    => 'bg-danger',
                     'icon'           => 'fe fe-rotate-ccw',
-                    'reference_no'   => $ret->return_no ?: 'RET-' . str_pad($ret->id, 4, '0', STR_PAD_LEFT),
+                    'reference_no'   => 'RET-' . str_pad($ret->id, 4, '0', STR_PAD_LEFT),
                     'party_name'     => $ret->customer?->name ?: 'Customer',
                     'party_role'     => 'Customer',
                     'party_phone'    => $ret->customer?->phone,
@@ -308,7 +342,15 @@ class MasterLogReportController extends Controller
         if (in_array($eventType, ['all', 'expenses', 'financial'])) {
             // Daily Expenses
             $expenses = DailyExpense::whereBetween('created_at', [$start, $end])
-                ->with(['category', 'employee', 'user'])
+                ->select([
+                    'id', 'expense_category_id', 'amount', 'date', 'remarks',
+                    'employee_id', 'user_id', 'spend_method', 'created_at'
+                ])
+                ->with([
+                    'category:id,name',
+                    'employee:id,name,phone',
+                    'user:id,name'
+                ])
                 ->get();
 
             foreach ($expenses as $exp) {
@@ -340,7 +382,10 @@ class MasterLogReportController extends Controller
 
             // Worker Extra Charges & Payouts
             $payouts = WorkerPayout::whereBetween('created_at', [$start, $end])
-                ->with(['items'])
+                ->select([
+                    'id', 'payout_no', 'recipient_name', 'recipient_phone',
+                    'total_amount', 'charge_type', 'payment_method', 'notes', 'created_at'
+                ])
                 ->get();
 
             foreach ($payouts as $wpo) {

@@ -7,9 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Vendor extends Model
 {
-    use HasFactory;
+    use HasFactory, \Illuminate\Database\Eloquent\SoftDeletes;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'name',
+        'company',
+        'phone',
+        'email',
+        'address',
+        'bin_number',
+        'tin_number',
+        'opening_balance',
+        'status',
+    ];
 
     public function purchases()
     {

@@ -91,6 +91,48 @@ class Lot extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    public function getTotalPurchasesCountAttribute(): int
+    {
+        return $this->purchases()->count();
+    }
+
+    public function getTotalCoilsCountAttribute(): int
+    {
+        return (int) $this->purchases()->sum('quantity');
+    }
+
+    public function getTotalWeightAttribute(): float
+    {
+        return (float) $this->purchases->sum(fn($p) => (float)($p->total_weight ?: $p->quantity));
+    }
+
+    public function getTotalAmountAttribute(): float
+    {
+        return (float) $this->purchases->sum('total_price');
+    }
+
+    public function getTotalPaidAttribute(): float
+    {
+        return (float) $this->purchases->sum('payment');
+    }
+
+    public function getTotalDueAttribute(): float
+    {
+        return max(0, round($this->total_amount - $this->total_paid, 2));
+    }
+
+    public function getFinancialSummaryAttribute(): array
+    {
+        return [
+            'total_purchases' => $this->total_purchases_count,
+            'total_coils'     => $this->total_coils_count,
+            'total_weight'    => $this->total_weight,
+            'total_amount'    => $this->total_amount,
+            'total_paid'      => $this->total_paid,
+            'total_due'       => $this->total_due,
+        ];
+    }
+
     /**
      * Generate unique default Lot Number if custom number is not provided
      */

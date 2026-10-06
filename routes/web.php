@@ -7,18 +7,20 @@ use App\Http\Controllers\{
     PurchaseController,
     RevenueController, RoleController, PermissionController,
     SalaryController, SalesController,
-    TaDaController, UserController, VendorController, BankDetailController,
+    UserController, VendorController, BankDetailController,
     CompanyDetailController, PaymentController, ReturnController,
     ChartOfAccountController, JournalEntryController, LedgerController,
-    TrialBalanceController, FinancialStatementController, ContraEntryController,
-    ReconciliationController, FiscalYearController, CoilController, WarehouseController,
+    TrialBalanceController, FinancialStatementController,
+    FiscalYearController, WarehouseController,
     WorkerPayoutController, ShopController, MasterLogReportController
 };
 
 use Illuminate\Support\Facades\{Auth, Route};
 
 Auth::routes(['register' => false, 'reset' => false, 'verify' => false]);
-Route::get('/logout', [\App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout.get');
+Route::get('/logout', function () {
+    return redirect()->route('login');
+})->name('logout.get');
 
 Route::get('/', function () {
     return Auth::check() ? redirect()->route('dashboard') : redirect()->route('login');

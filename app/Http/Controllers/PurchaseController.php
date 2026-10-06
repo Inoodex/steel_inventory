@@ -240,106 +240,116 @@ class PurchaseController extends Controller
             'coil_notes'        => 'nullable|string|max:500',
         ]);
 
-        $purchase = Purchase::with('coils')->findOrFail($purchase->id);
-        $oldLotId = $purchase->lot_id;
-        $coil = $purchase->coils->first();
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            $purchase = Purchase::with('coils')->findOrFail($purchase->id);
+            $oldLotId = $purchase->lot_id;
+            $coil = $purchase->coils->first();
 
-        $coilQty = max(1, (int) $request->quantity);
-        $perCoilWeight = (float) $request->unit_weight;
-        $calculatedTotalWeight = $coilQty * $perCoilWeight;
-        $totalWeight = (float) ($request->total_weight ?: $calculatedTotalWeight);
-        if ($totalWeight <= 0 && $calculatedTotalWeight > 0) {
-            $totalWeight = $calculatedTotalWeight;
-        }
-
-        // Sold weight protection check
-        if ($coil) {
-            $soldWeight = max(0, (float)$coil->net_weight - (float)$coil->remaining_weight);
-            if ($soldWeight > 0 && $totalWeight < $soldWeight) {
-                return redirect()->back()->withInput()->with('error', "Cannot reduce total intake weight below " . number_format($soldWeight, 2) . " kg because this amount has already been sold and dispatched.");
+            $coilQty = max(1, (int) $request->quantity);
+            $perCoilWeight = (float) $request->unit_weight;
+            $calculatedTotalWeight = $coilQty * $perCoilWeight;
+            $totalWeight = (float) ($request->total_weight ?: $calculatedTotalWeight);
+            if ($totalWeight <= 0 && $calculatedTotalWeight > 0) {
+                $totalWeight = $calculatedTotalWeight;
             }
-        }
 
-        $rate = (float) $request->unit_price;
-        $subPrice = (float) ($request->sub_price ?: ($totalWeight * $rate));
-
-        $deliveryCharge  = (float) ($request->delivery_charge ?? 0);
-        $transportPayer  = $request->input('transport_payer', 'me');
-        $vendorDelivery  = ($transportPayer === 'vendor') ? $deliveryCharge : 0;
-        $labourCost      = (float) ($request->labour_cost ?? 0);
-        $weightScaleCost = (float) ($request->weight_scale_cost ?? 0);
-        $otherCharges    = (float) ($request->other_charges ?? 0);
-        $discount        = (float) ($request->discount ?? 0);
-        $netExtraCharges = ($vendorDelivery + $labourCost + $weightScaleCost + $otherCharges) - $discount;
-
-        $totalPrice = max(0, round($subPrice + $netExtraCharges, 2));
-        $payment = (float) $request->payment;
-        $due = max(0, round($totalPrice - $payment, 2));
-
-        $purchase->lot_id            = $request->lot_id;
-        $purchase->warehouse_id      = $request->warehouse_id;
-        $purchase->vendor_id         = $request->vendor_id;
-        $purchase->thickness         = $request->thickness;
-        $purchase->size              = $request->size;
-        $purchase->size_type         = $request->size_type ?: 'ft';
-        $purchase->unit_weight       = $perCoilWeight;
-        $purchase->total_weight      = $totalWeight;
-        $purchase->quantity          = $coilQty;
-        $purchase->unit_price        = $rate;
-        $purchase->sub_price         = $subPrice;
-        $purchase->delivery_charge   = $deliveryCharge;
-        $purchase->transport_payer   = $transportPayer;
-        $purchase->labour_cost       = $labourCost;
-        $purchase->weight_scale_cost = $weightScaleCost;
-        $purchase->other_charges     = $otherCharges;
-        $purchase->discount          = $discount;
-        $purchase->total_price       = $totalPrice;
-        $purchase->payment           = $payment;
-        $purchase->due               = $due;
-        $purchase->payment_method    = $request->payment_method ?? 'cash';
-        $purchase->bank_detail_id    = ($request->payment_method !== 'cash') ? $request->bank_detail_id : null;
-        $purchase->transaction_ref   = ($request->payment_method !== 'cash') ? $request->transaction_ref : null;
-        $purchase->notes             = $request->notes;
-        $purchase->updated_by        = Auth::id();
-        $purchase->save();
-
-        // Synchronize linked Coil record in yard stock
-        if ($coil) {
-            $prevNetWeight = (float) $coil->net_weight;
-            $soldWeight = max(0, $prevNetWeight - (float) $coil->remaining_weight);
-            $newRemainingWeight = max(0, $totalWeight - $soldWeight);
-
-            $coil->update([
-                'lot_id'           => $request->lot_id,
-                'vendor_id'        => $request->vendor_id,
-                'warehouse_id'     => $request->warehouse_id,
-                'thickness'        => $request->thickness,
-                'width'            => $request->size,
-                'length'           => $request->size_type ?: 'ft',
-                'piece_count'      => $coilQty,
-                'gross_weight'     => $totalWeight,
-                'net_weight'       => $totalWeight,
-                'remaining_weight' => $newRemainingWeight,
-                'rate_per_ton'     => $rate,
-                'total_price'      => $totalPrice,
-                'status'           => ($newRemainingWeight <= 0) ? 'exhausted' : 'in_stock',
-                'notes'            => $request->coil_notes ?? $coil->notes,
-                'updated_by'       => Auth::id(),
-            ]);
-        }
-
-        // Update affected lots totals
-        foreach (array_unique(array_filter([$oldLotId, $request->lot_id])) as $lId) {
-            $lot = Lot::find($lId);
-            if ($lot) {
-                $lot->total_quantity = $lot->purchases()->sum('total_weight');
-                $lot->total_amount   = $lot->purchases()->sum('total_price');
-                $lot->save();
+            // Sold weight protection check
+            if ($coil) {
+                $soldWeight = max(0, (float)$coil->net_weight - (float)$coil->remaining_weight);
+                if ($soldWeight > 0 && $totalWeight < $soldWeight) {
+                    \Illuminate\Support\Facades\DB::rollBack();
+                    return redirect()->back()->withInput()->with('error', "Cannot reduce total intake weight below " . number_format($soldWeight, 2) . " kg because this amount has already been sold and dispatched.");
+                }
             }
-        }
 
-        return redirect()->route('purchase.show', $purchase->id)
-            ->with('success', 'Purchase order #PO-' . $purchase->id . ' and physical coil specifications updated successfully.');
+            $rate = (float) $request->unit_price;
+            $subPrice = (float) ($request->sub_price ?: ($totalWeight * $rate));
+
+            $deliveryCharge  = (float) ($request->delivery_charge ?? 0);
+            $transportPayer  = $request->input('transport_payer', 'me');
+            $vendorDelivery  = ($transportPayer === 'vendor') ? $deliveryCharge : 0;
+            $labourCost      = (float) ($request->labour_cost ?? 0);
+            $weightScaleCost = (float) ($request->weight_scale_cost ?? 0);
+            $otherCharges    = (float) ($request->other_charges ?? 0);
+            $discount        = (float) ($request->discount ?? 0);
+            $netExtraCharges = ($vendorDelivery + $labourCost + $weightScaleCost + $otherCharges) - $discount;
+
+            $totalPrice = max(0, round($subPrice + $netExtraCharges, 2));
+            $payment = (float) $request->payment;
+            $due = max(0, round($totalPrice - $payment, 2));
+
+            $purchase->lot_id            = $request->lot_id;
+            $purchase->warehouse_id      = $request->warehouse_id;
+            $purchase->vendor_id         = $request->vendor_id;
+            $purchase->thickness         = $request->thickness;
+            $purchase->size              = $request->size;
+            $purchase->size_type         = $request->size_type ?: 'ft';
+            $purchase->unit_weight       = $perCoilWeight;
+            $purchase->total_weight      = $totalWeight;
+            $purchase->quantity          = $coilQty;
+            $purchase->unit_price        = $rate;
+            $purchase->sub_price         = $subPrice;
+            $purchase->delivery_charge   = $deliveryCharge;
+            $purchase->transport_payer   = $transportPayer;
+            $purchase->labour_cost       = $labourCost;
+            $purchase->weight_scale_cost = $weightScaleCost;
+            $purchase->other_charges     = $otherCharges;
+            $purchase->discount          = $discount;
+            $purchase->total_price       = $totalPrice;
+            $purchase->payment           = $payment;
+            $purchase->due               = $due;
+            $purchase->payment_method    = $request->payment_method ?? 'cash';
+            $purchase->bank_detail_id    = ($request->payment_method !== 'cash') ? $request->bank_detail_id : null;
+            $purchase->transaction_ref   = ($request->payment_method !== 'cash') ? $request->transaction_ref : null;
+            $purchase->notes             = $request->notes;
+            $purchase->updated_by        = Auth::id();
+            $purchase->save();
+
+            // Synchronize linked Coil record in yard stock
+            if ($coil) {
+                $prevNetWeight = (float) $coil->net_weight;
+                $soldWeight = max(0, $prevNetWeight - (float) $coil->remaining_weight);
+                $newRemainingWeight = max(0, $totalWeight - $soldWeight);
+
+                $coil->update([
+                    'lot_id'           => $request->lot_id,
+                    'vendor_id'        => $request->vendor_id,
+                    'warehouse_id'     => $request->warehouse_id,
+                    'thickness'        => $request->thickness,
+                    'width'            => $request->size,
+                    'length'           => $request->size_type ?: 'ft',
+                    'piece_count'      => $coilQty,
+                    'gross_weight'     => $totalWeight,
+                    'net_weight'       => $totalWeight,
+                    'remaining_weight' => $newRemainingWeight,
+                    'rate_per_ton'     => $rate,
+                    'total_price'      => $totalPrice,
+                    'status'           => ($newRemainingWeight <= 0) ? 'exhausted' : 'in_stock',
+                    'notes'            => $request->coil_notes ?? $coil->notes,
+                    'updated_by'       => Auth::id(),
+                ]);
+            }
+
+            // Update affected lots totals
+            foreach (array_unique(array_filter([$oldLotId, $request->lot_id])) as $lId) {
+                $lot = Lot::find($lId);
+                if ($lot) {
+                    $lot->total_quantity = $lot->purchases()->sum('total_weight');
+                    $lot->total_amount   = $lot->purchases()->sum('total_price');
+                    $lot->save();
+                }
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            return redirect()->route('purchase.show', $purchase->id)
+                ->with('success', 'Purchase order #PO-' . $purchase->id . ' and physical coil specifications updated successfully.');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            \Illuminate\Support\Facades\Log::error("Failed to update purchase #PO-{$purchase->id}: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Failed to update purchase: ' . $e->getMessage());
+        }
     }
 
     /**

@@ -264,13 +264,13 @@ class UserController extends Controller
 
     public function pinStore(Request $request)
     {
-        $inputs = $request->all();
+        $allowedKeys = Extra::where('status', '1')->pluck('name')->toArray();
+        $inputs = $request->only($allowedKeys);
 
         foreach ($inputs as $key => $input) {
-            if (Extra::where('name', $key)->exists()) {  // Avoid unnecessary queries
-                Extra::where('name', $key)->update(['value' => $input]);
-            }
+            Extra::where('name', $key)->where('status', '1')->update(['value' => $input]);
         }
-        return redirect()->back();
+
+        return redirect()->back()->with('success', 'PIN settings updated successfully.');
     }
 }
