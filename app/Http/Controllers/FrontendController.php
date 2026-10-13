@@ -16,6 +16,7 @@ use App\Models\Warehouse;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\WorkerPayoutItem;
+use App\Models\BankDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -83,25 +84,41 @@ class FrontendController extends Controller
         // Accounting & Financial Balances
         $today = date('Y-m-d');
         $liquidCash          = getAccountBalance('1110', $today);
-        $receivables         = getAccountBalance('1130', $today);
+        $glReceivables       = getAccountBalance('1130', $today);
         $inventoryValuation  = getAccountBalance('1140', $today);
-        $payables            = getAccountBalance('2110', $today);
+        $glPayables          = getAccountBalance('2110', $today);
 
-        // Bank Balance
+        // Receivables: GL Account [1130] or Live Customer Dues (opening balance + invoice dues)
+        $liveCustomerDues = (float) Customer::sum('opening_balance') + (float) Sale::whereNull('deleted_at')->where('due_payment', '>', 0)->sum('due_payment');
+        $receivables = $glReceivables != 0.0 ? $glReceivables : $liveCustomerDues;
+
+        // Payables: GL Account [2110] or Live Vendor Dues (purchase dues + vendor opening balances)
+        $liveVendorDues = (float) Purchase::where('due', '>', 0)->sum('due') + (float) Vendor::sum('opening_balance');
+        $payables = $glPayables != 0.0 ? $glPayables : $liveVendorDues;
+
+        // Bank Balance: GL accounts (1120 parent or 1120-* sub-accounts) with fallback to active BankDetail records
         $bankAccountParent = ChartOfAccount::where('account_code', '1120')->first();
         $bankBalance  = 0.00;
         $bankAccounts = collect();
         if ($bankAccountParent) {
             $bankAccounts = ChartOfAccount::where('parent_id', $bankAccountParent->id)->get();
-            if ($bankAccounts->count() > 0) {
-                $balances = ChartOfAccount::batchCalculateBalances($today);
-                foreach ($bankAccounts as $b) {
-                    $b->balance = $balances[$b->id] ?? 0.0;
-                    $bankBalance += $b->balance;
-                }
-            } else {
-                $bankBalance = $bankAccountParent->calculateBalance($today);
+        }
+        if ($bankAccounts->isEmpty()) {
+            $bankAccounts = ChartOfAccount::where('account_code', 'like', '1120-%')->get();
+        }
+
+        if ($bankAccounts->count() > 0) {
+            $balances = ChartOfAccount::batchCalculateBalances($today);
+            foreach ($bankAccounts as $b) {
+                $b->balance = $balances[$b->id] ?? $b->calculateBalance($today);
+                $bankBalance += $b->balance;
             }
+        } elseif ($bankAccountParent) {
+            $bankBalance = $bankAccountParent->calculateBalance($today);
+        }
+
+        if ($bankBalance == 0.00) {
+            $bankBalance = (float) BankDetail::where('is_active', true)->sum('current_balance');
         }
 
         // Steel Yard & Stock Summary

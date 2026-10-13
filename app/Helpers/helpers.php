@@ -335,9 +335,8 @@ if (!function_exists('getAccountBalance')) {
      */
     function getAccountBalance(int|string $accountIdentifier, ?string $asOfDate = null, ?string $fromDate = null): float
     {
-        $account = is_numeric($accountIdentifier)
-            ? \App\Models\ChartOfAccount::find($accountIdentifier)
-            : \App\Models\ChartOfAccount::where('account_code', $accountIdentifier)->orWhere('id', $accountIdentifier)->first();
+        $account = \App\Models\ChartOfAccount::where('account_code', (string) $accountIdentifier)->first()
+            ?: (is_numeric($accountIdentifier) ? \App\Models\ChartOfAccount::find($accountIdentifier) : null);
 
         if (!$account) {
             return 0.00;
