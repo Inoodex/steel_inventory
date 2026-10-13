@@ -68,6 +68,11 @@
                                 <i class="fe fe-dollar-sign"></i><span> Vendor Dues</span>
                             </a>
                         </li>
+                        <li class="{{ $active(['vendor-advances.*']) ? 'active' : '' }}">
+                            <a href="{{ route('vendor-advances.index') }}">
+                                <i class="fe fe-arrow-up-right"></i><span> Vendor Advances</span>
+                            </a>
+                        </li>
                     @endif
                 @endif
 
@@ -118,9 +123,14 @@
                             <i class="fe fe-download"></i><span> Shop Purchases List</span>
                         </a>
                     </li>
-                    <li class="{{ $active(['shops.returns.*']) ? 'active' : '' }}">
+                    <li class="{{ $active(['shops.returns.create']) ? 'active' : '' }}">
+                        <a href="{{ route('shops.returns.create') }}">
+                            <i class="fe fe-rotate-ccw"></i><span> Shop Return</span>
+                        </a>
+                    </li>
+                    <li class="{{ $active(['shops.returns.index', 'shops.returns.show']) ? 'active' : '' }}">
                         <a href="{{ route('shops.returns.index') }}">
-                            <i class="fe fe-refresh-cw"></i><span> Shop Returns</span>
+                            <i class="fe fe-refresh-cw"></i><span> Shop Returns List</span>
                         </a>
                     </li>
                     <li class="{{ $active(['shops.stock.*']) ? 'active' : '' }}">
@@ -171,6 +181,11 @@
                         <li class="{{ $active(['due-payments.*']) ? 'active' : '' }}">
                             <a href="{{ route('due-payments.index') }}">
                                 <i class="fe fe-user-check"></i><span> Customer Dues</span>
+                            </a>
+                        </li>
+                        <li class="{{ $active(['customer-advances.*']) ? 'active' : '' }}">
+                            <a href="{{ route('customer-advances.index') }}">
+                                <i class="fe fe-arrow-down-left"></i><span> Customer Advances</span>
                             </a>
                         </li>
                     @endif

@@ -146,15 +146,26 @@
                         <input type="date" name="to" class="form-control border-light-subtle" value="{{ old('to', $request->to ?? '') }}">
                     </div>
 
+                    @php
+                        $regularFilterBanks = ($bankDetails ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return !(stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                        $mfsFilterBanks = ($bankDetails ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return (stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                    @endphp
+
                     <div class="col-lg-2 col-md-4 col-6">
                         <label class="form-label small text-secondary fw-semibold mb-1">Spend Method</label>
                         <select name="spend_method" class="form-select border-light-subtle">
                             <option value="">All Methods</option>
-                            <option value="cash" {{ $request->spend_method == 'cash' ? 'selected' : '' }}>Cash</option>
+                            <option value="cash" {{ $request->spend_method == 'cash' ? 'selected' : '' }}>Cash in Hand</option>
                             <option value="bank" {{ $request->spend_method == 'bank' ? 'selected' : '' }}>Bank Transfer</option>
-                            <option value="mobile_banking" {{ $request->spend_method == 'mobile_banking' ? 'selected' : '' }}>Mobile Banking (bKash/Nagad)</option>
-                            <option value="card" {{ $request->spend_method == 'card' ? 'selected' : '' }}>Card Payment</option>
-                            <option value="other" {{ $request->spend_method == 'other' ? 'selected' : '' }}>Other / Online</option>
+                            <option value="mobile_banking" {{ $request->spend_method == 'mobile_banking' ? 'selected' : '' }}>Mobile Banking (MFS)</option>
                         </select>
                     </div>
 
@@ -162,11 +173,24 @@
                         <label class="form-label small text-secondary fw-semibold mb-1">Bank / MFS Account</label>
                         <select name="bank_detail_id" class="form-select border-light-subtle">
                             <option value="">All Accounts</option>
-                            @foreach ($bankDetails as $bank)
-                                <option value="{{ $bank->id }}" {{ $request->bank_detail_id == $bank->id ? 'selected' : '' }}>
-                                    {{ $bank->bank_name }} ({{ $bank->account_number }})
-                                </option>
-                            @endforeach
+                            @if($regularFilterBanks->count() > 0)
+                                <optgroup label="Bank Accounts">
+                                    @foreach ($regularFilterBanks as $bank)
+                                        <option value="{{ $bank->id }}" {{ $request->bank_detail_id == $bank->id ? 'selected' : '' }}>
+                                            {{ $bank->bank_name }} ({{ $bank->account_number }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+                            @if($mfsFilterBanks->count() > 0)
+                                <optgroup label="Mobile Banking / MFS">
+                                    @foreach ($mfsFilterBanks as $bank)
+                                        <option value="{{ $bank->id }}" {{ $request->bank_detail_id == $bank->id ? 'selected' : '' }}>
+                                            {{ $bank->bank_name }} ({{ $bank->account_number }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
                         </select>
                     </div>
 

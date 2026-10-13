@@ -12,6 +12,9 @@ use App\Models\Vendor;
 use App\Models\Lot;
 use App\Models\BankDetail;
 use App\Models\User;
+use App\Models\ReturnItem;
+use App\Models\SalesItem;
+use App\Http\Requests\StoreReturnRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -51,13 +54,18 @@ class ShopController extends Controller
      */
     public function createSale(Request $request)
     {
-        $shop = $this->getShop();
-        $coils = Coil::where('warehouse_id', $shop->id)
-            ->where('status', 'in_stock')
+        $shop = $request->filled('warehouse_id')
+            ? (Warehouse::find($request->warehouse_id) ?? $this->getShop())
+            : $this->getShop();
+
+        $coils = Coil::where('status', 'in_stock')
             ->where('remaining_weight', '>', 0)
-            ->with(['lot', 'warehouse'])
+            ->with(['lot.vendor', 'warehouse'])
             ->latest()
             ->get();
+
+        $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
+        $lots = Lot::with(['vendor'])->where('status', 'active')->orderBy('id', 'desc')->get();
 
         $existingClients = Customer::select('id', 'name', 'phone', 'address', 'opening_balance')
             ->withSum(['sales' => function($q) {
@@ -92,6 +100,8 @@ class ShopController extends Controller
             'shop',
             'coils',
             'existingClients',
+            'warehouses',
+            'lots',
             'bankAccounts',
             'orderNo'
         ));
@@ -456,6 +466,194 @@ class ShopController extends Controller
             'totalReturnsCount',
             'totalRefundAmount'
         ));
+    }
+
+    /**
+     * Show dedicated form to create a new return for Shop Sales.
+     */
+    public function createReturn(Request $request)
+    {
+        $shop = $this->getShop();
+        $sale = null;
+        $saleItems = [];
+
+        if ($request->filled('sale_id')) {
+            $sale = Sale::where('warehouse_id', $shop->id)
+                ->with(['customer', 'items.coil', 'items.product', 'items.lot'])
+                ->where('id', $request->sale_id)
+                ->first();
+            if ($sale) {
+                $saleItems = $sale->items;
+            }
+        }
+
+        $sales = Sale::where('warehouse_id', $shop->id)
+            ->where('status', '!=', 'cancelled')
+            ->with(['customer', 'items.coil', 'items.lot'])
+            ->latest('order_date')
+            ->get();
+
+        return view('frontend.pages.shops.returns_create', compact('shop', 'sale', 'saleItems', 'sales'));
+    }
+
+    /**
+     * Fetch items for a shop sale order (AJAX endpoint).
+     */
+    public function getSaleItems($saleId)
+    {
+        $shop = $this->getShop();
+        $sale = Sale::where('warehouse_id', $shop->id)
+            ->with(['items.coil', 'items.product', 'items.lot', 'customer'])
+            ->where('id', $saleId)
+            ->first();
+
+        if (!$sale) {
+            return response()->json(['error' => 'Shop sale not found'], 404);
+        }
+
+        return response()->json([
+            'sale' => $sale,
+            'items' => $sale->items->map(function ($item) {
+                $coilNo = $item->coil->coil_number ?? $item->product->coil_number ?? null;
+                $name = $coilNo ? ('Coil #' . $coilNo) : ($item->lot ? ('Lot #' . $item->lot->lot_number) : ('Item #' . $item->id));
+                if ($item->size) {
+                    $name .= " ({$item->size}" . ($item->size_type ? " {$item->size_type}" : '') . ")";
+                }
+                $availQty = (float)($item->qty - ($item->returned_qty ?? 0));
+                return [
+                    'id'            => $item->id,
+                    'sales_item_id' => $item->id,
+                    'product_id'    => $item->coil_id ?? $item->product_id,
+                    'product_name'  => $name,
+                    'quantity'      => (float)$item->qty,
+                    'returned_qty'  => (float)($item->returned_qty ?? 0),
+                    'available_qty' => max(0, $availQty),
+                    'unit_price'    => (float)$item->unit_price,
+                    'total_price'   => (float)$item->total_price
+                ];
+            })
+        ]);
+    }
+
+    /**
+     * Store a newly created return for Shop Sales.
+     */
+    public function storeReturn(StoreReturnRequest $request)
+    {
+        $shop = $this->getShop();
+        $validated = $request->validated();
+
+        $sale = Sale::where('warehouse_id', $shop->id)->findOrFail($validated['sale_id']);
+
+        DB::beginTransaction();
+        try {
+            $return = ProductReturn::create([
+                'sale_id'             => $sale->id,
+                'customer_id'         => $sale->customer_id,
+                'return_date'         => $validated['return_date'],
+                'status'              => 'pending',
+                'reason'              => $validated['reason'] ?? null,
+                'notes'               => $validated['notes'] ?? null,
+                'total_refund_amount' => 0
+            ]);
+
+            foreach ($validated['items'] as $item) {
+                $salesItemId = $item['sales_item_id'] ?? null;
+                $productId = $item['product_id'] ?? null;
+
+                if (!$productId && $salesItemId) {
+                    $sItem = SalesItem::find($salesItemId);
+                    if ($sItem) {
+                        $productId = $sItem->coil_id ?? $sItem->product_id;
+                    }
+                }
+
+                $qty = (float)($item['quantity'] ?? 0);
+                $unitPrice = (float)($item['unit_price'] ?? 0);
+
+                $itemData = [
+                    'return_id'     => $return->id,
+                    'sales_item_id' => $salesItemId,
+                    'quantity'      => $qty,
+                    'unit_price'    => $unitPrice,
+                    'total_price'   => $qty * $unitPrice,
+                    'return_reason' => $item['return_reason'] ?? 'other',
+                    'condition'     => $item['condition'] ?? 'good',
+                    'notes'         => $item['notes'] ?? null,
+                ];
+
+                if (\Illuminate\Support\Facades\Schema::hasColumn('return_items', 'product_id')) {
+                    $itemData['product_id'] = $productId;
+                }
+
+                ReturnItem::create($itemData);
+            }
+
+            $return->total_refund_amount = $return->calculateTotalRefund();
+            $return->save();
+
+            DB::commit();
+
+            session()->flash('sweet_alert', [
+                'type'  => 'success',
+                'title' => 'Shop Return Created!',
+                'text'  => 'Shop return request created. Status: Pending Approval.',
+            ]);
+
+            return redirect()->route('shops.returns.show', $return->id)
+                ->with('success', 'Shop return created successfully. Status: Pending Approval.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->with('error', 'Error creating shop return: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Display the specified Shop Sales Return.
+     */
+    public function showReturn($id)
+    {
+        $shop = $this->getShop();
+        $return = ProductReturn::whereHas('sale', function($q) use ($shop) {
+            $q->where('warehouse_id', $shop->id);
+        })->with(['sale.customer', 'sale.items.coil', 'sale.items.lot', 'customer', 'items.salesItem.coil', 'items.salesItem.lot', 'items.product', 'processedBy'])->findOrFail($id);
+
+        $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
+
+        return view('frontend.pages.shops.returns_show', compact('shop', 'return', 'bankAccounts'));
+    }
+
+    /**
+     * Delete a shop return if pending or rejected.
+     */
+    public function destroyReturn($id)
+    {
+        $shop = $this->getShop();
+        $return = ProductReturn::whereHas('sale', function($q) use ($shop) {
+            $q->where('warehouse_id', $shop->id);
+        })->findOrFail($id);
+
+        if (!$return->isPending() && !$return->isRejected()) {
+            return back()->with('error', 'Only pending or rejected returns can be deleted.');
+        }
+
+        DB::beginTransaction();
+        try {
+            $return->items()->delete();
+            $return->delete();
+            DB::commit();
+
+            session()->flash('sweet_alert', [
+                'type'  => 'success',
+                'title' => 'Return Deleted',
+                'text'  => 'Shop return record has been removed.',
+            ]);
+
+            return redirect()->route('shops.returns.index')->with('success', 'Shop return deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error deleting shop return: ' . $e->getMessage());
+        }
     }
 
     /**

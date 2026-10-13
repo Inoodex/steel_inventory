@@ -411,6 +411,7 @@ class PaymentController extends Controller
                             ]
                         ]
                     ]);
+                }
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning("Vendor payment journal posting failed for payment #{$payment->id}: " . $e->getMessage());
             }

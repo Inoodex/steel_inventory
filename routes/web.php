@@ -12,7 +12,8 @@ use App\Http\Controllers\{
     ChartOfAccountController, JournalEntryController, LedgerController,
     TrialBalanceController, FinancialStatementController,
     FiscalYearController, WarehouseController,
-    WorkerPayoutController, ShopController, MasterLogReportController
+    WorkerPayoutController, ShopController, MasterLogReportController,
+    CustomerAdvanceController, VendorAdvanceController
 };
 
 use Illuminate\Support\Facades\{Auth, Route};
@@ -70,6 +71,11 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('shops/purchases/create', [ShopController::class, 'createPurchase'])->name('shops.purchases.create');
     Route::get('shops/purchases', [ShopController::class, 'purchases'])->name('shops.purchases.index');
     Route::get('shops/returns', [ShopController::class, 'returns'])->name('shops.returns.index');
+    Route::get('shops/returns/create', [ShopController::class, 'createReturn'])->name('shops.returns.create');
+    Route::post('shops/returns', [ShopController::class, 'storeReturn'])->name('shops.returns.store');
+    Route::get('shops/returns/sale-items/{saleId}', [ShopController::class, 'getSaleItems'])->name('shops.returns.sale.items');
+    Route::get('shops/returns/{id}', [ShopController::class, 'showReturn'])->name('shops.returns.show');
+    Route::delete('shops/returns/{id}', [ShopController::class, 'destroyReturn'])->name('shops.returns.destroy');
     Route::get('shops/settings', [ShopController::class, 'settings'])->name('shops.settings');
     Route::resource('shops', ShopController::class);
 
@@ -137,6 +143,20 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('/due-payments/pdf', [SalesController::class, 'duePaymentsPdf'])->name('due-payments.pdf');
     Route::get('/vendor-due-payments', [PurchaseController::class, 'duePayments'])->name('vendor-due-payments.index');
     Route::get('/vendor-due-payments/pdf', [PurchaseController::class, 'duePaymentsPdf'])->name('vendor-due-payments.pdf');
+
+    // Customer Advances
+    Route::get('/customer-advances', [CustomerAdvanceController::class, 'index'])->name('customer-advances.index');
+    Route::get('/customer-advances/create', [CustomerAdvanceController::class, 'create'])->name('customer-advances.create');
+    Route::post('/customer-advances', [CustomerAdvanceController::class, 'store'])->name('customer-advances.store');
+    Route::get('/customer-advances/pdf', [CustomerAdvanceController::class, 'pdf'])->name('customer-advances.pdf');
+    Route::get('/customer-advances/{id}/receipt-pdf', [CustomerAdvanceController::class, 'receiptPdf'])->name('customer-advances.receipt-pdf');
+
+    // Vendor Advances
+    Route::get('/vendor-advances', [VendorAdvanceController::class, 'index'])->name('vendor-advances.index');
+    Route::get('/vendor-advances/create', [VendorAdvanceController::class, 'create'])->name('vendor-advances.create');
+    Route::post('/vendor-advances', [VendorAdvanceController::class, 'store'])->name('vendor-advances.store');
+    Route::get('/vendor-advances/pdf', [VendorAdvanceController::class, 'pdf'])->name('vendor-advances.pdf');
+    Route::get('/vendor-advances/{id}/voucher-pdf', [VendorAdvanceController::class, 'voucherPdf'])->name('vendor-advances.voucher-pdf');
 
     // Customer Sale Payments
     Route::post('/add-payment', [PaymentController::class, 'addPayment'])->name('add.payment');

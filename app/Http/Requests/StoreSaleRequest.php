@@ -35,7 +35,7 @@ class StoreSaleRequest extends FormRequest
             'subTotal'             => 'required|numeric|min:0',
             'discount'             => 'nullable|numeric|min:0',
             'grandTotal'           => 'required|numeric|min:0',
-            'advanced_payment'     => 'nullable|numeric|min:0',
+            'advanced_payment'     => 'nullable|numeric|min:0|lte:grandTotal',
             'duePayment'           => 'nullable|numeric|min:0',
             'payment_method'       => 'nullable|string|in:cash,bank,cheque,mobile_banking,advance_credit',
             'bank_detail_id'       => 'nullable|exists:bank_details,id',
@@ -67,6 +67,7 @@ class StoreSaleRequest extends FormRequest
             'qty.required'                   => 'At least one steel line item with quantity is required.',
             'subTotal.required'              => 'Sub total is required.',
             'grandTotal.required'            => 'Grand total is required.',
+            'advanced_payment.lte'           => 'Current payment cannot exceed the invoice grand total.',
         ];
     }
 

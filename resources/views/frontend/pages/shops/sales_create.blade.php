@@ -47,8 +47,8 @@
         <div class="content-page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
-                    <h4 class="card-title fw-bold text-dark mb-0">Shop Direct Sale</h4>
-                    <span class="badge bg-primary text-white px-2.5 py-1 rounded-pill"><i class="fe fe-shopping-cart me-1"></i>{{ $shop->name }}</span>
+                  <h4 class="card-title fw-bold text-dark mb-0">Shop Direct Sale</h4>
+                  <span class="badge bg-primary text-white px-2.5 py-1 rounded-pill"><i class="fe fe-shopping-cart me-1"></i>{{ $shop->name }}</span>
                 </div>
                 <p class="text-muted small mb-0">Fast retail point-of-sale invoicing from shop inventory with live calculation &amp; instant billing</p>
             </div>
@@ -62,7 +62,7 @@
     </div>
     <!-- /Page Header -->
 
-    <form method="POST" action="{{ route('sales.store') }}" id="shopSaleForm" onsubmit="return validateShopSaleForm(event)">
+    <form method="POST" action="{{ route('sales.store') }}" id="shopSaleForm" target="_blank" onsubmit="return validateShopSaleForm(event)">
         @csrf
         <input type="hidden" name="warehouse_id" id="warehouse_id" value="{{ $shop->id }}">
         <input type="hidden" name="delivery_status" value="delivered">
@@ -76,8 +76,6 @@
                 <div class="card border-0 shadow-sm rounded-3 mb-4 p-2">
                     <div class="pos-card-header d-flex justify-content-between align-items-center rounded-top-3">
                         <span><i class="fe fe-user text-primary me-2"></i>Customer &amp; Invoice Details</span>
-                        <!-- <span class="badge bg-light text-dark border font-monospace">{{ $orderNo }}</span>
-                        <input type="hidden" name="order_no" value="{{ $orderNo }}"> -->
                     </div>
                     <div class="card-body p-3">
                         
@@ -94,10 +92,6 @@
                                     <label class="form-check-label small fw-semibold text-dark" for="shopNewClient">New Customer</label>
                                 </div>
                             </div>
-                            <!-- <div class="d-flex align-items-center gap-2">
-                                <label class="form-label small text-secondary fw-semibold mb-0">Date <span class="text-danger">*</span></label>
-                                <input type="date" name="order_date" id="order_date" class="form-control form-control-sm" value="{{ old('order_date', date('Y-m-d')) }}" required style="width: 140px;">
-                            </div> -->
                         </div>
 
                         <!-- Existing Client Selection Form -->
@@ -115,7 +109,7 @@
                                                 data-phone="{{ $client->phone }}"
                                                 data-address="{{ $client->address }}"
                                                 data-opening-due="{{ $client->opening_balance > 0 ? $client->opening_balance : 0 }}"
-                                                data-sales-due="{{ $client->sales_due ?? 0 }}"
+                                                data-sales-due="{{ $client->sales_sum_due_payment ?? 0 }}"
                                                 data-total-due="{{ $client->net_due }}"
                                                 data-advance-credit="{{ $client->advance_credit }}"
                                                 {{ old('existing_client_id') == $client->id ? 'selected' : '' }}>
@@ -183,66 +177,71 @@
                 <div class="card border-0 shadow-sm rounded-3 mb-4 p-2">
                     <div class="pos-card-header d-flex justify-content-between align-items-center rounded-top-3">
                         <span><i class="fe fe-box text-primary me-2"></i>Select Items From Shop Inventory</span>
-                        <span class="badge bg-primary-subtle text-primary">{{ $coils->count() }} Items In Stock</span>
+                        <span class="badge bg-primary-subtle text-primary" id="badgeStockSummary">In-Stock Lots &amp; Opening Stock</span>
                     </div>
                     <div class="card-body p-3">
                         
-                        <!-- Item Selector Row -->
-                        <div class="bg-light p-3 rounded-3 border mb-3">
-                            <div class="row g-2 align-items-end">
-                                <div class="col-md-5 col-12">
-                                    <label class="form-label small text-secondary fw-semibold mb-1">
-                                        Choose Stock Item / Coil <span class="text-danger">*</span>
-                                    </label>
-                                    <select id="builder_coil_select" class="form-select select2" onchange="handleCoilSelected(this)">
-                                        <option value="">Select an available coil in shop...</option>
-                                        @foreach($coils as $c)
-                                            @php
-                                                $remKg = (float)$c->remaining_weight;
-                                                $defRatePerTon = (float)($c->rate_per_ton > 0 ? $c->rate_per_ton * 1000 : 0);
-                                                $defRatePerKg = (float)($c->rate_per_ton > 0 ? $c->rate_per_ton : 0);
-                                            @endphp
-                                            <option value="{{ $c->id }}"
-                                                data-coil-no="{{ $c->coil_no }}"
-                                                data-lot-id="{{ $c->lot_id ?? '' }}"
-                                                data-lot-name="{{ $c->lot?->name ?? 'Direct Stock' }}"
-                                                data-thickness="{{ $c->thickness }}"
-                                                data-width="{{ $c->width }}"
-                                                data-length="{{ $c->length }}"
-                                                data-available="{{ $remKg }}"
-                                                data-pieces="{{ $c->piece_count ?: 1 }}"
-                                                data-rate-ton="{{ $defRatePerTon }}"
-                                                data-rate-kg="{{ $defRatePerKg }}">
-                                                {{ $c->coil_no }} | Thk: {{ $c->thickness }} | {{ $c->width }} | Avail: {{ number_format($remKg) }} kg
-                                            </option>
-                                        @endforeach
+                        <!-- Item Selector Row (7 Fields Exact Same as Normal Sale) -->
+                        <div class="bg-light p-3 rounded-3 border mb-3" id="form-group-item1">
+                            <div class="row g-3 align-items-end">
+                                <!-- 1. Stock / Lot Source Select Dropdown -->
+                                <div class="col-lg-4 col-md-6 col-12">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label class="form-label small text-secondary fw-semibold mb-0">
+                                            1. Select Stock / Lot Source <span class="text-danger">*</span>
+                                        </label>
+                                        <span id="lotAvgRateBadge" class="badge bg-primary-subtle text-primary border" style="display:none; font-size: 11px;"></span>
+                                    </div>
+                                    <select id="builder_lot_id" class="form-select select2 border-light-subtle" onchange="handleLotSelected(this)">
+                                        <option value="">Select Stock / Lot Source...</option>
                                     </select>
                                 </div>
 
-                                <div class="col-md-2 col-6">
-                                    <label class="form-label small text-secondary fw-semibold mb-1">Selling Pcs</label>
-                                    <input type="number" id="builder_pcs" class="form-control" value="1" min="1" step="1">
+                                <!-- 2. Available Total Weight -->
+                                <div class="col-lg-4 col-md-3 col-6">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">Total Available Stock</label>
+                                    <input type="text" id="stock1" class="form-control border-light-subtle bg-white fw-bold text-primary" readonly placeholder="0.00 kg">
                                 </div>
 
-                                <div class="col-md-2 col-6">
-                                    <label class="form-label small text-secondary fw-semibold mb-1">Weight (Kg) <span class="text-danger">*</span></label>
-                                    <input type="number" id="builder_weight" class="form-control fw-bold" placeholder="0.00" min="0.01" step="0.01">
+                                <!-- 3. Cost Rate -->
+                                <div class="col-lg-4 col-md-3 col-6">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">Avg Cost Rate (৳)</label>
+                                    <input type="number" id="purchase_price1" class="form-control border-light-subtle bg-white" readonly placeholder="0.00">
                                 </div>
 
-                                <div class="col-md-2 col-6">
-                                    <label class="form-label small text-secondary fw-semibold mb-1">Rate (৳/Ton) <span class="text-danger">*</span></label>
-                                    <input type="number" id="builder_rate" class="form-control" placeholder="৳/Ton" min="0" step="0.01">
+                                <!-- 4. Custom Size / Specs (Required, not auto-filled) -->
+                                <div class="col-lg-3 col-md-6 col-12">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label class="form-label small text-secondary fw-semibold mb-0">Custom Size / Specs <span class="text-danger">*</span></label>
+                                    </div>
+                                    <input type="text" id="custom_size1" class="form-control border-light-subtle" placeholder="e.g. 4x8 ft cut">
                                 </div>
 
-                                <div class="col-md-1 col-6">
-                                    <button type="button" class="btn btn-primary w-100 py-2 rounded-2" onclick="addShopLineItem()" title="Add to Bill">
+                                <!-- 5. Selling Rate -->
+                                <div class="col-lg-3 col-md-6 col-12">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">Selling Rate (৳) <span class="text-danger">*</span></label>
+                                    <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="unit_price1" class="form-control border-light-subtle" step="0.01" min="0" placeholder="0.00">
+                                </div>
+
+                                <!-- 6. Selling Quantity -->
+                                <div class="col-lg-3 col-md-6 col-12">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">Selling Qty / Wt (kg) <span class="text-danger">*</span></label>
+                                    <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="qty1" class="form-control border-light-subtle text-dark fw-bold" step="0.01" min="0.01" placeholder="0.00">
+                                </div>
+
+                                <!-- 7. Line Total Preview -->
+                                <div class="col-lg-3 col-md-6 col-12">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">Line Total (৳)</label>
+                                    <input type="text" id="total1" class="form-control border-light-subtle bg-white fw-bold text-success" readonly value="0.00">
+                                </div>
+
+                                <!-- Add Item Button -->
+                                <div class="col-12 text-end pt-1">
+                                    <button type="button" onclick="addShopLineItem()" class="btn btn-success px-4 rounded-3 d-inline-flex align-items-center justify-content-center gap-2 py-2 shadow-sm">
                                         <i class="fe fe-plus"></i>
+                                        <span>Add Steel Item</span>
                                     </button>
                                 </div>
-                            </div>
-                            <div class="mt-2 text-muted small d-flex justify-content-between align-items-center" id="selectedCoilMeta" style="display: none !important;">
-                                <span id="metaCoilSpec"></span>
-                                <span class="badge bg-success-subtle text-success" id="metaCoilStock"></span>
                             </div>
                         </div>
 
@@ -251,12 +250,11 @@
                             <table class="table table-custom table-hover align-middle mb-0" id="shopItemsTable">
                                 <thead class="bg-light text-secondary fs-7 text-uppercase">
                                     <tr>
-                                        <th class="ps-3">Item / Coil</th>
+                                        <th class="ps-3">Stock / Lot Source</th>
                                         <th>Thickness</th>
-                                        <th>Size / Spec</th>
-                                        <th class="text-center" style="width: 80px;">Pieces</th>
+                                        <th>Custom Size / Spec</th>
                                         <th class="text-end" style="width: 120px;">Weight (Kg)</th>
-                                        <th class="text-end" style="width: 130px;">Rate (৳/Ton)</th>
+                                        <th class="text-end" style="width: 130px;">Rate (৳/kg)</th>
                                         <th class="text-end" style="width: 130px;">Sub Total (৳)</th>
                                         <th class="text-center" style="width: 50px;"></th>
                                     </tr>
@@ -266,9 +264,9 @@
                                 </tbody>
                                 <tfoot id="tableFooterEmpty">
                                     <tr>
-                                        <td colspan="8" class="text-center py-4 text-muted">
+                                        <td colspan="7" class="text-center py-4 text-muted">
                                             <i class="fe fe-shopping-bag fs-2 text-secondary opacity-50 d-block mb-1"></i>
-                                            <span>No steel items added yet. Select an available coil above and click (+).</span>
+                                            <span>No steel items added yet. Select a Stock / Lot Source above and click Add Steel Item.</span>
                                         </td>
                                     </tr>
                                 </tfoot>
@@ -298,8 +296,8 @@
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <div class="p-3 bg-white rounded-3 shadow-sm border text-center">
-                                <small class="text-muted text-uppercase fw-semibold fs-8 d-block mb-1">Total Pieces</small>
-                                <h5 class="fw-bold text-dark mb-0" id="displayTotalPieces">0 pcs</h5>
+                                <small class="text-muted text-uppercase fw-semibold fs-8 d-block mb-1">Total Items</small>
+                                <h5 class="fw-bold text-dark mb-0" id="displayTotalPieces">0 items</h5>
                             </div>
                         </div>
                         <div class="col-6">
@@ -398,24 +396,47 @@
                                     </div>
                                 </div>
 
-                                <div class="mb-2">
-                                    <label class="form-label small text-secondary fw-semibold mb-1">Payment Method <span class="text-danger">*</span></label>
-                                    <select name="payment_method" id="payment_method" class="form-select form-select-sm" onchange="handlePaymentMethod(this.value)">
-                                        <option value="cash" selected>Cash Payment</option>
-                                        <option value="bank">Bank Transfer</option>
-                                        <option value="mobile_banking">Mobile Banking (bKash / Nagad)</option>
-                                        <option value="advance_credit">Customer Advance Amount</option>
-                                    </select>
-                                </div>
+                                @php
+                                    $regularBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                                        $type = $b->account_type ?? '';
+                                        $name = $b->bank_name ?? '';
+                                        return !(stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                                    });
+                                    $mfsBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                                        $type = $b->account_type ?? '';
+                                        $name = $b->bank_name ?? '';
+                                        return (stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                                    });
+                                @endphp
 
-                                <div id="bankSelectionDiv" class="mb-2" style="display: none;">
-                                    <label class="form-label small text-secondary fw-semibold mb-1">Deposit Bank Account <span class="text-danger">*</span></label>
-                                    <select name="bank_detail_id" id="bank_detail_id" class="form-select form-select-sm">
-                                        <option value="">Select Bank Account</option>
-                                        @foreach($bankAccounts as $bank)
-                                            <option value="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>{{ $bank->bank_name }} - {{ $bank->account_number }}</option>
-                                        @endforeach
+
+
+                                <div class="mb-2">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">
+                                        <i class="fe fe-layers me-1 text-primary"></i> Receiving Account / Method
+                                    </label>
+                                    <select id="shopSaleAccountSelector" class="form-select form-select-sm" onchange="handleShopSaleAccountChange(this)">
+                                        @if($regularBanks->count() > 0)
+                                            <optgroup label="Bank Accounts">
+                                                @foreach($regularBanks as $bank)
+                                                    <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                                        {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                                    </option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endif
+                                        @if($mfsBanks->count() > 0)
+                                            <optgroup label="Mobile Banking / MFS">
+                                                @foreach($mfsBanks as $bank)
+                                                    <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}" {{ (!isset($regularBanks) || $regularBanks->isEmpty()) && $loop->first ? 'selected' : '' }}>
+                                                        {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                                    </option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endif
                                     </select>
+                                    <input type="hidden" name="payment_method" id="hidden_payment_method" value="bank">
+                                    <input type="hidden" name="bank_detail_id" id="hidden_bank_detail_id" value="">
                                 </div>
 
                                 <div id="txnRefDiv" class="mb-3" style="display: none;">
@@ -427,7 +448,7 @@
                             <!-- Submit Button -->
                             <button type="submit" class="btn btn-primary w-100 py-2.5 rounded-3 shadow fw-bold d-flex align-items-center justify-content-center gap-2">
                                 <span>Save &amp; Generate Invoice</span>
-ene                            </button>
+                            </button>
 
                         </div>
                     </div>
@@ -444,12 +465,469 @@ ene                            </button>
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
+const allAvailableCoils = @json($coils);
+const allAvailableLots = @json($lots->keyBy('id'));
+const currentShopId = "{{ $shop->id }}";
+let currentSelectedLot = null;
 let shopLineItems = [];
 let selectedCustomerAdvance = 0;
 
 $(document).ready(function() {
     $('.select2').select2({ width: '100%' });
+    populateShopLotSources();
 });
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return $('<div>').text(text).html();
+}
+
+function populateShopLotSources() {
+    const lotSelect = $('#builder_lot_id');
+    lotSelect.empty();
+    lotSelect.append('<option value="">Select Stock / Lot Source...</option>');
+
+    // Filter coils belonging to this shop with remaining weight > 0
+    const shopCoils = allAvailableCoils.filter(c => String(c.warehouse_id) === String(currentShopId) && parseFloat(c.remaining_weight) > 0);
+
+    const openingCoils = shopCoils.filter(c => (c.purchase_id === null || !c.lot_id));
+    const openingCount = openingCoils.length;
+    const openingWeight = openingCoils.reduce((sum, c) => sum + (parseFloat(c.remaining_weight) || 0), 0);
+
+    const totalCount = shopCoils.length;
+    const totalWeight = shopCoils.reduce((sum, c) => sum + (parseFloat(c.remaining_weight) || 0), 0);
+
+    if (openingCount > 0 || totalCount > 0) {
+        let directOptgroup = $('<optgroup label="Direct / Opening Yard Stock"></optgroup>');
+        if (openingCount > 0) {
+            directOptgroup.append(`
+                <option value="opening_stock" data-vendor="Direct Yard Stock" data-lot-number="Opening Stock">
+                    📦 Opening Stock (${openingCount} coils, ${openingWeight.toLocaleString()} kg)
+                </option>
+            `);
+        }
+        if (totalCount > 0) {
+            directOptgroup.append(`
+                <option value="all_stock" data-vendor="All Inventory" data-lot-number="All Stock">
+                    🌐 All In-Stock in Shop (${totalCount} coils, ${totalWeight.toLocaleString()} kg)
+                </option>
+            `);
+        }
+        lotSelect.append(directOptgroup);
+    }
+
+    // Purchase Mill Lots optgroup
+    const lotGroups = {};
+    shopCoils.forEach(c => {
+        if (c.lot_id) {
+            if (!lotGroups[c.lot_id]) {
+                lotGroups[c.lot_id] = {
+                    coilsCount: 0,
+                    weight: 0,
+                    lot: c.lot || allAvailableLots[c.lot_id] || { id: c.lot_id, lot_number: 'Lot #' + c.lot_id }
+                };
+            }
+            lotGroups[c.lot_id].coilsCount++;
+            lotGroups[c.lot_id].weight += (parseFloat(c.remaining_weight) || 0);
+        }
+    });
+
+    const lotIds = Object.keys(lotGroups);
+    if (lotIds.length > 0) {
+        let millOptgroup = $('<optgroup label="Purchase Mill Lots in this Yard"></optgroup>');
+        lotIds.forEach(lId => {
+            const g = lotGroups[lId];
+            const lotObj = g.lot;
+            const vendorName = (lotObj.vendor && lotObj.vendor.name) ? lotObj.vendor.name : (lotObj.vendor_name || '');
+            const vendorLabel = vendorName ? ` (${vendorName})` : '';
+            const text = `${lotObj.lot_number}${vendorLabel} — ${g.coilsCount} ${g.coilsCount === 1 ? 'coil' : 'coils'} (${g.weight.toLocaleString()} kg)`;
+            millOptgroup.append(`
+                <option value="${lId}" data-vendor="${escapeHtml(vendorName || 'Mill Lot')}" data-lot-number="${escapeHtml(lotObj.lot_number)}">
+                    ${escapeHtml(text)}
+                </option>
+            `);
+        });
+        lotSelect.append(millOptgroup);
+    }
+
+    if (totalCount === 0) {
+        lotSelect.append('<option value="" disabled>No in-stock steel coils found in shop inventory</option>');
+    }
+
+    if ($.fn.select2) {
+        lotSelect.select2({ width: '100%' });
+    }
+}
+
+function handleLotSelected(selectEl) {
+    const lotId = $(selectEl).val();
+    const lotAvgBadge = document.getElementById('lotAvgRateBadge');
+
+    if (!lotId) {
+        currentSelectedLot = null;
+        resetBuilderFields();
+        return;
+    }
+
+    const shopCoils = allAvailableCoils.filter(c => String(c.warehouse_id) === String(currentShopId) && parseFloat(c.remaining_weight) > 0);
+
+    let filtered = [];
+    let lotNumberDisplay = '';
+    let vendorDisplay = '';
+
+    if (lotId === 'opening_stock') {
+        lotNumberDisplay = 'Opening Stock';
+        vendorDisplay = 'Direct Yard Stock';
+        filtered = shopCoils.filter(c => (c.purchase_id === null || !c.lot_id));
+    } else if (lotId === 'all_stock') {
+        lotNumberDisplay = 'All Stock';
+        vendorDisplay = 'All Inventory';
+        filtered = shopCoils;
+    } else {
+        const lotOption = $(`#builder_lot_id option[value="${lotId}"]`);
+        lotNumberDisplay = lotOption.data('lot-number') || lotOption.text().trim();
+        vendorDisplay = lotOption.data('vendor') || '';
+        filtered = shopCoils.filter(c => String(c.lot_id) === String(lotId));
+    }
+
+    if (filtered.length === 0) {
+        currentSelectedLot = null;
+        resetBuilderFields();
+        return;
+    }
+
+    const totalLotWeight = filtered.reduce((sum, c) => sum + (parseFloat(c.remaining_weight) || 0), 0);
+    const totalLotCost = filtered.reduce((sum, c) => sum + ((parseFloat(c.remaining_weight) || 0) * (parseFloat(c.rate_per_ton) || 0)), 0);
+    const avgLotRate = totalLotWeight > 0 ? (totalLotCost / totalLotWeight) : 0;
+
+    const thicknessList = [...new Set(filtered.map(c => c.thickness).filter(Boolean))];
+    const sizeList = [...new Set(filtered.map(c => c.width || c.size).filter(Boolean))];
+    const sizeTypeList = [...new Set(filtered.map(c => (c.length && c.length !== 'N/A') ? c.length : (c.size_type || '')).filter(Boolean))];
+
+    currentSelectedLot = {
+        id: (lotId === 'opening_stock' || lotId === 'all_stock') ? '' : lotId,
+        raw_source: lotId,
+        lot_number: lotNumberDisplay,
+        vendor: vendorDisplay,
+        availableWeight: totalLotWeight,
+        avgRate: avgLotRate,
+        coilsCount: filtered.length,
+        thickness: thicknessList.join(', '),
+        size: sizeList.join(', '),
+        size_type: sizeTypeList[0] || 'ft'
+    };
+
+    if (lotAvgBadge) {
+        if (avgLotRate > 0) {
+            lotAvgBadge.style.display = 'inline-block';
+            lotAvgBadge.innerHTML = `Avg Cost: ৳${avgLotRate.toFixed(2)}/kg`;
+            lotAvgBadge.title = `Combined Weighted Avg Cost of ${filtered.length} in-stock coils in this Lot (Total Stock: ${totalLotWeight.toLocaleString()} kg)`;
+        } else {
+            lotAvgBadge.style.display = 'none';
+        }
+    }
+
+    document.getElementById('stock1').value = totalLotWeight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg';
+    document.getElementById('purchase_price1').value = avgLotRate.toFixed(2);
+    document.getElementById('unit_price1').value = avgLotRate > 0 ? avgLotRate.toFixed(2) : '';
+    document.getElementById('qty1').value = '';
+    document.getElementById('qty1').setAttribute('max', totalLotWeight);
+    document.getElementById('custom_size1').value = '';
+    document.getElementById('qty1').focus();
+
+    updatePreviewTotal();
+}
+
+function resetBuilderFields() {
+    currentSelectedLot = null;
+    document.getElementById('stock1').value = '';
+    document.getElementById('purchase_price1').value = '';
+    document.getElementById('custom_size1').value = '';
+    document.getElementById('unit_price1').value = '';
+    document.getElementById('qty1').value = '';
+    document.getElementById('total1').value = '0.00';
+    const lotAvgBadge = document.getElementById('lotAvgRateBadge');
+    if (lotAvgBadge) lotAvgBadge.style.display = 'none';
+}
+
+function updatePreviewTotal() {
+    const qty = parseFloat(document.getElementById('qty1')?.value) || 0;
+    const price = parseFloat(document.getElementById('unit_price1')?.value) || 0;
+    const total = qty * price;
+    const totalEl = document.getElementById('total1');
+    if (totalEl) {
+        totalEl.value = '৳ ' + total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+}
+
+function addShopLineItem() {
+    if (!currentSelectedLot) {
+        alert('Please select a Stock / Lot Source first.');
+        $('#builder_lot_id').focus();
+        return;
+    }
+
+    const qtyInput = document.getElementById('qty1');
+    const qty = parseFloat(qtyInput.value) || 0;
+    if (qty <= 0) {
+        alert('Please enter your desired selling quantity (kg).');
+        qtyInput.focus();
+        return;
+    }
+
+    const availableStock = currentSelectedLot.availableWeight;
+    if (qty > availableStock + 0.0001) {
+        alert(`Cannot sell more than available lot stock!\n\nRequested: ${qty.toLocaleString()} kg\nAvailable Stock: ${availableStock.toLocaleString()} kg`);
+        qtyInput.value = availableStock;
+        qtyInput.focus();
+        updatePreviewTotal();
+        return;
+    }
+
+    // Check if lot already in cart
+    const lotRawSource = currentSelectedLot.raw_source;
+    let alreadyInCart = 0;
+    shopLineItems.forEach(item => {
+        if (item.raw_source === lotRawSource) {
+            alreadyInCart += item.weight;
+        }
+    });
+
+    if ((alreadyInCart + qty) > (availableStock + 0.0001)) {
+        const remainingAllowed = Math.max(0, availableStock - alreadyInCart);
+        alert(`Cannot exceed available lot stock!\n\nLot: ${currentSelectedLot.lot_number}\nTotal Available: ${availableStock.toLocaleString()} kg\nAlready in Cart: ${alreadyInCart.toLocaleString()} kg\nRemaining Allowed: ${remainingAllowed.toLocaleString()} kg`);
+        qtyInput.value = remainingAllowed > 0 ? remainingAllowed : '';
+        qtyInput.focus();
+        updatePreviewTotal();
+        return;
+    }
+
+    const unitPriceInput = document.getElementById('unit_price1');
+    const unitPrice = parseFloat(unitPriceInput.value) || 0;
+    if (unitPrice < 0) {
+        alert('Please enter a valid selling rate.');
+        unitPriceInput.focus();
+        return;
+    }
+
+    const customSizeInput = document.getElementById('custom_size1');
+    const customSize = (customSizeInput?.value || '').trim();
+    if (!customSize) {
+        alert('Please enter Custom Size / Specs.');
+        customSizeInput?.focus();
+        return;
+    }
+
+    const lineTotal = qty * unitPrice;
+
+    shopLineItems.push({
+        raw_source: lotRawSource,
+        lot_id: currentSelectedLot.id,
+        lot_number: currentSelectedLot.lot_number,
+        vendor: currentSelectedLot.vendor,
+        thickness: currentSelectedLot.thickness,
+        size: currentSelectedLot.size,
+        size_type: currentSelectedLot.size_type,
+        custom_size: customSize,
+        weight: qty,
+        rate: unitPrice,
+        subtotal: lineTotal,
+        max_available: availableStock
+    });
+
+    // Reset builder inputs
+    $('#builder_lot_id').val('').trigger('change');
+    resetBuilderFields();
+
+    renderShopTable();
+}
+
+function removeShopItem(index) {
+    shopLineItems.splice(index, 1);
+    renderShopTable();
+}
+
+function renderShopTable() {
+    const tbody = document.getElementById('item_container');
+    const footerEmpty = document.getElementById('tableFooterEmpty');
+    tbody.innerHTML = '';
+
+    if (shopLineItems.length === 0) {
+        footerEmpty.style.display = '';
+        recalculateShopSummary();
+        return;
+    }
+
+    footerEmpty.style.display = 'none';
+
+    shopLineItems.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        const badgeClass = (!item.lot_id || item.lot_number === 'Opening Stock') ? 'bg-info-subtle text-info border-info-subtle' : 'bg-light text-dark border';
+        tr.innerHTML = `
+            <td class="ps-3">
+                <span class="badge ${badgeClass} border fw-bold">${escapeHtml(item.lot_number)}</span>
+                ${item.vendor ? `<small class="text-muted d-block" style="font-size: 11px;">${escapeHtml(item.vendor)}</small>` : ''}
+                <input type="hidden" name="coil_id[]" value="">
+                <input type="hidden" name="lot_id[]" value="${escapeHtml(item.lot_id)}">
+            </td>
+            <td>
+                <span class="fw-bold text-dark">${escapeHtml(item.thickness || '—')}</span>
+                <input type="hidden" name="thickness[]" value="${escapeHtml(item.thickness)}">
+            </td>
+            <td>
+                <input type="text" name="custom_size[]" class="form-control form-control-sm" value="${escapeHtml(item.custom_size)}" required oninput="updateLineCustomSize(${idx}, this.value)">
+                <input type="hidden" name="size[]" value="${escapeHtml(item.size)}">
+                <input type="hidden" name="size_type[]" value="${escapeHtml(item.size_type)}">
+            </td>
+            <td class="text-end">
+                <input type="number" name="qty[]" class="form-control form-control-sm text-end fw-bold" value="${item.weight.toFixed(2)}" min="0.01" step="0.01" max="${item.max_available}" oninput="updateLineWeight(${idx}, this.value)">
+            </td>
+            <td class="text-end">
+                <input type="number" name="unit_price[]" class="form-control form-control-sm text-end" value="${item.rate.toFixed(2)}" min="0" step="0.01" oninput="updateLineRate(${idx}, this.value)">
+            </td>
+            <td class="text-end fw-bold text-dark" id="line_subtotal_${idx}">
+                ৳${item.subtotal.toFixed(2)}
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger p-1 rounded" onclick="removeShopItem(${idx})">
+                    <i class="fe fe-trash-2"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    recalculateShopSummary();
+}
+
+function updateLineWeight(idx, val) {
+    if (shopLineItems[idx]) {
+        const w = parseFloat(val) || 0;
+        shopLineItems[idx].weight = w;
+        shopLineItems[idx].subtotal = w * shopLineItems[idx].rate;
+        const subDisplay = document.getElementById(`line_subtotal_${idx}`);
+        if (subDisplay) subDisplay.innerText = `৳${shopLineItems[idx].subtotal.toFixed(2)}`;
+        recalculateShopSummary();
+    }
+}
+
+function updateLineRate(idx, val) {
+    if (shopLineItems[idx]) {
+        const r = parseFloat(val) || 0;
+        shopLineItems[idx].rate = r;
+        shopLineItems[idx].subtotal = shopLineItems[idx].weight * r;
+        const subDisplay = document.getElementById(`line_subtotal_${idx}`);
+        if (subDisplay) subDisplay.innerText = `৳${shopLineItems[idx].subtotal.toFixed(2)}`;
+        recalculateShopSummary();
+    }
+}
+
+function updateLineCustomSize(idx, val) {
+    if (shopLineItems[idx]) {
+        shopLineItems[idx].custom_size = val;
+    }
+}
+
+function recalculateShopSummary() {
+    let totalWeight = 0;
+    let itemsSubtotal = 0;
+
+    shopLineItems.forEach(item => {
+        totalWeight += item.weight;
+        itemsSubtotal += item.subtotal;
+    });
+
+    document.getElementById('displayTotalPieces').innerText = shopLineItems.length + ' items';
+    document.getElementById('displayTotalWeight').innerText = totalWeight.toFixed(2) + ' kg';
+    document.getElementById('displaySubtotal').innerText = '৳' + itemsSubtotal.toFixed(2);
+    
+    document.getElementById('subTotal').value = itemsSubtotal.toFixed(2);
+    document.getElementById('subtotal').value = itemsSubtotal.toFixed(2);
+
+    const transportPayer = document.querySelector('input[name="transport_payer"]:checked')?.value || 'me';
+    const deliveryCharge = parseFloat(document.getElementById('delivery_charge').value) || 0;
+    const billedDelivery = (transportPayer === 'vendor') ? deliveryCharge : 0;
+    
+    const labourCost = parseFloat(document.getElementById('labour_cost').value) || 0;
+    const scaleCost = parseFloat(document.getElementById('weight_scale_cost').value) || 0;
+    const otherCharges = parseFloat(document.getElementById('other_charges').value) || 0;
+    const discount = parseFloat(document.getElementById('discount').value) || 0;
+    const vatPercent = parseFloat(document.getElementById('vat').value) || 0;
+    const vatAmount = (itemsSubtotal * vatPercent) / 100;
+
+    let grandTotal = itemsSubtotal - discount + vatAmount + billedDelivery + labourCost + scaleCost + otherCharges;
+    grandTotal = Math.max(0, grandTotal);
+
+    document.getElementById('displayGrandTotal').innerText = '৳ ' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('grandTotal').value = grandTotal.toFixed(2);
+    document.getElementById('total').value = grandTotal.toFixed(2);
+    document.getElementById('payble').value = grandTotal.toFixed(2);
+    document.getElementById('bill').value = grandTotal.toFixed(2);
+
+    const paidInput = document.getElementById('advanced_payment');
+    let paidAmt = parseFloat(paidInput?.value) || 0;
+    if (paidInput) {
+        paidInput.setAttribute('max', grandTotal.toFixed(2));
+    }
+    if (paidAmt > grandTotal) {
+        paidAmt = grandTotal;
+        if (paidInput) paidInput.value = grandTotal.toFixed(2);
+    }
+    const dueAmt = Math.max(0, grandTotal - paidAmt);
+    document.getElementById('due_payment').value = dueAmt.toFixed(2);
+    document.getElementById('duePayment').value = dueAmt.toFixed(2);
+}
+
+function handleShopSaleAccountChange(selectEl) {
+    const selectedOpt = selectEl.options[selectEl.selectedIndex];
+    if (!selectedOpt) return;
+    const val = selectEl.value;
+    const methodInput = document.getElementById('hidden_payment_method');
+    const bankInput = document.getElementById('hidden_bank_detail_id');
+    const txnDiv = document.getElementById('txnRefDiv');
+
+    if (val === 'advance_credit') {
+        if (methodInput) methodInput.value = 'advance_credit';
+        if (bankInput) bankInput.value = '';
+        if (txnDiv) txnDiv.style.display = 'none';
+    } else {
+        const method = selectedOpt.getAttribute('data-method') || 'bank';
+        const bankId = selectedOpt.getAttribute('data-id') || '';
+        if (methodInput) methodInput.value = method;
+        if (bankInput) bankInput.value = bankId;
+        if (txnDiv) txnDiv.style.display = bankId ? 'block' : 'none';
+    }
+}
+
+function toggleCustomerType(type) {
+    const existingSection = document.getElementById('existingCustomerSection');
+    const newSection = document.getElementById('newCustomerSection');
+    const custDueAlert = document.getElementById('customerDueAlert');
+    const custSelect = document.getElementById('customer_id');
+    const newName = document.getElementById('new_cust_name');
+    const newPhone = document.getElementById('new_cust_phone');
+
+    if (type === 'new') {
+        existingSection.style.display = 'none';
+        newSection.style.display = 'block';
+        if (custDueAlert) custDueAlert.style.display = 'none';
+        selectedCustomerAdvance = 0;
+        
+        if (custSelect) custSelect.required = false;
+        if (newName) newName.required = true;
+        if (newPhone) newPhone.required = true;
+    } else {
+        existingSection.style.display = 'block';
+        newSection.style.display = 'none';
+        
+        if (custSelect) {
+            custSelect.required = true;
+            handleCustomerSelect(custSelect);
+        }
+        if (newName) newName.required = false;
+        if (newPhone) newPhone.required = false;
+    }
+}
 
 function handleCustomerSelect(selectEl) {
     const opt = selectEl.options[selectEl.selectedIndex];
@@ -500,276 +978,6 @@ function applyCustomerAdvance() {
     recalculateShopSummary();
 }
 
-function handleCoilSelected(selectEl) {
-    const opt = selectEl.options[selectEl.selectedIndex];
-    if (!opt || !opt.value) {
-        document.getElementById('selectedCoilMeta').style.setProperty('display', 'none', 'important');
-        return;
-    }
-
-    const thickness = opt.getAttribute('data-thickness');
-    const width = opt.getAttribute('data-width');
-    const length = opt.getAttribute('data-length');
-    const available = parseFloat(opt.getAttribute('data-available') || 0);
-    const defaultRate = parseFloat(opt.getAttribute('data-rate-ton') || 0);
-
-    document.getElementById('builder_weight').value = available > 0 ? available.toFixed(2) : '';
-    document.getElementById('builder_weight').setAttribute('max', available);
-    document.getElementById('builder_rate').value = defaultRate > 0 ? defaultRate.toFixed(2) : '';
-
-    const metaDiv = document.getElementById('selectedCoilMeta');
-    document.getElementById('metaCoilSpec').innerText = `Spec: ${thickness} | ${width} ${length ? 'x ' + length : ''}`;
-    document.getElementById('metaCoilStock').innerText = `Avail: ${available.toLocaleString()} kg`;
-    metaDiv.style.display = 'flex';
-}
-
-function addShopLineItem() {
-    const selectEl = document.getElementById('builder_coil_select');
-    const opt = selectEl.options[selectEl.selectedIndex];
-    if (!opt || !opt.value) {
-        alert('Please select an available coil from shop inventory.');
-        return;
-    }
-
-    const coilId = opt.value;
-    const coilNo = opt.getAttribute('data-coil-no');
-    const lotId = opt.getAttribute('data-lot-id');
-    const thickness = opt.getAttribute('data-thickness');
-    const width = opt.getAttribute('data-width');
-    const length = opt.getAttribute('data-length');
-    const maxAvailable = parseFloat(opt.getAttribute('data-available') || 0);
-    
-    const pcs = parseInt(document.getElementById('builder_pcs').value) || 1;
-    const weight = parseFloat(document.getElementById('builder_weight').value) || 0;
-    const ratePerTon = parseFloat(document.getElementById('builder_rate').value) || 0;
-
-    if (weight <= 0) {
-        alert('Please enter a valid selling weight.');
-        return;
-    }
-
-    if (weight > maxAvailable + 0.01) {
-        alert(`Weight (${weight} kg) cannot exceed available stock (${maxAvailable} kg).`);
-        return;
-    }
-
-    const lineTotal = (weight * ratePerTon) / 1000;
-    const ratePerKg = ratePerTon / 1000;
-
-    // Check if coil already added
-    const existingIndex = shopLineItems.findIndex(item => item.coil_id === coilId);
-    if (existingIndex > -1) {
-        alert('This coil is already added in the table. Remove or edit existing row.');
-        return;
-    }
-
-    shopLineItems.push({
-        coil_id: coilId,
-        coil_no: coilNo,
-        lot_id: lotId,
-        thickness: thickness,
-        width: width,
-        length: length,
-        custom_size: `${thickness || ''} | ${width || ''}${length ? ' x ' + length : ''}`.trim() || 'Standard Spec',
-        pieces: pcs,
-        weight: weight,
-        rate_per_ton: ratePerTon,
-        rate_per_kg: ratePerKg,
-        subtotal: lineTotal,
-        max_available: maxAvailable
-    });
-
-    // Reset builder inputs
-    selectEl.value = '';
-    $('#builder_coil_select').val('').trigger('change');
-    document.getElementById('builder_pcs').value = '1';
-    document.getElementById('builder_weight').value = '';
-    document.getElementById('builder_rate').value = '';
-
-    renderShopTable();
-}
-
-function removeShopItem(index) {
-    shopLineItems.splice(index, 1);
-    renderShopTable();
-}
-
-function renderShopTable() {
-    const tbody = document.getElementById('item_container');
-    const footerEmpty = document.getElementById('tableFooterEmpty');
-    tbody.innerHTML = '';
-
-    if (shopLineItems.length === 0) {
-        footerEmpty.style.display = '';
-        recalculateShopSummary();
-        return;
-    }
-
-    footerEmpty.style.display = 'none';
-
-    shopLineItems.forEach((item, idx) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="ps-3">
-                <span class="badge bg-light text-dark border font-monospace fw-bold">${item.coil_no}</span>
-                <input type="hidden" name="coil_id[]" value="${item.coil_id}">
-                <input type="hidden" name="lot_id[]" value="${item.lot_id}">
-                <input type="hidden" name="custom_size[]" value="${item.custom_size}">
-            </td>
-            <td>
-                <span class="fw-bold text-dark">${item.thickness}</span>
-                <input type="hidden" name="thickness[]" value="${item.thickness}">
-            </td>
-            <td>
-                <span>${item.width} ${item.length ? 'x ' + item.length : ''}</span>
-                <input type="hidden" name="size[]" value="${item.width}">
-                <input type="hidden" name="size_type[]" value="${item.length || 'ft'}">
-            </td>
-            <td class="text-center">
-                <input type="number" name="piece_count[]" class="form-control form-control-sm text-center" value="${item.pieces}" min="1" oninput="updateLinePiece(${idx}, this.value)">
-            </td>
-            <td class="text-end">
-                <input type="number" name="qty[]" class="form-control form-control-sm text-end fw-bold" value="${item.weight.toFixed(2)}" min="0.01" step="0.01" max="${item.max_available}" oninput="updateLineWeight(${idx}, this.value)">
-            </td>
-            <td class="text-end">
-                <input type="number" class="form-control form-control-sm text-end" value="${item.rate_per_ton.toFixed(2)}" min="0" step="0.01" oninput="updateLineRate(${idx}, this.value)">
-                <input type="hidden" name="unit_price[]" id="unit_price_${idx}" value="${item.rate_per_kg.toFixed(4)}">
-            </td>
-            <td class="text-end fw-bold text-dark" id="line_subtotal_${idx}">
-                ৳${item.subtotal.toFixed(2)}
-            </td>
-            <td class="text-center">
-                <button type="button" class="btn btn-sm btn-outline-danger p-1 rounded" onclick="removeShopItem(${idx})">
-                    <i class="fe fe-trash-2"></i>
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-
-    recalculateShopSummary();
-}
-
-function updateLinePiece(idx, val) {
-    if (shopLineItems[idx]) {
-        shopLineItems[idx].pieces = parseInt(val) || 1;
-        recalculateShopSummary();
-    }
-}
-
-function updateLineWeight(idx, val) {
-    if (shopLineItems[idx]) {
-        const w = parseFloat(val) || 0;
-        shopLineItems[idx].weight = w;
-        shopLineItems[idx].subtotal = (w * shopLineItems[idx].rate_per_ton) / 1000;
-        const subDisplay = document.getElementById(`line_subtotal_${idx}`);
-        if (subDisplay) subDisplay.innerText = `৳${shopLineItems[idx].subtotal.toFixed(2)}`;
-        recalculateShopSummary();
-    }
-}
-
-function updateLineRate(idx, val) {
-    if (shopLineItems[idx]) {
-        const r = parseFloat(val) || 0;
-        shopLineItems[idx].rate_per_ton = r;
-        shopLineItems[idx].rate_per_kg = r / 1000;
-        shopLineItems[idx].subtotal = (shopLineItems[idx].weight * r) / 1000;
-        
-        const ratePerKgInput = document.getElementById(`unit_price_${idx}`);
-        if (ratePerKgInput) ratePerKgInput.value = (r / 1000).toFixed(4);
-
-        const subDisplay = document.getElementById(`line_subtotal_${idx}`);
-        if (subDisplay) subDisplay.innerText = `৳${shopLineItems[idx].subtotal.toFixed(2)}`;
-        recalculateShopSummary();
-    }
-}
-
-function recalculateShopSummary() {
-    let totalPieces = 0;
-    let totalWeight = 0;
-    let itemsSubtotal = 0;
-
-    shopLineItems.forEach(item => {
-        totalPieces += item.pieces;
-        totalWeight += item.weight;
-        itemsSubtotal += item.subtotal;
-    });
-
-    document.getElementById('displayTotalPieces').innerText = totalPieces + ' pcs';
-    document.getElementById('displayTotalWeight').innerText = totalWeight.toFixed(2) + ' kg';
-    document.getElementById('displaySubtotal').innerText = '৳' + itemsSubtotal.toFixed(2);
-    
-    document.getElementById('subTotal').value = itemsSubtotal.toFixed(2);
-    document.getElementById('subtotal').value = itemsSubtotal.toFixed(2);
-
-    const transportPayer = document.querySelector('input[name="transport_payer"]:checked')?.value || 'me';
-    const deliveryCharge = parseFloat(document.getElementById('delivery_charge').value) || 0;
-    const billedDelivery = (transportPayer === 'vendor') ? deliveryCharge : 0;
-    
-    const labourCost = parseFloat(document.getElementById('labour_cost').value) || 0;
-    const scaleCost = parseFloat(document.getElementById('weight_scale_cost').value) || 0;
-    const otherCharges = parseFloat(document.getElementById('other_charges').value) || 0;
-    const discount = parseFloat(document.getElementById('discount').value) || 0;
-    const vatPercent = parseFloat(document.getElementById('vat').value) || 0;
-    const vatAmount = (itemsSubtotal * vatPercent) / 100;
-
-    let grandTotal = itemsSubtotal - discount + vatAmount + billedDelivery + labourCost + scaleCost + otherCharges;
-    grandTotal = Math.max(0, grandTotal);
-
-    document.getElementById('displayGrandTotal').innerText = '৳ ' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    document.getElementById('grandTotal').value = grandTotal.toFixed(2);
-    document.getElementById('total').value = grandTotal.toFixed(2);
-    document.getElementById('payble').value = grandTotal.toFixed(2);
-    document.getElementById('bill').value = grandTotal.toFixed(2);
-
-    const paidAmt = parseFloat(document.getElementById('advanced_payment').value) || 0;
-    const dueAmt = Math.max(0, grandTotal - paidAmt);
-    document.getElementById('due_payment').value = dueAmt.toFixed(2);
-    document.getElementById('duePayment').value = dueAmt.toFixed(2);
-}
-
-function handlePaymentMethod(method) {
-    const bankDiv = document.getElementById('bankSelectionDiv');
-    const txnDiv = document.getElementById('txnRefDiv');
-    if (method === 'bank' || method === 'mobile_banking') {
-        bankDiv.style.display = 'block';
-        txnDiv.style.display = 'block';
-    } else {
-        bankDiv.style.display = 'none';
-        txnDiv.style.display = 'none';
-    }
-}
-
-function toggleCustomerType(type) {
-    const existingSection = document.getElementById('existingCustomerSection');
-    const newSection = document.getElementById('newCustomerSection');
-    const custDueAlert = document.getElementById('customerDueAlert');
-    const custSelect = document.getElementById('customer_id');
-    const newName = document.getElementById('new_cust_name');
-    const newPhone = document.getElementById('new_cust_phone');
-
-    if (type === 'new') {
-        existingSection.style.display = 'none';
-        newSection.style.display = 'block';
-        if (custDueAlert) custDueAlert.style.display = 'none';
-        selectedCustomerAdvance = 0;
-        
-        if (custSelect) custSelect.required = false;
-        if (newName) newName.required = true;
-        if (newPhone) newPhone.required = true;
-    } else {
-        existingSection.style.display = 'block';
-        newSection.style.display = 'none';
-        
-        if (custSelect) {
-            custSelect.required = true;
-            handleCustomerSelect(custSelect);
-        }
-        if (newName) newName.required = false;
-        if (newPhone) newPhone.required = false;
-    }
-}
-
 function validateShopSaleForm(e) {
     if (shopLineItems.length === 0) {
         e.preventDefault();
@@ -802,8 +1010,24 @@ function validateShopSaleForm(e) {
             return false;
         }
     }
+
+    const advancedPaymentVal = parseFloat(document.getElementById('advanced_payment')?.value) || 0;
+    const grandTotalVal = parseFloat(document.getElementById('grandTotal')?.value) || 0;
+    if (advancedPaymentVal > (grandTotalVal + 0.01)) {
+        if (e) e.preventDefault();
+        alert(`Current Payment (৳${advancedPaymentVal.toFixed(2)}) cannot exceed remaining due / invoice amount (৳${grandTotalVal.toFixed(2)}).`);
+        document.getElementById('advanced_payment')?.focus();
+        return false;
+    }
+
+    reloadAfterSubmit();
     return true;
+}
+
+function reloadAfterSubmit() {
+    setTimeout(function() {
+        window.location.href = "{{ route('shops.sales.index') }}";
+    }, 500);
 }
 </script>
 @endpush
-

@@ -215,7 +215,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <label class="form-label small text-secondary fw-semibold mb-0">Custom Size / Specs <span class="text-danger">*</span></label>
                             </div>
-                            <input type="text" id="custom_size1" class="form-control border-light-subtle" placeholder="e.g. 4x8 ft cut" required>
+                            <input type="text" id="custom_size1" class="form-control border-light-subtle" placeholder="e.g. 4x8 ft cut">
                         </div>
 
                         <!-- 5. Selling Rate -->
@@ -369,40 +369,55 @@
 
                 <!-- Payment Method & Banking Details Section -->
                 <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 mb-3" id="paymentMethodSection">
-                    <div class="row g-3 align-items-center">
-                        <div class="col-lg-4 col-md-6 col-12">
-                            <label class="form-label small text-secondary fw-semibold mb-1">
-                                <i class="fe fe-credit-card me-1 text-primary"></i> Payment Method <span class="text-danger">*</span>
-                            </label>
-                            <select name="payment_method" id="paymentMethodSelect" class="form-select border-light-subtle" onchange="handlePaymentMethodChange(this.value)">
-                                <option value="cash" selected>Cash in Hand</option>
-                                <option value="advance_credit">💰 Advance Balance / Deposit Adjustment</option>
-                                <option value="bank">Bank Transfer / Deposit</option>
-                                <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
-                            </select>
-                        </div>
+                    @php
+                        $regularBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return !(stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                        $mfsBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return (stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                    @endphp
 
-                        <!-- Bank Account Selector (Shown for Bank, Mobile Banking) -->
-                        <div class="col-lg-4 col-md-6 col-12" id="bankAccountContainer" style="display: none;">
+
+                    <div class="row g-3 align-items-center">
+                        <div class="col-lg-7 col-md-7 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">
-                                <i class="fe fe-layers me-1 text-info"></i> Deposit Bank Account <span class="text-danger">*</span>
+                                <i class="fe fe-layers me-1 text-primary"></i> Receiving Account / Method
                             </label>
-                            <select name="bank_detail_id" id="bankDetailSelect" class="form-select border-light-subtle">
-                                <option value="">Select Bank Account</option>
-                                @foreach($bankAccounts ?? [] as $bank)
-                                    <option value="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
-                                        {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                    </option>
-                                @endforeach
+                            <select id="saleAccountSelector" class="form-select border-light-subtle" onchange="handleSaleAccountChange(this)">
+                                @if($regularBanks->count() > 0)
+                                    <optgroup label="Bank Accounts">
+                                        @foreach($regularBanks as $bank)
+                                            <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                                {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
+                                @if($mfsBanks->count() > 0)
+                                    <optgroup label="Mobile Banking / MFS">
+                                        @foreach($mfsBanks as $bank)
+                                            <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}" {{ (!isset($regularBanks) || $regularBanks->isEmpty()) && $loop->first ? 'selected' : '' }}>
+                                                {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
                             </select>
+                            <input type="hidden" name="payment_method" id="hidden_payment_method" value="bank">
+                            <input type="hidden" name="bank_detail_id" id="hidden_bank_detail_id" value="">
                         </div>
 
                         <!-- Transaction Reference / Notes -->
-                        <div class="col-lg-4 col-md-6 col-12" id="transactionRefContainer" style="display: none;">
+                        <div class="col-lg-5 col-md-5 col-12" id="transactionRefContainer">
                             <label class="form-label small text-secondary fw-semibold mb-1">
-                                <i class="fe fe-file-text me-1 text-secondary"></i> Transaction Ref / TrxID
+                                <i class="fe fe-file-text me-1 text-secondary"></i> TrxID / Ref #
                             </label>
-                            <input type="text" name="transaction_ref" id="transactionRefInput" class="form-control border-light-subtle bg-white">
+                            <input type="text" name="transaction_ref" id="transactionRefInput" class="form-control border-light-subtle bg-white" placeholder="e.g. TXN-12345">
                         </div>
                     </div>
                 </div>
@@ -473,6 +488,18 @@ $(document).ready(function () {
     // Populate initial stock/lot source based on default selected warehouse
     populateWarehouseLotSources($('#warehouse_id').val());
 });
+
+function handleSaleAccountChange(selectEl) {
+    const selectedOpt = selectEl.options[selectEl.selectedIndex];
+    if (!selectedOpt) return;
+    const methodInput = document.getElementById('hidden_payment_method');
+    const bankInput = document.getElementById('hidden_bank_detail_id');
+
+    const method = selectedOpt.getAttribute('data-method') || 'bank';
+    const bankId = selectedOpt.getAttribute('data-id') || '';
+    if (methodInput) methodInput.value = method;
+    if (bankInput) bankInput.value = bankId;
+}
 
 function escapeHtml(text) {
     if (!text) return '';
@@ -983,7 +1010,15 @@ function calculateTotal() {
         gtDisplay.innerText = '৳ ' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
 
-    const advanced = parseFloat(document.getElementById('advancedPayment')?.value) || 0;
+    const advancedInput = document.getElementById('advancedPayment');
+    let advanced = parseFloat(advancedInput?.value) || 0;
+    if (advancedInput) {
+        advancedInput.setAttribute('max', grandTotal.toFixed(2));
+    }
+    if (advanced > grandTotal) {
+        advanced = grandTotal;
+        if (advancedInput) advancedInput.value = grandTotal.toFixed(2);
+    }
     const currentDue = Math.max(0, grandTotal - advanced);
     document.getElementById('duePayment').value = currentDue.toFixed(2);
     
@@ -1064,21 +1099,40 @@ function validateSaleFormSubmission(e) {
         return false;
     }
 
+    const advancedPaymentVal = parseFloat(document.getElementById('advancedPayment')?.value) || 0;
+    const grandTotalVal = parseFloat(document.getElementById('grandTotal')?.value) || 0;
+    if (advancedPaymentVal > (grandTotalVal + 0.01)) {
+        if (e) e.preventDefault();
+        alert(`Current Payment (৳${advancedPaymentVal.toFixed(2)}) cannot exceed the invoice amount (৳${grandTotalVal.toFixed(2)}).`);
+        document.getElementById('advancedPayment')?.focus();
+        return false;
+    }
+
     reloadAfterSubmit();
     return true;
 }
 
-function handlePaymentMethodChange(method) {
-    const bankContainer = document.getElementById('bankAccountContainer');
+function handleSaleAccountChange(selectEl) {
+    const selectedOpt = selectEl.options[selectEl.selectedIndex];
+    const val = selectEl.value;
+    const methodInput = document.getElementById('hidden_payment_method');
+    const bankInput = document.getElementById('hidden_bank_detail_id');
     const refContainer = document.getElementById('transactionRefContainer');
-    if (!bankContainer || !refContainer) return;
 
-    if (method === 'cash' || method === 'advance_credit') {
-        bankContainer.style.display = 'none';
-        refContainer.style.display = 'none';
+    if (val === 'cash') {
+        if (methodInput) methodInput.value = 'cash';
+        if (bankInput) bankInput.value = '';
+        if (refContainer) refContainer.style.display = 'none';
+    } else if (val === 'advance_credit') {
+        if (methodInput) methodInput.value = 'advance_credit';
+        if (bankInput) bankInput.value = '';
+        if (refContainer) refContainer.style.display = 'none';
     } else {
-        bankContainer.style.display = 'block';
-        refContainer.style.display = 'block';
+        const method = selectedOpt.getAttribute('data-method') || 'bank';
+        const bankId = selectedOpt.getAttribute('data-id') || '';
+        if (methodInput) methodInput.value = method;
+        if (bankInput) bankInput.value = bankId;
+        if (refContainer) refContainer.style.display = 'block';
     }
 }
 

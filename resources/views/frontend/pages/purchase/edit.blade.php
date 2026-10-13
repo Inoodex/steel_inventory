@@ -430,34 +430,54 @@
                                 </div>
                             </div>
 
+                            @php
+                                $regularPurchaseEditBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                                    $type = $b->account_type ?? '';
+                                    $name = $b->bank_name ?? '';
+                                    return !(stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                                });
+                                $mfsPurchaseEditBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                                    $type = $b->account_type ?? '';
+                                    $name = $b->bank_name ?? '';
+                                    return (stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                                });
+                                $currPurchaseMethod = old('payment_method', $purchase->payment_method ?? 'cash');
+                                $currPurchaseBankId = old('bank_detail_id', $purchase->bank_detail_id ?? '');
+                            @endphp
+
                             <!-- Settlement Payment Method & Channel -->
                             <div class="mb-3 p-3 bg-light rounded-3 border border-light-subtle">
                                 <label class="form-label fw-semibold small text-secondary mb-1">
-                                    <i class="fe fe-credit-card me-1 text-primary"></i> Settlement Payment Method
+                                    <i class="fe fe-credit-card me-1 text-primary"></i> Settlement Account / Method <span class="text-danger">*</span>
                                 </label>
-                                <select name="payment_method" id="purchasePaymentMethod" class="form-select border-light-subtle mb-2" onchange="handlePurchasePaymentMethodChange(this.value)">
-                                    <option value="cash" {{ old('payment_method', $purchase->payment_method ?? 'cash') === 'cash' ? 'selected' : '' }}>Cash in Hand</option>
-                                    <option value="bank" {{ old('payment_method', $purchase->payment_method) === 'bank' ? 'selected' : '' }}>Bank Transfer / MFS</option>
+                                <select id="purchaseEditAccountSelector" class="form-select border-light-subtle mb-2" onchange="handlePurchaseEditAccountChange(this)" required>
+                                    @if($regularPurchaseEditBanks->count() > 0)
+                                        <optgroup label="Bank Accounts">
+                                            @foreach($regularPurchaseEditBanks as $bank)
+                                                <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" {{ ($currPurchaseMethod === 'bank' && $currPurchaseBankId == $bank->id) ? 'selected' : '' }}>
+                                                    {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endif
+                                    @if($mfsPurchaseEditBanks->count() > 0)
+                                        <optgroup label="Mobile Banking / MFS">
+                                            @foreach($mfsPurchaseEditBanks as $bank)
+                                                <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}" {{ ($currPurchaseMethod === 'mobile_banking' && $currPurchaseBankId == $bank->id) ? 'selected' : '' }}>
+                                                    {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endif
                                 </select>
-
-                                <!-- Bank Account Selector -->
-                                <div id="purchaseBankAccountContainer" class="mb-2" style="{{ old('payment_method', $purchase->payment_method) === 'bank' ? '' : 'display: none;' }}">
-                                    <label class="form-label fw-semibold small text-secondary mb-1">Disbursement Bank Account</label>
-                                    <select name="bank_detail_id" id="purchaseBankDetail" class="form-select border-light-subtle">
-                                        <option value="">Select Bank Account</option>
-                                        @foreach($bankAccounts ?? [] as $bank)
-                                            <option value="{{ $bank->id }}" {{ old('bank_detail_id', $purchase->bank_detail_id) == $bank->id ? 'selected' : '' }}>
-                                                {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                                <input type="hidden" name="payment_method" id="hidden_purchase_edit_method" value="{{ $currPurchaseMethod }}">
+                                <input type="hidden" name="bank_detail_id" id="hidden_purchase_edit_bank_id" value="{{ $currPurchaseBankId }}">
 
                                 <!-- Transaction Ref -->
-                                <div id="purchaseTransactionRefContainer" style="{{ old('payment_method', $purchase->payment_method) === 'bank' ? '' : 'display: none;' }}">
+                                <div id="purchaseEditTrxContainer" style="{{ $currPurchaseMethod === 'cash' ? 'display: none;' : '' }}">
                                     <label class="form-label fw-semibold small text-secondary mb-1">Transaction Ref / TrxID</label>
                                     <input type="text" name="transaction_ref" class="form-control border-light-subtle bg-white"
-                                        value="{{ old('transaction_ref', $purchase->transaction_ref) }}">
+                                        value="{{ old('transaction_ref', $purchase->transaction_ref) }}" placeholder="e.g. TrxID / Cheque #">
                                 </div>
                             </div>
 
@@ -564,33 +584,22 @@
             calculateFinancials();
         }
 
-        function handlePurchasePaymentMethodChange(method) {
-            const bankContainer = document.getElementById('purchaseBankAccountContainer');
-            const refContainer = document.getElementById('purchaseTransactionRefContainer');
-            const bankSelect = document.getElementById('purchaseBankDetail');
-            const refInput = document.querySelector('input[name="transaction_ref"]');
-            if (!bankContainer || !refContainer) return;
+        function handlePurchaseEditAccountChange(select) {
+            if (!select) return;
+            const selectedOption = select.options[select.selectedIndex];
+            if (!selectedOption) return;
+            const method = selectedOption.getAttribute('data-method') || 'bank';
+            const bankId = selectedOption.getAttribute('data-id') || '';
 
-            if (method === 'cash') {
-                bankContainer.style.display = 'none';
-                refContainer.style.display = 'none';
-                if (bankSelect) {
-                    bankSelect.value = '';
-                    bankSelect.disabled = true;
-                }
-                if (refInput) {
-                    refInput.value = '';
-                    refInput.disabled = true;
-                }
-            } else {
-                bankContainer.style.display = 'block';
-                refContainer.style.display = 'block';
-                if (bankSelect) {
-                    bankSelect.disabled = false;
-                }
-                if (refInput) {
-                    refInput.disabled = false;
-                }
+            const hiddenMethod = document.getElementById('hidden_purchase_edit_method');
+            const hiddenBank = document.getElementById('hidden_purchase_edit_bank_id');
+            const trxContainer = document.getElementById('purchaseEditTrxContainer');
+
+            if (hiddenMethod) hiddenMethod.value = method;
+            if (hiddenBank) hiddenBank.value = bankId;
+
+            if (trxContainer) {
+                trxContainer.style.display = bankId ? 'block' : 'none';
             }
         }
 

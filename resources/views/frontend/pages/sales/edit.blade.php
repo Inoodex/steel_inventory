@@ -438,39 +438,56 @@
 
                 <!-- Payment Method & Banking Details Section -->
                 <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 mb-3" id="paymentMethodSection">
-                    <div class="row g-3 align-items-center">
-                        <div class="col-lg-4 col-md-6 col-12">
-                            <label class="form-label small text-secondary fw-semibold mb-1">
-                                <i class="fe fe-credit-card me-1 text-primary"></i> Payment Method <span class="text-danger">*</span>
-                            </label>
-                            <select name="payment_method" id="paymentMethodSelect" class="form-select border-light-subtle" onchange="handlePaymentMethodChange(this.value)">
-                                <option value="cash" {{ ($sales->payment_method ?? 'cash') === 'cash' ? 'selected' : '' }}>Cash in Hand</option>
-                                <option value="bank" {{ ($sales->payment_method ?? '') === 'bank' ? 'selected' : '' }}>Bank Transfer / Deposit</option>
-                                <option value="mobile_banking" {{ ($sales->payment_method ?? '') === 'mobile_banking' ? 'selected' : '' }}>Mobile Banking (bKash/Nagad)</option>
-                            </select>
-                        </div>
+                    @php
+                        $regularSalesEditBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return !(stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                        $mfsSalesEditBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return (stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                        $currSaleMethod = old('payment_method', $sales->payment_method ?? 'cash');
+                        $currSaleBankId = old('bank_detail_id', $sales->bank_detail_id ?? '');
+                    @endphp
 
-                        <!-- Bank Account Selector -->
-                        <div class="col-lg-4 col-md-6 col-12" id="bankAccountContainer" style="{{ ($sales->payment_method ?? 'cash') === 'cash' ? 'display: none;' : '' }}">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-lg-6 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">
-                                <i class="fe fe-layers me-1 text-info"></i> Deposit Bank Account <span class="text-danger">*</span>
+                                <i class="fe fe-credit-card me-1 text-primary"></i> Receiving Account / Payment Method <span class="text-danger">*</span>
                             </label>
-                            <select name="bank_detail_id" id="bankDetailSelect" class="form-select border-light-subtle">
-                                <option value="">Select Bank Account</option>
-                                @foreach($bankAccounts ?? [] as $bank)
-                                    <option value="{{ $bank->id }}" {{ ($sales->bank_detail_id == $bank->id || ($sales->bank_detail_id == null && $bank->is_default)) ? 'selected' : '' }}>
-                                        {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                    </option>
-                                @endforeach
+                            <select id="salesEditAccountSelector" class="form-select border-light-subtle" onchange="handleSalesEditAccountChange(this)" required>
+                                @if($regularSalesEditBanks->count() > 0)
+                                    <optgroup label="Bank Accounts">
+                                        @foreach($regularSalesEditBanks as $bank)
+                                            <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" {{ ($currSaleMethod === 'bank' && $currSaleBankId == $bank->id) ? 'selected' : '' }}>
+                                                {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
+                                @if($mfsSalesEditBanks->count() > 0)
+                                    <optgroup label="Mobile Banking / MFS">
+                                        @foreach($mfsSalesEditBanks as $bank)
+                                            <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}" {{ ($currSaleMethod === 'mobile_banking' && $currSaleBankId == $bank->id) ? 'selected' : '' }}>
+                                                {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
                             </select>
+                            <input type="hidden" name="payment_method" id="hidden_sales_edit_method" value="{{ $currSaleMethod }}">
+                            <input type="hidden" name="bank_detail_id" id="hidden_sales_edit_bank_id" value="{{ $currSaleBankId }}">
                         </div>
 
                         <!-- Transaction Reference / Notes -->
-                        <div class="col-lg-4 col-md-6 col-12" id="transactionRefContainer" style="{{ ($sales->payment_method ?? 'cash') === 'cash' ? 'display: none;' : '' }}">
+                        <div class="col-lg-6 col-md-6 col-12" id="salesEditTrxContainer" style="{{ $currSaleMethod === 'cash' ? 'display: none;' : '' }}">
                             <label class="form-label small text-secondary fw-semibold mb-1">
                                 <i class="fe fe-file-text me-1 text-secondary"></i> Transaction Ref / TrxID
                             </label>
-                            <input type="text" name="transaction_ref" id="transactionRefInput" class="form-control border-light-subtle bg-white" value="{{ $sales->transaction_ref }}">
+                            <input type="text" name="transaction_ref" id="transactionRefInput" class="form-control border-light-subtle bg-white" value="{{ old('transaction_ref', $sales->transaction_ref) }}" placeholder="e.g. TrxID / Cheque #">
                         </div>
                     </div>
                 </div>
@@ -991,17 +1008,22 @@ function calculateTotal() {
     }
 }
 
-function handlePaymentMethodChange(method) {
-    const bankContainer = document.getElementById('bankAccountContainer');
-    const refContainer = document.getElementById('transactionRefContainer');
-    if (!bankContainer || !refContainer) return;
+function handleSalesEditAccountChange(select) {
+    if (!select) return;
+    const selectedOption = select.options[select.selectedIndex];
+    if (!selectedOption) return;
+    const method = selectedOption.getAttribute('data-method') || 'bank';
+    const bankId = selectedOption.getAttribute('data-id') || '';
 
-    if (method === 'cash') {
-        bankContainer.style.display = 'none';
-        refContainer.style.display = 'none';
-    } else {
-        bankContainer.style.display = 'block';
-        refContainer.style.display = 'block';
+    const hiddenMethod = document.getElementById('hidden_sales_edit_method');
+    const hiddenBank = document.getElementById('hidden_sales_edit_bank_id');
+    const trxContainer = document.getElementById('salesEditTrxContainer');
+
+    if (hiddenMethod) hiddenMethod.value = method;
+    if (hiddenBank) hiddenBank.value = bankId;
+
+    if (trxContainer) {
+        trxContainer.style.display = bankId ? 'block' : 'none';
     }
 }
 </script>

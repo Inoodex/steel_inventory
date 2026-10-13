@@ -115,15 +115,43 @@
                                 <input type="number" step="0.01" class="form-control border-light-subtle" name="payment_amount" id="payment_amount" max="{{ $sale->due_payment }}" min="0.01" value="{{ $sale->due_payment }}" required oninput="updateRemaining(this.value)">
                             </div>
 
+                            @php
+                                $regularSaleBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                                    $type = $b->account_type ?? '';
+                                    $name = $b->bank_name ?? '';
+                                    return !(stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                                });
+                                $mfsSaleBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                                    $type = $b->account_type ?? '';
+                                    $name = $b->bank_name ?? '';
+                                    return (stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                                });
+                            @endphp
+
                             <div class="col-lg-4 col-md-6 col-12">
-                                <label class="form-label small text-secondary fw-semibold mb-1">Payment Method <span class="text-danger">*</span></label>
-                                <select class="form-select border-light-subtle" name="payment_method" required>
-                                    <option value="">Select Payment Method</option>
-                                    <option value="cash" selected>Cash</option>
-                                    <option value="card">Card</option>
-                                    <option value="bank_transfer">Bank Transfer</option>
-                                    <option value="bkash">bKash / Mobile Banking</option>
+                                <label class="form-label small text-secondary fw-semibold mb-1">Receiving Account / Payment Method <span class="text-danger">*</span></label>
+                                <select class="form-select border-light-subtle" id="salesPaymentAccountSelector" onchange="handleSalesPaymentAccountChange(this)" required>
+                                    @if($regularSaleBanks->count() > 0)
+                                        <optgroup label="Bank Accounts">
+                                            @foreach($regularSaleBanks as $bank)
+                                                <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                                    {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endif
+                                    @if($mfsSaleBanks->count() > 0)
+                                        <optgroup label="Mobile Banking / MFS">
+                                            @foreach($mfsSaleBanks as $bank)
+                                                <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}" {{ (!isset($regularSaleBanks) || $regularSaleBanks->isEmpty()) && $loop->first ? 'selected' : '' }}>
+                                                    {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endif
                                 </select>
+                                <input type="hidden" name="payment_method" id="hidden_sales_payment_method" value="bank">
+                                <input type="hidden" name="bank_detail_id" id="hidden_sales_payment_bank_id" value="">
                             </div>
 
                             <div class="col-lg-4 col-md-12 col-12">
@@ -186,8 +214,23 @@
         }
     }
 
+    function handleSalesPaymentAccountChange(select) {
+        if (!select) return;
+        const selectedOption = select.options[select.selectedIndex];
+        const method = selectedOption ? (selectedOption.getAttribute('data-method') || 'bank') : 'bank';
+        const bankId = selectedOption ? (selectedOption.getAttribute('data-id') || '') : '';
+
+        const hiddenMethod = document.getElementById('hidden_sales_payment_method');
+        const hiddenBank = document.getElementById('hidden_sales_payment_bank_id');
+
+        if (hiddenMethod) hiddenMethod.value = method;
+        if (hiddenBank) hiddenBank.value = bankId;
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         updateRemaining({{ $sale->due_payment }});
+        const accSelect = document.getElementById('salesPaymentAccountSelector');
+        if (accSelect) handleSalesPaymentAccountChange(accSelect);
     });
 </script>
 @endif

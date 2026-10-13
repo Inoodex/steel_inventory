@@ -523,30 +523,47 @@
                         <input type="number" step="0.01" min="0.01" name="amount" id="modalAmountInput" class="form-control fw-bold text-dark" placeholder="0.00" required>
                     </div>
 
-                    <!-- Payment Method -->
+                    @php
+                        $regularDueBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return !(stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                        $mfsDueBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return (stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                    @endphp
+
+                    <!-- Unified Receiving Account Selector -->
                     <div class="mb-3">
-                        <label class="form-label fw-bold small text-dark mb-1">Payment Method <span class="text-danger">*</span></label>
-                        <select name="payment_method" id="modalPaymentMethod" class="form-select border-light-subtle" onchange="toggleModalBankDetails(this.value)">
-                            <option value="cash" selected>Cash</option>
-                            <option value="bank">Bank Transfer / Deposit</option>
-                            <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                        <label class="form-label fw-bold small text-dark mb-1">Receiving Account / Payment Method <span class="text-danger">*</span></label>
+                        <select id="salesDueAccountSelector" class="form-select border-light-subtle" onchange="handleSalesDueAccountChange(this)" required>
+                            @if($regularDueBanks->count() > 0)
+                                <optgroup label="Bank Accounts">
+                                    @foreach($regularDueBanks as $bank)
+                                        <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                            {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+                            @if($mfsDueBanks->count() > 0)
+                                <optgroup label="Mobile Banking / MFS">
+                                    @foreach($mfsDueBanks as $bank)
+                                        <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}" {{ (!isset($regularDueBanks) || $regularDueBanks->isEmpty()) && $loop->first ? 'selected' : '' }}>
+                                            {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
                         </select>
+                        <input type="hidden" name="payment_method" id="hidden_sales_due_method" value="bank">
+                        <input type="hidden" name="bank_detail_id" id="hidden_sales_due_bank_id" value="">
                     </div>
 
-                    <!-- Bank Account Selector -->
-                    <div class="mb-3" id="modalBankContainer" style="display: none;">
-                        <label class="form-label fw-bold small text-dark mb-1">Receiving Bank Account <span class="text-danger">*</span></label>
-                        <select name="bank_detail_id" class="form-select border-light-subtle">
-                            <option value="">Select Bank Account</option>
-                            @foreach($bankAccounts ?? [] as $bank)
-                                <option value="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
-                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <!-- Transaction Ref -->
+                    <!-- Transaction Ref (Shown for Bank / MFS) -->
                     <div class="mb-3" id="modalTrxContainer" style="display: none;">
                         <label class="form-label fw-bold small text-dark mb-1">Transaction Ref / Cheque No</label>
                         <input type="text" name="transaction_ref" class="form-control border-light-subtle" placeholder="e.g. TrxID / Cheque #">
@@ -591,15 +608,22 @@ function openCustomerPaymentModal(id, name, openingDue, totalDue) {
     modal.show();
 }
 
-function toggleModalBankDetails(val) {
-    const bankBox = document.getElementById('modalBankContainer');
+function handleSalesDueAccountChange(select) {
+    if (!select) return;
+    const selectedOption = select.options[select.selectedIndex];
+    if (!selectedOption) return;
+    const method = selectedOption.getAttribute('data-method') || 'bank';
+    const bankId = selectedOption.getAttribute('data-id') || '';
+
+    const hiddenMethod = document.getElementById('hidden_sales_due_method');
+    const hiddenBank = document.getElementById('hidden_sales_due_bank_id');
     const trxBox = document.getElementById('modalTrxContainer');
-    if (val === 'cash') {
-        bankBox.style.display = 'none';
-        trxBox.style.display = 'none';
-    } else {
-        bankBox.style.display = 'block';
-        trxBox.style.display = 'block';
+
+    if (hiddenMethod) hiddenMethod.value = method;
+    if (hiddenBank) hiddenBank.value = bankId;
+
+    if (trxBox) {
+        trxBox.style.display = bankId ? 'block' : 'none';
     }
 }
 

@@ -78,9 +78,11 @@ class ProductReturn extends Model
     }
 
     // Approve return: updates stock, adjusts sale invoice amounts, creates refund payment, and marks approved
-    public function approve($userId)
+    public function approve($userId, array $refundData = [])
     {
         $this->load(['sale', 'items.salesItem']);
+
+        $originalSaleDue = $this->sale ? (float)($this->sale->due_payment ?? 0) : 0;
 
         $this->update([
             'status'              => 'approved',
@@ -98,23 +100,23 @@ class ProductReturn extends Model
         $this->updateSaleAmounts();
 
         // 3. Create refund payment record
-        $this->createRefundPayment($userId);
+        $this->createRefundPayment($userId, $refundData);
 
         // 4. Update sales_items returned_qty
         $this->updateSalesItemsReturnedQty();
 
         // 5. Post double-entry journal voucher to accounting ledger
-        $this->postReturnJournalEntry($userId);
+        $this->postReturnJournalEntry($userId, $refundData, $originalSaleDue);
     }
 
     // Alias for complete if called anywhere
-    public function complete($userId)
+    public function complete($userId, array $refundData = [])
     {
-        $this->approve($userId);
+        $this->approve($userId, $refundData);
     }
 
     // Post double-entry bookkeeping journal voucher for approved return
-    public function postReturnJournalEntry($userId)
+    public function postReturnJournalEntry($userId, array $refundData = [], $originalSaleDue = null)
     {
         $refundAmount = (float) $this->total_refund_amount;
         if ($refundAmount <= 0) {
@@ -133,14 +135,26 @@ class ProductReturn extends Model
             $returnsAcc = \App\Models\ChartOfAccount::where('account_code', '5120')->first()
                        ?? \App\Models\ChartOfAccount::where('account_name', 'like', '%Sales Return%')->first();
             $arAcc = \App\Models\ChartOfAccount::where('account_code', '1130')->first();
-            $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first()
-                    ?? \App\Models\ChartOfAccount::where('account_name', 'like', '%Cash%')->first();
+            
+            // Resolve payout credit account (Bank / MFS or Cash)
+            $bankDetailId = $refundData['bank_detail_id'] ?? null;
+            $creditAcc = null;
+            if (!empty($bankDetailId)) {
+                $bank = \App\Models\BankDetail::find($bankDetailId);
+                if ($bank) {
+                    $creditAcc = $bank->resolveChartOfAccount();
+                }
+            }
+            if (!$creditAcc) {
+                $creditAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first()
+                          ?? \App\Models\ChartOfAccount::where('account_name', 'like', '%Cash%')->first();
+            }
 
             if ($returnsAcc && function_exists('postJournalEntry')) {
                 $orderNo = $this->sale ? $this->sale->order_no : ('Sale #' . $this->sale_id);
                 $customerName = $this->customer ? $this->customer->name : ('Customer #' . $this->customer_id);
 
-                $saleDue = $this->sale ? (float)$this->sale->due_payment : 0;
+                $saleDue = $originalSaleDue !== null ? (float)$originalSaleDue : ($this->sale ? (float)$this->sale->due_payment : 0);
                 $arCreditPortion = min($refundAmount, $saleDue);
                 $cashCreditPortion = max(0, $refundAmount - $arCreditPortion);
 
@@ -153,16 +167,17 @@ class ProductReturn extends Model
                         'description' => "Accounts Receivable reduction on Order #{$orderNo} for Return #{$this->id}"
                     ];
                 }
-                if ($cashCreditPortion > 0 && $cashAcc) {
+                if ($cashCreditPortion > 0 && $creditAcc) {
+                    $accountName = $creditAcc->account_name ?? 'Cash';
                     $creditItems[] = [
-                        'account_id'  => $cashAcc->id,
+                        'account_id'  => $creditAcc->id,
                         'debit'       => 0.00,
                         'credit'      => $cashCreditPortion,
-                        'description' => "Cash refund paid to {$customerName} for Return #{$this->id}"
+                        'description' => "Refund paid from {$accountName} to {$customerName} for Return #{$this->id}"
                     ];
-                } elseif (empty($creditItems) && $cashAcc) {
+                } elseif (empty($creditItems) && $creditAcc) {
                     $creditItems[] = [
-                        'account_id'  => $cashAcc->id,
+                        'account_id'  => $creditAcc->id,
                         'debit'       => 0.00,
                         'credit'      => $refundAmount,
                         'description' => "Credit adjustment for Return #{$this->id}"
@@ -197,6 +212,9 @@ class ProductReturn extends Model
     private function updateSaleAmounts()
     {
         $sale = $this->sale;
+        if (!$sale) {
+            return;
+        }
         $refundAmount = $this->total_refund_amount;
 
         $newPayble = $sale->payble - $refundAmount;
@@ -211,16 +229,27 @@ class ProductReturn extends Model
     }
 
     // Create refund payment record
-    private function createRefundPayment($userId)
+    private function createRefundPayment($userId, array $refundData = [])
     {
-        // Only use fields defined in Payment::$fillable
+        $paymentMethod = $refundData['payment_method'] ?? 'cash';
+        $bankDetailId = !empty($refundData['bank_detail_id']) ? $refundData['bank_detail_id'] : null;
+        $trxRef = $refundData['transaction_ref'] ?? null;
+
+        if ($paymentMethod === 'cash') {
+            $bankDetailId = null;
+        }
+
         Payment::create([
-            'sale_id'        => $this->sale_id,
-            'customer_id'    => $this->customer_id,
-            'payment_for'    => 3, // 3 = refund
-            'payment_method' => 'cash',
-            'amount'         => -abs($this->total_refund_amount), // Negative for refund
-            'remarks'        => "Refund for Return #{$this->id}",
+            'sale_id'         => $this->sale_id,
+            'customer_id'     => $this->customer_id,
+            'payment_for'     => 3, // 3 = refund
+            'payment_method'  => $paymentMethod,
+            'bank_detail_id'  => $bankDetailId,
+            'transaction_ref' => $trxRef,
+            'amount'          => -abs($this->total_refund_amount), // Negative for refund
+            'payment_date'    => now()->toDateString(),
+            'remarks'         => "Refund for Return #{$this->id}" . ($trxRef ? " (Ref: {$trxRef})" : ''),
+            'created_by'      => $userId,
         ]);
     }
 

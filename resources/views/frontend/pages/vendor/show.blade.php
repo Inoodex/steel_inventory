@@ -477,32 +477,50 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Payment Method <span class="text-danger">*</span></label>
-                        <select name="payment_method" id="vendorModalPaymentMethod" class="form-select border-light-subtle" required onchange="toggleVendorModalBank(this.value)">
-                            <option value="cash" selected>Cash in Hand</option>
-                            <option value="bank">Bank Transfer / Deposit</option>
-                            <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
-                        </select>
-                    </div>
+                    @php
+                        $regularVendorBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return !(stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                        $mfsVendorBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return (stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                    @endphp
 
-                    <!-- Bank Account Selector -->
-                    <div class="mb-3" id="vendorModalBankContainer" style="display: none;">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Bank / Wallet Account <span class="text-danger">*</span></label>
-                        <select name="bank_detail_id" id="vendorModalBankDetail" class="form-select border-light-subtle">
-                            <option value="">Select Bank / MFS Account</option>
-                            @foreach($bankAccounts ?? [] as $bank)
-                                <option value="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
-                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                </option>
-                            @endforeach
+                    <!-- Unified Disbursement Account Selector -->
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Account / Method <span class="text-danger">*</span></label>
+                        <select id="vendorModalAccountSelector" class="form-select border-light-subtle" onchange="handleVendorModalAccountChange(this)" required>
+                            @if($regularVendorBanks->count() > 0)
+                                <optgroup label="Bank Accounts">
+                                    @foreach($regularVendorBanks as $bank)
+                                        <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                            {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+                            @if($mfsVendorBanks->count() > 0)
+                                <optgroup label="Mobile Banking / MFS">
+                                    @foreach($mfsVendorBanks as $bank)
+                                        <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}" {{ (!isset($regularVendorBanks) || $regularVendorBanks->isEmpty()) && $loop->first ? 'selected' : '' }}>
+                                            {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
                         </select>
+                        <input type="hidden" name="payment_method" id="hidden_vendor_modal_method" value="bank">
+                        <input type="hidden" name="bank_detail_id" id="hidden_vendor_modal_bank_id" value="">
                     </div>
 
                     <!-- Transaction Ref -->
                     <div class="mb-3" id="vendorModalRefContainer" style="display: none;">
                         <label class="form-label small text-secondary fw-semibold mb-1">Transaction Ref / TrxID</label>
-                        <input type="text" name="transaction_ref" class="form-control border-light-subtle">
+                        <input type="text" name="transaction_ref" class="form-control border-light-subtle" placeholder="e.g. TrxID / Cheque #">
                     </div>
 
                     <div class="mb-3">
@@ -548,22 +566,32 @@ function openVendorPaymentModal(purchaseId, maxAmount) {
     amountInput.value = numMax > 0 ? numMax.toFixed(2) : '';
     amountInput.max = numMax > 0 ? numMax : '';
 
+    const selector = document.getElementById('vendorModalAccountSelector');
+    if (selector) {
+        handleVendorModalAccountChange(selector);
+    }
+
     const modalEl = document.getElementById('vendorPaymentModal');
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
 }
 
-function toggleVendorModalBank(method) {
-    const bankContainer = document.getElementById('vendorModalBankContainer');
-    const refContainer = document.getElementById('vendorModalRefContainer');
-    if (!bankContainer || !refContainer) return;
+function handleVendorModalAccountChange(select) {
+    if (!select) return;
+    const selectedOption = select.options[select.selectedIndex];
+    if (!selectedOption) return;
+    const method = selectedOption.getAttribute('data-method') || 'bank';
+    const bankId = selectedOption.getAttribute('data-id') || '';
 
-    if (method === 'cash') {
-        bankContainer.style.display = 'none';
-        refContainer.style.display = 'none';
-    } else {
-        bankContainer.style.display = 'block';
-        refContainer.style.display = 'block';
+    const hiddenMethod = document.getElementById('hidden_vendor_modal_method');
+    const hiddenBank = document.getElementById('hidden_vendor_modal_bank_id');
+    const refContainer = document.getElementById('vendorModalRefContainer');
+
+    if (hiddenMethod) hiddenMethod.value = method;
+    if (hiddenBank) hiddenBank.value = bankId;
+
+    if (refContainer) {
+        refContainer.style.display = bankId ? 'block' : 'none';
     }
 }
 </script>

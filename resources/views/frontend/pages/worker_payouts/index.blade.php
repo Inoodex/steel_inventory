@@ -822,69 +822,41 @@
                     </div>
 
                     <div class="row g-2 mb-3">
-                        <div class="col-md-6 col-12">
+                        <div class="col-md-5 col-12">
                             <label class="form-label small fw-semibold text-secondary mb-1">Payout Date <span class="text-danger">*</span></label>
                             <input type="date" name="payout_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                         </div>
-                        <div class="col-md-6 col-12">
-                            <label class="form-label small fw-semibold text-secondary mb-1">Payment Method <span class="text-danger">*</span></label>
-                            <select name="payment_method" class="form-select payout-method-select" required onchange="handlePayoutMethodChange(this)">
-                                <option value="cash" selected>Cash in Hand</option>
-                                <option value="bank">Bank Transfer</option>
-                                <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                        <div class="col-md-7 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">
+                                <i class="fe fe-credit-card me-1 text-primary"></i> Disbursement Account / Method <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select payout-unified-account-select" onchange="handlePayoutUnifiedAccountChange(this)" required>
+                                @if(isset($bankAccounts) && $bankAccounts->count() > 0)
+                                    <optgroup label="Bank Accounts">
+                                        @foreach($bankAccounts as $bank)
+                                            <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}">
+                                                {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
+                                @if(isset($mfsAccounts) && $mfsAccounts->count() > 0)
+                                    <optgroup label="Mobile Banking / MFS">
+                                        @foreach($mfsAccounts as $mfs)
+                                            <option value="mfs_{{ $mfs->id }}" data-method="mobile_banking" data-id="{{ $mfs->id }}" data-chart-id="{{ $mfs->chartOfAccount?->id ?? '' }}" data-provider="{{ $mfs->bank_name }}">
+                                                {{ $mfs->bank_name }} — {{ $mfs->account_number }} ({{ $mfs->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
                             </select>
+                            <input type="hidden" name="payment_method" class="payout-method-input" value="bank">
+                            <input type="hidden" name="bank_detail_id" class="payout-bank-id-input" value="">
+                            <input type="hidden" name="mfs_bank_id" class="payout-mfs-id-input" value="">
+                            <input type="hidden" name="payment_account_id" class="payout-account-id-input" value="">
+                            <input type="hidden" name="mfs_provider" class="payout-mfs-provider-input" value="">
                         </div>
                     </div>
-
-                    <!-- Auto-filled Bank Account (Shown when Bank Transfer is selected) -->
-                    <div class="mb-3 payout-bank-group" style="display: none;">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement Bank Account <span class="text-danger">*</span></label>
-                        <select name="bank_detail_id" class="form-select payout-bank-select" onchange="handlePayoutBankChange(this)">
-                            @forelse($bankAccounts as $bank)
-                                <option value="{{ $bank->id }}" 
-                                        data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
-                                        {{ $bank->is_default ? 'selected' : '' }}>
-                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                </option>
-                            @empty
-                                @foreach($bankDetails as $bank)
-                                    <option value="{{ $bank->id }}" 
-                                            data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
-                                            {{ $bank->is_default ? 'selected' : '' }}>
-                                        {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                    </option>
-                                @endforeach
-                            @endforelse
-                        </select>
-                    </div>
-
-                    <!-- Dynamic MFS Provider / Account (Shown when Mobile Banking is selected) -->
-                    <div class="mb-3 payout-mfs-group" style="display: none;">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement MFS Account / Wallet <span class="text-danger">*</span></label>
-                        <select name="mfs_bank_id" class="form-select payout-mfs-select" onchange="handlePayoutMfsChange(this)">
-                            @forelse($mfsAccounts as $mfs)
-                                <option value="{{ $mfs->id }}" 
-                                        data-provider="{{ $mfs->bank_name }}" 
-                                        data-chart-id="{{ $mfs->chartOfAccount?->id ?? '' }}"
-                                        {{ $loop->first ? 'selected' : '' }}>
-                                    {{ $mfs->bank_name }} - {{ $mfs->account_name }} ({{ $mfs->account_number }})
-                                </option>
-                            @empty
-                                <option value="" disabled selected>No registered MFS accounts found</option>
-                            @endforelse
-                        </select>
-                        <input type="hidden" name="mfs_provider" class="payout-mfs-provider-input" value="{{ $mfsAccounts->first()?->bank_name ?? '' }}">
-                        @if(!isset($mfsAccounts) || $mfsAccounts->isEmpty())
-                            <div class="mt-1">
-                                <a href="{{ route('bank-details.create') }}" target="_blank" class="text-primary fs-8 text-decoration-none">
-                                    <i class="fe fe-plus-circle me-1"></i>Add your company MFS account in Bank/MFS Accounts
-                                </a>
-                            </div>
-                        @endif
-                    </div>
-
-                    <!-- Hidden Payment Account ID (Auto-selected based on Cash/Bank/MFS) -->
-                    <input type="hidden" name="payment_account_id" class="payout-account-id-input" value="{{ $cashAccount?->id ?? '' }}">
 
                     <div class="mb-0">
                         <label class="form-label small fw-semibold text-secondary mb-1">Narration / Settlement Notes</label>
@@ -1039,69 +1011,41 @@
                     </div>
 
                     <div class="row g-2 mb-3">
-                        <div class="col-md-6 col-12">
+                        <div class="col-md-5 col-12">
                             <label class="form-label small fw-semibold text-secondary mb-1">Payout Date <span class="text-danger">*</span></label>
                             <input type="date" name="payout_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                         </div>
-                        <div class="col-md-6 col-12">
-                            <label class="form-label small fw-semibold text-secondary mb-1">Payment Method <span class="text-danger">*</span></label>
-                            <select name="payment_method" class="form-select payout-method-select" required onchange="handlePayoutMethodChange(this)">
-                                <option value="cash" selected>Cash in Hand</option>
-                                <option value="bank">Bank Transfer</option>
-                                <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                        <div class="col-md-7 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">
+                                <i class="fe fe-credit-card me-1 text-primary"></i> Disbursement Account / Method <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select payout-unified-account-select" onchange="handlePayoutUnifiedAccountChange(this)" required>
+                                @if(isset($bankAccounts) && $bankAccounts->count() > 0)
+                                    <optgroup label="Bank Accounts">
+                                        @foreach($bankAccounts as $bank)
+                                            <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}">
+                                                {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
+                                @if(isset($mfsAccounts) && $mfsAccounts->count() > 0)
+                                    <optgroup label="Mobile Banking / MFS">
+                                        @foreach($mfsAccounts as $mfs)
+                                            <option value="mfs_{{ $mfs->id }}" data-method="mobile_banking" data-id="{{ $mfs->id }}" data-chart-id="{{ $mfs->chartOfAccount?->id ?? '' }}" data-provider="{{ $mfs->bank_name }}">
+                                                {{ $mfs->bank_name }} — {{ $mfs->account_number }} ({{ $mfs->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
                             </select>
+                            <input type="hidden" name="payment_method" class="payout-method-input" value="bank">
+                            <input type="hidden" name="bank_detail_id" class="payout-bank-id-input" value="">
+                            <input type="hidden" name="mfs_bank_id" class="payout-mfs-id-input" value="">
+                            <input type="hidden" name="payment_account_id" class="payout-account-id-input" value="">
+                            <input type="hidden" name="mfs_provider" class="payout-mfs-provider-input" value="">
                         </div>
                     </div>
-
-                    <!-- Auto-filled Bank Account (Shown when Bank Transfer is selected) -->
-                    <div class="mb-3 payout-bank-group" style="display: none;">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement Bank Account <span class="text-danger">*</span></label>
-                        <select name="bank_detail_id" class="form-select payout-bank-select" onchange="handlePayoutBankChange(this)">
-                            @forelse($bankAccounts as $bank)
-                                <option value="{{ $bank->id }}" 
-                                        data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
-                                        {{ $bank->is_default ? 'selected' : '' }}>
-                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                </option>
-                            @empty
-                                @foreach($bankDetails as $bank)
-                                    <option value="{{ $bank->id }}" 
-                                            data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
-                                            {{ $bank->is_default ? 'selected' : '' }}>
-                                        {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                    </option>
-                                @endforeach
-                            @endforelse
-                        </select>
-                    </div>
-
-                    <!-- Dynamic MFS Provider / Account (Shown when Mobile Banking is selected) -->
-                    <div class="mb-3 payout-mfs-group" style="display: none;">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement MFS Account / Wallet <span class="text-danger">*</span></label>
-                        <select name="mfs_bank_id" class="form-select payout-mfs-select" onchange="handlePayoutMfsChange(this)">
-                            @forelse($mfsAccounts as $mfs)
-                                <option value="{{ $mfs->id }}" 
-                                        data-provider="{{ $mfs->bank_name }}" 
-                                        data-chart-id="{{ $mfs->chartOfAccount?->id ?? '' }}"
-                                        {{ $loop->first ? 'selected' : '' }}>
-                                    {{ $mfs->bank_name }} - {{ $mfs->account_name }} ({{ $mfs->account_number }})
-                                </option>
-                            @empty
-                                <option value="" disabled selected>No registered MFS accounts found</option>
-                            @endforelse
-                        </select>
-                        <input type="hidden" name="mfs_provider" class="payout-mfs-provider-input" value="{{ $mfsAccounts->first()?->bank_name ?? '' }}">
-                        @if(!isset($mfsAccounts) || $mfsAccounts->isEmpty())
-                            <div class="mt-1">
-                                <a href="{{ route('bank-details.create') }}" target="_blank" class="text-primary fs-8 text-decoration-none">
-                                    <i class="fe fe-plus-circle me-1"></i>Add your company MFS account in Bank/MFS Accounts
-                                </a>
-                            </div>
-                        @endif
-                    </div>
-
-                    <!-- Hidden Payment Account ID (Auto-selected based on Cash/Bank/MFS) -->
-                    <input type="hidden" name="payment_account_id" class="payout-account-id-input" value="{{ $cashAccount?->id ?? '' }}">
 
                     <div class="mb-0">
                         <label class="form-label small fw-semibold text-secondary mb-1">Narration / Settlement Notes</label>
@@ -1256,69 +1200,41 @@
                     </div>
 
                     <div class="row g-2 mb-3">
-                        <div class="col-md-6 col-12">
+                        <div class="col-md-5 col-12">
                             <label class="form-label small fw-semibold text-secondary mb-1">Payout Date <span class="text-danger">*</span></label>
                             <input type="date" name="payout_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                         </div>
-                        <div class="col-md-6 col-12">
-                            <label class="form-label small fw-semibold text-secondary mb-1">Payment Method <span class="text-danger">*</span></label>
-                            <select name="payment_method" class="form-select payout-method-select" required onchange="handlePayoutMethodChange(this)">
-                                <option value="cash" selected>Cash in Hand</option>
-                                <option value="bank">Bank Transfer</option>
-                                <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                        <div class="col-md-7 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">
+                                <i class="fe fe-credit-card me-1 text-primary"></i> Disbursement Account / Method <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select payout-unified-account-select" onchange="handlePayoutUnifiedAccountChange(this)" required>
+                                @if(isset($bankAccounts) && $bankAccounts->count() > 0)
+                                    <optgroup label="Bank Accounts">
+                                        @foreach($bankAccounts as $bank)
+                                            <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}">
+                                                {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
+                                @if(isset($mfsAccounts) && $mfsAccounts->count() > 0)
+                                    <optgroup label="Mobile Banking / MFS">
+                                        @foreach($mfsAccounts as $mfs)
+                                            <option value="mfs_{{ $mfs->id }}" data-method="mobile_banking" data-id="{{ $mfs->id }}" data-chart-id="{{ $mfs->chartOfAccount?->id ?? '' }}" data-provider="{{ $mfs->bank_name }}">
+                                                {{ $mfs->bank_name }} — {{ $mfs->account_number }} ({{ $mfs->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
                             </select>
+                            <input type="hidden" name="payment_method" class="payout-method-input" value="bank">
+                            <input type="hidden" name="bank_detail_id" class="payout-bank-id-input" value="">
+                            <input type="hidden" name="mfs_bank_id" class="payout-mfs-id-input" value="">
+                            <input type="hidden" name="payment_account_id" class="payout-account-id-input" value="">
+                            <input type="hidden" name="mfs_provider" class="payout-mfs-provider-input" value="">
                         </div>
                     </div>
-
-                    <!-- Auto-filled Bank Account (Shown when Bank Transfer is selected) -->
-                    <div class="mb-3 payout-bank-group" style="display: none;">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement Bank Account <span class="text-danger">*</span></label>
-                        <select name="bank_detail_id" class="form-select payout-bank-select" onchange="handlePayoutBankChange(this)">
-                            @forelse($bankAccounts as $bank)
-                                <option value="{{ $bank->id }}" 
-                                        data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
-                                        {{ $bank->is_default ? 'selected' : '' }}>
-                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                </option>
-                            @empty
-                                @foreach($bankDetails as $bank)
-                                    <option value="{{ $bank->id }}" 
-                                            data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
-                                            {{ $bank->is_default ? 'selected' : '' }}>
-                                        {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                    </option>
-                                @endforeach
-                            @endforelse
-                        </select>
-                    </div>
-
-                    <!-- Dynamic MFS Provider / Account (Shown when Mobile Banking is selected) -->
-                    <div class="mb-3 payout-mfs-group" style="display: none;">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement MFS Account / Wallet <span class="text-danger">*</span></label>
-                        <select name="mfs_bank_id" class="form-select payout-mfs-select" onchange="handlePayoutMfsChange(this)">
-                            @forelse($mfsAccounts as $mfs)
-                                <option value="{{ $mfs->id }}" 
-                                        data-provider="{{ $mfs->bank_name }}" 
-                                        data-chart-id="{{ $mfs->chartOfAccount?->id ?? '' }}"
-                                        {{ $loop->first ? 'selected' : '' }}>
-                                    {{ $mfs->bank_name }} - {{ $mfs->account_name }} ({{ $mfs->account_number }})
-                                </option>
-                            @empty
-                                <option value="" disabled selected>No registered MFS accounts found</option>
-                            @endforelse
-                        </select>
-                        <input type="hidden" name="mfs_provider" class="payout-mfs-provider-input" value="{{ $mfsAccounts->first()?->bank_name ?? '' }}">
-                        @if(!isset($mfsAccounts) || $mfsAccounts->isEmpty())
-                            <div class="mt-1">
-                                <a href="{{ route('bank-details.create') }}" target="_blank" class="text-primary fs-8 text-decoration-none">
-                                    <i class="fe fe-plus-circle me-1"></i>Add your company MFS account in Bank/MFS Accounts
-                                </a>
-                            </div>
-                        @endif
-                    </div>
-
-                    <!-- Hidden Payment Account ID (Auto-selected based on Cash/Bank/MFS) -->
-                    <input type="hidden" name="payment_account_id" class="payout-account-id-input" value="{{ $cashAccount?->id ?? '' }}">
 
                     <div class="mb-0">
                         <label class="form-label small fw-semibold text-secondary mb-1">Narration / Settlement Notes</label>
@@ -1481,69 +1397,41 @@
                     </div>
 
                     <div class="row g-2 mb-3">
-                        <div class="col-md-6 col-12">
+                        <div class="col-md-5 col-12">
                             <label class="form-label small fw-semibold text-secondary mb-1">Payout Date <span class="text-danger">*</span></label>
                             <input type="date" name="payout_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                         </div>
-                        <div class="col-md-6 col-12">
-                            <label class="form-label small fw-semibold text-secondary mb-1">Payment Method <span class="text-danger">*</span></label>
-                            <select name="payment_method" class="form-select payout-method-select" required onchange="handlePayoutMethodChange(this)">
-                                <option value="cash" selected>Cash in Hand</option>
-                                <option value="bank">Bank Transfer</option>
-                                <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                        <div class="col-md-7 col-12">
+                            <label class="form-label small fw-semibold text-secondary mb-1">
+                                <i class="fe fe-credit-card me-1 text-primary"></i> Disbursement Account / Method <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select payout-unified-account-select" onchange="handlePayoutUnifiedAccountChange(this)" required>
+                                @if(isset($bankAccounts) && $bankAccounts->count() > 0)
+                                    <optgroup label="Bank Accounts">
+                                        @foreach($bankAccounts as $bank)
+                                            <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}">
+                                                {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
+                                @if(isset($mfsAccounts) && $mfsAccounts->count() > 0)
+                                    <optgroup label="Mobile Banking / MFS">
+                                        @foreach($mfsAccounts as $mfs)
+                                            <option value="mfs_{{ $mfs->id }}" data-method="mobile_banking" data-id="{{ $mfs->id }}" data-chart-id="{{ $mfs->chartOfAccount?->id ?? '' }}" data-provider="{{ $mfs->bank_name }}">
+                                                {{ $mfs->bank_name }} — {{ $mfs->account_number }} ({{ $mfs->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
                             </select>
+                            <input type="hidden" name="payment_method" class="payout-method-input" value="bank">
+                            <input type="hidden" name="bank_detail_id" class="payout-bank-id-input" value="">
+                            <input type="hidden" name="mfs_bank_id" class="payout-mfs-id-input" value="">
+                            <input type="hidden" name="payment_account_id" class="payout-account-id-input" value="">
+                            <input type="hidden" name="mfs_provider" class="payout-mfs-provider-input" value="">
                         </div>
                     </div>
-
-                    <!-- Auto-filled Bank Account (Shown when Bank Transfer is selected) -->
-                    <div class="mb-3 payout-bank-group" style="display: none;">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement Bank Account <span class="text-danger">*</span></label>
-                        <select name="bank_detail_id" class="form-select payout-bank-select" onchange="handlePayoutBankChange(this)">
-                            @forelse($bankAccounts as $bank)
-                                <option value="{{ $bank->id }}" 
-                                        data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
-                                        {{ $bank->is_default ? 'selected' : '' }}>
-                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                </option>
-                            @empty
-                                @foreach($bankDetails as $bank)
-                                    <option value="{{ $bank->id }}" 
-                                            data-chart-id="{{ $bank->chartOfAccount?->id ?? '' }}"
-                                            {{ $bank->is_default ? 'selected' : '' }}>
-                                        {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                    </option>
-                                @endforeach
-                            @endforelse
-                        </select>
-                    </div>
-
-                    <!-- Dynamic MFS Provider / Account (Shown when Mobile Banking is selected) -->
-                    <div class="mb-3 payout-mfs-group" style="display: none;">
-                        <label class="form-label small fw-semibold text-secondary mb-1">Disbursement MFS Account / Wallet <span class="text-danger">*</span></label>
-                        <select name="mfs_bank_id" class="form-select payout-mfs-select" onchange="handlePayoutMfsChange(this)">
-                            @forelse($mfsAccounts as $mfs)
-                                <option value="{{ $mfs->id }}" 
-                                        data-provider="{{ $mfs->bank_name }}" 
-                                        data-chart-id="{{ $mfs->chartOfAccount?->id ?? '' }}"
-                                        {{ $loop->first ? 'selected' : '' }}>
-                                    {{ $mfs->bank_name }} - {{ $mfs->account_name }} ({{ $mfs->account_number }})
-                                </option>
-                            @empty
-                                <option value="" disabled selected>No registered MFS accounts found</option>
-                            @endforelse
-                        </select>
-                        <input type="hidden" name="mfs_provider" class="payout-mfs-provider-input" value="{{ $mfsAccounts->first()?->bank_name ?? '' }}">
-                        @if(!isset($mfsAccounts) || $mfsAccounts->isEmpty())
-                            <div class="mt-1">
-                                <a href="{{ route('bank-details.create') }}" target="_blank" class="text-primary fs-8 text-decoration-none">
-                                    <i class="fe fe-plus-circle me-1"></i>Add your company MFS account in Bank/MFS Accounts
-                                </a>
-                            </div>
-                        @endif
-                    </div>
-
-                    <!-- Hidden Payment Account ID (Auto-selected based on Cash/Bank/MFS) -->
-                    <input type="hidden" name="payment_account_id" class="payout-account-id-input" value="{{ $cashAccount?->id ?? '' }}">
 
                     <div class="mb-0">
                         <label class="form-label small fw-semibold text-secondary mb-1">Narration / Settlement Notes</label>
@@ -1566,85 +1454,29 @@
 <script>
 
 
-    function handlePayoutMethodChange(selectElem) {
+    function handlePayoutUnifiedAccountChange(selectElem) {
         const modal = selectElem.closest('.modal');
         if (!modal) return;
 
-        const method = selectElem.value;
-        const bankGroup = modal.querySelector('.payout-bank-group');
-        const mfsGroup = modal.querySelector('.payout-mfs-group');
-        const bankSelect = modal.querySelector('.payout-bank-select');
-        const mfsSelect = modal.querySelector('.payout-mfs-select');
-        const accountInput = modal.querySelector('.payout-account-id-input');
-        const defaultCashId = "{{ $cashAccount?->id ?? '' }}";
-        const defaultBankMfsId = "{{ $defaultBankMfsAccount?->id ?? '' }}";
+        const opt = selectElem.options[selectElem.selectedIndex];
+        if (!opt) return;
 
-        if (method === 'cash') {
-            if (bankGroup) bankGroup.style.display = 'none';
-            if (mfsGroup) mfsGroup.style.display = 'none';
-            if (bankSelect) bankSelect.disabled = true;
-            if (mfsSelect) mfsSelect.disabled = true;
-            if (accountInput) accountInput.value = defaultCashId;
-        } else if (method === 'bank') {
-            if (bankGroup) bankGroup.style.display = 'block';
-            if (mfsGroup) mfsGroup.style.display = 'none';
-            if (mfsSelect) mfsSelect.disabled = true;
-            if (bankSelect) {
-                bankSelect.disabled = false;
-                if (!bankSelect.value && bankSelect.options.length > 0) {
-                    bankSelect.selectedIndex = 0;
-                }
-                handlePayoutBankChange(bankSelect);
-            } else if (accountInput) {
-                accountInput.value = defaultBankMfsId;
-            }
-        } else if (method === 'mobile_banking') {
-            if (bankGroup) bankGroup.style.display = 'none';
-            if (mfsGroup) mfsGroup.style.display = 'block';
-            if (bankSelect) bankSelect.disabled = true;
-            if (mfsSelect) {
-                mfsSelect.disabled = false;
-                if (!mfsSelect.value && mfsSelect.options.length > 0) {
-                    mfsSelect.selectedIndex = 0;
-                }
-                handlePayoutMfsChange(mfsSelect);
-            } else if (accountInput) {
-                accountInput.value = defaultBankMfsId;
-            }
-        }
-    }
+        const method = opt.getAttribute('data-method') || 'bank';
+        const bankId = opt.getAttribute('data-id') || '';
+        const chartId = opt.getAttribute('data-chart-id') || '';
+        const provider = opt.getAttribute('data-provider') || '';
 
-    function handlePayoutBankChange(bankSelect) {
-        const modal = bankSelect.closest('.modal');
-        if (!modal) return;
-
-        const selectedOpt = bankSelect.options[bankSelect.selectedIndex];
-        const chartId = selectedOpt ? selectedOpt.getAttribute('data-chart-id') : null;
-        const accountInput = modal.querySelector('.payout-account-id-input');
-        const defaultBankMfsId = "{{ $defaultBankMfsAccount?->id ?? '' }}";
-
-        if (accountInput) {
-            accountInput.value = chartId || defaultBankMfsId;
-        }
-    }
-
-    function handlePayoutMfsChange(mfsSelect) {
-        const modal = mfsSelect.closest('.modal');
-        if (!modal) return;
-
-        const selectedOpt = mfsSelect.options[mfsSelect.selectedIndex];
-        const chartId = selectedOpt ? selectedOpt.getAttribute('data-chart-id') : null;
-        const provider = selectedOpt ? selectedOpt.getAttribute('data-provider') : mfsSelect.value;
+        const methodInput = modal.querySelector('.payout-method-input');
+        const bankIdInput = modal.querySelector('.payout-bank-id-input');
+        const mfsIdInput = modal.querySelector('.payout-mfs-id-input');
         const accountInput = modal.querySelector('.payout-account-id-input');
         const providerInput = modal.querySelector('.payout-mfs-provider-input');
-        const defaultBankMfsId = "{{ $defaultBankMfsAccount?->id ?? '' }}";
 
-        if (accountInput) {
-            accountInput.value = chartId || defaultBankMfsId;
-        }
-        if (providerInput && provider) {
-            providerInput.value = provider;
-        }
+        if (methodInput) methodInput.value = method;
+        if (bankIdInput) bankIdInput.value = (method === 'bank') ? bankId : '';
+        if (mfsIdInput) mfsIdInput.value = (method === 'mobile_banking') ? bankId : '';
+        if (accountInput) accountInput.value = chartId;
+        if (providerInput) providerInput.value = provider;
     }
 
     function handleRecipientQuickSelect(selectEl) {
@@ -1795,9 +1627,9 @@
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.modal').forEach(function(modal) {
             modal.addEventListener('shown.bs.modal', function() {
-                const methodSelect = modal.querySelector('.payout-method-select');
-                if (methodSelect) {
-                    handlePayoutMethodChange(methodSelect);
+                const unifiedSelect = modal.querySelector('.payout-unified-account-select');
+                if (unifiedSelect) {
+                    handlePayoutUnifiedAccountChange(unifiedSelect);
                 }
             });
         });

@@ -140,4 +140,81 @@ class ProductReturnWorkflowTest extends TestCase
         $this->assertFalse($return->isApproved());
         $this->assertEquals(80000.00, $return->calculateTotalRefund());
     }
+
+    public function test_approve_return_with_bank_refund(): void
+    {
+        $bank = \App\Models\BankDetail::create([
+            'bank_name' => 'Islami Bank',
+            'account_name' => 'Steel Treasury',
+            'account_number' => 'IBBL-987654321',
+            'account_type' => 'Current',
+            'is_active' => true,
+        ]);
+
+        $sale = Sale::create([
+            'order_no' => 'INV-202610-0003',
+            'customer_id' => $this->customer->id,
+            'order_date' => now()->toDateString(),
+            'qty' => 2.000,
+            'subtotal' => 160000.00,
+            'total' => 160000.00,
+            'payble' => 160000.00,
+            'bill' => 160000.00,
+            'discount' => 0.00,
+            'advanced_payment' => 160000.00,
+            'due_payment' => 0.00,
+            'payment_method' => 'bank',
+            'bank_detail_id' => $bank->id,
+            'sales_by' => $this->admin->id,
+            'status' => 'paid',
+            'warehouse_id' => $this->warehouse->id,
+        ]);
+
+        $salesItem = SalesItem::create([
+            'order_id' => $sale->id,
+            'coil_id' => $this->coil->id,
+            'lot_id' => $this->lot->id,
+            'unit_price' => 80000.00,
+            'qty' => 2.000,
+            'total_price' => 160000.00,
+        ]);
+
+        $return = ProductReturn::create([
+            'sale_id' => $sale->id,
+            'customer_id' => $this->customer->id,
+            'return_date' => now()->toDateString(),
+            'total_refund_amount' => 80000.00,
+            'status' => 'pending',
+            'reason' => 'Customer return request',
+        ]);
+
+        ReturnItem::create([
+            'return_id' => $return->id,
+            'sales_item_id' => $salesItem->id,
+            'quantity' => 1,
+            'unit_price' => 80000.00,
+            'total_price' => 80000.00,
+            'condition' => 'good',
+        ]);
+
+        $response = $this->actingAs($this->admin)->patch(route('returns.approve', $return->id), [
+            'payment_method' => 'bank',
+            'bank_detail_id' => $bank->id,
+            'transaction_ref' => 'TRX-REF-5555',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $return->refresh();
+
+        $this->assertTrue($return->isApproved());
+        $this->assertDatabaseHas('payments', [
+            'sale_id' => $sale->id,
+            'customer_id' => $this->customer->id,
+            'payment_for' => 3,
+            'payment_method' => 'bank',
+            'bank_detail_id' => $bank->id,
+            'transaction_ref' => 'TRX-REF-5555',
+            'amount' => -80000.00,
+        ]);
+    }
 }

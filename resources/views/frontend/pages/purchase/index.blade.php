@@ -670,10 +670,9 @@
         amountInput.value = numMax > 0 ? numMax.toFixed(2) : '';
         amountInput.max = numMax > 0 ? numMax : '';
 
-        const methodSelect = document.getElementById('purchaseModalPaymentMethod');
-        if (methodSelect) {
-            methodSelect.value = 'cash';
-            togglePurchaseDueModalBank('cash');
+        const selector = document.getElementById('purchaseIndexAccountSelector');
+        if (selector) {
+            handlePurchaseIndexAccountChange(selector);
         }
 
         const modalEl = document.getElementById('purchaseDuePaymentModal');
@@ -681,35 +680,22 @@
         modal.show();
     }
 
-    function togglePurchaseDueModalBank(method) {
-        const bankContainer = document.getElementById('purchaseModalBankContainer');
-        const refContainer = document.getElementById('purchaseModalRefContainer');
-        const bankSelect = document.getElementById('purchaseModalBankDetail');
-        const refInput = document.querySelector('#purchaseDuePaymentModal input[name="transaction_ref"]');
-        if (!bankContainer || !refContainer) return;
+    function handlePurchaseIndexAccountChange(select) {
+        if (!select) return;
+        const selectedOption = select.options[select.selectedIndex];
+        if (!selectedOption) return;
+        const method = selectedOption.getAttribute('data-method') || 'bank';
+        const bankId = selectedOption.getAttribute('data-id') || '';
 
-        if (method === 'cash') {
-            bankContainer.style.display = 'none';
-            refContainer.style.display = 'none';
-            if (bankSelect) {
-                bankSelect.value = '';
-                bankSelect.disabled = true;
-                bankSelect.required = false;
-            }
-            if (refInput) {
-                refInput.value = '';
-                refInput.disabled = true;
-            }
-        } else {
-            bankContainer.style.display = 'block';
-            refContainer.style.display = 'block';
-            if (bankSelect) {
-                bankSelect.disabled = false;
-                bankSelect.required = true;
-            }
-            if (refInput) {
-                refInput.disabled = false;
-            }
+        const hiddenMethod = document.getElementById('hidden_purchase_index_method');
+        const hiddenBank = document.getElementById('hidden_purchase_index_bank_id');
+        const refContainer = document.getElementById('purchaseModalRefContainer');
+
+        if (hiddenMethod) hiddenMethod.value = method;
+        if (hiddenBank) hiddenBank.value = bankId;
+
+        if (refContainer) {
+            refContainer.style.display = bankId ? 'block' : 'none';
         }
     }
 </script>
@@ -746,32 +732,50 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Payment Method <span class="text-danger">*</span></label>
-                        <select name="payment_method" id="purchaseModalPaymentMethod" class="form-select border-light-subtle" required onchange="togglePurchaseDueModalBank(this.value)">
-                            <option value="cash" selected>Cash in Hand</option>
-                            <option value="bank">Bank Transfer / Deposit</option>
-                            <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
-                        </select>
-                    </div>
+                    @php
+                        $regularPurchaseIndexBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return !(stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                        $mfsPurchaseIndexBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return (stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                    @endphp
 
-                    <!-- Bank Account Selector -->
-                    <div class="mb-3" id="purchaseModalBankContainer" style="display: none;">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Bank / Wallet Account <span class="text-danger">*</span></label>
-                        <select name="bank_detail_id" id="purchaseModalBankDetail" class="form-select border-light-subtle">
-                            <option value="">Select Bank / MFS Account</option>
-                            @foreach($bankAccounts ?? [] as $bank)
-                                <option value="{{ $bank->id }}">
-                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                </option>
-                            @endforeach
+                    <!-- Unified Disbursement Account Selector -->
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Account / Method <span class="text-danger">*</span></label>
+                        <select id="purchaseIndexAccountSelector" class="form-select border-light-subtle" onchange="handlePurchaseIndexAccountChange(this)" required>
+                            @if($regularPurchaseIndexBanks->count() > 0)
+                                <optgroup label="Bank Accounts">
+                                    @foreach($regularPurchaseIndexBanks as $bank)
+                                        <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                            {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+                            @if($mfsPurchaseIndexBanks->count() > 0)
+                                <optgroup label="Mobile Banking / MFS">
+                                    @foreach($mfsPurchaseIndexBanks as $bank)
+                                        <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}" {{ (!isset($regularPurchaseIndexBanks) || $regularPurchaseIndexBanks->isEmpty()) && $loop->first ? 'selected' : '' }}>
+                                            {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
                         </select>
+                        <input type="hidden" name="payment_method" id="hidden_purchase_index_method" value="bank">
+                        <input type="hidden" name="bank_detail_id" id="hidden_purchase_index_bank_id" value="">
                     </div>
 
                     <!-- Transaction Ref -->
                     <div class="mb-3" id="purchaseModalRefContainer" style="display: none;">
                         <label class="form-label small text-secondary fw-semibold mb-1">Transaction Ref / TrxID</label>
-                        <input type="text" name="transaction_ref" class="form-control border-light-subtle">
+                        <input type="text" name="transaction_ref" class="form-control border-light-subtle" placeholder="e.g. TrxID / Cheque #">
                     </div>
 
                     <div class="mb-3">

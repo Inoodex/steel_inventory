@@ -241,19 +241,117 @@
                         <span class="text-muted small">Approving this return will immediately restock items into inventory and adjust the invoice balance.</span>
                     </div>
                     <div class="d-flex gap-2">
-                        <form method="POST" action="{{ route('returns.approve', $return->id) }}" class="d-inline" onsubmit="return confirm('Approve return? Stock will be updated and invoice adjusted immediately.')">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="btn btn-success px-4 py-2 rounded-3 d-flex align-items-center gap-2">
-                                <i class="fe fe-check-circle"></i>
-                                <span>Approve & Restock</span>
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-success px-4 py-2 rounded-3 d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#approveModal">
+                            <i class="fe fe-check-circle"></i>
+                            <span>Approve & Restock</span>
+                        </button>
 
                         <button type="button" class="btn btn-outline-danger px-4 py-2 rounded-3 d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#rejectModal">
                             <i class="fe fe-x-circle"></i>
                             <span>Reject Return</span>
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approve & Refund Modal -->
+            <div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow rounded-3">
+                        <form method="POST" action="{{ route('returns.approve', $return->id) }}">
+                            @csrf
+                            @method('PATCH')
+                            <div class="modal-header border-bottom">
+                                <h5 class="modal-title fw-bold text-dark">
+                                    <i class="fe fe-check-circle text-success me-2"></i>Approve Return &amp; Refund
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                @php
+                                    $refundTotal = (float)($return->total_refund_amount ?? 0);
+                                    $saleDue = (float)($return->sale->due_payment ?? 0);
+                                    $regularBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                                        $type = $b->account_type ?? '';
+                                        $name = $b->bank_name ?? '';
+                                        return !(stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                                    });
+                                    $mfsBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                                        $type = $b->account_type ?? '';
+                                        $name = $b->bank_name ?? '';
+                                        return (stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                                    });
+                                @endphp
+
+                                <!-- Refund Overview -->
+                                <div class="p-3 bg-light rounded-3 border mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-secondary small fw-semibold">Return Amount:</span>
+                                        <span class="fw-bold text-danger fs-6">৳{{ number_format($refundTotal, 2) }}</span>
+                                    </div>
+                                    @if($return->sale)
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="text-muted small">Current Invoice Due:</span>
+                                            <span class="fw-semibold text-dark small">৳{{ number_format($saleDue, 2) }}</span>
+                                        </div>
+                                        @if($saleDue >= $refundTotal)
+                                            <div class="mt-2 pt-2 border-top text-success small">
+                                                <i class="fe fe-info me-1"></i>Full return amount will be adjusted against invoice due balance.
+                                            </div>
+                                        @elseif($saleDue > 0)
+                                            <div class="mt-2 pt-2 border-top text-primary small">
+                                                <i class="fe fe-info me-1"></i>৳{{ number_format($saleDue, 2) }} will reduce invoice due. The remaining <strong>৳{{ number_format($refundTotal - $saleDue, 2) }}</strong> will be refunded from the account selected below.
+                                            </div>
+                                        @else
+                                            <div class="mt-2 pt-2 border-top text-primary small">
+                                                <i class="fe fe-info me-1"></i>Full <strong>৳{{ number_format($refundTotal, 2) }}</strong> will be refunded to customer from the account selected below.
+                                            </div>
+                                        @endif
+                                    @endif
+                                </div>
+
+                                <!-- Refund Disbursed From Dropdown -->
+                                <div class="mb-3">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">
+                                        Refund Disbursed From <span class="text-danger">*</span>
+                                    </label>
+                                    <select id="returnApproveAccountSelector" class="form-select border-light-subtle" onchange="handleReturnApproveAccountChange(this)" required>
+                                        @if($regularBanks->count() > 0)
+                                            <optgroup label="Bank Accounts">
+                                                @foreach($regularBanks as $bank)
+                                                    <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                                        {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                                    </option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endif
+                                        @if($mfsBanks->count() > 0)
+                                            <optgroup label="Mobile Banking / MFS">
+                                                @foreach($mfsBanks as $bank)
+                                                    <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}" {{ (!isset($regularBanks) || $regularBanks->isEmpty()) && $loop->first ? 'selected' : '' }}>
+                                                        {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                                    </option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endif
+                                    </select>
+                                    <input type="hidden" name="payment_method" id="hidden_return_approve_payment_method" value="bank">
+                                    <input type="hidden" name="bank_detail_id" id="hidden_return_approve_bank_detail_id" value="">
+                                </div>
+
+                                <!-- TrxID / Reference -->
+                                <div class="mb-2" id="returnApproveTrxContainer" style="display: none;">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">TrxID / Cheque Ref</label>
+                                    <input type="text" name="transaction_ref" id="returnApproveTrxRef" class="form-control border-light-subtle" placeholder="Transaction Reference / TrxID">
+                                </div>
+                            </div>
+                            <div class="modal-footer border-top pt-3">
+                                <button type="button" class="btn btn-outline-secondary rounded-2 px-3" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-success rounded-2 px-4 fw-semibold">
+                                    <i class="fe fe-check me-1"></i>Approve &amp; Restock
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -288,3 +386,31 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function handleReturnApproveAccountChange(select) {
+    if (!select) return;
+    const selectedOption = select.options[select.selectedIndex];
+    if (!selectedOption) return;
+    const method = selectedOption.getAttribute('data-method') || 'bank';
+    const bankId = selectedOption.getAttribute('data-id') || '';
+
+    const hiddenMethod = document.getElementById('hidden_return_approve_payment_method');
+    const hiddenBank = document.getElementById('hidden_return_approve_bank_detail_id');
+    const trxContainer = document.getElementById('returnApproveTrxContainer');
+
+    if (hiddenMethod) hiddenMethod.value = method;
+    if (hiddenBank) hiddenBank.value = bankId;
+
+    if (trxContainer) {
+        trxContainer.style.display = bankId ? 'block' : 'none';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const sel = document.getElementById('returnApproveAccountSelector');
+    if (sel) handleReturnApproveAccountChange(sel);
+});
+</script>
+@endpush

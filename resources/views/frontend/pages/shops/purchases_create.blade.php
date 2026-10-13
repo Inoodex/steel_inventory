@@ -491,27 +491,52 @@
 
                                     <!-- Method & Bank Accounts -->
                                     <div class="p-2.5 bg-light rounded-3 border mb-2">
-                                        <label class="form-label fs-8 text-secondary fw-semibold mb-1">Payment Method</label>
-                                        <select name="payment_method" id="purchasePaymentMethod" class="form-select form-select-sm mb-2" onchange="handlePurchasePaymentMethodChange(this.value)">
-                                            <option value="cash" selected>Cash in Hand</option>
-                                            <option value="bank">Bank Transfer / MFS</option>
-                                        </select>
+                                        @php
+                                            $regularBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                                                $type = $b->account_type ?? '';
+                                                $name = $b->bank_name ?? '';
+                                                return !(stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                                            });
+                                            $mfsBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                                                $type = $b->account_type ?? '';
+                                                $name = $b->bank_name ?? '';
+                                                return (stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                                            });
+                                        @endphp
 
-                                        <div id="purchaseBankAccountContainer" class="mb-2" style="display: none;">
-                                            <label class="form-label fs-8 text-secondary fw-semibold mb-1">Disbursement Bank</label>
-                                            <select name="bank_detail_id" id="purchaseBankDetail" class="form-select form-select-sm">
-                                                <option value="" selected>Select Bank Account</option>
-                                                @foreach($bankAccounts ?? [] as $bank)
-                                                    <option value="{{ $bank->id }}">
-                                                        {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                                    </option>
-                                                @endforeach
+
+
+                                        <div class="mb-2">
+                                            <label class="form-label fs-8 text-secondary fw-semibold mb-1">
+                                                <i class="fe fe-layers me-1 text-primary"></i> Bank / MFS Account
+                                            </label>
+                                            <select id="shopPurchaseAccountSelector" class="form-select form-select-sm" onchange="handleShopPurchaseAccountChange(this)">
+                                                @if($regularBanks->count() > 0)
+                                                    <optgroup label="Bank Accounts">
+                                                        @foreach($regularBanks as $bank)
+                                                            <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                                                {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                                            </option>
+                                                        @endforeach
+                                                    </optgroup>
+                                                @endif
+                                                @if($mfsBanks->count() > 0)
+                                                    <optgroup label="Mobile Banking / MFS">
+                                                        @foreach($mfsBanks as $bank)
+                                                            <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}" {{ (!isset($regularBanks) || $regularBanks->isEmpty()) && $loop->first ? 'selected' : '' }}>
+                                                                {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                                            </option>
+                                                        @endforeach
+                                                    </optgroup>
+                                                @endif
                                             </select>
+                                            <input type="hidden" name="payment_method" id="hidden_shop_purchase_payment_method" value="bank">
+                                            <input type="hidden" name="bank_detail_id" id="hidden_shop_purchase_bank_detail_id" value="">
                                         </div>
 
-                                        <div id="purchaseTransactionRefContainer" style="display: none;">
+                                        <div id="purchaseTransactionRefContainer">
                                             <label class="form-label fs-8 text-secondary fw-semibold mb-1">TrxID / Cheque Ref</label>
-                                            <input type="text" name="transaction_ref" class="form-control form-control-sm bg-white" placeholder="Transaction Reference #">
+                                            <input type="text" name="transaction_ref" id="purchaseTransactionRef" class="form-control form-select-sm bg-white" placeholder="Transaction Reference #">
                                         </div>
                                     </div>
                                 </div>
@@ -893,20 +918,34 @@
                 vendorMetrics[vId].bill = Math.max(0, roundTo2(vendorMetrics[vId].subTotal + vNetCharges));
             });
 
-            let bankOptionsHtml = '<option value="">Select Bank Account</option>';
-            bankAccountsList.forEach(b => {
-                bankOptionsHtml += `<option value="${b.id}">${escapeHtml(b.bank_name)} - ${escapeHtml(b.account_name)} (${escapeHtml(b.account_number)})</option>`;
-            });
-
             let cardsHtml = '';
             uniqueVendorIds.forEach(vId => {
                 const vInfo = vendorsMap[vId] || { name: 'Vendor #' + vId, phone: '' };
                 const m = vendorMetrics[vId];
                 const prevPay = existingVendorPay[vId] !== undefined ? existingVendorPay[vId] : '0.00';
-                const prevMethod = existingVendorMethod[vId] || 'cash';
+                const prevBank = existingVendorBank[vId] || '';
                 const prevRef = existingVendorRef[vId] || '';
                 const vPaid = parseFloat(prevPay) || 0;
                 const vDue = Math.max(0, m.bill - vPaid);
+
+                let vendorBankOpts = '<option value="">Select Account</option>';
+                let regOpts = '';
+                let mfsOpts = '';
+                bankAccountsList.forEach(b => {
+                    const type = b.account_type || '';
+                    const name = b.bank_name || '';
+                    const isMfs = (type.toLowerCase().includes('mfs') || /(bkash|nagad|rocket|upay|mfs)/i.test(name + ' ' + type));
+                    const method = isMfs ? 'mobile_banking' : 'bank';
+                    const isSel = (prevBank ? prevBank == b.id : b.is_default);
+                    const opt = `<option value="${b.id}" data-method="${method}" ${isSel ? 'selected' : ''}>${escapeHtml(b.bank_name)} — ${escapeHtml(b.account_number)} (${escapeHtml(b.account_name)})</option>`;
+                    if (isMfs) {
+                        mfsOpts += opt;
+                    } else {
+                        regOpts += opt;
+                    }
+                });
+                if (regOpts) vendorBankOpts += `<optgroup label="🏦 Bank Accounts">${regOpts}</optgroup>`;
+                if (mfsOpts) vendorBankOpts += `<optgroup label="📱 Mobile Banking / MFS">${mfsOpts}</optgroup>`;
 
                 cardsHtml += `
                     <div class="card border border-light-subtle rounded-3 p-2.5 mb-2 vendor-payment-card bg-white shadow-none" data-vendor-id="${vId}">
@@ -923,7 +962,7 @@
                         </div>
 
                         <div class="row g-1 align-items-center mt-1">
-                            <div class="col-sm-6 col-12">
+                            <div class="col-sm-4 col-12">
                                 <label class="form-label fs-8 text-secondary fw-semibold mb-0">Paid (৳)</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-light text-success fw-bold">৳</span>
@@ -936,24 +975,16 @@
                                     <i class="fe fe-alert-triangle me-1"></i>Exceeds (৳ ${m.bill.toFixed(2)})
                                 </div>
                             </div>
-                            <div class="col-sm-6 col-12">
-                                <label class="form-label fs-8 text-secondary fw-semibold mb-0">Method</label>
-                                <select name="vendor_payments[${vId}][payment_method]" class="form-select form-select-sm vendor-method-select" onchange="onVendorMethodChange(this)">
-                                    <option value="cash" ${prevMethod === 'cash' ? 'selected' : ''}>Cash</option>
-                                    <option value="bank" ${prevMethod === 'bank' ? 'selected' : ''}>Bank/MFS</option>
+                            <div class="col-sm-5 col-12">
+                                <label class="form-label fs-8 text-secondary fw-semibold mb-0">Disbursement Account</label>
+                                <select name="vendor_payments[${vId}][bank_detail_id]" class="form-select form-select-sm vendor-bank-select" onchange="onVendorBankChange(this)">
+                                    ${vendorBankOpts}
                                 </select>
+                                <input type="hidden" name="vendor_payments[${vId}][payment_method]" class="vendor-method-input" value="bank">
                             </div>
-                            <div class="col-12 vendor-bank-row mt-1" style="${prevMethod === 'cash' ? 'display: none;' : ''}">
-                                <div class="row g-1">
-                                    <div class="col-sm-6 col-12">
-                                        <select name="vendor_payments[${vId}][bank_detail_id]" class="form-select form-select-sm vendor-bank-select">
-                                            ${bankOptionsHtml}
-                                        </select>
-                                    </div>
-                                    <div class="col-sm-6 col-12">
-                                        <input type="text" name="vendor_payments[${vId}][transaction_ref]" class="form-control form-select-sm vendor-ref-input" placeholder="TrxID #" value="${escapeHtml(prevRef)}">
-                                    </div>
-                                </div>
+                            <div class="col-sm-3 col-12">
+                                <label class="form-label fs-8 text-secondary fw-semibold mb-0">TrxID Ref</label>
+                                <input type="text" name="vendor_payments[${vId}][transaction_ref]" class="form-control form-select-sm vendor-ref-input" placeholder="TrxID #" value="${escapeHtml(prevRef)}">
                             </div>
                         </div>
 
@@ -1017,13 +1048,23 @@
         recalculateMultiVendorTotals();
     }
 
-    function onVendorMethodChange(select) {
+    function onVendorBankChange(select) {
         const card = $(select).closest('.vendor-payment-card');
-        if ($(select).val() === 'bank') {
-            card.find('.vendor-bank-row').slideDown(150);
-        } else {
-            card.find('.vendor-bank-row').slideUp(150);
-        }
+        const opt = select.options[select.selectedIndex];
+        const method = opt ? (opt.getAttribute('data-method') || 'bank') : 'bank';
+        card.find('.vendor-method-input').val(method);
+    }
+
+    function handleShopPurchaseAccountChange(selectEl) {
+        const selectedOpt = selectEl.options[selectEl.selectedIndex];
+        if (!selectedOpt) return;
+        const methodInput = document.getElementById('hidden_shop_purchase_payment_method');
+        const bankInput = document.getElementById('hidden_shop_purchase_bank_detail_id');
+
+        const method = selectedOpt.getAttribute('data-method') || 'bank';
+        const bankId = selectedOpt.getAttribute('data-id') || '';
+        if (methodInput) methodInput.value = method;
+        if (bankInput) bankInput.value = bankId;
     }
 
     function recalculateMultiVendorTotals() {
@@ -1067,7 +1108,8 @@
             $('#vendor_hidden').val(initialDefaultVendor);
         }
 
-        handlePurchasePaymentMethodChange($('#purchasePaymentMethod').val());
+        const initialAcc = document.getElementById('shopPurchaseAccountSelector');
+        if (initialAcc) handleShopPurchaseAccountChange(initialAcc);
         recalculateSummary();
     });
 </script>

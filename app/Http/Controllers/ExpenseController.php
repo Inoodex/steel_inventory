@@ -157,7 +157,7 @@ class ExpenseController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'employee_id' => 'required|exists:employees,id',
+            'employee_id' => 'nullable|exists:employees,id',
             'date' => 'required|date',
             'amount' => 'required|numeric|min:0.01',
             'spend_method' => 'required|in:cash,bank,card,bank_transfer,mobile_banking,other',

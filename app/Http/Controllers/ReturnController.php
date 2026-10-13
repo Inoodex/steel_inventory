@@ -7,6 +7,7 @@ use App\Models\ReturnItem;
 use App\Models\Sale;
 use App\Models\Customer;
 use App\Models\Inventory;
+use App\Models\BankDetail;
 use App\Http\Requests\StoreReturnRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -123,17 +124,22 @@ class ReturnController extends Controller
                 $qty = (float)($item['quantity'] ?? 0);
                 $unitPrice = (float)($item['unit_price'] ?? 0);
 
-                ReturnItem::create([
+                $itemData = [
                     'return_id'     => $return->id,
                     'sales_item_id' => $salesItemId,
-                    'product_id'    => $productId,
                     'quantity'      => $qty,
                     'unit_price'    => $unitPrice,
                     'total_price'   => $qty * $unitPrice,
                     'return_reason' => $item['return_reason'] ?? 'other',
                     'condition'     => $item['condition'] ?? 'good',
                     'notes'         => $item['notes'] ?? null,
-                ]);
+                ];
+
+                if (\Illuminate\Support\Facades\Schema::hasColumn('return_items', 'product_id')) {
+                    $itemData['product_id'] = $productId;
+                }
+
+                ReturnItem::create($itemData);
             }
 
             // Update total refund amount
@@ -163,33 +169,40 @@ class ReturnController extends Controller
     public function show($id)
     {
         $return = ProductReturn::with(['sale', 'customer', 'items.salesItem', 'processedBy'])->findOrFail($id);
-        return view('frontend.pages.returns.show', compact('return'));
+        $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
+        return view('frontend.pages.returns.show', compact('return', 'bankAccounts'));
     }
 
     /**
      * Approve the return (immediately updates stock and adjusts sales balance).
      */
-    public function approve($id)
+    public function approve(Request $request, $id)
     {
-        $return = ProductReturn::with('items')->findOrFail($id);
+        $return = ProductReturn::with(['sale', 'items'])->findOrFail($id);
 
         if (!$return->isPending()) {
             return back()->with('error', 'Only pending returns can be approved');
         }
 
+        $validated = $request->validate([
+            'payment_method'  => 'nullable|string',
+            'bank_detail_id'  => 'nullable|exists:bank_details,id',
+            'transaction_ref' => 'nullable|string|max:100',
+        ]);
+
         DB::beginTransaction();
 
         try {
-            $return->approve(Auth::id());
+            $return->approve(Auth::id(), $validated);
             DB::commit();
 
             session()->flash('sweet_alert', [
                 'type'  => 'success',
                 'title' => 'Return Approved!',
-                'text'  => 'Return approved. Stock has been updated and sale balance adjusted.',
+                'text'  => 'Return approved. Stock has been updated and refund processed.',
             ]);
 
-            return back()->with('success', 'Return approved successfully. Stock updated and sale balance adjusted.');
+            return back()->with('success', 'Return approved successfully. Stock updated and refund processed.');
         } catch (\Exception $e) {
             DB::rollback();
             return back()->with('error', 'Error approving return: ' . $e->getMessage());
@@ -199,9 +212,9 @@ class ReturnController extends Controller
     /**
      * Complete the return (alias for backward compatibility).
      */
-    public function complete($id)
+    public function complete(Request $request, $id)
     {
-        return $this->approve($id);
+        return $this->approve($request, $id);
     }
 
     /**

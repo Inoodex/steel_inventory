@@ -659,8 +659,9 @@ class SalesController extends Controller
         }
 
         $payments = $paymentsQuery->get();
+        $bankAccounts = \App\Models\BankDetail::active()->orderBy('bank_name')->get();
 
-        return view('frontend.pages.sales.payments', compact('payments', 'request', 'saleId', 'sale'));
+        return view('frontend.pages.sales.payments', compact('payments', 'request', 'saleId', 'sale', 'bankAccounts'));
     }
 
     public function report(Request $request)
@@ -799,6 +800,7 @@ class SalesController extends Controller
             'sale_id' => 'required|exists:sales,id',
             'payment_amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|string',
+            'bank_detail_id' => 'nullable|exists:bank_details,id',
             'payment_date' => 'nullable|date',
             'notes' => 'nullable|string',
         ]);
@@ -839,6 +841,7 @@ class SalesController extends Controller
                 'due_before_payment' => $dueBeforePayment,
                 'due_after_payment' => $newDuePayment,
                 'payment_method' => $request->payment_method,
+                'bank_detail_id' => ($request->payment_method !== 'cash') ? $request->bank_detail_id : null,
                 'payment_date' => $request->payment_date ?: now(),
                 'notes' => $request->notes,
                 'payment_for' => 2, // Sales

@@ -60,29 +60,47 @@
                         <input type="number" step="0.01" name="amount" class="form-control border-light-subtle" value="{{ old('amount', $expense->amount) }}" required>
                     </div>
 
-                    <div class="col-lg-4 col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Spend Method <span class="text-danger">*</span></label>
-                        <select name="spend_method" id="spendMethodSelect" class="form-select border-light-subtle select2" required data-placeholder="Select Spend Method" onchange="toggleBankSelect(this.value)">
-                            <option value="cash" {{ old('spend_method', $expense->spend_method) == 'cash' ? 'selected' : '' }}>Cash Payment</option>
-                            <option value="bank" {{ old('spend_method', $expense->spend_method) == 'bank' ? 'selected' : '' }}>Bank Transfer / Deposit</option>
-                            <option value="mobile_banking" {{ old('spend_method', $expense->spend_method) == 'mobile_banking' ? 'selected' : '' }}>Mobile Banking (bKash / Nagad / Rocket)</option>
-                            <option value="card" {{ old('spend_method', $expense->spend_method) == 'card' ? 'selected' : '' }}>Card Payment</option>
-                            <option value="other" {{ old('spend_method', $expense->spend_method) == 'other' ? 'selected' : '' }}>Other / Online</option>
-                        </select>
-                    </div>
+                    @php
+                        $regularBanks = ($bankDetails ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return !(stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                        $mfsBanks = ($bankDetails ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return (stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                        $currMethod = old('spend_method', $expense->spend_method ?? 'cash');
+                        $currBankId = old('bank_detail_id', $expense->bank_detail_id ?? '');
+                    @endphp
 
-                    <div class="col-lg-4 col-md-6 col-12" id="bankAccountWrapper" style="{{ old('spend_method', $expense->spend_method) === 'cash' ? 'display: none;' : '' }}">
+                    <div class="col-lg-4 col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">
-                            <i class="fe fe-layers me-1 text-primary"></i> Bank / MFS Account <span class="text-danger">*</span>
+                            <i class="fe fe-credit-card me-1 text-primary"></i> Paid From Account / Method <span class="text-danger">*</span>
                         </label>
-                        <select name="bank_detail_id" id="bankDetailSelect" class="form-select border-light-subtle select2" data-placeholder="Select Bank / MFS Account">
-                            <option value="">Select Bank / MFS Account</option>
-                            @foreach ($bankDetails as $bank)
-                                <option value="{{ $bank->id }}" {{ old('bank_detail_id', $expense->bank_detail_id) == $bank->id ? 'selected' : '' }}>
-                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                </option>
-                            @endforeach
+                        <select id="expenseAccountSelector" class="form-select border-light-subtle" onchange="handleExpenseAccountChange(this)" required>
+                            @if($regularBanks->count() > 0)
+                                <optgroup label="Bank Accounts">
+                                    @foreach($regularBanks as $bank)
+                                        <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" {{ ($currMethod === 'bank' && $currBankId == $bank->id) ? 'selected' : '' }}>
+                                            {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+                            @if($mfsBanks->count() > 0)
+                                <optgroup label="Mobile Banking / MFS">
+                                    @foreach($mfsBanks as $bank)
+                                        <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}" {{ ($currMethod === 'mobile_banking' && $currBankId == $bank->id) ? 'selected' : '' }}>
+                                            {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
                         </select>
+                        <input type="hidden" name="spend_method" id="hidden_expense_spend_method" value="{{ $currMethod }}">
+                        <input type="hidden" name="bank_detail_id" id="hidden_expense_bank_id" value="{{ $currBankId }}">
                     </div>
 
                     <div class="col-lg-4 col-md-12 col-12" id="remarksWrapper">
@@ -103,21 +121,16 @@
 
 @push('scripts')
 <script>
-    function toggleBankSelect(method) {
-        const wrapper = document.getElementById('bankAccountWrapper');
-        const bankSelect = document.getElementById('bankDetailSelect');
-        
-        if (method === 'cash') {
-            wrapper.style.display = 'none';
-            if (bankSelect) {
-                bankSelect.removeAttribute('required');
-            }
-        } else {
-            wrapper.style.display = 'block';
-            if (bankSelect) {
-                bankSelect.setAttribute('required', 'required');
-            }
-        }
+    function handleExpenseAccountChange(select) {
+        const selectedOption = select.options[select.selectedIndex];
+        const method = selectedOption.getAttribute('data-method') || 'cash';
+        const bankId = selectedOption.getAttribute('data-id') || '';
+
+        const hiddenMethod = document.getElementById('hidden_expense_spend_method');
+        const hiddenBank = document.getElementById('hidden_expense_bank_id');
+
+        if (hiddenMethod) hiddenMethod.value = method;
+        if (hiddenBank) hiddenBank.value = bankId;
     }
 
     $(document).ready(function() {
@@ -125,11 +138,10 @@
             width: '100%'
         });
 
-        $('#spendMethodSelect').on('change', function() {
-            toggleBankSelect($(this).val());
-        });
-
-        toggleBankSelect($('#spendMethodSelect').val());
+        const selector = document.getElementById('expenseAccountSelector');
+        if (selector) {
+            handleExpenseAccountChange(selector);
+        }
     });
 </script>
 @endpush

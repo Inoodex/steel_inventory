@@ -319,32 +319,50 @@
                         </div>
                     </div>
 
+                    @php
+                        $regularPurchaseDueBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return !(stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                        $mfsPurchaseDueBanks = ($bankAccounts ?? collect())->filter(function($b) {
+                            $type = $b->account_type ?? '';
+                            $name = $b->bank_name ?? '';
+                            return (stripos($type, 'MFS') !== false || preg_match('/(bkash|nagad|rocket|upay|mfs)/i', $name . ' ' . $type));
+                        });
+                    @endphp
+
+                    <!-- Unified Disbursement Account Selector -->
                     <div class="mb-3">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Payment Method <span class="text-danger">*</span></label>
-                        <select name="payment_method" id="modalPaymentMethod" class="form-select border-light-subtle" required onchange="toggleModalBank(this.value)">
-                            <option value="cash" selected>Cash in Hand</option>
-                            <option value="bank">Bank Transfer / Deposit</option>
-                            <option value="mobile_banking">Mobile Banking (bKash/Nagad)</option>
+                        <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Account / Method <span class="text-danger">*</span></label>
+                        <select id="purchaseDueAccountSelector" class="form-select border-light-subtle" onchange="handlePurchaseDueAccountChange(this)" required>
+                            @if($regularPurchaseDueBanks->count() > 0)
+                                <optgroup label="Bank Accounts">
+                                    @foreach($regularPurchaseDueBanks as $bank)
+                                        <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}" {{ $bank->is_default ? 'selected' : '' }}>
+                                            {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+                            @if($mfsPurchaseDueBanks->count() > 0)
+                                <optgroup label="Mobile Banking / MFS">
+                                    @foreach($mfsPurchaseDueBanks as $bank)
+                                        <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}" {{ (!isset($regularPurchaseDueBanks) || $regularPurchaseDueBanks->isEmpty()) && $loop->first ? 'selected' : '' }}>
+                                            {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
                         </select>
+                        <input type="hidden" name="payment_method" id="hidden_purchase_due_method" value="bank">
+                        <input type="hidden" name="bank_detail_id" id="hidden_purchase_due_bank_id" value="">
                     </div>
 
-                    <!-- Bank Account Selector -->
-                    <div class="mb-3" id="modalBankContainer" style="display: none;">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Bank / Wallet Account <span class="text-danger">*</span></label>
-                        <select name="bank_detail_id" id="modalBankDetail" class="form-select border-light-subtle">
-                            <option value="">Select Bank / MFS Account</option>
-                            @foreach($bankAccounts ?? [] as $bank)
-                                <option value="{{ $bank->id }}">
-                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <!-- Transaction Ref -->
+                    <!-- Transaction Ref (Shown for Bank / MFS) -->
                     <div class="mb-3" id="modalRefContainer" style="display: none;">
                         <label class="form-label small text-secondary fw-semibold mb-1">Transaction Ref / TrxID</label>
-                        <input type="text" name="transaction_ref" class="form-control border-light-subtle">
+                        <input type="text" name="transaction_ref" class="form-control border-light-subtle" placeholder="e.g. TrxID / Cheque #">
                     </div>
 
                     <div class="mb-3">
@@ -411,10 +429,9 @@ function openVendorDueModal(purchaseId, vendorId, vendorName, maxDue) {
     amountInput.value = numMax > 0 ? numMax.toFixed(2) : '';
     amountInput.max = numMax > 0 ? numMax : '';
 
-    const methodSelect = document.getElementById('modalPaymentMethod');
-    if (methodSelect) {
-        methodSelect.value = 'cash';
-        toggleModalBank('cash');
+    const selector = document.getElementById('purchaseDueAccountSelector');
+    if (selector) {
+        handlePurchaseDueAccountChange(selector);
     }
 
     const modalEl = document.getElementById('vendorDueModal');
@@ -422,35 +439,22 @@ function openVendorDueModal(purchaseId, vendorId, vendorName, maxDue) {
     modal.show();
 }
 
-function toggleModalBank(method) {
-    const bankContainer = document.getElementById('modalBankContainer');
-    const refContainer = document.getElementById('modalRefContainer');
-    const bankSelect = document.getElementById('modalBankDetail');
-    const refInput = document.querySelector('#vendorDueModal input[name="transaction_ref"]');
-    if (!bankContainer || !refContainer) return;
+function handlePurchaseDueAccountChange(select) {
+    if (!select) return;
+    const selectedOption = select.options[select.selectedIndex];
+    if (!selectedOption) return;
+    const method = selectedOption.getAttribute('data-method') || 'bank';
+    const bankId = selectedOption.getAttribute('data-id') || '';
 
-    if (method === 'cash') {
-        bankContainer.style.display = 'none';
-        refContainer.style.display = 'none';
-        if (bankSelect) {
-            bankSelect.value = '';
-            bankSelect.disabled = true;
-            bankSelect.required = false;
-        }
-        if (refInput) {
-            refInput.value = '';
-            refInput.disabled = true;
-        }
-    } else {
-        bankContainer.style.display = 'block';
-        refContainer.style.display = 'block';
-        if (bankSelect) {
-            bankSelect.disabled = false;
-            bankSelect.required = true;
-        }
-        if (refInput) {
-            refInput.disabled = false;
-        }
+    const hiddenMethod = document.getElementById('hidden_purchase_due_method');
+    const hiddenBank = document.getElementById('hidden_purchase_due_bank_id');
+    const refContainer = document.getElementById('modalRefContainer');
+
+    if (hiddenMethod) hiddenMethod.value = method;
+    if (hiddenBank) hiddenBank.value = bankId;
+
+    if (refContainer) {
+        refContainer.style.display = bankId ? 'block' : 'none';
     }
 }
 </script>

@@ -71,9 +71,9 @@
                 <p class="text-muted small mb-0">Track returned inventory and customer refunds processed for <strong>{{ $shop->name }}</strong></p>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <a href="{{ route('returns.create') }}" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
-                    <i class="fe fe-refresh-cw fs-6"></i>
-                    <span>Record Return</span>
+                <a href="{{ route('shops.returns.create') }}" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
+                    <i class="fe fe-plus-circle fs-6"></i>
+                    <span>Create Shop Return</span>
                 </a>
             </div>
         </div>
@@ -194,17 +194,57 @@
                                     @endif
                                 </td>
                                 <td class="text-end pe-4">
-                                    <a href="{{ route('returns.show', $ret->id) }}" class="btn btn-sm btn-light border px-2 py-1 rounded-2" title="View Return Details">
-                                        <i class="fe fe-eye"></i>
-                                    </a>
+                                    <div class="dropdown dropdown-action">
+                                        <a href="javascript:void(0)" class="btn-action-icon shadow-none" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                            <a class="dropdown-item py-2" href="{{ route('shops.returns.show', $ret->id) }}">
+                                                <i class="far fa-eye me-2 text-primary"></i> View Return
+                                            </a>
+                                            @if($ret->sale)
+                                                <a class="dropdown-item py-2" href="{{ route('sales.show', $ret->sale->id) }}">
+                                                    <i class="fe fe-file-text me-2 text-secondary"></i> View Sale Invoice
+                                                </a>
+                                            @endif
+                                            @if($ret->isPending())
+                                                <form method="POST" action="{{ route('returns.approve', $ret->id) }}" onsubmit="return confirm('Approve this return? Stock will be restocked into {{ $shop->name }} and invoice balance adjusted.')">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="dropdown-item py-2 text-success">
+                                                        <i class="far fa-check-circle me-2"></i> Approve Return
+                                                    </button>
+                                                </form>
+                                                <a class="dropdown-item py-2 text-warning" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#rejectModal{{ $ret->id }}">
+                                                    <i class="far fa-times-circle me-2"></i> Reject Return
+                                                </a>
+                                            @endif
+                                            @if($ret->isPending() || $ret->isRejected())
+                                                <form method="POST" action="{{ route('shops.returns.destroy', $ret->id) }}" onsubmit="return confirm('Delete this return record?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="dropdown-item py-2 text-danger">
+                                                        <i class="far fa-trash-alt me-2"></i> Delete Return
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-5 text-muted">
-                                    <div class="mb-2"><i class="fe fe-refresh-cw fs-1 text-secondary opacity-50"></i></div>
-                                    <h6 class="fw-bold">No Shop Sales Returns Found</h6>
-                                    <p class="small text-muted mb-0">Customer return records for shops will appear here.</p>
+                                <td colspan="8" class="text-center py-5">
+                                    <div class="d-flex flex-column align-items-center justify-content-center">
+                                        <div class="avatar avatar-xl bg-primary-light text-primary rounded-circle mb-3 d-flex align-items-center justify-content-center">
+                                            <i class="fe fe-rotate-ccw fs-1"></i>
+                                        </div>
+                                        <h5 class="fw-bold text-dark mb-1">No Product Returns Found</h5>
+                                        <p class="text-muted small mb-3">Record customer product returns to adjust stock and refunds</p>
+                                        <a href="{{ route('shops.returns.create') }}" class="btn btn-primary btn-sm px-3 rounded-2">
+                                            New Return
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         @endforelse
@@ -219,6 +259,36 @@
             @endif
         </div>
     </div>
+
+    {{-- Modals placed at bottom of page outside table cards per AGENTS.md --}}
+    @foreach($returns as $ret)
+        @if($ret->isPending())
+            <div class="modal fade" id="rejectModal{{ $ret->id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow rounded-3">
+                        <form method="POST" action="{{ route('returns.reject', $ret->id) }}">
+                            @csrf
+                            @method('PATCH')
+                            <div class="modal-header border-bottom">
+                                <h5 class="modal-title fw-bold text-dark">Reject Return #{{ $ret->id }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <div class="mb-3">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">Rejection Reason <span class="text-danger">*</span></label>
+                                    <textarea name="reason" class="form-control border-light-subtle" rows="3" placeholder="Provide a reason for rejecting this return..." required></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-top pt-3">
+                                <button type="button" class="btn btn-outline-secondary rounded-2 px-3" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger rounded-2 px-4">Reject Return</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endforeach
 
 </div>
 @endsection
