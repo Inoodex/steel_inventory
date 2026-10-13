@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ChartOfAccount;
 use Illuminate\Http\Request;
-use Mpdf\Mpdf;
+use App\Services\PdfService;
 
 class TrialBalanceController extends Controller
 {
@@ -89,31 +89,23 @@ class TrialBalanceController extends Controller
 
         $padBase64 = function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '';
 
-        $html = view('pdf.accounts.trial-balance', compact(
-            'rows',
-            'totalDebit',
-            'totalCredit',
-            'asOfDate',
-            'padBase64'
-        ))->render();
-
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-            'margin_top' => 45,
-            'margin_bottom' => 25,
-            'margin_left' => 15,
-            'margin_right' => 15,
-        ]);
-
-        $mpdf->WriteHTML($html);
-
-        $pdfContent = $mpdf->Output("Trial-Balance-{$asOfDate}.pdf", 'S');
-        return response($pdfContent, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"Trial-Balance-{$asOfDate}.pdf\"",
-        ]);
+        return PdfService::viewToResponse(
+            'pdf.accounts.trial-balance',
+            compact(
+                'rows',
+                'totalDebit',
+                'totalCredit',
+                'asOfDate',
+                'padBase64'
+            ),
+            "Trial-Balance-{$asOfDate}.pdf",
+            [
+                'margin_top'    => 45,
+                'margin_bottom' => 25,
+                'margin_left'   => 15,
+                'margin_right'  => 15,
+            ]
+        );
     }
 
     /**

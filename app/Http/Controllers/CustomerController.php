@@ -8,6 +8,7 @@ use App\Models\Service;
 use App\Models\User;
 use App\Models\Customer;
 use Illuminate\Support\Facades\Validator;
+use App\Services\PdfService;
 
 class CustomerController extends Controller
 {
@@ -73,16 +74,7 @@ class CustomerController extends Controller
             return $c;
         });
 
-        $html = view('pdf.customers', compact('customers'))->render();
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-        $mpdf->WriteHTML($html);
-        return response($mpdf->Output('Customer_List_' . now()->format('Y_m_d_His') . '.pdf', 'S'), 200, [
-            'Content-Type' => 'application/pdf',
-        ]);
+        return PdfService::viewToResponse('pdf.customers', compact('customers'), 'Customer_List_' . now()->format('Y_m_d_His') . '.pdf');
     }
 
     /**
@@ -239,36 +231,21 @@ class CustomerController extends Controller
      */
     public function ledgerPdf(Request $request, string $id)
     {
-        ini_set('memory_limit', '512M');
         $customer = Customer::findOrFail($id);
         $fromDate = $request->input('from_date');
         $toDate = $request->input('to_date');
 
         $ledgerData = $this->getCustomerLedgerData($customer, $fromDate, $toDate);
-
         $ledgerData['padBase64'] = function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '';
-
-        $html = view('pdf.customer_ledger', $ledgerData)->render();
-
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-            'margin_top' => 45,
-            'margin_bottom' => 25,
-            'margin_left' => 15,
-            'margin_right' => 15,
-        ]);
-
-        $mpdf->WriteHTML($html);
 
         $safeName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $customer->name);
         $filename = "Customer_Ledger_{$safeName}_" . date('Ymd') . '.pdf';
-        $pdfContent = $mpdf->Output($filename, 'S');
 
-        return response($pdfContent, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"{$filename}\"",
+        return PdfService::viewToResponse('pdf.customer_ledger', $ledgerData, $filename, [
+            'margin_top'    => 45,
+            'margin_bottom' => 25,
+            'margin_left'   => 15,
+            'margin_right'  => 15,
         ]);
     }
 

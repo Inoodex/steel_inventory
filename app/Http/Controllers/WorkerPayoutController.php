@@ -14,27 +14,27 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Mpdf\Mpdf;
+use App\Services\PdfService;
 
 class WorkerPayoutController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Overall System KPI Metrics
-        $allSalesWithCharges = Sale::where(function ($q) {
-            $q->where('delivery_charge', '>', 0)
-              ->orWhere('labour_cost', '>', 0)
-              ->orWhere('weight_scale_cost', '>', 0)
-              ->orWhere('other_charges', '>', 0);
-        })->get();
+        // 1. Overall System KPI Metrics (Direct SQL Aggregation)
+        $salesCharges = Sale::selectRaw('
+            SUM(delivery_charge) as total_delivery,
+            SUM(labour_cost) as total_labour,
+            SUM(weight_scale_cost) as total_scale,
+            SUM(other_charges) as total_other
+        ')->first();
 
-        $totalCollectedDelivery = (float) $allSalesWithCharges->sum('delivery_charge');
-        $totalCollectedLabour   = (float) $allSalesWithCharges->sum('labour_cost');
-        $totalCollectedScale    = (float) $allSalesWithCharges->sum('weight_scale_cost');
-        $totalCollectedOther    = (float) $allSalesWithCharges->sum('other_charges');
+        $totalCollectedDelivery = (float) ($salesCharges->total_delivery ?? 0);
+        $totalCollectedLabour   = (float) ($salesCharges->total_labour ?? 0);
+        $totalCollectedScale    = (float) ($salesCharges->total_scale ?? 0);
+        $totalCollectedOther    = (float) ($salesCharges->total_other ?? 0);
         $totalCollectedCharges  = $totalCollectedDelivery + $totalCollectedLabour + $totalCollectedScale + $totalCollectedOther;
 
-        // Paid amounts from WorkerPayoutItem (safely checked if table exists)
+        // Paid amounts from WorkerPayoutItem (aggregated in a single query)
         $totalPaidLabour   = 0.00;
         $totalPaidDelivery = 0.00;
         $totalPaidScale    = 0.00;
@@ -42,10 +42,17 @@ class WorkerPayoutController extends Controller
         $totalPaidCharges  = 0.00;
 
         if (\Illuminate\Support\Facades\Schema::hasTable('worker_payout_items')) {
-            $totalPaidLabour   = (float) WorkerPayoutItem::where('charge_type', 'labour')->sum('amount');
-            $totalPaidDelivery = (float) WorkerPayoutItem::where('charge_type', 'delivery')->sum('amount');
-            $totalPaidScale    = (float) WorkerPayoutItem::where('charge_type', 'weight_scale')->sum('amount');
-            $totalPaidOther    = (float) WorkerPayoutItem::where('charge_type', 'other')->sum('amount');
+            $paidSums = WorkerPayoutItem::selectRaw('
+                SUM(CASE WHEN charge_type = "labour" THEN amount ELSE 0 END) as paid_labour,
+                SUM(CASE WHEN charge_type = "delivery" THEN amount ELSE 0 END) as paid_delivery,
+                SUM(CASE WHEN charge_type = "weight_scale" THEN amount ELSE 0 END) as paid_scale,
+                SUM(CASE WHEN charge_type = "other" THEN amount ELSE 0 END) as paid_other
+            ')->first();
+
+            $totalPaidLabour   = (float) ($paidSums->paid_labour ?? 0);
+            $totalPaidDelivery = (float) ($paidSums->paid_delivery ?? 0);
+            $totalPaidScale    = (float) ($paidSums->paid_scale ?? 0);
+            $totalPaidOther    = (float) ($paidSums->paid_other ?? 0);
             $totalPaidCharges  = $totalPaidLabour + $totalPaidDelivery + $totalPaidScale + $totalPaidOther;
         }
 
@@ -650,26 +657,17 @@ class WorkerPayoutController extends Controller
         $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
         $padBase64 = file_exists($padPath) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($padPath)) : (function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '');
 
-        $html = view('pdf.worker_payout_voucher', compact('payout', 'padBase64'))->render();
-
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-            'margin_top' => 45,
-            'margin_bottom' => 25,
-            'margin_left' => 15,
-            'margin_right' => 15,
-        ]);
-
-        $mpdf->WriteHTML($html);
-
-        $pdfContent = $mpdf->Output("Voucher-{$payout->payout_no}.pdf", 'S');
-
-        return response($pdfContent, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"Voucher-{$payout->payout_no}.pdf\"",
-        ]);
+        return PdfService::viewToResponse(
+            'pdf.worker_payout_voucher',
+            compact('payout', 'padBase64'),
+            "Voucher-{$payout->payout_no}.pdf",
+            [
+                'margin_top'    => 45,
+                'margin_bottom' => 25,
+                'margin_left'   => 15,
+                'margin_right'  => 15,
+            ]
+        );
     }
 
     /**
@@ -733,22 +731,9 @@ class WorkerPayoutController extends Controller
     {
         $data = $this->getChargesReportData($request);
 
-        $html = view('frontend.pages.report.charges.pdf', $data)->render();
+        $filename = 'extra-charges-report-' . now()->format('Y-m-d') . '.pdf';
 
-        $mpdf = new Mpdf([
-            'mode'         => 'utf-8',
-            'format'       => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-
-        $mpdf->WriteHTML($html);
-
-        $pdfContent = $mpdf->Output('extra-charges-report-' . now()->format('Y-m-d') . '.pdf', 'S');
-
-        return response($pdfContent, 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="extra-charges-report-' . now()->format('Y-m-d') . '.pdf"',
-        ]);
+        return PdfService::viewToResponse('frontend.pages.report.charges.pdf', $data, $filename);
     }
 
     /**

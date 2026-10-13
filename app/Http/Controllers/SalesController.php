@@ -12,6 +12,7 @@ use App\Http\Requests\UpdateSaleRequest;
 use App\Services\SaleService;
 use Carbon\Carbon;
 use Twilio\Rest\Client;
+use App\Services\PdfService;
 
 class SalesController extends Controller
 {
@@ -53,16 +54,8 @@ class SalesController extends Controller
 
         // Export PDF of all matching sales records
         if ($request->search_for == 'pdf' || $request->export == 'pdf') {
-            $html = view('pdf.sales', compact('services', 'request'))->render();
-            $mpdf = new \Mpdf\Mpdf([
-                'mode' => 'utf-8',
-                'format' => 'A4',
-                'default_font' => 'Helvetica',
-            ]);
-            $mpdf->WriteHTML($html);
-            return response($mpdf->Output('Sales_List_Report_' . now()->format('Y_m_d_His') . '.pdf', 'S'), 200, [
-                'Content-Type' => 'application/pdf',
-            ]);
+            $filename = 'Sales_List_Report_' . now()->format('Y_m_d_His') . '.pdf';
+            return PdfService::viewToResponse('pdf.sales', compact('services', 'request'), $filename);
         }
 
         $services = $query->orderBy('id', 'desc')->paginate(15)->withQueryString();
@@ -303,10 +296,13 @@ class SalesController extends Controller
             }
 
             // 2. Restore coil weight for old sale items
+            $coilIds = $sale->items->pluck('coil_id')->filter()->unique();
+            $loadedCoils = $coilIds->isNotEmpty() ? Coil::whereIn('id', $coilIds)->get()->keyBy('id') : collect();
+
             foreach ($sale->items as $oldItem) {
                 if ($oldItem->qty > 0) {
                     if ($oldItem->coil_id) {
-                        $oldCoil = Coil::find($oldItem->coil_id);
+                        $oldCoil = $loadedCoils->get($oldItem->coil_id);
                         if ($oldCoil) {
                             $oldCoil->remaining_weight = (float)$oldCoil->remaining_weight + (float)$oldItem->qty;
                             if ($oldCoil->status === 'exhausted' && $oldCoil->remaining_weight > 0) {
@@ -594,27 +590,18 @@ class SalesController extends Controller
         $returns = $sales->returns ? $sales->returns->where('status', 'completed') : collect();
 
         try {
-            ini_set('memory_limit', '512M');
-            
-            $mpdf = new \Mpdf\Mpdf([
-                'mode' => 'utf-8',
-                'format' => 'A4',
-                'margin_top' => 42,
-                'margin_bottom' => 15,
-                'margin_left' => 15,
-                'margin_right' => 15,
-                'default_font' => 'Helvetica',
-            ]);
-
-            $html = view('frontend.pages.sales.invoice_pdf', compact('sales', 'items', 'customer', 'returns'))->render();
-            $mpdf->WriteHTML($html);
-
-            $pdfContent = $mpdf->Output(($sales->order_no ?? $sales->id) . '.pdf', \Mpdf\Output\Destination::STRING_RETURN);
-
-            return response($pdfContent, 200, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . ($sales->order_no ?? $sales->id) . '.pdf"',
-            ]);
+            $filename = ($sales->order_no ?? $sales->id) . '.pdf';
+            return PdfService::viewToResponse(
+                'frontend.pages.sales.invoice_pdf',
+                compact('sales', 'items', 'customer', 'returns'),
+                $filename,
+                [
+                    'margin_top'    => 42,
+                    'margin_bottom' => 15,
+                    'margin_left'   => 15,
+                    'margin_right'  => 15,
+                ]
+            );
         } catch (\Exception $e) {
             Log::error('Sales invoice PDF generation failed: ' . $e->getMessage(), [
                 'sale_id' => $id,
@@ -745,16 +732,7 @@ class SalesController extends Controller
 
         $salesReport = $salesQuery->orderBy('sales.created_at', 'desc')->get();
 
-        $html = view('frontend.pages.report.sales.pdf', compact('salesReport', 'request'))->render();
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-        $mpdf->WriteHTML($html);
-        return response($mpdf->Output('sales-report.pdf', 'S'), 200, [
-            'Content-Type' => 'application/pdf',
-        ]);
+        return PdfService::viewToResponse('frontend.pages.report.sales.pdf', compact('salesReport', 'request'), 'sales-report.pdf');
     }
 
     public function getSaleDetails($id)
@@ -930,77 +908,18 @@ class SalesController extends Controller
         $totalInvoiceDues = (float) Sale::where('due_payment', '>', 0)->sum('due_payment');
         $grandTotalDues = $totalOpeningDues + $totalInvoiceDues;
 
-        $html = view('pdf.due_payments', compact(
-            'sales',
-            'customersWithDue',
-            'totalOpeningDues',
-            'totalInvoiceDues',
-            'grandTotalDues'
-        ))->render();
-
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-        $mpdf->WriteHTML($html);
         $filename = 'Due_Payments_Report_' . now()->format('Y_m_d_His') . '.pdf';
 
-        return response($mpdf->Output($filename, 'S'), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $filename . '"',
-        ]);
+        return PdfService::viewToResponse(
+            'pdf.due_payments',
+            compact(
+                'sales',
+                'customersWithDue',
+                'totalOpeningDues',
+                'totalInvoiceDues',
+                'grandTotalDues'
+            ),
+            $filename
+        );
     }
-
-public function extraChargesReportPdf(Request $request)
-{
-    $query = Sale::with(['customer', 'payoutUser'])
-        ->where(function($q) {
-            $q->where('delivery_charge', '>', 0)
-              ->orWhere('labour_cost', '>', 0)
-              ->orWhere('weight_scale_cost', '>', 0)
-              ->orWhere('other_charges', '>', 0);
-        });
-
-    if ($request->filled('from') && $request->filled('to')) {
-        $query->whereBetween('created_at', [$request->from . ' 00:00:00', $request->to . ' 23:59:59']);
-    } else {
-        $query->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()]);
-    }
-
-    if ($request->filled('payout_status') && $request->payout_status !== 'all') {
-        $query->where('charges_payout_status', $request->payout_status);
-    }
-
-    $sales = $query->latest()->get();
-
-    $totalDelivery = $sales->sum('delivery_charge');
-    $totalLabour = $sales->sum('labour_cost');
-    $totalScale = $sales->sum('weight_scale_cost');
-    $totalOther = $sales->sum('other_charges');
-    $totalCharges = $totalDelivery + $totalLabour + $totalScale + $totalOther;
-
-    $totalPaidCharges = $sales->where('charges_payout_status', 'paid')->sum(function($s) {
-        return (float)$s->delivery_charge + (float)$s->labour_cost + (float)$s->weight_scale_cost + (float)$s->other_charges;
-    });
-    $totalUnpaidCharges = $sales->where('charges_payout_status', '!=', 'paid')->sum(function($s) {
-        return (float)$s->delivery_charge + (float)$s->labour_cost + (float)$s->weight_scale_cost + (float)$s->other_charges;
-    });
-
-    $html = view('pdf.extra_charges_report', compact(
-        'sales', 'totalDelivery', 'totalLabour', 'totalScale', 'totalOther', 'totalCharges',
-        'totalPaidCharges', 'totalUnpaidCharges', 'request'
-    ))->render();
-
-    $mpdf = new \Mpdf\Mpdf([
-        'mode' => 'utf-8',
-        'format' => 'A4',
-        'default_font' => 'Helvetica',
-    ]);
-    $mpdf->WriteHTML($html);
-
-    return response($mpdf->Output('Extra_Charges_Report_' . now()->format('Y_m_d_His') . '.pdf', 'S'), 200, [
-        'Content-Type' => 'application/pdf',
-    ]);
-}
 }

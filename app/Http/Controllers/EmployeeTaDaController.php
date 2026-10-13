@@ -40,13 +40,30 @@ class EmployeeTaDaController extends Controller
 
     public function update(Request $request, $id)
     {
+        $user = Auth::user();
+        $employee = $user?->employee;
+
+        if (!$employee) {
+            return redirect()->back()->with('error', 'Employee profile not found for this account.');
+        }
+
+        // Scope to authenticated employee unless user has Super Admin role
+        $tadaQuery = TaDa::where('id', $id);
+        if (!$user->hasRole('Super Admin')) {
+            $tadaQuery->where('employee_id', $employee->id);
+        }
+        $tadas = $tadaQuery->firstOrFail();
+
         $request->validate([
-            'used_amount' => 'required|numeric|min:0|max:' . TaDa::findOrFail($id)->amount,
+            'used_amount' => 'required|numeric|min:0|max:' . $tadas->amount,
         ]);
 
-        $tadas = TaDa::findOrFail($id);
-        $tadas->used_amount = $request->used_amount;
-        $tadas->remaining_amount = $tadas->amount - $tadas->used_amount;
+        if (\Illuminate\Support\Facades\Schema::hasColumn('ta_das', 'used_amount')) {
+            $tadas->used_amount = (float) $request->used_amount;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('ta_das', 'remaining_amount')) {
+            $tadas->remaining_amount = max(0, (float) $tadas->amount - (float) $request->used_amount);
+        }
         $tadas->save();
 
         return redirect()->route('employee.tada.index')->with('success', 'Amount submitted successfully.');
@@ -60,11 +77,11 @@ class EmployeeTaDaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'date' => 'required|date',
-            'amount' => 'required|numeric',
-            'type' => 'required|in:TA,DA',
+            'date'         => 'required|date',
+            'amount'       => 'required|numeric|min:0.01',
+            'type'         => 'required|in:TA,DA',
             'payment_type' => 'required|in:Advance,Claim',
-            'purpose' => 'nullable|string',
+            'purpose'      => 'nullable|string|max:500',
         ]);
 
         $user = Auth::user();
@@ -74,15 +91,23 @@ class EmployeeTaDaController extends Controller
             return redirect()->back()->with('error', 'Employee profile not found for this account.');
         }
 
-        TaDa::create([
-            'user_id' => $user->id,
+        $data = [
             'employee_id' => $employee->id,
-            'date' => $request->date,
-            'amount' => $request->amount,
-            'type' => $request->type,
-            'payment_type' => $request->payment_type,
-            'purpose' => $request->purpose,
-        ]);
+            'date'        => $request->date,
+            'amount'      => $request->amount,
+            'purpose'     => $request->purpose,
+        ];
+        if (\Illuminate\Support\Facades\Schema::hasColumn('ta_das', 'user_id')) {
+            $data['user_id'] = $user->id;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('ta_das', 'type')) {
+            $data['type'] = $request->type;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('ta_das', 'payment_type')) {
+            $data['payment_type'] = $request->payment_type;
+        }
+
+        TaDa::create($data);
 
         return redirect()->route('employee.tada.index')->with('success', 'TA/DA request submitted.');
     }

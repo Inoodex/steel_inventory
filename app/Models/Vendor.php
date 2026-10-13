@@ -35,4 +35,43 @@ class Vendor extends Model
     {
         return $this->hasMany(Lot::class);
     }
+
+    public function getNetBalanceAttribute(): float
+    {
+        $opening = (float) ($this->opening_balance ?? 0);
+        $purchasesTotal = (float) $this->purchases()->sum('total_price');
+        $paymentsTotal = (float) $this->payments()->sum('amount');
+
+        return $opening + $purchasesTotal - $paymentsTotal;
+    }
+
+    public function getAdvanceBalanceAttribute(): float
+    {
+        $net = $this->net_balance;
+        return $net < 0 ? abs($net) : 0.00;
+    }
+
+    public function getEffectivePayableAttribute(): float
+    {
+        $net = $this->net_balance;
+        return $net > 0 ? $net : 0.00;
+    }
+
+    public function calculateFinancials(?float $purchasesTotal = null, ?float $paymentsTotal = null): array
+    {
+        $opening = (float) ($this->opening_balance ?? 0);
+        $purchases = $purchasesTotal !== null ? $purchasesTotal : (float) $this->purchases()->sum('total_price');
+        $payments = $paymentsTotal !== null ? $paymentsTotal : (float) $this->payments()->sum('amount');
+
+        $net = $opening + $purchases - $payments;
+
+        return [
+            'opening_balance' => $opening,
+            'purchases_total' => $purchases,
+            'payments_total'  => $payments,
+            'net_balance'     => $net,
+            'advance_balance' => $net < 0 ? abs($net) : 0.00,
+            'payable_due'     => $net > 0 ? $net : 0.00,
+        ];
+    }
 }

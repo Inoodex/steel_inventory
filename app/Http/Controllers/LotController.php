@@ -10,7 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Mpdf\Mpdf;
+use App\Services\PdfService;
 
 class LotController extends Controller
 {
@@ -192,22 +192,8 @@ class LotController extends Controller
     {
         $data = $this->getLotReportData($request);
 
-        $html = view('frontend.pages.report.lots.pdf', $data)->render();
-
-        $mpdf = new Mpdf([
-            'mode'         => 'utf-8',
-            'format'       => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-
-        $mpdf->WriteHTML($html);
-
-        $pdfContent = $mpdf->Output('lot-report-' . now()->format('Y-m-d') . '.pdf', 'S');
-
-        return response($pdfContent, 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="lot-report-' . now()->format('Y-m-d') . '.pdf"',
-        ]);
+        $filename = 'lot-report-' . now()->format('Y-m-d') . '.pdf';
+        return PdfService::viewToResponse('frontend.pages.report.lots.pdf', $data, $filename);
     }
 
     /**

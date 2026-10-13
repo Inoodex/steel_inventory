@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\PdfService;
 
 class InventoryController extends Controller
 {
@@ -458,18 +459,8 @@ class InventoryController extends Controller
         }
 
         $coils = $query->get();
-
-        $html = view('pdf.inventory', compact('coils'))->render();
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-        $mpdf->WriteHTML($html);
         $filename = 'Steel_Inventory_Stock_Report_' . now()->format('Y_m_d_His') . '.pdf';
-        return response($mpdf->Output($filename, 'S'), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $filename . '"',
-        ]);
+
+        return PdfService::viewToResponse('pdf.inventory', compact('coils'), $filename);
     }
 }

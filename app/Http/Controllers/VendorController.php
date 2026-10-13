@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\{Service, User, Vendor, Purchase};
 use Illuminate\Support\Facades\Validator;
+use App\Services\PdfService;
 
 class VendorController extends Controller
 {
@@ -118,16 +119,7 @@ class VendorController extends Controller
     public function downloadPdf()
     {
         $vendors = Vendor::all();
-        $html = view('pdf.vendors', compact('vendors'))->render();
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-        $mpdf->WriteHTML($html);
-        return response($mpdf->Output('vendor-list.pdf', 'S'), 200, [
-            'Content-Type' => 'application/pdf',
-        ]);
+        return PdfService::viewToResponse('pdf.vendors', compact('vendors'), 'vendor-list.pdf');
     }
 
     /**
@@ -149,36 +141,21 @@ class VendorController extends Controller
      */
     public function ledgerPdf(Request $request, string $id)
     {
-        ini_set('memory_limit', '512M');
         $vendor = Vendor::findOrFail($id);
         $fromDate = $request->input('from_date');
         $toDate = $request->input('to_date');
 
         $ledgerData = $this->getVendorLedgerData($vendor, $fromDate, $toDate);
-
         $ledgerData['padBase64'] = function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '';
-
-        $html = view('pdf.vendor_ledger', $ledgerData)->render();
-
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-            'margin_top' => 45,
-            'margin_bottom' => 25,
-            'margin_left' => 15,
-            'margin_right' => 15,
-        ]);
-
-        $mpdf->WriteHTML($html);
 
         $safeName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $vendor->name);
         $filename = "Vendor_Ledger_{$safeName}_" . date('Ymd') . '.pdf';
-        $pdfContent = $mpdf->Output($filename, 'S');
 
-        return response($pdfContent, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"{$filename}\"",
+        return PdfService::viewToResponse('pdf.vendor_ledger', $ledgerData, $filename, [
+            'margin_top'    => 45,
+            'margin_bottom' => 25,
+            'margin_left'   => 15,
+            'margin_right'  => 15,
         ]);
     }
 

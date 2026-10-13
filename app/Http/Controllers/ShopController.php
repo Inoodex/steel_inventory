@@ -18,6 +18,7 @@ use App\Http\Requests\StoreReturnRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Services\PdfService;
 
 class ShopController extends Controller
 {
@@ -557,12 +558,16 @@ class ShopController extends Controller
                 'total_refund_amount' => 0
             ]);
 
+            $hasProductIdCol = \Illuminate\Support\Facades\Schema::hasColumn('return_items', 'product_id');
+            $salesItemIds = collect($validated['items'])->pluck('sales_item_id')->filter()->unique();
+            $loadedSalesItems = $salesItemIds->isNotEmpty() ? SalesItem::whereIn('id', $salesItemIds)->get()->keyBy('id') : collect();
+
             foreach ($validated['items'] as $item) {
                 $salesItemId = $item['sales_item_id'] ?? null;
                 $productId = $item['product_id'] ?? null;
 
                 if (!$productId && $salesItemId) {
-                    $sItem = SalesItem::find($salesItemId);
+                    $sItem = $loadedSalesItems->get($salesItemId);
                     if ($sItem) {
                         $productId = $sItem->coil_id ?? $sItem->product_id;
                     }
@@ -582,7 +587,7 @@ class ShopController extends Controller
                     'notes'         => $item['notes'] ?? null,
                 ];
 
-                if (\Illuminate\Support\Facades\Schema::hasColumn('return_items', 'product_id')) {
+                if ($hasProductIdCol) {
                     $itemData['product_id'] = $productId;
                 }
 
@@ -773,7 +778,7 @@ class ShopController extends Controller
         $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
         $padBase64 = file_exists($padPath) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($padPath)) : (function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '');
 
-        $html = view('pdf.shop_stock', compact(
+        $data = compact(
             'coils',
             'selectedShopName',
             'totalItems',
@@ -783,21 +788,16 @@ class ShopController extends Controller
             'totalPieces',
             'thicknessBreakdown',
             'padBase64'
-        ))->render();
+        );
 
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4-L',
-            'default_font' => 'Helvetica',
-            'margin_top' => 42,
+        $filename = 'Shop_Stock_Report_' . now()->format('Y_m_d_His') . '.pdf';
+
+        return PdfService::viewToResponse('pdf.shop_stock', $data, $filename, [
+            'format'        => 'A4-L',
+            'margin_top'    => 42,
             'margin_bottom' => 20,
-            'margin_left' => 12,
-            'margin_right' => 12,
-        ]);
-
-        $mpdf->WriteHTML($html);
-        return response($mpdf->Output('Shop_Stock_Report_' . now()->format('Y_m_d_His') . '.pdf', 'S'), 200, [
-            'Content-Type' => 'application/pdf',
+            'margin_left'   => 12,
+            'margin_right'  => 12,
         ]);
     }
 }

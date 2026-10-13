@@ -7,7 +7,7 @@ use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Mpdf\Mpdf;
+use App\Services\PdfService;
 
 class JournalEntryController extends Controller
 {
@@ -116,25 +116,17 @@ class JournalEntryController extends Controller
 
         $padBase64 = function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '';
 
-        $html = view('pdf.accounts.voucher', compact('journalEntry', 'padBase64'))->render();
-
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-            'margin_top' => 45,
-            'margin_bottom' => 25,
-            'margin_left' => 15,
-            'margin_right' => 15,
-        ]);
-
-        $mpdf->WriteHTML($html);
-
-        $pdfContent = $mpdf->Output("Voucher-{$journalEntry->journal_no}.pdf", 'S');
-        return response($pdfContent, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"Voucher-{$journalEntry->journal_no}.pdf\"",
-        ]);
+        return PdfService::viewToResponse(
+            'pdf.accounts.voucher',
+            compact('journalEntry', 'padBase64'),
+            "Voucher-{$journalEntry->journal_no}.pdf",
+            [
+                'margin_top'    => 45,
+                'margin_bottom' => 25,
+                'margin_left'   => 15,
+                'margin_right'  => 15,
+            ]
+        );
     }
 
     /**

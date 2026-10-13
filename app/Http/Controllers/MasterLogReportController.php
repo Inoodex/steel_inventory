@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Carbon\Carbon;
+use App\Services\PdfService;
 
 class MasterLogReportController extends Controller
 {
@@ -106,7 +107,7 @@ class MasterLogReportController extends Controller
             }
         }
 
-        $html = view('pdf.master_logs', compact(
+        $data = compact(
             'allLogs',
             'kpis',
             'fromDate',
@@ -114,23 +115,16 @@ class MasterLogReportController extends Controller
             'eventType',
             'warehouseName',
             'search'
-        ))->render();
+        );
 
-        $mpdf = new \Mpdf\Mpdf([
-            'mode'          => 'utf-8',
-            'format'        => 'A4-L', // Landscape for wide log columns
-            'default_font'  => 'Helvetica',
+        $filename = 'Master_Activity_Logs_' . Carbon::parse($fromDate)->format('Ymd') . '_to_' . Carbon::parse($toDate)->format('Ymd') . '.pdf';
+
+        return PdfService::viewToResponse('pdf.master_logs_report', $data, $filename, [
+            'format'        => 'A4-L',
             'margin_top'    => 35,
             'margin_bottom' => 20,
             'margin_left'   => 12,
             'margin_right'  => 12,
-        ]);
-
-        $mpdf->WriteHTML($html);
-        $filename = 'Master_Activity_Logs_' . Carbon::parse($fromDate)->format('Ymd') . '_to_' . Carbon::parse($toDate)->format('Ymd') . '.pdf';
-
-        return response($mpdf->Output($filename, 'S'), 200, [
-            'Content-Type' => 'application/pdf',
         ]);
     }
 

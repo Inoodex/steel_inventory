@@ -9,15 +9,6 @@ use App\Models\Customer;
 
 class PaymentController extends Controller
 {
-    public function payments(Request $request, $id, $payment_for = 2)
-    {
-        $payments = Payment::with('bankDetail')->where('sale_id', $id)->latest()->get();
-        $bill = Sale::with('customer')->where('id', $id)->firstOrFail();
-        $bankAccounts = \App\Models\BankDetail::where('is_active', true)->orderBy('bank_name')->get();
-        
-        return view('frontend.pages.payment.bill_payment', compact('payments', 'id', 'payment_for', 'bill', 'bankAccounts'));
-    }
-
     public function addPayment(Request $request)
     {
         $request->validate([
@@ -232,6 +223,12 @@ class PaymentController extends Controller
 
     public function updatePayment(Request $request, $id)
     {
+        $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method_id' => 'nullable|string',
+            'remarks' => 'nullable|string|max:500',
+        ]);
+
         $payment = Payment::where('id', $id)->first();
         if (!$payment) {
             return redirect()->back()->with(['error' => 'Payment not found.']);
@@ -242,17 +239,24 @@ class PaymentController extends Controller
             return redirect()->back()->with(['error' => 'Sale not found.']);
         }
 
-        $bill->advanced_payment = max(0, ($bill->advanced_payment ?? 0) - $payment->amount + $request->amount);
-        $bill->due_payment = max(0, ($bill->payble ?? $bill->total) - $bill->advanced_payment);
-        $bill->status = $bill->due_payment <= 0 ? 'paid' : 'partial';
-        $bill->update();
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            $bill->advanced_payment = max(0, ($bill->advanced_payment ?? 0) - $payment->amount + (float)$request->amount);
+            $bill->due_payment = max(0, ($bill->payble ?? $bill->total) - $bill->advanced_payment);
+            $bill->status = $bill->due_payment <= 0 ? 'paid' : 'partial';
+            $bill->update();
 
-        $payment->payment_method = $request->payment_method_id ?? $payment->payment_method;
-        $payment->amount = $request->amount;
-        $payment->remarks = $request->remarks;
-        $payment->update();
+            $payment->payment_method = $request->payment_method_id ?? $payment->payment_method;
+            $payment->amount = (float)$request->amount;
+            $payment->remarks = $request->remarks;
+            $payment->update();
 
-        return redirect()->back()->with(['success' => 'Payment updated successfully.']);
+            \Illuminate\Support\Facades\DB::commit();
+            return redirect()->back()->with(['success' => 'Payment updated successfully.']);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return redirect()->back()->with(['error' => 'Failed to update payment: ' . $e->getMessage()]);
+        }
     }
 
     public function deletePayment(Request $request, $id)
@@ -262,17 +266,38 @@ class PaymentController extends Controller
             return redirect()->back()->with(['error' => 'Payment not found.']);
         }
 
-        $bill = Sale::where('id', $payment->sale_id)->first();
-        if ($bill) {
-            $bill->advanced_payment = max(0, ($bill->advanced_payment ?? 0) - $payment->amount);
-            $bill->due_payment = max(0, ($bill->payble ?? $bill->total) - $bill->advanced_payment);
-            $bill->status = $bill->due_payment <= 0 ? 'paid' : ($bill->advanced_payment > 0 ? 'partial' : 'credit');
-            $bill->update();
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            $bill = Sale::where('id', $payment->sale_id)->first();
+            if ($bill) {
+                $bill->advanced_payment = max(0, ($bill->advanced_payment ?? 0) - $payment->amount);
+                $bill->due_payment = max(0, ($bill->payble ?? $bill->total) - $bill->advanced_payment);
+                $bill->status = $bill->due_payment <= 0 ? 'paid' : ($bill->advanced_payment > 0 ? 'partial' : 'credit');
+                $bill->update();
+            }
+
+            // Remove or clean up linked double-entry journal voucher if exists
+            $journals = \App\Models\JournalEntry::where(function ($q) use ($payment) {
+                $q->where('reference_type', 'customer_payment')->where('reference_id', $payment->id);
+            })->orWhere(function ($q) use ($payment) {
+                $q->where('reference_type', 'customer_payment')
+                  ->where('reference_id', $payment->customer_id)
+                  ->where('total_debit', $payment->amount);
+            })->get();
+
+            foreach ($journals as $j) {
+                $j->items()->delete();
+                $j->delete();
+            }
+
+            $payment->delete();
+
+            \Illuminate\Support\Facades\DB::commit();
+            return redirect()->back()->with(['success' => 'Payment deleted successfully and ledger balances reverted.']);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return redirect()->back()->with(['error' => 'Failed to delete payment: ' . $e->getMessage()]);
         }
-
-        $payment->delete();
-
-        return redirect()->back()->with(['success' => 'Payment deleted successfully.']);
     }
 
     /**

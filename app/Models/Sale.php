@@ -100,23 +100,6 @@ class Sale extends Model
         'charges_payout_at' => 'datetime',
     ];
 
-    // protected static function boot()
-    // {
-    //     parent::boot();
-
-    //     static::saving(function ($sale) {
-    //         $sale->due_payment = $sale->payble - $sale->advanced_payment;
-
-    //         // Auto-update payment_status
-    //         if ($sale->advanced_payment == 0) {
-    //             $sale->payment_status = 'pending';
-    //         } elseif ($sale->advanced_payment > 0 && $sale->advanced_payment < $sale->payble) {
-    //             $sale->payment_status = 'partial';
-    //         } elseif ($sale->advanced_payment >= $sale->payble) {
-    //             $sale->payment_status = 'paid';
-    //         }
-    //     });
-    // }
     public function items()
     {
         return $this->hasMany(SalesItem::class, 'order_id');

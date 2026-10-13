@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\PdfService;
 
 class CustomerAdvanceController extends Controller
 {
@@ -267,18 +268,11 @@ class CustomerAdvanceController extends Controller
 
         $totalActiveAdvanceCredit = (float) $customersWithAdvance->sum('advance_credit');
 
-        $html = view('frontend.pages.advances.customer_pdf', compact('customersWithAdvance', 'totalActiveAdvanceCredit'))->render();
-
-        $mpdf = new \Mpdf\Mpdf([
-            'mode'         => 'utf-8',
-            'format'       => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-        $mpdf->WriteHTML($html);
-
-        return response($mpdf->Output('Customer_Advance_Balances_' . date('Ymd') . '.pdf', 'I'), 200, [
-            'Content-Type' => 'application/pdf',
-        ]);
+        return PdfService::viewToResponse(
+            'frontend.pages.advances.customer_pdf',
+            compact('customersWithAdvance', 'totalActiveAdvanceCredit'),
+            'Customer_Advance_Balances_' . date('Ymd') . '.pdf'
+        );
     }
 
     /**
@@ -291,17 +285,10 @@ class CustomerAdvanceController extends Controller
             ->whereNull('sale_id')
             ->findOrFail($id);
 
-        $html = view('frontend.pages.advances.customer_receipt_pdf', compact('payment'))->render();
-
-        $mpdf = new \Mpdf\Mpdf([
-            'mode'         => 'utf-8',
-            'format'       => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-        $mpdf->WriteHTML($html);
-
-        return response($mpdf->Output('Customer_Advance_Receipt_' . $payment->id . '.pdf', 'I'), 200, [
-            'Content-Type' => 'application/pdf',
-        ]);
+        return PdfService::viewToResponse(
+            'frontend.pages.advances.customer_receipt_pdf',
+            compact('payment'),
+            'Customer_Advance_Receipt_' . $payment->id . '.pdf'
+        );
     }
 }

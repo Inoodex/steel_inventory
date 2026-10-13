@@ -7,7 +7,7 @@ use App\Models\Customer;
 use App\Models\JournalEntryItem;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
-use Mpdf\Mpdf;
+use App\Services\PdfService;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LedgerController extends Controller
@@ -42,36 +42,30 @@ class LedgerController extends Controller
 
         $padBase64 = function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '';
 
-        $html = view('pdf.accounts.ledger', compact(
-            'selectedAccount',
-            'selectedParty',
-            'partyType',
-            'ledgerItems',
-            'openingBalance',
-            'closingBalance',
-            'fromDate',
-            'toDate',
-            'padBase64'
-        ))->render();
-
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-            'margin_top' => 45,
-            'margin_bottom' => 25,
-            'margin_left' => 15,
-            'margin_right' => 15,
-        ]);
-
-        $mpdf->WriteHTML($html);
-
         $partyPrefix = $selectedParty ? "-{$data['partyName']}" : '';
-        $pdfContent = $mpdf->Output("Ledger-{$selectedAccount->account_code}{$partyPrefix}.pdf", 'S');
-        return response($pdfContent, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"Ledger-{$selectedAccount->account_code}{$partyPrefix}.pdf\"",
-        ]);
+        $filename = "Ledger-{$selectedAccount->account_code}{$partyPrefix}.pdf";
+
+        return PdfService::viewToResponse(
+            'pdf.accounts.ledger',
+            compact(
+                'selectedAccount',
+                'selectedParty',
+                'partyType',
+                'ledgerItems',
+                'openingBalance',
+                'closingBalance',
+                'fromDate',
+                'toDate',
+                'padBase64'
+            ),
+            $filename,
+            [
+                'margin_top'    => 45,
+                'margin_bottom' => 25,
+                'margin_left'   => 15,
+                'margin_right'  => 15,
+            ]
+        );
     }
 
     /**

@@ -112,10 +112,10 @@ class ChartOfAccount extends Model
             ->whereHas('journalEntry', function ($q) use ($asOfDate, $fromDate) {
                 $q->whereIn('status', ['posted', 'approved']);
                 if ($asOfDate) {
-                    $q->where('entry_date', '<=', $asOfDate);
+                    $q->where('entry_date', '<=', strlen($asOfDate) === 10 ? $asOfDate . ' 23:59:59' : $asOfDate);
                 }
                 if ($fromDate) {
-                    $q->where('entry_date', '>=', $fromDate);
+                    $q->where('entry_date', '>=', strlen($fromDate) === 10 ? $fromDate . ' 00:00:00' : $fromDate);
                 }
             });
 
@@ -135,5 +135,51 @@ class ChartOfAccount extends Model
         } else {
             return $opening + ($totalCredit - $totalDebit);
         }
+    }
+
+    /**
+     * High-performance batch calculation of running balances for all accounts in 1-2 aggregated queries.
+     * Returns an array keyed by account_id => float balance.
+     */
+    public static function batchCalculateBalances(?string $asOfDate = null, ?string $fromDate = null): array
+    {
+        $query = \Illuminate\Support\Facades\DB::table('journal_entry_items')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_items.journal_entry_id')
+            ->whereIn('journal_entries.status', ['posted', 'approved']);
+
+        if ($asOfDate) {
+            $query->where('journal_entries.entry_date', '<=', strlen($asOfDate) === 10 ? $asOfDate . ' 23:59:59' : $asOfDate);
+        }
+        if ($fromDate) {
+            $query->where('journal_entries.entry_date', '>=', strlen($fromDate) === 10 ? $fromDate . ' 00:00:00' : $fromDate);
+        }
+
+        $sums = $query->select(
+            'journal_entry_items.account_id',
+            \Illuminate\Support\Facades\DB::raw('SUM(journal_entry_items.debit) as total_debit'),
+            \Illuminate\Support\Facades\DB::raw('SUM(journal_entry_items.credit) as total_credit')
+        )->groupBy('journal_entry_items.account_id')->get()->keyBy('account_id');
+
+        $accounts = self::all();
+        $balances = [];
+
+        foreach ($accounts as $account) {
+            $item = $sums->get($account->id);
+            $totalDebit = $item ? (float)$item->total_debit : 0.0;
+            $totalCredit = $item ? (float)$item->total_credit : 0.0;
+
+            $opening = 0.0;
+            if (!$fromDate && in_array($account->account_type, ['asset', 'liability', 'equity'])) {
+                $opening = (float) $account->opening_balance;
+            }
+
+            if ($account->isDebitNormal()) {
+                $balances[$account->id] = $opening + ($totalDebit - $totalCredit);
+            } else {
+                $balances[$account->id] = $opening + ($totalCredit - $totalDebit);
+            }
+        }
+
+        return $balances;
     }
 }

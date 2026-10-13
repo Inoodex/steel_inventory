@@ -110,12 +110,16 @@ class ReturnController extends Controller
             ]);
 
             // Create return items
+            $hasProductIdCol = \Illuminate\Support\Facades\Schema::hasColumn('return_items', 'product_id');
+            $salesItemIds = collect($validated['items'])->pluck('sales_item_id')->filter()->unique();
+            $loadedSalesItems = $salesItemIds->isNotEmpty() ? \App\Models\SalesItem::whereIn('id', $salesItemIds)->get()->keyBy('id') : collect();
+
             foreach ($validated['items'] as $item) {
                 $salesItemId = $item['sales_item_id'] ?? null;
                 $productId = $item['product_id'] ?? null;
 
                 if (!$productId && $salesItemId) {
-                    $sItem = \App\Models\SalesItem::find($salesItemId);
+                    $sItem = $loadedSalesItems->get($salesItemId);
                     if ($sItem) {
                         $productId = $sItem->coil_id ?? $sItem->product_id;
                     }
@@ -135,7 +139,7 @@ class ReturnController extends Controller
                     'notes'         => $item['notes'] ?? null,
                 ];
 
-                if (\Illuminate\Support\Facades\Schema::hasColumn('return_items', 'product_id')) {
+                if ($hasProductIdCol) {
                     $itemData['product_id'] = $productId;
                 }
 

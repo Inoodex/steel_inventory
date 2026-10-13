@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\StorePurchaseRequest;
 use App\Services\PurchaseService;
 use Carbon\Carbon;
+use App\Services\PdfService;
 
 class PurchaseController extends Controller
 {
@@ -442,16 +443,8 @@ class PurchaseController extends Controller
             'lot' => $request->filled('lot_id') ? Lot::find($request->lot_id)?->lot_number : 'All Lots',
         ];
 
-        $html = view('frontend.pages.report.purchase.pdf', compact('purchases', 'filters'))->render();
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-        $mpdf->WriteHTML($html);
-        return response($mpdf->Output('purchase-report-' . now()->format('Y-m-d') . '.pdf', 'S'), 200, [
-            'Content-Type' => 'application/pdf',
-        ]);
+        $filename = 'purchase-report-' . now()->format('Y-m-d') . '.pdf';
+        return PdfService::viewToResponse('frontend.pages.report.purchase.pdf', compact('purchases', 'filters'), $filename);
     }
 
     private function applyPurchaseReportFilters($query, Request $request)
@@ -506,18 +499,8 @@ class PurchaseController extends Controller
             ->latest()
             ->get();
 
-        $html = view('pdf.vendor_due_payments', compact('purchases'))->render();
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-        $mpdf->WriteHTML($html);
         $filename = 'Vendor_Due_Payments_Report_' . now()->format('Y_m_d_His') . '.pdf';
 
-        return response($mpdf->Output($filename, 'S'), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $filename . '"',
-        ]);
+        return PdfService::viewToResponse('pdf.vendor_due_payments', compact('purchases'), $filename);
     }
 }

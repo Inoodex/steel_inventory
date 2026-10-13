@@ -7,7 +7,7 @@ use App\Models\DailyExpense;
 use App\Models\Revenue;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use PDF;
+use App\Services\PdfService;
 
 class RevenueController extends Controller
 {
@@ -19,18 +19,10 @@ class RevenueController extends Controller
 
     public function downloadPdf()
     {
-        ini_set('memory_limit', '512M');
         $revenues = Revenue::orderByDesc('year')->orderByDesc('month')->get();
-        $html = view('pdf.revenue', compact('revenues'))->render();
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-        $mpdf->WriteHTML($html);
-        return response($mpdf->Output('Monthly_Revenue_Report_' . now()->format('Y_m_d_His') . '.pdf', 'S'), 200, [
-            'Content-Type' => 'application/pdf',
-        ]);
+        $filename = 'Monthly_Revenue_Report_' . now()->format('Y_m_d_His') . '.pdf';
+
+        return PdfService::viewToResponse('pdf.revenue', compact('revenues'), $filename);
     }
 
     public function generate()
@@ -60,17 +52,8 @@ class RevenueController extends Controller
      public function export($id)
     {
         $revenue = Revenue::findOrFail($id);
-        $html = view('frontend.pages.report.revenue.pdf', compact('revenue'))->render();
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-        $mpdf->WriteHTML($html);
         $filename = "Revenue_Report_{$revenue->month_name}_{$revenue->year}.pdf";
 
-        return response($mpdf->Output($filename, 'S'), 200, [
-            'Content-Type' => 'application/pdf',
-        ]);
+        return PdfService::viewToResponse('frontend.pages.report.revenue.pdf', compact('revenue'), $filename);
     }
 }

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\PdfService;
 
 class VendorAdvanceController extends Controller
 {
@@ -249,18 +250,11 @@ class VendorAdvanceController extends Controller
 
         $totalActiveVendorAdvance = (float) $vendorsWithAdvance->sum('advance_balance');
 
-        $html = view('frontend.pages.advances.vendor_pdf', compact('vendorsWithAdvance', 'totalActiveVendorAdvance'))->render();
-
-        $mpdf = new \Mpdf\Mpdf([
-            'mode'         => 'utf-8',
-            'format'       => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-        $mpdf->WriteHTML($html);
-
-        return response($mpdf->Output('Vendor_Advance_Balances_' . date('Ymd') . '.pdf', 'I'), 200, [
-            'Content-Type' => 'application/pdf',
-        ]);
+        return PdfService::viewToResponse(
+            'frontend.pages.advances.vendor_pdf',
+            compact('vendorsWithAdvance', 'totalActiveVendorAdvance'),
+            'Vendor_Advance_Balances_' . date('Ymd') . '.pdf'
+        );
     }
 
     /**
@@ -273,17 +267,10 @@ class VendorAdvanceController extends Controller
             ->whereNull('purchase_id')
             ->findOrFail($id);
 
-        $html = view('frontend.pages.advances.vendor_voucher_pdf', compact('payment'))->render();
-
-        $mpdf = new \Mpdf\Mpdf([
-            'mode'         => 'utf-8',
-            'format'       => 'A4',
-            'default_font' => 'Helvetica',
-        ]);
-        $mpdf->WriteHTML($html);
-
-        return response($mpdf->Output('Vendor_Advance_Voucher_' . $payment->id . '.pdf', 'I'), 200, [
-            'Content-Type' => 'application/pdf',
-        ]);
+        return PdfService::viewToResponse(
+            'frontend.pages.advances.vendor_voucher_pdf',
+            compact('payment'),
+            'Vendor_Advance_Voucher_' . $payment->id . '.pdf'
+        );
     }
 }

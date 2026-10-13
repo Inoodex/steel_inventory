@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\ExpenseCategory;
 use App\Models\BankDetail;
 use Illuminate\Support\Facades\Auth;
+use App\Services\PdfService;
 
 class ExpenseController extends Controller
 {
@@ -80,16 +81,11 @@ class ExpenseController extends Controller
 
         // PDF export shortcut
         if ($request->search_for === 'pdf') {
-            $html = view('pdf.daily_expense', compact('dailyExpense', 'request', 'categories', 'bankDetails'))->render();
-            $mpdf = new \Mpdf\Mpdf([
-                'mode' => 'utf-8',
-                'format' => 'A4',
-                'default_font' => 'Helvetica',
-            ]);
-            $mpdf->WriteHTML($html);
-            return response($mpdf->Output('daily_expense.pdf', 'S'), 200, [
-                'Content-Type' => 'application/pdf',
-            ]);
+            return PdfService::viewToResponse(
+                'pdf.daily_expense',
+                compact('dailyExpense', 'request', 'categories', 'bankDetails'),
+                'daily_expense.pdf'
+            );
         }
 
         // Render index view
@@ -258,8 +254,9 @@ class ExpenseController extends Controller
     {
         $expense = DailyExpense::findOrFail($id);
 
-        // Clean up linked journal entries
+        \Illuminate\Support\Facades\DB::beginTransaction();
         try {
+            // Clean up linked journal entries
             $linkedJournals = \App\Models\JournalEntry::where('reference_type', 'expense')
                 ->where('reference_id', $expense->id)
                 ->get();
@@ -267,12 +264,15 @@ class ExpenseController extends Controller
                 $j->items()->delete();
                 $j->delete();
             }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning("Expense #{$id} delete journal cleanup notice: " . $e->getMessage());
-        }
 
-        $expense->delete();
-        return redirect()->back()->with(['success' => getNotify(3)]);
+            $expense->delete();
+
+            \Illuminate\Support\Facades\DB::commit();
+            return redirect()->back()->with(['success' => getNotify(3)]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return redirect()->back()->with(['error' => 'Failed to delete expense: ' . $e->getMessage()]);
+        }
     }
 
     /**

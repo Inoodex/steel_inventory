@@ -42,25 +42,42 @@ class FrontendController extends Controller
         $currentYear = date('Y');
         $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-        // Monthly Sales & Purchase Revenue (current year)
+        // Monthly Sales & Purchase Revenue (current year) - Grouped in 2 queries
+        $isSqlite = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'sqlite';
+        $monthExpr = $isSqlite ? "strftime('%m', created_at)" : "MONTH(created_at)";
+        $yearExpr  = $isSqlite ? "strftime('%Y', created_at)" : "YEAR(created_at)";
+
+        $salesByMonth = Sale::whereRaw("{$yearExpr} = ?", [$currentYear])
+            ->selectRaw("{$monthExpr} as m, SUM(payble) as total")
+            ->groupBy('m')
+            ->pluck('total', 'm');
+
+        $purchasesByMonth = Purchase::whereRaw("{$yearExpr} = ?", [$currentYear])
+            ->selectRaw("{$monthExpr} as m, SUM(total_price) as total")
+            ->groupBy('m')
+            ->pluck('total', 'm');
+
         $monthlySales = [];
         $monthlyPurchases = [];
         foreach ($months as $key => $monthName) {
-            $monthNumber = $key + 1;
-            $monthlySales[$monthName] = (float) Sale::whereYear('created_at', $currentYear)
-                ->whereMonth('created_at', $monthNumber)
-                ->sum('payble');
-            $monthlyPurchases[$monthName] = (float) Purchase::whereYear('created_at', $currentYear)
-                ->whereMonth('created_at', $monthNumber)
-                ->sum('total_price');
+            $mNum = $key + 1;
+            $mKey = str_pad((string)$mNum, 2, '0', STR_PAD_LEFT);
+            $monthlySales[$monthName] = (float) ($salesByMonth->get($mNum) ?? $salesByMonth->get($mKey) ?? 0.0);
+            $monthlyPurchases[$monthName] = (float) ($purchasesByMonth->get($mNum) ?? $purchasesByMonth->get($mKey) ?? 0.0);
         }
 
-        // Yearly Sales Revenue (last 6 years)
+        // Yearly Sales Revenue (last 6 years) - Grouped in 1 query
         $currentYearInt = (int) $currentYear;
+        $startYear = $currentYearInt - 5;
+        $salesByYear = Sale::whereRaw("{$yearExpr} >= ?", [$startYear])
+            ->selectRaw("{$yearExpr} as yr, SUM(payble) as total")
+            ->groupBy('yr')
+            ->pluck('total', 'yr');
+
         $yearlyRev = [];
         for ($i = 5; $i >= 0; $i--) {
             $yr = $currentYearInt - $i;
-            $yearlyRev[$yr] = (float) Sale::whereYear('created_at', $yr)->sum('payble');
+            $yearlyRev[$yr] = (float) ($salesByYear->get((string)$yr) ?? $salesByYear->get($yr) ?? 0.0);
         }
 
         // Accounting & Financial Balances
@@ -77,8 +94,9 @@ class FrontendController extends Controller
         if ($bankAccountParent) {
             $bankAccounts = ChartOfAccount::where('parent_id', $bankAccountParent->id)->get();
             if ($bankAccounts->count() > 0) {
+                $balances = ChartOfAccount::batchCalculateBalances($today);
                 foreach ($bankAccounts as $b) {
-                    $b->balance = $b->calculateBalance($today);
+                    $b->balance = $balances[$b->id] ?? 0.0;
                     $bankBalance += $b->balance;
                 }
             } else {
@@ -105,12 +123,8 @@ class FrontendController extends Controller
         $recentJournalEntries = JournalEntry::with('creator')->latest('entry_date')->latest('id')->take(6)->get();
 
         // Worker Extra Charges & Payouts Liability
-        $totalCollectedCharges = (float) (
-            Sale::sum('labour_cost') +
-            Sale::sum('delivery_charge') +
-            Sale::sum('weight_scale_cost') +
-            Sale::sum('other_charges')
-        );
+        $chargesSum = Sale::selectRaw('SUM(labour_cost) as lab, SUM(delivery_charge) as del, SUM(weight_scale_cost) as scale, SUM(other_charges) as other')->first();
+        $totalCollectedCharges = (float) (($chargesSum->lab ?? 0) + ($chargesSum->del ?? 0) + ($chargesSum->scale ?? 0) + ($chargesSum->other ?? 0));
         $totalPaidCharges = Schema::hasTable('worker_payout_items')
             ? (float) WorkerPayoutItem::sum('amount')
             : 0;

@@ -27,20 +27,55 @@ class SalaryController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'employee_id' => 'required',
-            'month' => 'required',
-            'basic_salary' => 'required|numeric',
-            'advance' => 'nullable|numeric',
-            'allowance' => 'nullable|numeric',
-            'deduction' => 'nullable|numeric',
+        $validated = $request->validate([
+            'employee_id'    => 'required|exists:employees,id',
+            'month'          => 'required|string',
+            'basic_salary'   => 'required|numeric|min:0',
+            'advance'        => 'nullable|numeric|min:0',
+            'allowance'      => 'nullable|numeric|min:0',
+            'deduction'      => 'nullable|numeric|min:0',
             'payment_status' => 'required|in:paid,unpaid',
-            'payment_date' => 'nullable|date',
-            'note' => 'nullable|string|max:500',
+            'payment_date'   => 'nullable|date',
+            'note'           => 'nullable|string|max:500',
         ]);
 
-        $data = $request->all();
-        $data['net_salary'] = (float)$request->basic_salary + (float)($request->allowance ?? 0) - (float)($request->deduction ?? 0) - (float)($request->advance ?? 0);
+        $netSalary = (float)$validated['basic_salary'] + (float)($validated['allowance'] ?? 0) - (float)($validated['deduction'] ?? 0) - (float)($validated['advance'] ?? 0);
+        $netSalary = max(0, $netSalary);
+
+        $data = [
+            'employee_id'  => $validated['employee_id'],
+            'basic_salary' => (float)$validated['basic_salary'],
+            'allowance'    => (float)($validated['allowance'] ?? 0),
+            'net_salary'   => $netSalary,
+            'payment_date' => $validated['payment_date'] ?? null,
+        ];
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'month')) {
+            $data['month'] = $validated['month'];
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'month_year')) {
+            $data['month_year'] = $validated['month'];
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'advance')) {
+            $data['advance'] = (float)($validated['advance'] ?? 0);
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'advance_deduction')) {
+            $data['advance_deduction'] = (float)($validated['advance'] ?? 0);
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'deduction')) {
+            $data['deduction'] = (float)($validated['deduction'] ?? 0);
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'payment_status')) {
+            $data['payment_status'] = $validated['payment_status'];
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'status')) {
+            $data['status'] = $validated['payment_status'] === 'paid' ? 'paid' : 'pending';
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'note')) {
+            $data['note'] = $validated['note'] ?? null;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'notes')) {
+            $data['notes'] = $validated['note'] ?? null;
+        }
 
         $salary = Salary::create($data);
 
@@ -62,20 +97,55 @@ class SalaryController extends Controller
 
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'employee_id' => 'required',
-            'month' => 'required',
-            'basic_salary' => 'required|numeric',
-            'advance' => 'nullable|numeric',
-            'allowance' => 'nullable|numeric',
-            'deduction' => 'nullable|numeric',
+        $validated = $request->validate([
+            'employee_id'    => 'required|exists:employees,id',
+            'month'          => 'required|string',
+            'basic_salary'   => 'required|numeric|min:0',
+            'advance'        => 'nullable|numeric|min:0',
+            'allowance'      => 'nullable|numeric|min:0',
+            'deduction'      => 'nullable|numeric|min:0',
             'payment_status' => 'required|in:paid,unpaid',
-            'payment_date' => 'nullable|date',
-            'note' => 'nullable|string|max:500',
+            'payment_date'   => 'nullable|date',
+            'note'           => 'nullable|string|max:500',
         ]);
 
-        $data = $request->all();
-        $data['net_salary'] = (float)$request->basic_salary + (float)($request->allowance ?? 0) - (float)($request->deduction ?? 0) - (float)($request->advance ?? 0);
+        $netSalary = (float)$validated['basic_salary'] + (float)($validated['allowance'] ?? 0) - (float)($validated['deduction'] ?? 0) - (float)($validated['advance'] ?? 0);
+        $netSalary = max(0, $netSalary);
+
+        $data = [
+            'employee_id'  => $validated['employee_id'],
+            'basic_salary' => (float)$validated['basic_salary'],
+            'allowance'    => (float)($validated['allowance'] ?? 0),
+            'net_salary'   => $netSalary,
+            'payment_date' => $validated['payment_date'] ?? null,
+        ];
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'month')) {
+            $data['month'] = $validated['month'];
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'month_year')) {
+            $data['month_year'] = $validated['month'];
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'advance')) {
+            $data['advance'] = (float)($validated['advance'] ?? 0);
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'advance_deduction')) {
+            $data['advance_deduction'] = (float)($validated['advance'] ?? 0);
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'deduction')) {
+            $data['deduction'] = (float)($validated['deduction'] ?? 0);
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'payment_status')) {
+            $data['payment_status'] = $validated['payment_status'];
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'status')) {
+            $data['status'] = $validated['payment_status'] === 'paid' ? 'paid' : 'pending';
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'note')) {
+            $data['note'] = $validated['note'] ?? null;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('salaries', 'notes')) {
+            $data['notes'] = $validated['note'] ?? null;
+        }
 
         $salary = Salary::findOrFail($id);
         $salary->update($data);
@@ -93,6 +163,7 @@ class SalaryController extends Controller
     {
         $salary = Salary::findOrFail($id);
 
+        \Illuminate\Support\Facades\DB::beginTransaction();
         try {
             $linkedJournals = \App\Models\JournalEntry::where('reference_type', 'salary')
                 ->where('reference_id', $salary->id)
@@ -101,12 +172,15 @@ class SalaryController extends Controller
                 $j->items()->delete();
                 $j->delete();
             }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning("Salary #{$id} delete journal cleanup notice: " . $e->getMessage());
-        }
 
-        $salary->delete();
-        return redirect()->route('salary.index')->with('success', 'Salary record deleted successfully.');
+            $salary->delete();
+
+            \Illuminate\Support\Facades\DB::commit();
+            return redirect()->route('salary.index')->with('success', 'Salary record deleted successfully.');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return redirect()->route('salary.index')->with('error', 'Failed to delete salary record: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -207,58 +281,4 @@ class SalaryController extends Controller
             ]);
         }
     }
-
-public function getTaDaDataAjax(Request $request)
-{
-    $employeeId = $request->employee_id;
-    $month = $request->month;
-    $year = substr($month, 0, 4);
-    $monthNum = substr($month, 5, 2);
-    
-    $taDaRecords = TaDa::where('employee_id', $employeeId)
-                      ->whereYear('date', $year)
-                      ->whereMonth('date', $monthNum)
-                      ->get();
-
-    $totalAdvance = 0;
-    $totalClaim = 0;
-
-    foreach ($taDaRecords as $record) {
-        if ($record->payment_type === 'Advance') {
-            $totalAdvance += $record->remaining_amount;
-        } elseif ($record->payment_type === 'Claim') {
-            $totalClaim += $record->amount;
-        }
-    }
-
-    return response()->json([
-        'total_advance' => $totalAdvance,
-        'total_claim' => $totalClaim,
-        'records_count' => $taDaRecords->count()
-    ]);
-}
-// public function getAdvanceSumByMonth($id, Request $request)
-// {
-//     // Find the "Advance Salary" category dynamically
-//     $advanceCategory = ExpenseCategory::where('name', 'Advance Salary')->first();
-    
-//     if (!$advanceCategory) {
-//         return response()->json(['sum' => 0]);
-//     }
-
-//     $query = DailyExpense::where('employee_id', $id)
-//                          ->where('expense_category_id', $advanceCategory->id);
-    
-//     // Filter by month if provided
-//     if ($request->has('month') && $request->month) {
-//         $year = substr($request->month, 0, 4);
-//         $monthNum = substr($request->month, 5, 2);
-//         $query->whereYear('date', $year)
-//               ->whereMonth('date', $monthNum);
-//     }
-    
-//     $advance = $query->sum('amount');
-    
-//     return response()->json(['sum' => $advance]);
-// }
 }

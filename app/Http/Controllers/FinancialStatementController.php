@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ChartOfAccount;
 use Illuminate\Http\Request;
-use Mpdf\Mpdf;
+use App\Services\PdfService;
 
 class FinancialStatementController extends Controller
 {
@@ -15,6 +15,8 @@ class FinancialStatementController extends Controller
     {
         $fromDate = $request->query('from_date', date('Y-01-01'));
         $toDate = $request->query('to_date', date('Y-m-d'));
+
+        $balances = ChartOfAccount::batchCalculateBalances($toDate, $fromDate);
 
         // Revenues (Class 4000)
         $revenueAccounts = ChartOfAccount::active()
@@ -27,7 +29,7 @@ class FinancialStatementController extends Controller
         $totalRevenue = 0.00;
 
         foreach ($revenueAccounts as $account) {
-            $amount = $account->calculateBalance($toDate, $fromDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $revenueData[] = [
                     'account' => $account,
@@ -48,7 +50,7 @@ class FinancialStatementController extends Controller
         $totalExpense = 0.00;
 
         foreach ($expenseAccounts as $account) {
-            $amount = $account->calculateBalance($toDate, $fromDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $expenseData[] = [
                     'account' => $account,
@@ -76,11 +78,13 @@ class FinancialStatementController extends Controller
         $fromDate = $request->query('from_date', date('Y-01-01'));
         $toDate = $request->query('to_date', date('Y-m-d'));
 
+        $balances = ChartOfAccount::batchCalculateBalances($toDate, $fromDate);
+
         $revenueAccounts = ChartOfAccount::active()->byType('revenue')->whereNotNull('parent_id')->get();
         $revenueData = [];
         $totalRevenue = 0.00;
         foreach ($revenueAccounts as $account) {
-            $amount = $account->calculateBalance($toDate, $fromDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $revenueData[] = ['account' => $account, 'amount' => $amount];
                 $totalRevenue += $amount;
@@ -91,7 +95,7 @@ class FinancialStatementController extends Controller
         $expenseData = [];
         $totalExpense = 0.00;
         foreach ($expenseAccounts as $account) {
-            $amount = $account->calculateBalance($toDate, $fromDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $expenseData[] = ['account' => $account, 'amount' => $amount];
                 $totalExpense += $amount;
@@ -102,34 +106,26 @@ class FinancialStatementController extends Controller
 
         $padBase64 = function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '';
 
-        $html = view('pdf.accounts.profit-loss', compact(
-            'revenueData',
-            'expenseData',
-            'totalRevenue',
-            'totalExpense',
-            'netProfit',
-            'fromDate',
-            'toDate',
-            'padBase64'
-        ))->render();
-
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-            'margin_top' => 45,
-            'margin_bottom' => 25,
-            'margin_left' => 15,
-            'margin_right' => 15,
-        ]);
-
-        $mpdf->WriteHTML($html);
-
-        $pdfContent = $mpdf->Output("Profit-Loss-{$toDate}.pdf", 'S');
-        return response($pdfContent, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"Profit-Loss-{$toDate}.pdf\"",
-        ]);
+        return PdfService::viewToResponse(
+            'pdf.accounts.profit-loss',
+            compact(
+                'revenueData',
+                'expenseData',
+                'totalRevenue',
+                'totalExpense',
+                'netProfit',
+                'fromDate',
+                'toDate',
+                'padBase64'
+            ),
+            "Profit-Loss-{$toDate}.pdf",
+            [
+                'margin_top'    => 45,
+                'margin_bottom' => 25,
+                'margin_left'   => 15,
+                'margin_right'  => 15,
+            ]
+        );
     }
 
     /**
@@ -138,13 +134,14 @@ class FinancialStatementController extends Controller
     public function balanceSheet(Request $request)
     {
         $asOfDate = $request->query('as_of_date', date('Y-m-d'));
+        $balances = ChartOfAccount::batchCalculateBalances($asOfDate);
 
         // Assets (1000)
         $assetAccounts = ChartOfAccount::active()->byType('asset')->whereNotNull('parent_id')->get();
         $assetData = [];
         $totalAssets = 0.00;
         foreach ($assetAccounts as $account) {
-            $amount = $account->calculateBalance($asOfDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $assetData[] = ['account' => $account, 'amount' => $amount];
                 $totalAssets += $amount;
@@ -156,7 +153,7 @@ class FinancialStatementController extends Controller
         $liabilityData = [];
         $totalLiabilities = 0.00;
         foreach ($liabilityAccounts as $account) {
-            $amount = $account->calculateBalance($asOfDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $liabilityData[] = ['account' => $account, 'amount' => $amount];
                 $totalLiabilities += $amount;
@@ -168,7 +165,7 @@ class FinancialStatementController extends Controller
         $equityData = [];
         $totalEquity = 0.00;
         foreach ($equityAccounts as $account) {
-            $amount = $account->calculateBalance($asOfDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $equityData[] = ['account' => $account, 'amount' => $amount];
                 $totalEquity += $amount;
@@ -178,11 +175,11 @@ class FinancialStatementController extends Controller
         // Net Earnings from Revenue - Expense for period
         $revTotal = 0.00;
         foreach (ChartOfAccount::active()->byType('revenue')->whereNotNull('parent_id')->get() as $a) {
-            $revTotal += $a->calculateBalance($asOfDate);
+            $revTotal += $balances[$a->id] ?? 0.0;
         }
         $expTotal = 0.00;
         foreach (ChartOfAccount::active()->byType('expense')->whereNotNull('parent_id')->get() as $a) {
-            $expTotal += $a->calculateBalance($asOfDate);
+            $expTotal += $balances[$a->id] ?? 0.0;
         }
         $currentEarnings = $revTotal - $expTotal;
 
@@ -208,12 +205,13 @@ class FinancialStatementController extends Controller
     public function balanceSheetPdf(Request $request)
     {
         $asOfDate = $request->query('as_of_date', date('Y-m-d'));
+        $balances = ChartOfAccount::batchCalculateBalances($asOfDate);
 
         $assetAccounts = ChartOfAccount::active()->byType('asset')->whereNotNull('parent_id')->get();
         $assetData = [];
         $totalAssets = 0.00;
         foreach ($assetAccounts as $account) {
-            $amount = $account->calculateBalance($asOfDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $assetData[] = ['account' => $account, 'amount' => $amount];
                 $totalAssets += $amount;
@@ -224,7 +222,7 @@ class FinancialStatementController extends Controller
         $liabilityData = [];
         $totalLiabilities = 0.00;
         foreach ($liabilityAccounts as $account) {
-            $amount = $account->calculateBalance($asOfDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $liabilityData[] = ['account' => $account, 'amount' => $amount];
                 $totalLiabilities += $amount;
@@ -235,7 +233,7 @@ class FinancialStatementController extends Controller
         $equityData = [];
         $totalEquity = 0.00;
         foreach ($equityAccounts as $account) {
-            $amount = $account->calculateBalance($asOfDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $equityData[] = ['account' => $account, 'amount' => $amount];
                 $totalEquity += $amount;
@@ -244,11 +242,11 @@ class FinancialStatementController extends Controller
 
         $revTotal = 0.00;
         foreach (ChartOfAccount::active()->byType('revenue')->whereNotNull('parent_id')->get() as $a) {
-            $revTotal += $a->calculateBalance($asOfDate);
+            $revTotal += $balances[$a->id] ?? 0.0;
         }
         $expTotal = 0.00;
         foreach (ChartOfAccount::active()->byType('expense')->whereNotNull('parent_id')->get() as $a) {
-            $expTotal += $a->calculateBalance($asOfDate);
+            $expTotal += $balances[$a->id] ?? 0.0;
         }
         $currentEarnings = $revTotal - $expTotal;
         $totalEquityWithEarnings = $totalEquity + $currentEarnings;
@@ -256,36 +254,28 @@ class FinancialStatementController extends Controller
 
         $padBase64 = function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '';
 
-        $html = view('pdf.accounts.balance-sheet', compact(
-            'assetData',
-            'liabilityData',
-            'equityData',
-            'totalAssets',
-            'totalLiabilities',
-            'totalEquityWithEarnings',
-            'currentEarnings',
-            'totalLiabAndEquity',
-            'asOfDate',
-            'padBase64'
-        ))->render();
-
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font' => 'Helvetica',
-            'margin_top' => 45,
-            'margin_bottom' => 25,
-            'margin_left' => 15,
-            'margin_right' => 15,
-        ]);
-
-        $mpdf->WriteHTML($html);
-
-        $pdfContent = $mpdf->Output("Balance-Sheet-{$asOfDate}.pdf", 'S');
-        return response($pdfContent, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"Balance-Sheet-{$asOfDate}.pdf\"",
-        ]);
+        return PdfService::viewToResponse(
+            'pdf.accounts.balance-sheet',
+            compact(
+                'assetData',
+                'liabilityData',
+                'equityData',
+                'totalAssets',
+                'totalLiabilities',
+                'totalEquityWithEarnings',
+                'currentEarnings',
+                'totalLiabAndEquity',
+                'asOfDate',
+                'padBase64'
+            ),
+            "Balance-Sheet-{$asOfDate}.pdf",
+            [
+                'margin_top'    => 45,
+                'margin_bottom' => 25,
+                'margin_left'   => 15,
+                'margin_right'  => 15,
+            ]
+        );
     }
 
     /**
@@ -295,12 +285,13 @@ class FinancialStatementController extends Controller
     {
         $fromDate = $request->query('from_date', date('Y-01-01'));
         $toDate = $request->query('to_date', date('Y-m-d'));
+        $balances = ChartOfAccount::batchCalculateBalances($toDate, $fromDate);
 
         $revenueAccounts = ChartOfAccount::active()->byType('revenue')->whereNotNull('parent_id')->orderBy('account_code')->get();
         $revenueData = [];
         $totalRevenue = 0.00;
         foreach ($revenueAccounts as $account) {
-            $amount = $account->calculateBalance($toDate, $fromDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $revenueData[] = ['account' => $account, 'amount' => $amount];
                 $totalRevenue += $amount;
@@ -311,7 +302,7 @@ class FinancialStatementController extends Controller
         $expenseData = [];
         $totalExpense = 0.00;
         foreach ($expenseAccounts as $account) {
-            $amount = $account->calculateBalance($toDate, $fromDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $expenseData[] = ['account' => $account, 'amount' => $amount];
                 $totalExpense += $amount;
@@ -360,13 +351,14 @@ class FinancialStatementController extends Controller
     public function balanceSheetCsv(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
     {
         $asOfDate = $request->query('as_of_date', date('Y-m-d'));
+        $balances = ChartOfAccount::batchCalculateBalances($asOfDate);
 
         // Assets
         $assetAccounts = ChartOfAccount::active()->byType('asset')->whereNotNull('parent_id')->get();
         $assetData = [];
         $totalAssets = 0.00;
         foreach ($assetAccounts as $account) {
-            $amount = $account->calculateBalance($asOfDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $assetData[] = ['account' => $account, 'amount' => $amount];
                 $totalAssets += $amount;
@@ -378,7 +370,7 @@ class FinancialStatementController extends Controller
         $liabilityData = [];
         $totalLiabilities = 0.00;
         foreach ($liabilityAccounts as $account) {
-            $amount = $account->calculateBalance($asOfDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $liabilityData[] = ['account' => $account, 'amount' => $amount];
                 $totalLiabilities += $amount;
@@ -390,7 +382,7 @@ class FinancialStatementController extends Controller
         $equityData = [];
         $totalEquity = 0.00;
         foreach ($equityAccounts as $account) {
-            $amount = $account->calculateBalance($asOfDate);
+            $amount = $balances[$account->id] ?? 0.0;
             if (abs($amount) > 0.001) {
                 $equityData[] = ['account' => $account, 'amount' => $amount];
                 $totalEquity += $amount;
@@ -399,11 +391,11 @@ class FinancialStatementController extends Controller
 
         $revTotal = 0.00;
         foreach (ChartOfAccount::active()->byType('revenue')->whereNotNull('parent_id')->get() as $a) {
-            $revTotal += $a->calculateBalance($asOfDate);
+            $revTotal += $balances[$a->id] ?? 0.0;
         }
         $expTotal = 0.00;
         foreach (ChartOfAccount::active()->byType('expense')->whereNotNull('parent_id')->get() as $a) {
-            $expTotal += $a->calculateBalance($asOfDate);
+            $expTotal += $balances[$a->id] ?? 0.0;
         }
         $currentEarnings = $revTotal - $expTotal;
         $totalEquityWithEarnings = $totalEquity + $currentEarnings;
