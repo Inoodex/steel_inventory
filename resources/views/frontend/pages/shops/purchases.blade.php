@@ -180,7 +180,7 @@
                         @forelse($purchases as $p)
                             <tr>
                                 <td class="ps-4">
-                                    <span class="badge bg-light text-dark border font-monospace">{{ $p->lot?->name ?? 'Lot #' . $p->lot_id }}</span>
+                                    <span class="badge bg-light text-dark border font-monospace">{{ $p->lot?->lot_number ?? ($p->lot?->name ?? 'Lot #' . $p->lot_id) }}</span>
                                 </td>
                                 <td>{{ $p->created_at?->format('d M Y') }}</td>
                                 <td>

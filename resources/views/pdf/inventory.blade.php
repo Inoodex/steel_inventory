@@ -140,11 +140,11 @@
         <tr>
             <td style="width: 50%; vertical-align: bottom;">
                 <div style="font-size: 14px; font-weight: 800; color: #103567; text-transform: uppercase;">
-                    STOCK INVENTORY
+                    {{ $headerLabel ?? 'STOCK INVENTORY' }}
                 </div>
             </td>
             <td style="width: 50%;" class="report-title">
-                <h1>INVENTORY STOCK REPORT</h1>
+                <h1>{{ $reportTitle ?? 'INVENTORY STOCK REPORT' }}</h1>
                 <p>Printed: {{ now()->format('d M Y') }}</p>
             </td>
         </tr>
@@ -156,6 +156,7 @@
             <tr>
                 <td style="width: 50%;">
                     <strong>Total In-Stock Items:</strong> {{ count($coils) }} Coils
+                    <span style="font-size: 9px; color: #64748b; margin-left: 6px;">({{ $scopeNote ?? 'Yard Stock • Excludes Shop Stock' }})</span>
                 </td>
                 <td style="width: 50%; text-align: right;">
                     <strong>Total Available Stock:</strong>

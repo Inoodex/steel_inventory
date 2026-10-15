@@ -19,7 +19,15 @@ class LotController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Lot::with(['vendor', 'purchases']);
+        $query = Lot::with(['vendor', 'purchases' => function ($q) {
+            $q->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            });
+        }])->whereDoesntHave('purchases', function ($q) {
+            $q->whereHas('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            });
+        });
 
         // Search by Lot Number or Vendor Name
         if ($request->filled('search')) {
@@ -50,11 +58,20 @@ class LotController extends Controller
         $lots = $query->latest()->paginate(15)->withQueryString();
         $vendors = Vendor::latest()->get();
 
-        // Calculate summary metrics
-        $totalLots = Lot::count();
-        $activeLots = Lot::where('status', 'active')->count();
-        $totalWeight = (float) \App\Models\Purchase::whereNotNull('lot_id')->sum('total_weight');
-        $totalValuation = (float) \App\Models\Purchase::whereNotNull('lot_id')->sum('total_price');
+        // Calculate summary metrics (Yard lots & purchases only)
+        $yardLotsQuery = Lot::whereDoesntHave('purchases', function ($q) {
+            $q->whereHas('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            });
+        });
+        $totalLots = (clone $yardLotsQuery)->count();
+        $activeLots = (clone $yardLotsQuery)->where('status', 'active')->count();
+        $totalWeight = (float) \App\Models\Purchase::whereNotNull('lot_id')
+            ->whereDoesntHave('warehouse', fn($wq) => $wq->where('type', 'shop'))
+            ->sum('total_weight');
+        $totalValuation = (float) \App\Models\Purchase::whereNotNull('lot_id')
+            ->whereDoesntHave('warehouse', fn($wq) => $wq->where('type', 'shop'))
+            ->sum('total_price');
 
         return view('frontend.pages.lots.index', compact('lots', 'vendors', 'totalLots', 'activeLots', 'totalWeight', 'totalValuation'));
     }
@@ -206,7 +223,11 @@ class LotController extends Controller
             'purchases.warehouse',
             'coils',
             'salesItems.sale.customer',
-        ]);
+        ])->whereDoesntHave('purchases', function ($q) {
+            $q->whereHas('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            });
+        });
 
         // 1. Date Range & Preset Filtering
         $datePreset = $request->input('date_preset');

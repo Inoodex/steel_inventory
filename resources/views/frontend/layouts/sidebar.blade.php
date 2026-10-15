@@ -214,17 +214,20 @@
 
                     {{-- Accounting & Ledger --}}
                     @if($isAdmin)
-                        <li class="submenu {{ $active(['chart-of-accounts.*','journal-entries.*','ledger.*','fiscal-years.*']) ? 'active' : '' }}">
+                        <li class="submenu {{ $active(['chart-of-accounts.*','journal-entries.*','balance-transfers.*','ledger.*','fiscal-years.*']) ? 'active' : '' }}">
                             <a href="javascript:void(0)">
                                 <i class="fe fe-book"></i><span> Accounting &amp; Ledger</span>
                                 <span class="menu-arrow"></span>
                             </a>
-                            <ul style="{{ $active(['chart-of-accounts.*','journal-entries.*','ledger.*','fiscal-years.*']) ? 'display:block' : '' }}">
+                            <ul style="{{ $active(['chart-of-accounts.*','journal-entries.*','balance-transfers.*','ledger.*','fiscal-years.*']) ? 'display:block' : '' }}">
                                 <li class="{{ $active(['chart-of-accounts.*']) ? 'active' : '' }}">
                                     <a href="{{ route('chart-of-accounts.index') }}"><i class="fe fe-folder"></i> Chart of Accounts</a>
                                 </li>
                                 <li class="{{ $active(['journal-entries.*']) ? 'active' : '' }}">
                                     <a href="{{ route('journal-entries.index') }}"><i class="fe fe-file-text"></i> Journal Vouchers</a>
+                                </li>
+                                <li class="{{ $active(['balance-transfers.*']) ? 'active' : '' }}">
+                                    <a href="{{ route('balance-transfers.index') }}"><i class="fe fe-repeat"></i> Balance Transfers</a>
                                 </li>
                                 <li class="{{ $active(['ledger.*']) ? 'active' : '' }}">
                                     <a href="{{ route('ledger.index') }}"><i class="fe fe-book-open"></i> General Ledger</a>

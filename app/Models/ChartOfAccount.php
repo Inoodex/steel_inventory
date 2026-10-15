@@ -110,7 +110,7 @@ class ChartOfAccount extends Model
     {
         $query = $this->journalItems()
             ->whereHas('journalEntry', function ($q) use ($asOfDate, $fromDate) {
-                $q->whereIn('status', ['posted', 'approved']);
+                $q->whereIn('status', ['posted', 'approved', 'reversed']);
                 if ($asOfDate) {
                     $q->where('entry_date', '<=', strlen($asOfDate) === 10 ? $asOfDate . ' 23:59:59' : $asOfDate);
                 }
@@ -145,7 +145,7 @@ class ChartOfAccount extends Model
     {
         $query = \Illuminate\Support\Facades\DB::table('journal_entry_items')
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_items.journal_entry_id')
-            ->whereIn('journal_entries.status', ['posted', 'approved']);
+            ->whereIn('journal_entries.status', ['posted', 'approved', 'reversed']);
 
         if ($asOfDate) {
             $query->where('journal_entries.entry_date', '<=', strlen($asOfDate) === 10 ? $asOfDate . ' 23:59:59' : $asOfDate);

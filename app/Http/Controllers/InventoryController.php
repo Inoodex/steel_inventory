@@ -433,6 +433,9 @@ class InventoryController extends Controller
 
         $query = Coil::where('status', 'in_stock')
             ->where('remaining_weight', '>', 0)
+            ->whereDoesntHave('warehouse', function ($q) {
+                $q->where('type', 'shop');
+            })
             ->with(['lot.vendor', 'warehouse', 'purchase', 'vendor'])
             ->latest();
 

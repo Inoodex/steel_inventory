@@ -13,7 +13,7 @@ use App\Http\Controllers\{
     TrialBalanceController, FinancialStatementController,
     FiscalYearController, WarehouseController,
     WorkerPayoutController, ShopController, MasterLogReportController,
-    CustomerAdvanceController, VendorAdvanceController
+    CustomerAdvanceController, VendorAdvanceController, BalanceTransferController
 };
 
 use Illuminate\Support\Facades\{Auth, Route};
@@ -202,6 +202,14 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
             Route::get('journal-entries/{journalEntry}/pdf', [JournalEntryController::class, 'downloadPdf'])->name('journal-entries.pdf');
             Route::post('journal-entries/{journalEntry}/reverse', [JournalEntryController::class, 'reverse'])->name('journal-entries.reverse');
             Route::resource('journal-entries', JournalEntryController::class)->except(['edit', 'update', 'destroy']);
+
+            // Balance Transfers (Fund Transfers / Contra Vouchers)
+            Route::get('balance-transfers', [BalanceTransferController::class, 'index'])->name('balance-transfers.index');
+            Route::get('balance-transfers/create', [BalanceTransferController::class, 'create'])->name('balance-transfers.create');
+            Route::post('balance-transfers', [BalanceTransferController::class, 'store'])->name('balance-transfers.store');
+            Route::get('balance-transfers/{id}', [BalanceTransferController::class, 'show'])->name('balance-transfers.show');
+            Route::get('balance-transfers/{id}/pdf', [BalanceTransferController::class, 'downloadPdf'])->name('balance-transfers.pdf');
+            Route::post('balance-transfers/{id}/reverse', [BalanceTransferController::class, 'reverse'])->name('balance-transfers.reverse');
 
             // General Ledger
             Route::get('ledger', [LedgerController::class, 'index'])->name('ledger.index');

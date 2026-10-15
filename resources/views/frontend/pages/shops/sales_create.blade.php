@@ -157,15 +157,15 @@
                             <div class="row g-2">
                                 <div class="col-md-4 col-12">
                                     <label class="form-label small text-secondary fw-semibold mb-1">Customer Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="name" id="new_cust_name" class="form-control form-control-sm" placeholder="e.g. Rahim Trading">
+                                    <input type="text" name="name" id="new_cust_name" class="form-control form-control-sm">
                                 </div>
                                 <div class="col-md-4 col-12">
                                     <label class="form-label small text-secondary fw-semibold mb-1">Phone Number <span class="text-danger">*</span></label>
-                                    <input type="text" name="phone" id="new_cust_phone" class="form-control form-control-sm" placeholder="017xxxxxxxx">
+                                    <input type="text" name="phone" id="new_cust_phone" class="form-control form-control-sm">
                                 </div>
                                 <div class="col-md-4 col-12">
                                     <label class="form-label small text-secondary fw-semibold mb-1">Address / Location</label>
-                                    <input type="text" name="address" id="new_cust_address" class="form-control form-control-sm" placeholder="e.g. Tongi, Gazipur">
+                                    <input type="text" name="address" id="new_cust_address" class="form-control form-control-sm">
                                 </div>
                             </div>
                         </div>

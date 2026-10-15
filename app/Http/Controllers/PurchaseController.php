@@ -26,8 +26,14 @@ class PurchaseController extends Controller
     public function index(Request $request)
     {
         $query = Lot::with(['vendor', 'purchases' => function ($q) {
-            $q->with(['warehouse', 'coils'])->latest();
-        }])->whereHas('purchases');
+            $q->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            })->with(['warehouse', 'coils'])->latest();
+        }])->whereHas('purchases', function ($q) {
+            $q->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            });
+        });
 
         // Filter by search term
         if ($request->filled('search')) {
@@ -77,16 +83,29 @@ class PurchaseController extends Controller
         $lots = $query->latest()->paginate(15)->withQueryString();
         $purchases = $lots; // Alias for backward compatibility
 
-        // Overall summary statistics
-        $totalLotsCount  = Lot::whereHas('purchases')->count();
-        $totalOrderValue = (float) Purchase::sum('total_price');
-        $totalPaid       = (float) Purchase::sum('payment');
-        $totalDue        = (float) Purchase::sum('due');
-        $totalWeight     = (float) Purchase::sum('total_weight');
+        // Overall summary statistics (Yard / Main Warehouse purchases only)
+        $yardPurchaseQuery = Purchase::whereDoesntHave('warehouse', function ($wq) {
+            $wq->where('type', 'shop');
+        });
+        $totalLotsCount  = Lot::whereHas('purchases', function ($q) {
+            $q->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            });
+        })->count();
+        $totalOrderValue = (float) (clone $yardPurchaseQuery)->sum('total_price');
+        $totalPaid       = (float) (clone $yardPurchaseQuery)->sum('payment');
+        $totalDue        = (float) (clone $yardPurchaseQuery)->sum('due');
+        $totalWeight     = (float) (clone $yardPurchaseQuery)->sum('total_weight');
 
         $vendors      = Vendor::where('status', '1')->latest()->get();
-        $allLots      = Lot::where('status', 'active')->latest()->get();
-        $warehouses   = Warehouse::where('status', 'active')->orderBy('name')->get();
+        $allLots      = Lot::where('status', 'active')
+            ->whereDoesntHave('purchases', function ($q) {
+                $q->whereHas('warehouse', function ($wq) {
+                    $wq->where('type', 'shop');
+                });
+            })
+            ->latest()->get();
+        $warehouses   = Warehouse::warehouses()->where('status', 'active')->orderBy('name')->get();
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
 
         return view('frontend.pages.purchase.index', compact(
@@ -108,8 +127,15 @@ class PurchaseController extends Controller
     {
         $products   = collect();
         $vendors    = Vendor::where('status', '1')->latest()->get();
-        $lots       = Lot::with(['vendor', 'purchases.warehouse'])->where('status', 'active')->latest()->get();
-        $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
+        $lots       = Lot::with(['vendor', 'purchases.warehouse'])
+            ->where('status', 'active')
+            ->whereDoesntHave('purchases', function ($q) {
+                $q->whereHas('warehouse', function ($wq) {
+                    $wq->where('type', 'shop');
+                });
+            })
+            ->latest()->get();
+        $warehouses = Warehouse::warehouses()->where('status', 'active')->orderBy('name')->get();
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
         $suggestedLotNumber = Lot::generateLotNumber();
 
@@ -123,14 +149,24 @@ class PurchaseController extends Controller
     {
         try {
             $data = $request->validated();
+            $warehouse = !empty($data['warehouse_id']) ? Warehouse::find($data['warehouse_id']) : null;
+            $isShop = $warehouse && $warehouse->type === 'shop';
 
             if (!empty($data['items']) && is_array($data['items'])) {
                 $purchases = $this->purchaseService->createPurchasesBatch($data);
                 $count = count($purchases);
+                if ($isShop) {
+                    return redirect()->route('shops.purchases.index')
+                        ->with('success', "{$count} shop purchase items recorded and stock updated successfully.");
+                }
                 return redirect()->route('purchase.index')
                     ->with('success', "{$count} purchase items recorded and stock updated successfully.");
             } else {
                 $this->purchaseService->createPurchase($data);
+                if ($isShop) {
+                    return redirect()->route('shops.purchases.index')
+                        ->with('success', 'Shop purchase created and stock updated successfully.');
+                }
                 return redirect()->route('purchase.index')
                     ->with('success', 'Purchase created and stock updated successfully.');
             }
@@ -202,7 +238,9 @@ class PurchaseController extends Controller
         $purchase->load(['vendor', 'lot', 'warehouse', 'coils', 'bankDetail', 'creator']);
         $vendors = Vendor::where('status', '1')->latest()->get();
         $lots = Lot::where('status', 'active')->latest()->get();
-        $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
+        $warehouses = $purchase->warehouse?->isShop() 
+            ? Warehouse::where('status', 'active')->orderBy('name')->get() 
+            : Warehouse::warehouses()->where('status', 'active')->orderBy('name')->get();
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
 
         return view('frontend.pages.purchase.edit', compact('purchase', 'vendors', 'lots', 'warehouses', 'bankAccounts'));
@@ -384,8 +422,14 @@ class PurchaseController extends Controller
     {
         $request = $request ?? request();
         $query = Lot::with(['vendor', 'purchases' => function ($q) {
-            $q->with(['warehouse', 'coils'])->latest();
-        }])->whereHas('purchases');
+            $q->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            })->with(['warehouse', 'coils'])->latest();
+        }])->whereHas('purchases', function ($q) {
+            $q->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            });
+        });
 
         $hasFilters = $request->filled('vendor_id') || $request->filled('lot_id') || $request->filled('from') || $request->filled('to');
 
@@ -402,7 +446,11 @@ class PurchaseController extends Controller
 
         $purchases = $query->latest()->get();
         $vendors = Vendor::latest()->get();
-        $allLots = Lot::latest()->get();
+        $allLots = Lot::whereDoesntHave('purchases', function ($q) {
+            $q->whereHas('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            });
+        })->latest()->get();
         $lots = $allLots;
 
         return view('frontend.pages.report.purchase.index', compact('purchases', 'vendors', 'lots', 'allLots', 'request'));
@@ -411,15 +459,25 @@ class PurchaseController extends Controller
     public function report(Request $request)
     {
         $query = Lot::with(['vendor', 'purchases' => function ($q) {
-            $q->with(['warehouse', 'coils'])->latest();
-        }])->whereHas('purchases');
+            $q->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            })->with(['warehouse', 'coils'])->latest();
+        }])->whereHas('purchases', function ($q) {
+            $q->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            });
+        });
 
         $query = $this->applyPurchaseReportFilters($query, $request);
 
         $purchases = $query->latest()->get();
         $products = collect();
         $vendors = Vendor::latest()->get();
-        $allLots = Lot::latest()->get();
+        $allLots = Lot::whereDoesntHave('purchases', function ($q) {
+            $q->whereHas('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            });
+        })->latest()->get();
         $lots = $allLots;
 
         return view('frontend.pages.report.purchase.index', compact('purchases', 'products', 'vendors', 'lots', 'allLots', 'request'));
@@ -428,8 +486,14 @@ class PurchaseController extends Controller
     public function reportPdf(Request $request)
     {
         $query = Lot::with(['vendor', 'purchases' => function ($q) {
-            $q->with(['warehouse', 'coils'])->latest();
-        }])->whereHas('purchases');
+            $q->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            })->with(['warehouse', 'coils'])->latest();
+        }])->whereHas('purchases', function ($q) {
+            $q->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            });
+        });
 
         $query = $this->applyPurchaseReportFilters($query, $request);
 
@@ -480,6 +544,9 @@ class PurchaseController extends Controller
     public function duePayments()
     {
         $purchases = Purchase::with(['vendor', 'lot', 'warehouse'])
+            ->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            })
             ->where('due', '>', 0)
             ->latest()
             ->get();
@@ -495,6 +562,9 @@ class PurchaseController extends Controller
     public function duePaymentsPdf()
     {
         $purchases = Purchase::with(['vendor', 'lot', 'warehouse'])
+            ->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            })
             ->where('due', '>', 0)
             ->latest()
             ->get();

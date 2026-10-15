@@ -579,8 +579,7 @@
 
                                 <!-- Confirm & Save -->
                                 <button type="submit" class="btn btn-primary w-100 py-2.5 rounded-3 shadow fw-bold d-flex align-items-center justify-content-center gap-2" id="submitPurchaseBtn">
-                                    <i class="fe fe-check-circle"></i>
-                                    <span>Confirm &amp; Record Intake</span>
+                                    <span>Confirm &amp; Save</span>
                                 </button>
                             </div>
 

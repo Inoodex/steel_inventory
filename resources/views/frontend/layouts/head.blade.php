@@ -1114,6 +1114,11 @@
                 font-size: 0.95rem !important;
             }
         }
+
+        /* Permanently remove customizer spinning icon */
+        .settings-icon {
+            display: none !important;
+        }
     </style>
 
     <!-- Layout JS -->

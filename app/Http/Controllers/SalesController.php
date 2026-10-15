@@ -19,7 +19,10 @@ class SalesController extends Controller
     public function __construct(private SaleService $saleService) {}
     public function index(Request $request)
     {
-        $query = Sale::with(['customer', 'salesPerson', 'warehouse']);
+        $query = Sale::with(['customer', 'salesPerson', 'warehouse'])
+            ->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            });
 
         // Filter by date range (from - to)
         if ($request->filled('from') && $request->filled('to')) {
@@ -54,6 +57,7 @@ class SalesController extends Controller
 
         // Export PDF of all matching sales records
         if ($request->search_for == 'pdf' || $request->export == 'pdf') {
+            $services = (clone $query)->orderBy('id', 'desc')->get();
             $filename = 'Sales_List_Report_' . now()->format('Y_m_d_His') . '.pdf';
             return PdfService::viewToResponse('pdf.sales', compact('services', 'request'), $filename);
         }
@@ -62,35 +66,44 @@ class SalesController extends Controller
         $users = lib_salesMan();
 
 
-        // Report & Revenue Stats
-        $todaysRevenue = Sale::whereDate('created_at', Carbon::today())->sum('payble');
-        $thisWeeksRevenue = Sale::whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->sum('payble');
-        $thisMonthsRevenue = Sale::whereBetween('created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])->sum('payble');
-        $thisYearsRevenue = Sale::whereBetween('created_at', [Carbon::now()->startOfYear(), Carbon::now()->endOfYear()])->sum('payble');
+        // Report & Revenue Stats (Yard / Main Warehouse Sales only)
+        $yardSaleQuery = Sale::whereDoesntHave('warehouse', function ($wq) {
+            $wq->where('type', 'shop');
+        });
+
+        $todaysRevenue = (clone $yardSaleQuery)->whereDate('created_at', Carbon::today())->sum('payble');
+        $thisWeeksRevenue = (clone $yardSaleQuery)->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->sum('payble');
+        $thisMonthsRevenue = (clone $yardSaleQuery)->whereBetween('created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])->sum('payble');
+        $thisYearsRevenue = (clone $yardSaleQuery)->whereBetween('created_at', [Carbon::now()->startOfYear(), Carbon::now()->endOfYear()])->sum('payble');
         $totalServiceDues = 0;
 
         $todaysSalesRevenue = $todaysRevenue;
         $thisWeeksSalesRevenue = $thisWeeksRevenue;
         $thisMonthsSalesRevenue = $thisMonthsRevenue;
         $thisYearsSalesRevenue = $thisYearsRevenue;
-        $totalSalesDues = Sale::where('due_payment', '>', 0)->sum('due_payment');
+        $totalSalesDues = (clone $yardSaleQuery)->where('due_payment', '>', 0)->sum('due_payment');
 
         $todaysDailySalesRevenue = 0;
         $thisWeeksDailySalesRevenue = 0;
         $thisMonthsDailySalesRevenue = 0;
         $thisYearsDailySalesRevenue = 0;
 
-        $monthlyRevenue = Sale::selectRaw('MONTH(created_at) as month, SUM(payble) as total')
+        $isSqlite = DB::connection()->getDriverName() === 'sqlite';
+        $monthExpr = $isSqlite ? "cast(strftime('%m', created_at) as integer) as month, SUM(payble) as total" : 'MONTH(created_at) as month, SUM(payble) as total';
+        $yearExpr = $isSqlite ? "cast(strftime('%Y', created_at) as integer) as year, SUM(payble) as total" : 'YEAR(created_at) as year, SUM(payble) as total';
+        $yearWhereExpr = $isSqlite ? "cast(strftime('%Y', created_at) as integer) >= cast(strftime('%Y', 'now') as integer) - 9" : 'YEAR(created_at) >= YEAR(CURDATE()) - 9';
+
+        $monthlyRevenue = (clone $yardSaleQuery)->selectRaw($monthExpr)
             ->whereYear('created_at', Carbon::now()->year)
             ->groupBy('month')
             ->pluck('total', 'month')
             ->mapWithKeys(function ($total, $month) {
-                $monthName = Carbon::createFromFormat('m', $month)->format('M');
+                $monthName = Carbon::createFromFormat('m', str_pad((string)$month, 2, '0', STR_PAD_LEFT))->format('M');
                 return [$monthName => $total];
             });
 
-        $yearlyRevenue = Sale::selectRaw('YEAR(created_at) as year, SUM(payble) as total')
-            ->whereRaw('YEAR(created_at) >= YEAR(CURDATE()) - 9')
+        $yearlyRevenue = (clone $yardSaleQuery)->selectRaw($yearExpr)
+            ->whereRaw($yearWhereExpr)
             ->groupBy('year')
             ->pluck('total', 'year');
 
@@ -104,7 +117,14 @@ class SalesController extends Controller
     {
         $users  = User::get();
         $products = collect();
-        $coils = Coil::where('status', 'in_stock')->where('remaining_weight', '>', 0)->with(['lot', 'warehouse'])->latest()->get();
+        $coils = Coil::where('status', 'in_stock')
+            ->where('remaining_weight', '>', 0)
+            ->whereDoesntHave('warehouse', function ($wq) {
+                $wq->where('type', 'shop');
+            })
+            ->with(['lot', 'warehouse'])
+            ->latest()
+            ->get();
         $existingClients = Customer::select('id', 'name', 'phone', 'address', 'opening_balance')
             ->withSum(['sales' => function($q) {
                 $q->whereNull('deleted_at');
@@ -128,7 +148,7 @@ class SalesController extends Controller
                 $c->net_due = $net > 0 ? $net : 0.00;
                 return $c;
             });
-        $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
+        $warehouses = Warehouse::warehouses()->where('status', 'active')->orderBy('name')->get();
         $lots = Lot::with(['vendor'])->where('status', 'active')->orderBy('id', 'desc')->get();
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
 
@@ -219,7 +239,9 @@ class SalesController extends Controller
             ->orderBy('name')
             ->get();
 
-        $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
+        $warehouses = $sales->warehouse?->isShop()
+            ? Warehouse::where('status', 'active')->orderBy('name')->get()
+            : Warehouse::warehouses()->where('status', 'active')->orderBy('name')->get();
         $lots = Lot::with(['vendor'])->where('status', 'active')->orderBy('id', 'desc')->get();
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
 

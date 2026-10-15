@@ -133,4 +133,41 @@ class SaleWorkflowTest extends TestCase
         $this->assertEquals(250000.00, $this->customer->effective_due);
         $this->assertEquals(0.00, $this->customer->advance_credit);
     }
+
+    public function test_sales_index_excludes_shop_sales(): void
+    {
+        $shop = Warehouse::create([
+            'name' => 'Main Retail Shop',
+            'type' => 'shop',
+            'code' => 'SH-01',
+            'status' => 'active',
+        ]);
+
+        $yardSale = Sale::create([
+            'order_no' => 'YARD-SALE-001',
+            'customer_id' => $this->customer->id,
+            'order_date' => now()->toDateString(),
+            'qty' => 1,
+            'subtotal' => 50000,
+            'total' => 50000,
+            'payble' => 50000,
+            'warehouse_id' => $this->warehouse->id,
+        ]);
+
+        $shopSale = Sale::create([
+            'order_no' => 'SHOP-SALE-999',
+            'customer_id' => $this->customer->id,
+            'order_date' => now()->toDateString(),
+            'qty' => 1,
+            'subtotal' => 30000,
+            'total' => 30000,
+            'payble' => 30000,
+            'warehouse_id' => $shop->id,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('sales.index'));
+        $response->assertStatus(200);
+        $response->assertSee('YARD-SALE-001');
+        $response->assertDontSee('SHOP-SALE-999');
+    }
 }

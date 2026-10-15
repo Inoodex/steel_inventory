@@ -9,11 +9,11 @@
                     <h3 class="page-title font-weight-bold" style="color: #1e293b;">Balance Sheet</h3>
                 </div>
                 <div class="col-auto d-flex align-items-center gap-2">
-                    <a href="{{ route('reports.balance-sheet.csv', ['as_of_date' => $asOfDate]) }}"
+                    <!-- <a href="{{ route('reports.balance-sheet.csv', ['as_of_date' => $asOfDate]) }}"
                         class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1">
                         <i class="fas fa-file-excel"></i>
                         <span>Export CSV</span>
-                    </a>
+                    </a> -->
                     <a href="{{ route('reports.balance-sheet.pdf', ['as_of_date' => $asOfDate]) }}"
                         class="btn btn-outline-danger btn-sm d-inline-flex align-items-center gap-1" target="_blank">
                         <i class="fas fa-file-pdf"></i>

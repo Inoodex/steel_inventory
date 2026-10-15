@@ -100,7 +100,6 @@ class CustomerController extends Controller
             'email'           => 'nullable|email|max:255',
             'opening_balance' => 'nullable|numeric',
             'opening_due'     => 'nullable|numeric|min:0',
-            'opening_advance' => 'nullable|numeric|min:0',
             'address'         => 'required|string',
         ];
         $validation = Validator::make($attributes, $rules);
@@ -114,13 +113,8 @@ class CustomerController extends Controller
         $customer->email = $request->email;
         $customer->address = $request->address;
         
-        $openingDue = $request->filled('opening_due') ? (float)$request->opening_due : 0.0;
-        $openingAdv = $request->filled('opening_advance') ? (float)$request->opening_advance : 0.0;
-
-        if ($openingDue > 0) {
-            $customer->opening_balance = abs($openingDue);
-        } elseif ($openingAdv > 0) {
-            $customer->opening_balance = -1 * abs($openingAdv);
+        if ($request->filled('opening_due')) {
+            $customer->opening_balance = abs((float)$request->opening_due);
         } elseif ($request->filled('opening_balance')) {
             $customer->opening_balance = (float)$request->opening_balance;
         } else {
@@ -166,7 +160,6 @@ class CustomerController extends Controller
             'email'           => 'nullable|email|max:255',
             'opening_balance' => 'nullable|numeric',
             'opening_due'     => 'nullable|numeric|min:0',
-            'opening_advance' => 'nullable|numeric|min:0',
             'address'         => 'required|string',
         ];
         $validation = Validator::make($attributes, $rules);
@@ -180,13 +173,8 @@ class CustomerController extends Controller
         $customer->email = $request->email;
         $customer->address = $request->address;
 
-        $openingDue = $request->filled('opening_due') ? (float)$request->opening_due : 0.0;
-        $openingAdv = $request->filled('opening_advance') ? (float)$request->opening_advance : 0.0;
-
-        if ($openingDue > 0) {
-            $customer->opening_balance = abs($openingDue);
-        } elseif ($openingAdv > 0) {
-            $customer->opening_balance = -1 * abs($openingAdv);
+        if ($request->filled('opening_due')) {
+            $customer->opening_balance = abs((float)$request->opening_due);
         } elseif ($request->filled('opening_balance')) {
             $customer->opening_balance = (float)$request->opening_balance;
         } else {

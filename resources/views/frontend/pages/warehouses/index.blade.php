@@ -183,8 +183,8 @@
                             <th class="ps-4">Code</th>
                             <th>Stockyard / Depot Name</th>
                             <th>Location / Address</th>
-                            <th>Contact Person</th>
-                            <th class="text-center">Stored Coils</th>
+                            <!-- <th>Contact Person</th>
+                            <th class="text-center">Stored Coils</th> -->
                             <th>Status</th>
                             <th class="text-end pe-4">Action</th>
                         </tr>
@@ -212,7 +212,7 @@
                                         <i class="fe fe-map-pin text-secondary me-1"></i>{{ Str::limit ($wh->location, 20) ?? 'N/A' }}
                                     </span>
                                 </td>
-                                <td>
+                                <!-- <td>
                                     <span class="fw-medium text-dark small">{{ Str::limit ($wh->contact_person, 25) ?? 'N/A' }}</span>
                                     <p class="text-muted small">{{ $wh->contact_phone ?? 'N/A' }}</p>
                                 </td>
@@ -220,7 +220,7 @@
                                     <span class="badge badge-soft-primary px-3 py-2 rounded-pill fs-7">
                                         <i class="fe fe-disc me-1"></i> {{ $wh->coils_count ?? 0 }} Coils
                                     </span>
-                                </td>
+                                </td> -->
                                 <td>
                                     @if($wh->status === 'active')
                                         <span class="badge badge-soft-success px-3 py-2 rounded-pill fs-7">
@@ -329,7 +329,7 @@
                                 <label class="form-label small fw-semibold text-secondary mb-1">Location / Address</label>
                                 <input type="text" name="location" class="form-control border-light-subtle" value="{{ $wh->location }}">
                             </div>
-                            <div class="row g-3 mb-3">
+                            <!-- <div class="row g-3 mb-3">
                                 <div class="col-6">
                                     <label class="form-label small fw-semibold text-secondary mb-1">Contact Person</label>
                                     <input type="text" name="contact_person" class="form-control border-light-subtle" value="{{ $wh->contact_person }}">
@@ -342,7 +342,7 @@
                             <div class="mb-0">
                                 <label class="form-label small fw-semibold text-secondary mb-1">Capacity (Metric Tons)</label>
                                 <input type="number" step="0.001" name="capacity_ton" class="form-control border-light-subtle" value="{{ $wh->capacity_ton }}">
-                            </div>
+                            </div> -->
                         </div>
                         <div class="modal-footer border-top bg-light gap-2">
                             <button type="button" class="btn btn-light px-4 rounded-3 text-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -386,7 +386,7 @@
                             <label class="form-label small fw-semibold text-secondary mb-1">Location / Address</label>
                             <input type="text" name="location" class="form-control border-light-subtle">
                         </div>
-                        <div class="row g-3 mb-3">
+                        <!-- <div class="row g-3 mb-3">
                             <div class="col-6">
                                 <label class="form-label small fw-semibold text-secondary mb-1">Contact Person</label>
                                 <input type="text" name="contact_person" class="form-control border-light-subtle">
@@ -399,7 +399,7 @@
                         <div class="mb-0">
                             <label class="form-label small fw-semibold text-secondary mb-1">Capacity (Metric Tons)</label>
                             <input type="number" step="0.001" name="capacity_ton" class="form-control border-light-subtle">
-                        </div>
+                        </div> -->
                     </div>
                     <div class="modal-footer border-top bg-light gap-2">
                         <button type="button" class="btn btn-light px-4 rounded-3 text-secondary" data-bs-dismiss="modal">Cancel</button>

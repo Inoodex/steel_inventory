@@ -667,137 +667,196 @@ class ShopController extends Controller
     public function stockReport(Request $request)
     {
         $shop = $this->getShop();
-        $query = Coil::where('warehouse_id', $shop->id)->with(['warehouse', 'vendor', 'lot']);
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        } else {
-            $query->whereIn('status', ['in_stock', 'processing']);
-        }
+        $query = Coil::where('warehouse_id', $shop->id)
+            ->with(['lot.vendor', 'vendor', 'warehouse', 'purchase']);
 
-        if ($request->filled('thickness')) {
-            $query->where('thickness', $request->thickness);
-        }
-
+        // Search filter (coil number, thickness, width, length, vendor name, lot number)
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('coil_no', 'like', "%{$search}%")
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('coil_number', 'like', "%{$search}%")
                   ->orWhere('thickness', 'like', "%{$search}%")
                   ->orWhere('width', 'like', "%{$search}%")
-                  ->orWhere('length', 'like', "%{$search}%");
+                  ->orWhere('length', 'like', "%{$search}%")
+                  ->orWhereHas('vendor', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('lot', function ($q) use ($search) {
+                      $q->where('lot_number', 'like', "%{$search}%");
+                  });
             });
         }
 
-        $coils = $query->latest()->paginate(20)->withQueryString();
+        // Filter by Lot
+        if ($request->filled('lot_id')) {
+            $query->where('lot_id', $request->lot_id);
+        }
 
-        $allShopCoils = (clone $query)->get();
-        $totalItems = $allShopCoils->count();
-        $totalWeightKg = (float) $allShopCoils->sum('remaining_weight');
-        $totalWeightTon = $totalWeightKg / 1000;
-        $totalValuation = (float) $allShopCoils->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton);
-        $totalPieces = (float) $allShopCoils->sum(fn($c) => (float)($c->piece_count ?: 1));
+        // Status filter: default to 'in_stock' unless explicitly requested
+        $status = $request->input('status', 'in_stock');
+        if ($status === 'in_stock') {
+            $query->where('status', 'in_stock')->where('remaining_weight', '>', 0);
+        } elseif ($status === 'processing' || $status === 'in_processing') {
+            $query->where('status', 'processing');
+        } elseif ($status === 'reserved') {
+            $query->where('status', 'reserved');
+        } elseif ($status === 'exhausted') {
+            $query->where(function ($q) {
+                $q->where('status', 'exhausted')->orWhere('remaining_weight', '<=', 0);
+            });
+        } elseif ($status !== 'all') {
+            $query->where('status', $status);
+        }
 
-        $thicknessBreakdown = $allShopCoils->groupBy(function ($coil) {
+        $coils = $query->latest()->get();
+
+        // Group coils by lot_id for Lot-Wise expandable view
+        $lotGroups = $coils->groupBy(function ($c) {
+            return $c->lot_id ? (string)$c->lot_id : 'direct_stock';
+        })->map(function ($items, $key) {
+            $first = $items->first();
+            $lot = $key !== 'direct_stock' ? $first->lot : null;
+            $vendor = $lot?->vendor ?? $first->vendor;
+            $totalIntake = (float) $items->sum('net_weight');
+            $totalRemaining = (float) $items->sum('remaining_weight');
+            $pctRemaining = $totalIntake > 0 ? round(($totalRemaining / $totalIntake) * 100, 1) : ($totalRemaining > 0 ? 100 : 0);
+            $totalValuation = (float) $items->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton);
+            $totalPieces = (int) $items->sum(fn($c) => (float)($c->piece_count ?: 1));
+            $inStockPieces = (int) $items->where('remaining_weight', '>', 0)->sum(fn($c) => (float)($c->piece_count ?: 1));
+            $warehouses = $items->map(fn($c) => $c->warehouse?->name)->filter()->unique()->values();
+
+            return [
+                'lot_key'               => $key,
+                'lot_id'                => $lot?->id,
+                'lot'                   => $lot,
+                'lot_number'            => $lot ? $lot->lot_number : 'Direct Stock / Opening Stock',
+                'lot_date'              => $lot?->lot_date ? $lot->lot_date->format('d M Y') : ($first->created_at ? $first->created_at->format('d M Y') : '—'),
+                'vendor'                => $vendor,
+                'vendor_name'           => $vendor ? $vendor->name : ($lot ? 'Consignment' : 'Direct Stock'),
+                'coils'                 => $items,
+                'total_coils'           => $items->count(),
+                'in_stock_coils'        => $items->where('remaining_weight', '>', 0)->count(),
+                'total_pieces'          => $totalPieces,
+                'in_stock_pieces'       => $inStockPieces,
+                'total_intake_weight'   => $totalIntake,
+                'total_remaining_weight'=> $totalRemaining,
+                'pct_remaining'         => $pctRemaining,
+                'total_valuation'       => $totalValuation,
+                'warehouses'            => $warehouses,
+            ];
+        })->values();
+
+        // Auxiliary data for filters
+        $lots = Lot::where('status', 'active')
+            ->whereHas('coils', fn($q) => $q->where('warehouse_id', $shop->id))
+            ->latest()->get();
+        $vendors = Vendor::where('status', '1')->orderBy('name')->get();
+
+        // Top Summary KPI Metrics for this Shop
+        $totalInStockWeight = (float) Coil::where('warehouse_id', $shop->id)->where('status', 'in_stock')->sum('remaining_weight');
+        $totalIntakeWeight  = (float) Coil::where('warehouse_id', $shop->id)->where('status', 'in_stock')->sum('net_weight');
+        $inStockCount       = Coil::where('warehouse_id', $shop->id)->where('status', 'in_stock')->where('remaining_weight', '>', 0)->count();
+        $totalCoilsCount    = Coil::where('warehouse_id', $shop->id)->count();
+        $totalValuation     = (float) Coil::where('warehouse_id', $shop->id)->where('status', 'in_stock')->where('remaining_weight', '>', 0)
+            ->get()
+            ->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton);
+
+        // Thickness breakdown
+        $breakdownQuery = Coil::where('warehouse_id', $shop->id)
+            ->whereIn('status', ['in_stock', 'processing'])
+            ->where('remaining_weight', '>', 0);
+
+        if ($request->filled('lot_id')) {
+            $breakdownQuery->where('lot_id', $request->lot_id);
+        }
+
+        $thicknessBreakdown = $breakdownQuery->get()->groupBy(function ($coil) {
             return trim($coil->thickness) ?: 'Standard';
         })->map(function ($group, $thickness) {
-            $count = $group->count();
-            $pieces = $group->sum(fn($c) => (float)($c->piece_count ?: 1));
-            $weight = (float) $group->sum('remaining_weight');
-            $valuation = (float) $group->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton);
+            $totalCoils = $group->count();
+            $totalPieces = $group->sum(fn($c) => (float)($c->piece_count ?: 1));
+            $totalRemainingWeight = (float) $group->sum('remaining_weight');
+            $totalValuation = (float) $group->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton);
+            $avgPricePerKg = $totalRemainingWeight > 0 ? ($totalValuation / $totalRemainingWeight) : 0;
+            $avgPricePerTon = $avgPricePerKg * 1000;
+            $minRate = (float) $group->min('rate_per_ton');
+            $maxRate = (float) $group->max('rate_per_ton');
+            $sizes = $group->map(function($c) {
+                $w = $c->width ?: '';
+                $l = ($c->length && $c->length !== 'N/A') ? $c->length : '';
+                return trim("{$w} {$l}");
+            })->filter()->unique()->values()->all();
+
             return [
                 'thickness' => $thickness,
-                'count' => $count,
-                'pieces' => $pieces,
-                'weight' => $weight,
-                'weight_ton' => $weight / 1000,
-                'valuation' => $valuation,
-                'avg_rate' => $weight > 0 ? ($valuation / $weight) * 1000 : 0
+                'coils_count' => $totalCoils,
+                'pieces_count' => $totalPieces,
+                'total_weight' => $totalRemainingWeight,
+                'total_weight_mt' => $totalRemainingWeight / 1000,
+                'total_valuation' => $totalValuation,
+                'avg_price_per_kg' => $avgPricePerKg,
+                'avg_price_per_ton' => $avgPricePerTon,
+                'min_rate' => $minRate,
+                'max_rate' => $maxRate,
+                'sizes' => $sizes,
             ];
-        })->sortByDesc('weight');
-
-        $availableThicknesses = Coil::where('warehouse_id', $shop->id)->select('thickness')->distinct()->pluck('thickness')->filter();
+        })->sortByDesc('total_weight');
 
         return view('frontend.pages.shops.stock', compact(
-            'coils',
             'shop',
-            'availableThicknesses',
-            'totalItems',
-            'totalWeightKg',
-            'totalWeightTon',
+            'coils',
+            'lotGroups',
+            'lots',
+            'vendors',
+            'totalInStockWeight',
+            'totalIntakeWeight',
+            'inStockCount',
+            'totalCoilsCount',
             'totalValuation',
-            'totalPieces',
             'thicknessBreakdown'
         ));
     }
 
     /**
-     * Download Shop Stock Report as mPDF.
+     * Download Shop Stock Report as mPDF matching normal stock inventory standard.
      */
     public function stockReportPdf(Request $request)
     {
         ini_set('memory_limit', '512M');
 
         $shop = $this->getShop();
-        $query = Coil::where('warehouse_id', $shop->id)->with(['warehouse', 'vendor', 'lot']);
-        $selectedShopName = $shop->name . ' (' . ($shop->code ?? 'SHOP') . ')';
+        $query = Coil::where('warehouse_id', $shop->id)
+            ->where('status', 'in_stock')
+            ->where('remaining_weight', '>', 0)
+            ->with(['lot.vendor', 'warehouse', 'purchase', 'vendor'])
+            ->latest();
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        } else {
-            $query->whereIn('status', ['in_stock', 'processing']);
+        if ($request->filled('lot_id')) {
+            $query->where('lot_id', $request->lot_id);
         }
 
-        if ($request->filled('thickness')) {
-            $query->where('thickness', $request->thickness);
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('coil_number', 'like', "%{$search}%")
+                  ->orWhere('thickness', 'like', "%{$search}%")
+                  ->orWhereHas('vendor', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('lot', function ($q) use ($search) {
+                      $q->where('lot_number', 'like', "%{$search}%");
+                  });
+            });
         }
 
-        $coils = $query->latest()->get();
-
-        $totalItems = $coils->count();
-        $totalWeightKg = (float) $coils->sum('remaining_weight');
-        $totalWeightTon = $totalWeightKg / 1000;
-        $totalValuation = (float) $coils->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton);
-        $totalPieces = (float) $coils->sum(fn($c) => (float)($c->piece_count ?: 1));
-
-        $thicknessBreakdown = $coils->groupBy(function ($coil) {
-            return trim($coil->thickness) ?: 'Standard';
-        })->map(function ($group, $thickness) {
-            $weight = (float) $group->sum('remaining_weight');
-            $valuation = (float) $group->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton);
-            return [
-                'thickness' => $thickness,
-                'count' => $group->count(),
-                'pieces' => $group->sum(fn($c) => (float)($c->piece_count ?: 1)),
-                'weight' => $weight,
-                'weight_ton' => $weight / 1000,
-                'valuation' => $valuation,
-            ];
-        })->sortByDesc('weight');
-
-        $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
-        $padBase64 = file_exists($padPath) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($padPath)) : (function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '');
-
-        $data = compact(
-            'coils',
-            'selectedShopName',
-            'totalItems',
-            'totalWeightKg',
-            'totalWeightTon',
-            'totalValuation',
-            'totalPieces',
-            'thicknessBreakdown',
-            'padBase64'
-        );
-
+        $coils = $query->get();
         $filename = 'Shop_Stock_Report_' . now()->format('Y_m_d_His') . '.pdf';
 
-        return PdfService::viewToResponse('pdf.shop_stock', $data, $filename, [
-            'format'        => 'A4-L',
-            'margin_top'    => 42,
-            'margin_bottom' => 20,
-            'margin_left'   => 12,
-            'margin_right'  => 12,
-        ]);
+        $headerLabel = 'SHOP INVENTORY';
+        $reportTitle = 'SHOP STOCK INVENTORY REPORT';
+        $scopeNote = $shop->name . ' • Retail Outlet Stock';
+
+        return PdfService::viewToResponse('pdf.inventory', compact('coils', 'headerLabel', 'reportTitle', 'scopeNote'), $filename);
     }
 }
