@@ -540,6 +540,9 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-dark mb-1">Receiving Account / Payment Method <span class="text-danger">*</span></label>
                         <select id="salesDueAccountSelector" class="form-select border-light-subtle" onchange="handleSalesDueAccountChange(this)" required>
+                            <optgroup label="Cash">
+                                <option value="cash" data-method="cash">Hand Cash</option>
+                            </optgroup>
                             @if($regularDueBanks->count() > 0)
                                 <optgroup label="Bank Accounts">
                                     @foreach($regularDueBanks as $bank)

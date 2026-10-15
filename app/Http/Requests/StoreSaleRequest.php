@@ -11,6 +11,13 @@ class StoreSaleRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('bank_detail_id') === 'cash' || $this->input('bank_detail_id') === '' || $this->input('payment_method') === 'cash') {
+            $this->merge(['bank_detail_id' => null]);
+        }
+    }
+
     public function rules(): array
     {
         return [

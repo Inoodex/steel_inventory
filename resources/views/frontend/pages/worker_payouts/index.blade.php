@@ -831,6 +831,9 @@
                                 <i class="fe fe-credit-card me-1 text-primary"></i> Disbursement Account / Method <span class="text-danger">*</span>
                             </label>
                             <select class="form-select payout-unified-account-select" onchange="handlePayoutUnifiedAccountChange(this)" required>
+                                <optgroup label="Cash">
+                                    <option value="cash" data-method="cash" data-chart-id="{{ $cashAccount?->id ?? '' }}">Hand Cash</option>
+                                </optgroup>
                                 @if(isset($bankAccounts) && $bankAccounts->count() > 0)
                                     <optgroup label="Bank Accounts">
                                         @foreach($bankAccounts as $bank)
@@ -1020,6 +1023,9 @@
                                 <i class="fe fe-credit-card me-1 text-primary"></i> Disbursement Account / Method <span class="text-danger">*</span>
                             </label>
                             <select class="form-select payout-unified-account-select" onchange="handlePayoutUnifiedAccountChange(this)" required>
+                                <optgroup label="Cash">
+                                    <option value="cash" data-method="cash" data-chart-id="{{ $cashAccount?->id ?? '' }}">Hand Cash</option>
+                                </optgroup>
                                 @if(isset($bankAccounts) && $bankAccounts->count() > 0)
                                     <optgroup label="Bank Accounts">
                                         @foreach($bankAccounts as $bank)
@@ -1209,6 +1215,9 @@
                                 <i class="fe fe-credit-card me-1 text-primary"></i> Disbursement Account / Method <span class="text-danger">*</span>
                             </label>
                             <select class="form-select payout-unified-account-select" onchange="handlePayoutUnifiedAccountChange(this)" required>
+                                <optgroup label="Cash">
+                                    <option value="cash" data-method="cash" data-chart-id="{{ $cashAccount?->id ?? '' }}">Hand Cash</option>
+                                </optgroup>
                                 @if(isset($bankAccounts) && $bankAccounts->count() > 0)
                                     <optgroup label="Bank Accounts">
                                         @foreach($bankAccounts as $bank)
@@ -1406,6 +1415,9 @@
                                 <i class="fe fe-credit-card me-1 text-primary"></i> Disbursement Account / Method <span class="text-danger">*</span>
                             </label>
                             <select class="form-select payout-unified-account-select" onchange="handlePayoutUnifiedAccountChange(this)" required>
+                                <optgroup label="Cash">
+                                    <option value="cash" data-method="cash" data-chart-id="{{ $cashAccount?->id ?? '' }}">Hand Cash</option>
+                                </optgroup>
                                 @if(isset($bankAccounts) && $bankAccounts->count() > 0)
                                     <optgroup label="Bank Accounts">
                                         @foreach($bankAccounts as $bank)

@@ -27,13 +27,21 @@ class StorePurchaseRequest extends FormRequest
             $this->merge(['vendor_id' => $defaultVendor]);
         }
 
+        if ($this->input('bank_detail_id') === 'cash' || $this->input('bank_detail_id') === '' || $this->input('payment_method') === 'cash') {
+            $this->merge(['bank_detail_id' => null]);
+        }
+
         // Auto-sum total payment from vendor_payments if multi-vendor payments are provided
         $vendorPayments = $this->input('vendor_payments');
         if (is_array($vendorPayments) && count($vendorPayments) > 0) {
             $totalVendorPay = 0;
-            foreach ($vendorPayments as $vp) {
+            foreach ($vendorPayments as $idx => $vp) {
+                if (isset($vp['bank_detail_id']) && ($vp['bank_detail_id'] === 'cash' || $vp['bank_detail_id'] === '' || ($vp['payment_method'] ?? '') === 'cash')) {
+                    $vendorPayments[$idx]['bank_detail_id'] = null;
+                }
                 $totalVendorPay += (float) ($vp['amount'] ?? 0);
             }
+            $this->merge(['vendor_payments' => $vendorPayments]);
             if ($totalVendorPay > 0 || !$this->has('payment')) {
                 $this->merge(['payment' => round($totalVendorPay, 2)]);
             }

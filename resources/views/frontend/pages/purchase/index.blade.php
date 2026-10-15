@@ -749,6 +749,9 @@
                     <div class="mb-3">
                         <label class="form-label small text-secondary fw-semibold mb-1">Disbursement Account / Method <span class="text-danger">*</span></label>
                         <select id="purchaseIndexAccountSelector" class="form-select border-light-subtle" onchange="handlePurchaseIndexAccountChange(this)" required>
+                            <optgroup label="Cash">
+                                <option value="cash" data-method="cash">Hand Cash</option>
+                            </optgroup>
                             @if($regularPurchaseIndexBanks->count() > 0)
                                 <optgroup label="Bank Accounts">
                                     @foreach($regularPurchaseIndexBanks as $bank)

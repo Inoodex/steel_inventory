@@ -239,7 +239,7 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('chart-of-accounts.index', ['search' => $bank->chartOfAccount->account_code]) }}">
                                                         <i class="fe fe-layers text-info"></i>
-                                                        <span>View General Ledger</span>
+                                                        <span>View Ledger</span>
                                                     </a>
                                                 </li>
                                             @endif

@@ -511,6 +511,9 @@
                                                 <i class="fe fe-layers me-1 text-primary"></i> Bank / MFS Account
                                             </label>
                                             <select id="shopPurchaseAccountSelector" class="form-select form-select-sm" onchange="handleShopPurchaseAccountChange(this)">
+                                                <optgroup label="Cash">
+                                                    <option value="cash" data-method="cash">Hand Cash</option>
+                                                </optgroup>
                                                 @if($regularBanks->count() > 0)
                                                     <optgroup label="Bank Accounts">
                                                         @foreach($regularBanks as $bank)
@@ -929,6 +932,7 @@
                 const vDue = Math.max(0, m.bill - vPaid);
 
                 let vendorBankOpts = '<option value="">Select Account</option>';
+                vendorBankOpts += '<optgroup label="Cash"><option value="cash" data-method="cash"' + (prevBank === 'cash' ? ' selected' : '') + '>Hand Cash</option></optgroup>';
                 let regOpts = '';
                 let mfsOpts = '';
                 bankAccountsList.forEach(b => {
@@ -944,8 +948,8 @@
                         regOpts += opt;
                     }
                 });
-                if (regOpts) vendorBankOpts += `<optgroup label="🏦 Bank Accounts">${regOpts}</optgroup>`;
-                if (mfsOpts) vendorBankOpts += `<optgroup label="📱 Mobile Banking / MFS">${mfsOpts}</optgroup>`;
+                if (regOpts) vendorBankOpts += `<optgroup label="Bank Accounts">${regOpts}</optgroup>`;
+                if (mfsOpts) vendorBankOpts += `<optgroup label="Mobile Banking / MFS">${mfsOpts}</optgroup>`;
 
                 cardsHtml += `
                     <div class="card border border-light-subtle rounded-3 p-2.5 mb-2 vendor-payment-card bg-white shadow-none" data-vendor-id="${vId}">
@@ -1051,20 +1055,34 @@
     function onVendorBankChange(select) {
         const card = $(select).closest('.vendor-payment-card');
         const opt = select.options[select.selectedIndex];
-        const method = opt ? (opt.getAttribute('data-method') || 'bank') : 'bank';
-        card.find('.vendor-method-input').val(method);
+        const val = select.value;
+        if (val === 'cash') {
+            card.find('.vendor-method-input').val('cash');
+        } else {
+            const method = opt ? (opt.getAttribute('data-method') || 'bank') : 'bank';
+            card.find('.vendor-method-input').val(method);
+        }
     }
 
     function handleShopPurchaseAccountChange(selectEl) {
         const selectedOpt = selectEl.options[selectEl.selectedIndex];
         if (!selectedOpt) return;
+        const val = selectEl.value;
         const methodInput = document.getElementById('hidden_shop_purchase_payment_method');
         const bankInput = document.getElementById('hidden_shop_purchase_bank_detail_id');
+        const refContainer = document.getElementById('purchaseTransactionRefContainer');
 
-        const method = selectedOpt.getAttribute('data-method') || 'bank';
-        const bankId = selectedOpt.getAttribute('data-id') || '';
-        if (methodInput) methodInput.value = method;
-        if (bankInput) bankInput.value = bankId;
+        if (val === 'cash') {
+            if (methodInput) methodInput.value = 'cash';
+            if (bankInput) bankInput.value = '';
+            if (refContainer) refContainer.style.display = 'none';
+        } else {
+            const method = selectedOpt.getAttribute('data-method') || 'bank';
+            const bankId = selectedOpt.getAttribute('data-id') || '';
+            if (methodInput) methodInput.value = method;
+            if (bankInput) bankInput.value = bankId;
+            if (refContainer) refContainer.style.display = 'block';
+        }
     }
 
     function recalculateMultiVendorTotals() {

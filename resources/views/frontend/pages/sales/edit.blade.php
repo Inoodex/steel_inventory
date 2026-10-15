@@ -459,6 +459,9 @@
                                 <i class="fe fe-credit-card me-1 text-primary"></i> Receiving Account / Payment Method <span class="text-danger">*</span>
                             </label>
                             <select id="salesEditAccountSelector" class="form-select border-light-subtle" onchange="handleSalesEditAccountChange(this)" required>
+                                <optgroup label="Cash">
+                                    <option value="cash" data-method="cash" {{ $currSaleMethod === 'cash' ? 'selected' : '' }}>Hand Cash</option>
+                                </optgroup>
                                 @if($regularSalesEditBanks->count() > 0)
                                     <optgroup label="Bank Accounts">
                                         @foreach($regularSalesEditBanks as $bank)

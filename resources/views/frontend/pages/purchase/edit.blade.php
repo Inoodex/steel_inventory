@@ -451,6 +451,9 @@
                                     <i class="fe fe-credit-card me-1 text-primary"></i> Settlement Account / Method <span class="text-danger">*</span>
                                 </label>
                                 <select id="purchaseEditAccountSelector" class="form-select border-light-subtle mb-2" onchange="handlePurchaseEditAccountChange(this)" required>
+                                    <optgroup label="Cash">
+                                        <option value="cash" data-method="cash" {{ $currPurchaseMethod === 'cash' ? 'selected' : '' }}>Hand Cash</option>
+                                    </optgroup>
                                     @if($regularPurchaseEditBanks->count() > 0)
                                         <optgroup label="Bank Accounts">
                                             @foreach($regularPurchaseEditBanks as $bank)

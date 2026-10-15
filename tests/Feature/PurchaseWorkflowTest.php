@@ -170,4 +170,61 @@ class PurchaseWorkflowTest extends TestCase
         $bank->refresh();
         $this->assertEquals(40000.00, (float) $bank->current_balance);
     }
+
+    public function test_purchase_batch_with_hand_cash_creates_journal_entry_and_credits_cash_account(): void
+    {
+        $this->seed(\Database\Seeders\ChartOfAccountSeeder::class);
+        $service = app(\App\Services\PurchaseService::class);
+
+        $cashAccount = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
+        $this->assertNotNull($cashAccount);
+
+        $purchaseData = [
+            'vendor_id'       => $this->vendor->id,
+            'warehouse_id'    => $this->warehouse->id,
+            'lot_id'          => $this->lot->id,
+            'purchase_date'   => now()->format('Y-m-d'),
+            'payment'         => 15000.00,
+            'payment_method'  => 'cash',
+            'bank_detail_id'  => null,
+            'items'           => [
+                [
+                    'vendor_id'    => $this->vendor->id,
+                    'coil_number'  => 'COIL-CASH-001',
+                    'thickness'    => '2.5',
+                    'width'        => '1200',
+                    'length'       => '3000',
+                    'size'         => '1200',
+                    'size_type'    => 'mm',
+                    'coil_qty'     => 1,
+                    'unit_weight'  => 1.0,
+                    'total_weight' => 1.0,
+                    'unit_price'   => 50000.00,
+                    'sub_price'    => 50000.00,
+                ],
+            ],
+        ];
+
+        $purchases = $service->createPurchasesBatch($purchaseData);
+        $this->assertCount(1, $purchases);
+        $primaryPurchase = $purchases[0];
+
+        $this->assertEquals(50000.00, (float) $primaryPurchase->total_price);
+        $this->assertEquals(15000.00, (float) $primaryPurchase->payment);
+        $this->assertEquals(35000.00, (float) $primaryPurchase->due);
+
+        $jv = \App\Models\JournalEntry::where('reference_type', 'purchase')
+            ->where('reference_id', $primaryPurchase->id)
+            ->with('items')
+            ->first();
+
+        $this->assertNotNull($jv);
+        $this->assertEquals(50000.00, (float) $jv->total_debit);
+        $this->assertEquals(50000.00, (float) $jv->total_credit);
+
+        // Credit to Cash in Hand [1110]
+        $cashItem = $jv->items->firstWhere('account_id', $cashAccount->id);
+        $this->assertNotNull($cashItem);
+        $this->assertEquals(15000.00, (float) $cashItem->credit);
+    }
 }

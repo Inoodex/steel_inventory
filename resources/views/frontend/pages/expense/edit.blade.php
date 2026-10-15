@@ -80,6 +80,9 @@
                             <i class="fe fe-credit-card me-1 text-primary"></i> Paid From Account / Method <span class="text-danger">*</span>
                         </label>
                         <select id="expenseAccountSelector" class="form-select border-light-subtle" onchange="handleExpenseAccountChange(this)" required>
+                            <optgroup label="Cash">
+                                <option value="cash" data-method="cash" {{ $currMethod === 'cash' ? 'selected' : '' }}>Hand Cash</option>
+                            </optgroup>
                             @if($regularBanks->count() > 0)
                                 <optgroup label="Bank Accounts">
                                     @foreach($regularBanks as $bank)

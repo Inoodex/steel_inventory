@@ -389,6 +389,9 @@
                                 <i class="fe fe-layers me-1 text-primary"></i> Receiving Account / Method
                             </label>
                             <select id="saleAccountSelector" class="form-select border-light-subtle" onchange="handleSaleAccountChange(this)">
+                                <optgroup label="Cash">
+                                    <option value="cash" data-method="cash">Hand Cash</option>
+                                </optgroup>
                                 @if($regularBanks->count() > 0)
                                     <optgroup label="Bank Accounts">
                                         @foreach($regularBanks as $bank)

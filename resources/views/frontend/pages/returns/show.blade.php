@@ -316,6 +316,9 @@
                                         Refund Disbursed From <span class="text-danger">*</span>
                                     </label>
                                     <select id="returnApproveAccountSelector" class="form-select border-light-subtle" onchange="handleReturnApproveAccountChange(this)" required>
+                                        <optgroup label="Cash">
+                                            <option value="cash" data-method="cash">Hand Cash</option>
+                                        </optgroup>
                                         @if($regularBanks->count() > 0)
                                             <optgroup label="Bank Accounts">
                                                 @foreach($regularBanks as $bank)

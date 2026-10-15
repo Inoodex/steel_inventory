@@ -416,6 +416,9 @@
                                         <i class="fe fe-layers me-1 text-primary"></i> Receiving Account / Method
                                     </label>
                                     <select id="shopSaleAccountSelector" class="form-select form-select-sm" onchange="handleShopSaleAccountChange(this)">
+                                        <optgroup label="Cash">
+                                            <option value="cash" data-method="cash">Hand Cash</option>
+                                        </optgroup>
                                         @if($regularBanks->count() > 0)
                                             <optgroup label="Bank Accounts">
                                                 @foreach($regularBanks as $bank)
@@ -1028,6 +1031,28 @@ function reloadAfterSubmit() {
     setTimeout(function() {
         window.location.href = "{{ route('shops.sales.index') }}";
     }, 500);
+}
+
+function handleShopSaleAccountChange(selectEl) {
+    if (!selectEl) return;
+    const selectedOpt = selectEl.options[selectEl.selectedIndex];
+    if (!selectedOpt) return;
+    const val = selectEl.value;
+    const methodInput = document.getElementById('hidden_payment_method');
+    const bankInput = document.getElementById('hidden_bank_detail_id');
+    const txnRefDiv = document.getElementById('txnRefDiv');
+
+    if (val === 'cash') {
+        if (methodInput) methodInput.value = 'cash';
+        if (bankInput) bankInput.value = '';
+        if (txnRefDiv) txnRefDiv.style.display = 'none';
+    } else {
+        const method = selectedOpt.getAttribute('data-method') || 'bank';
+        const bankId = selectedOpt.getAttribute('data-id') || '';
+        if (methodInput) methodInput.value = method;
+        if (bankInput) bankInput.value = bankId;
+        if (txnRefDiv) txnRefDiv.style.display = 'block';
+    }
 }
 </script>
 @endpush
