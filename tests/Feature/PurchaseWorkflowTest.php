@@ -110,4 +110,64 @@ class PurchaseWorkflowTest extends TestCase
 
         $this->assertEquals($purchase->id, $coil->purchase->id);
     }
+
+    public function test_purchase_batch_with_bank_payment_creates_journal_entry_and_decrements_bank_balance(): void
+    {
+        $bank = \App\Models\BankDetail::create([
+            'bank_name'       => 'Islami Bank',
+            'account_name'    => 'Steel Trading Operations',
+            'account_number'  => '987654321',
+            'account_type'    => 'Bank',
+            'opening_balance' => 50000.00,
+            'current_balance' => 50000.00,
+            'is_default'      => true,
+            'is_active'       => true,
+        ]);
+
+        $service = app(\App\Services\PurchaseService::class);
+
+        $purchaseData = [
+            'lot_id'         => $this->lot->id,
+            'warehouse_id'   => $this->warehouse->id,
+            'purchase_date'  => date('Y-m-d'),
+            'payment_method' => 'bank',
+            'bank_detail_id' => $bank->id,
+            'total_payment'  => 10000.00,
+            'items'          => [
+                [
+                    'vendor_id'    => $this->vendor->id,
+                    'thickness'    => '3.00',
+                    'size'         => '1500',
+                    'size_type'    => 'mm',
+                    'coil_qty'     => 1,
+                    'unit_weight'  => 2.0,
+                    'total_weight' => 2.0,
+                    'unit_price'   => 50000.00,
+                    'sub_price'    => 100000.00,
+                ],
+            ],
+        ];
+
+        $purchases = $service->createPurchasesBatch($purchaseData);
+        $this->assertCount(1, $purchases);
+
+        $primaryPurchase = $purchases[0];
+        $this->assertEquals(100000.00, (float) $primaryPurchase->total_price);
+        $this->assertEquals(10000.00, (float) $primaryPurchase->payment);
+        $this->assertEquals(90000.00, (float) $primaryPurchase->due);
+
+        // Verify Journal Entry was auto-posted
+        $jv = \App\Models\JournalEntry::where('reference_type', 'purchase')
+            ->where('reference_id', $primaryPurchase->id)
+            ->with('items')
+            ->first();
+
+        $this->assertNotNull($jv, 'Journal voucher for purchase should be auto-posted');
+        $this->assertEquals(100000.00, (float) $jv->total_debit);
+        $this->assertEquals(100000.00, (float) $jv->total_credit);
+
+        // Verify bank balance was properly decremented by 10,000 (from 50,000 to 40,000)
+        $bank->refresh();
+        $this->assertEquals(40000.00, (float) $bank->current_balance);
+    }
 }

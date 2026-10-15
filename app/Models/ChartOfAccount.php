@@ -182,4 +182,128 @@ class ChartOfAccount extends Model
 
         return $balances;
     }
+
+    /**
+     * Ensure standard 5-class system chart of accounts and active fiscal year exist.
+     * Self-healing, idempotent, and non-destructive to existing balances.
+     */
+    public static function ensureSystemAccounts(): void
+    {
+        // 1. Ensure active fiscal year
+        if (function_exists('getActiveFiscalYear')) {
+            getActiveFiscalYear();
+        }
+
+        // 2. Normalize legacy Hand Cash if with code '0'
+        $zeroAccount = self::where('account_code', '0')->first();
+        if ($zeroAccount && !self::where('account_code', '1110')->exists()) {
+            $zeroAccount->update([
+                'account_code' => '1110',
+                'account_name' => 'Cash in Hand',
+                'account_type' => 'asset',
+                'level'        => 3,
+                'is_system'    => true,
+            ]);
+        }
+
+        // 3. Define Clean Minimal 2-Tier Tree (5 Root Classes + Direct Operational Accounts)
+        $tree = [
+            // ASSETS (1000)
+            [
+                'code' => '1000', 'name' => 'Assets', 'type' => 'asset', 'level' => 1, 'is_system' => true,
+                'children' => [
+                    ['code' => '1110', 'name' => 'Cash in Hand', 'type' => 'asset', 'level' => 2, 'is_system' => true],
+                    ['code' => '1120', 'name' => 'Bank & Mobile Banking Accounts', 'type' => 'asset', 'level' => 2, 'is_system' => true],
+                    ['code' => '1130', 'name' => 'Accounts Receivable (Customers)', 'type' => 'asset', 'level' => 2, 'is_system' => true],
+                    ['code' => '1140', 'name' => 'Steel Inventory Asset', 'type' => 'asset', 'level' => 2, 'is_system' => true],
+                    ['code' => '1150', 'name' => 'Advance to Vendors & Loans', 'type' => 'asset', 'level' => 2, 'is_system' => true],
+                ]
+            ],
+            // LIABILITIES (2000)
+            [
+                'code' => '2000', 'name' => 'Liabilities', 'type' => 'liability', 'level' => 1, 'is_system' => true,
+                'children' => [
+                    ['code' => '2110', 'name' => 'Accounts Payable (Vendors)', 'type' => 'liability', 'level' => 2, 'is_system' => true],
+                    ['code' => '2120', 'name' => 'Salary & Wages Payable', 'type' => 'liability', 'level' => 2, 'is_system' => true],
+                    ['code' => '2130', 'name' => 'Customer Advances / Deferred Revenue', 'type' => 'liability', 'level' => 2, 'is_system' => true],
+                    ['code' => '2140', 'name' => 'Pass-Through Extra Charges Payable', 'type' => 'liability', 'level' => 2, 'is_system' => true],
+                ]
+            ],
+            // EQUITY (3000)
+            [
+                'code' => '3000', 'name' => 'Equity', 'type' => 'equity', 'level' => 1, 'is_system' => true,
+                'children' => [
+                    ['code' => '3100', 'name' => 'Owner Capital', 'type' => 'equity', 'level' => 2, 'is_system' => true],
+                    ['code' => '3200', 'name' => 'Retained Earnings', 'type' => 'equity', 'level' => 2, 'is_system' => true],
+                ]
+            ],
+            // REVENUE (4000)
+            [
+                'code' => '4000', 'name' => 'Revenue / Income', 'type' => 'revenue', 'level' => 1, 'is_system' => true,
+                'children' => [
+                    ['code' => '4110', 'name' => 'Steel Sales Revenue', 'type' => 'revenue', 'level' => 2, 'is_system' => true],
+                ]
+            ],
+            // EXPENSES (5000)
+            [
+                'code' => '5000', 'name' => 'Expenses', 'type' => 'expense', 'level' => 1, 'is_system' => true,
+                'children' => [
+                    ['code' => '5110', 'name' => 'Purchase Cost / Raw Steel Expense', 'type' => 'expense', 'level' => 2, 'is_system' => true],
+                    ['code' => '5120', 'name' => 'Sales Returns & Allowances', 'type' => 'expense', 'level' => 2, 'is_system' => true],
+                    ['code' => '5210', 'name' => 'Employee Salary Expense', 'type' => 'expense', 'level' => 2, 'is_system' => true],
+                    ['code' => '5220', 'name' => 'Travel & Daily Allowance (TA/DA)', 'type' => 'expense', 'level' => 2, 'is_system' => true],
+                    ['code' => '5230', 'name' => 'Office Daily Expenses', 'type' => 'expense', 'level' => 2, 'is_system' => true],
+                ]
+            ],
+        ];
+
+        $insertNode = function ($node, $parentId = null) use (&$insertNode) {
+            $account = self::updateOrCreate(
+                ['account_code' => $node['code']],
+                [
+                    'account_name' => $node['name'],
+                    'account_type' => $node['type'],
+                    'parent_id'    => $parentId,
+                    'level'        => $node['level'],
+                    'is_active'    => true,
+                    'is_system'    => $node['is_system'] ?? false,
+                ]
+            );
+
+            if (!empty($node['children'])) {
+                foreach ($node['children'] as $child) {
+                    $insertNode($child, $account->id);
+                }
+            }
+
+            return $account;
+        };
+
+        foreach ($tree as $rootNode) {
+            $insertNode($rootNode);
+        }
+
+        // 4. Safely prune unused legacy intermediate group accounts if no journal entries exist
+        self::whereIn('account_code', ['1100', '2100', '4100', '5100', '5200'])
+            ->doesntHave('journalItems')
+            ->delete();
+
+        // 5. Connect any existing bank detail accounts under Bank Accounts (1120)
+        $bankParent = self::where('account_code', '1120')->first();
+        if ($bankParent) {
+            self::where('account_code', 'like', '1120-%')
+                ->update(['parent_id' => $bankParent->id, 'level' => 3]);
+
+            // Ensure all BankDetail records have a linked ChartOfAccount and synced balance
+            $banks = BankDetail::all();
+            foreach ($banks as $bank) {
+                if (!$bank->chartOfAccount) {
+                    $bank->resolveChartOfAccount();
+                }
+                if (method_exists($bank, 'syncCurrentBalance')) {
+                    $bank->syncCurrentBalance();
+                }
+            }
+        }
+    }
 }

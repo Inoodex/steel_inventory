@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\BankDetail;
 use App\Models\ChartOfAccount;
 use App\Models\FiscalYear;
 use Illuminate\Database\Seeder;
@@ -12,289 +11,26 @@ class ChartOfAccountSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     * Seeds minimal standard 5-class Chart of Accounts and active Fiscal Year.
      */
     public function run(): void
     {
         DB::transaction(function () {
-            // 1. Seed or ensure current active Fiscal Year
+            // 1. Ensure current active Fiscal Year
             $currentYear = date('Y');
-            $fiscalYearName = "{$currentYear}-" . ($currentYear + 1);
-
-            $fiscalYear = FiscalYear::firstOrCreate(
-                ['year_name' => $fiscalYearName],
+            FiscalYear::firstOrCreate(
+                ['is_active' => true],
                 [
+                    'year_name'  => "{$currentYear}-" . ($currentYear + 1),
                     'start_date' => "{$currentYear}-01-01",
-                    'end_date' => "{$currentYear}-12-31",
-                    'is_active' => true,
-                    'is_closed' => false,
+                    'end_date'   => "{$currentYear}-12-31",
+                    'is_active'  => true,
+                    'is_closed'  => false,
                 ]
             );
 
-            FiscalYear::where('id', '!=', $fiscalYear->id)->update(['is_active' => false]);
-
-            // 2. Essential & Practical Chart of Accounts for Steel Inventory
-            $accounts = [
-                // ==================== ASSETS (1000) ====================
-                [
-                    'code' => '1000',
-                    'name' => 'Assets',
-                    'type' => 'asset',
-                    'level' => 1,
-                    'is_system' => true,
-                    'children' => [
-                        [
-                            'code' => '1100',
-                            'name' => 'Current Assets',
-                            'type' => 'asset',
-                            'level' => 2,
-                            'is_system' => true,
-                            'children' => [
-                                [
-                                    'code' => '1110',
-                                    'name' => 'Cash in Hand',
-                                    'type' => 'asset',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                                [
-                                    'code' => '1120',
-                                    'name' => 'Bank & Mobile Banking Accounts',
-                                    'type' => 'asset',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                                [
-                                    'code' => '1130',
-                                    'name' => 'Accounts Receivable (Customers)',
-                                    'type' => 'asset',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                                [
-                                    'code' => '1140',
-                                    'name' => 'Steel Inventory Asset',
-                                    'type' => 'asset',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                                [
-                                    'code' => '1150',
-                                    'name' => 'Employee Advances & Loans',
-                                    'type' => 'asset',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-
-                // ==================== LIABILITIES (2000) ====================
-                [
-                    'code' => '2000',
-                    'name' => 'Liabilities',
-                    'type' => 'liability',
-                    'level' => 1,
-                    'is_system' => true,
-                    'children' => [
-                        [
-                            'code' => '2100',
-                            'name' => 'Current Liabilities',
-                            'type' => 'liability',
-                            'level' => 2,
-                            'is_system' => true,
-                            'children' => [
-                                [
-                                    'code' => '2110',
-                                    'name' => 'Accounts Payable (Vendors)',
-                                    'type' => 'liability',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                                [
-                                    'code' => '2120',
-                                    'name' => 'Salary & Wages Payable',
-                                    'type' => 'liability',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                                [
-                                    'code' => '2140',
-                                    'name' => 'Pass-Through Extra Charges Payable',
-                                    'type' => 'liability',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-
-                // ==================== EQUITY (3000) ====================
-                [
-                    'code' => '3000',
-                    'name' => 'Equity',
-                    'type' => 'equity',
-                    'level' => 1,
-                    'is_system' => true,
-                    'children' => [
-                        [
-                            'code' => '3100',
-                            'name' => 'Owner Capital',
-                            'type' => 'equity',
-                            'level' => 2,
-                            'is_system' => true,
-                        ],
-                        [
-                            'code' => '3200',
-                            'name' => 'Retained Earnings',
-                            'type' => 'equity',
-                            'level' => 2,
-                            'is_system' => true,
-                        ],
-                    ],
-                ],
-
-                // ==================== REVENUE (4000) ====================
-                [
-                    'code' => '4000',
-                    'name' => 'Revenue / Income',
-                    'type' => 'revenue',
-                    'level' => 1,
-                    'is_system' => true,
-                    'children' => [
-                        [
-                            'code' => '4100',
-                            'name' => 'Operating Revenue',
-                            'type' => 'revenue',
-                            'level' => 2,
-                            'is_system' => true,
-                            'children' => [
-                                [
-                                    'code' => '4110',
-                                    'name' => 'Steel Sales Revenue',
-                                    'type' => 'revenue',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-
-                // ==================== EXPENSES (5000) ====================
-                [
-                    'code' => '5000',
-                    'name' => 'Expenses',
-                    'type' => 'expense',
-                    'level' => 1,
-                    'is_system' => true,
-                    'children' => [
-                        [
-                            'code' => '5100',
-                            'name' => 'Cost of Goods Sold (COGS)',
-                            'type' => 'expense',
-                            'level' => 2,
-                            'is_system' => true,
-                            'children' => [
-                                [
-                                    'code' => '5110',
-                                    'name' => 'Purchase Cost / Raw Steel Expense',
-                                    'type' => 'expense',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                                [
-                                    'code' => '5120',
-                                    'name' => 'Sales Returns & Allowances',
-                                    'type' => 'expense',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                            ],
-                        ],
-                        [
-                            'code' => '5200',
-                            'name' => 'Operating & Administrative Expenses',
-                            'type' => 'expense',
-                            'level' => 2,
-                            'is_system' => true,
-                            'children' => [
-                                [
-                                    'code' => '5210',
-                                    'name' => 'Employee Salary Expense',
-                                    'type' => 'expense',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                                [
-                                    'code' => '5220',
-                                    'name' => 'Travel & Daily Allowance (TA/DA)',
-                                    'type' => 'expense',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                                [
-                                    'code' => '5230',
-                                    'name' => 'Office Daily Expenses',
-                                    'type' => 'expense',
-                                    'level' => 3,
-                                    'is_system' => true,
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ];
-
-            // Recursive inserter
-            $insertNode = function ($node, $parentId = null) use (&$insertNode) {
-                $account = ChartOfAccount::updateOrCreate(
-                    ['account_code' => $node['code']],
-                    [
-                        'account_name' => $node['name'],
-                        'account_type' => $node['type'],
-                        'parent_id' => $parentId,
-                        'level' => $node['level'],
-                        'is_active' => true,
-                        'is_system' => $node['is_system'] ?? false,
-                    ]
-                );
-
-                if (!empty($node['children'])) {
-                    foreach ($node['children'] as $child) {
-                        $insertNode($child, $account->id);
-                    }
-                }
-
-                return $account;
-            };
-
-            foreach ($accounts as $rootAccount) {
-                $insertNode($rootAccount);
-            }
-
-            // 3. Auto-sync existing BankDetail records under Bank Accounts (1120)
-            $bankParent = ChartOfAccount::where('account_code', '1120')->first();
-            if ($bankParent) {
-                $bankDetails = BankDetail::all();
-                $seq = 1;
-                foreach ($bankDetails as $bank) {
-                    $subCode = '1120-' . str_pad($seq++, 2, '0', STR_PAD_LEFT);
-                    ChartOfAccount::updateOrCreate(
-                        ['bank_detail_id' => $bank->id],
-                        [
-                            'account_code' => $subCode,
-                            'account_name' => "{$bank->bank_name} ({$bank->account_number})",
-                            'account_type' => 'asset',
-                            'parent_id' => $bankParent->id,
-                            'level' => 4,
-                            'is_active' => $bank->is_active,
-                            'is_system' => false,
-                        ]
-                    );
-                }
-            }
+            // 2. Delegate to minimal system accounts generator
+            ChartOfAccount::ensureSystemAccounts();
         });
     }
 }

@@ -35,4 +35,19 @@ class JournalEntryItem extends Model
     {
         return $this->belongsTo(ChartOfAccount::class, 'account_id');
     }
+
+    protected static function booted()
+    {
+        static::saved(function ($item) {
+            if ($item->account && $item->account->bank_detail_id) {
+                $item->account->bankDetail?->syncCurrentBalance();
+            }
+        });
+
+        static::deleted(function ($item) {
+            if ($item->account && $item->account->bank_detail_id) {
+                $item->account->bankDetail?->syncCurrentBalance();
+            }
+        });
+    }
 }

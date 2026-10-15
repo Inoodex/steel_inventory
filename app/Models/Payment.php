@@ -68,4 +68,19 @@ class Payment extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    protected static function booted()
+    {
+        static::saved(function ($payment) {
+            if ($payment->bank_detail_id) {
+                $payment->bankDetail?->syncCurrentBalance();
+            }
+        });
+
+        static::deleted(function ($payment) {
+            if ($payment->bank_detail_id) {
+                $payment->bankDetail?->syncCurrentBalance();
+            }
+        });
+    }
 }

@@ -278,7 +278,7 @@ class ExpenseController extends Controller
     /**
      * Post or update GL journal entry for an expense.
      */
-    protected function postExpenseJournal(DailyExpense $expense): void
+    public function postExpenseJournal(DailyExpense $expense): void
     {
         if (!function_exists('postJournalEntry')) {
             return;

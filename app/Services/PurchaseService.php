@@ -22,7 +22,7 @@ class PurchaseService
         return DB::transaction(function () use ($data) {
             $items = $data['items'] ?? [];
             $warehouseId = $data['warehouse_id'] ?? null;
-            $totalPayment = (float) ($data['payment'] ?? 0);
+            $totalPayment = (float) ($data['payment'] ?? ($data['total_payment'] ?? 0));
 
             // 1. Resolve or create Lot on the fly
             $lotType = $data['lot_type'] ?? 'existing';
@@ -334,6 +334,8 @@ class PurchaseService
 
             // Auto-post double-entry accounting journal voucher for batch purchase
             try {
+                \App\Models\ChartOfAccount::ensureSystemAccounts();
+
                 $apAcc = \App\Models\ChartOfAccount::where('account_code', '2110')->first();
                 $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
                 $invAcc = \App\Models\ChartOfAccount::where('account_code', '1140')->first();
@@ -375,6 +377,7 @@ class PurchaseService
                                         'account_id'  => $accModel->id,
                                         'amount'      => 0,
                                         'method'      => $vMethod,
+                                        'bank_id'     => $vBankId,
                                     ];
                                 }
                                 $disbursements[$accKey]['amount'] += $vPaid;
@@ -416,6 +419,14 @@ class PurchaseService
                         'description'    => 'Purchase Inward Batch — ' . count($createdPurchases) . ' steel items (' . count($purchasesByVendor) . ' vendors)',
                         'items'          => $journalItems
                     ]);
+
+                    // Sync current balance on each bank used
+                    foreach ($disbursements as $disb) {
+                        if (!empty($disb['bank_id'])) {
+                            $bank = \App\Models\BankDetail::find($disb['bank_id']);
+                            $bank?->syncCurrentBalance();
+                        }
+                    }
                 }
             } catch (\Throwable $e) {
                 Log::error('Auto-post journal voucher failed for purchase batch: ' . $e->getMessage(), [

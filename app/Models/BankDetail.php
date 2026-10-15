@@ -62,18 +62,18 @@ class BankDetail extends Model
         $openingBalance = (float) ($this->opening_balance ?? 0.00);
         $isActive = (bool) ($this->is_active ?? true);
 
+        $parent = ChartOfAccount::where('account_code', '1120')->first();
         $coa = $this->chartOfAccount ?: ChartOfAccount::where('bank_detail_id', $this->id)->first();
-
         if ($coa) {
             $coa->update([
                 'account_name'    => $accountName,
                 'opening_balance' => $openingBalance,
+                'parent_id'       => $coa->parent_id ?: $parent?->id,
                 'is_active'       => $isActive,
             ]);
             return $coa;
         }
 
-        $parent = ChartOfAccount::where('account_code', '1120')->first();
         $baseCode = '1120-' . str_pad((string) $this->id, 3, '0', STR_PAD_LEFT);
         $code = $baseCode;
         $counter = 1;
@@ -88,11 +88,47 @@ class BankDetail extends Model
             'account_name'    => $accountName,
             'account_type'    => 'asset',
             'parent_id'       => $parent?->id,
-            'level'           => 3,
+            'level'           => $parent ? ($parent->level + 1) : 3,
             'opening_balance' => $openingBalance,
-            'current_balance' => 0.00,
+            'current_balance' => $openingBalance,
             'is_active'       => $isActive,
             'is_system'       => false,
         ]);
+    }
+
+    /**
+     * Calculate and sync the true running balance from Chart of Accounts or direct Transactions.
+     */
+    public function syncCurrentBalance(): float
+    {
+        $coa = $this->chartOfAccount ?: ChartOfAccount::where('bank_detail_id', $this->id)->first();
+
+        // 1. If linked to General Ledger and journal transactions exist, use GAAP double-entry balance
+        if ($coa && $coa->journalItems()->exists()) {
+            $balance = (float) $coa->calculateBalance();
+        } else {
+            // 2. Direct transactional fallback: opening balance + received payments - disbursements
+            $opening = (float) ($this->opening_balance ?? 0.00);
+            $inflows = (float) Payment::where('bank_detail_id', $this->id)
+                ->whereIn('payment_for', [1, 2]) // 1: Sale payment, 2: Customer advance
+                ->sum('amount');
+            $outflows = (float) Payment::where('bank_detail_id', $this->id)
+                ->whereIn('payment_for', [3]) // 3: Purchase / Vendor payment / Advance
+                ->sum('amount');
+
+            // Daily expenses paid via this bank
+            $expenses = (float) DailyExpense::where('bank_detail_id', $this->id)->sum('amount');
+
+            // Worker payouts paid via this bank
+            $payouts = (float) WorkerPayout::where('bank_detail_id', $this->id)->sum('total_amount');
+
+            $balance = $opening + $inflows - $outflows - $expenses - $payouts;
+        }
+
+        if ((float) $this->current_balance !== (float) $balance) {
+            $this->forceFill(['current_balance' => $balance])->saveQuietly();
+        }
+
+        return $balance;
     }
 }

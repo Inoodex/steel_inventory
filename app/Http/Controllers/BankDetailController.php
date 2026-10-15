@@ -9,14 +9,17 @@ class BankDetailController extends Controller
 {
     public function index()
     {
+        \App\Models\ChartOfAccount::ensureSystemAccounts();
+
         $banks = BankDetail::with('chartOfAccount')->latest()->get();
 
-        // Ensure all accounts have a connected Chart of Account
+        // Ensure all accounts have a connected Chart of Account and live synced balance
         foreach ($banks as $bank) {
             if (!$bank->chartOfAccount) {
                 $bank->resolveChartOfAccount();
                 $bank->load('chartOfAccount');
             }
+            $bank->syncCurrentBalance();
         }
 
         return view('frontend.pages.bank-details.index', compact('banks'));

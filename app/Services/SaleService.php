@@ -145,6 +145,8 @@ class SaleService
 
             // 7. Auto-post double-entry journal voucher for Sale
             try {
+                \App\Models\ChartOfAccount::ensureSystemAccounts();
+
                 $arAcc = \App\Models\ChartOfAccount::where('account_code', '1130')->first();
                 $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
                 $revAcc = \App\Models\ChartOfAccount::where('account_code', '4110')->first();
@@ -168,7 +170,7 @@ class SaleService
                     [
                         'account_name' => 'Collected Extra Charges Payable (Pass-Through)',
                         'account_type' => 'liability',
-                        'level' => 3,
+                        'level' => 2,
                         'is_system' => true,
                         'status' => 'active',
                     ]

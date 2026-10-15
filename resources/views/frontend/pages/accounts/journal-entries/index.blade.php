@@ -130,9 +130,9 @@
                                         <div class="text-dark">{{ Str::limit($entry->description, 40) ?? 'No description' }}</div>
                                         <small class="text-muted">{{ $entry->items->count() }} split line(s)</small>
                                     </td>
-                                    <td class="text-end fw-bold text-dark">{{ number_format($entry->total_debit, 2) }}</td>
-                                    <td class="text-end fw-bold text-dark">{{ number_format($entry->total_credit, 2) }}</td>
-                                    <td class="text-center">
+                                    <td class="fw-bold text-dark">{{ number_format($entry->total_debit, 2) }}</td>
+                                    <td class="fw-bold text-dark">{{ number_format($entry->total_credit, 2) }}</td>
+                                    <td>
                                         @if($entry->status === 'approved')
                                             <span class="badge bg-success">Approved</span>
                                         @elseif($entry->status === 'reversed')
@@ -141,7 +141,7 @@
                                             <span class="badge bg-warning">Posted</span>
                                         @endif
                                     </td>
-                                    <td class="text-end pe-4">
+                                    <td>
                                         <div class="dropdown">
                                             <a href="javascript:void(0)" class="btn-action-icon shadow-none"
                                                 data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">

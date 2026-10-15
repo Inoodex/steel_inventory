@@ -77,4 +77,19 @@ class WorkerPayout extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    protected static function booted()
+    {
+        static::saved(function ($payout) {
+            if ($payout->bank_detail_id) {
+                $payout->bankDetail?->syncCurrentBalance();
+            }
+        });
+
+        static::deleted(function ($payout) {
+            if ($payout->bank_detail_id) {
+                $payout->bankDetail?->syncCurrentBalance();
+            }
+        });
+    }
 }

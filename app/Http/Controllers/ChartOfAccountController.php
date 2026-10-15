@@ -10,6 +10,8 @@ class ChartOfAccountController extends Controller
 {
     public function index(Request $request)
     {
+        ChartOfAccount::ensureSystemAccounts();
+
         $type = $request->query('type');
         $search = $request->query('search');
 

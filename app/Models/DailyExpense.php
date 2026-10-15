@@ -43,4 +43,19 @@ class DailyExpense extends Model
     {
         return $this->belongsTo(BankDetail::class, 'bank_detail_id');
     }
+
+    protected static function booted()
+    {
+        static::saved(function ($expense) {
+            if ($expense->bank_detail_id) {
+                $expense->bankDetail?->syncCurrentBalance();
+            }
+        });
+
+        static::deleted(function ($expense) {
+            if ($expense->bank_detail_id) {
+                $expense->bankDetail?->syncCurrentBalance();
+            }
+        });
+    }
 }
