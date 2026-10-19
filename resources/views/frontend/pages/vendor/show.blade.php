@@ -55,6 +55,8 @@
         $totalSpent = $purchases->sum(fn($p) => (float)($p->total_price ?? $p->total_amount ?? 0));
         $totalWeight = $purchases->sum(fn($p) => (float)($p->total_weight ?? 0));
         $totalDue = $purchases->sum(fn($p) => (float)($p->due ?? 0));
+        $financials = $vData->calculateFinancials();
+        $advanceBalance = (float)($financials['advance_balance'] ?? 0);
     @endphp
 
     <!-- Page Header -->
@@ -65,6 +67,12 @@
                 <p class="text-muted small mb-0">Detailed supplier contact profile, steel procurement volume and purchase order history</p>
             </div>
             <div class="d-flex align-items-center gap-2">
+                @if($advanceBalance > 0)
+                    <button type="button" class="btn btn-success px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2 shadow-sm text-white" data-bs-toggle="modal" data-bs-target="#refundVendorAdvanceModal">
+                        <i class="fe fe-corner-down-left"></i>
+                        <span>Return Advance (৳{{ number_format($advanceBalance, 2) }})</span>
+                    </button>
+                @endif
                 @if($totalDue > 0)
                     <button type="button" class="btn btn-success px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2 shadow-sm text-white" onclick="openVendorPaymentModal('', '{{ $totalDue }}')">
                         <i class="fe fe-dollar-sign"></i>
@@ -193,14 +201,18 @@
         </div>
 
         <div class="col-xl-3 col-md-6 col-12">
-            <div class="card stat-card border-0 shadow-sm rounded-3 bg-white h-100 mb-0">
+            <div class="card stat-card border-0 shadow-sm rounded-3 bg-white h-100 mb-0 {{ $advanceBalance > 0 ? 'bg-success-subtle border border-success-subtle' : '' }}">
                 <div class="card-body p-3 d-flex align-items-center">
-                    <div class="avatar avatar-md bg-danger-light text-danger rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-alert-circle fs-5"></i>
+                    <div class="avatar avatar-md {{ $advanceBalance > 0 ? 'bg-success text-white' : 'bg-danger-light text-danger' }} rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                        <i class="fe {{ $advanceBalance > 0 ? 'fe-arrow-down-left' : 'fe-alert-circle' }} fs-5"></i>
                     </div>
                     <div>
-                        <small class="text-muted d-block">Outstanding Due</small>
-                        <h5 class="fw-bold text-danger mb-0">৳{{ number_format($totalDue, 2) }}</h5>
+                        <small class="{{ $advanceBalance > 0 ? 'text-success fw-bold' : 'text-muted' }} d-block">
+                            {{ $advanceBalance > 0 ? 'Vendor Advance Balance' : 'Outstanding Due' }}
+                        </small>
+                        <h5 class="fw-bold {{ $advanceBalance > 0 ? 'text-success' : 'text-danger' }} mb-0">
+                            ৳{{ number_format($advanceBalance > 0 ? $advanceBalance : $totalDue, 2) }}
+                        </h5>
                     </div>
                 </div>
             </div>
@@ -380,11 +392,11 @@
                                 <td>
                                     <span class="badge bg-light text-dark border me-1">
                                         @if(in_array($payment->payment_method, ['bank', '2']))
-                                            🏦
+                                            
                                         @elseif(in_array($payment->payment_method, ['mobile_banking', '3']))
-                                            📱
+                                            
                                         @else
-                                            💵
+                                            
                                         @endif
                                         {{ $methodName }}
                                     </span>
@@ -417,6 +429,22 @@
                                             <i class="fas fa-ellipsis-v"></i>
                                         </a>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-primary" href="javascript:void(0)"
+                                                    onclick="openEditVendorPaymentModal({{ json_encode([
+                                                        'id' => $payment->id,
+                                                        'amount' => (float)$payment->amount,
+                                                        'payment_method' => $payment->payment_method,
+                                                        'bank_detail_id' => $payment->bank_detail_id,
+                                                        'transaction_ref' => $payment->transaction_ref,
+                                                        'payment_date' => $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('Y-m-d') : ($payment->created_at ? $payment->created_at->format('Y-m-d') : date('Y-m-d')),
+                                                        'remarks' => $payment->remarks ?? '',
+                                                        'purchase_id' => $payment->purchase_id,
+                                                    ]) }})">
+                                                    <i class="fe fe-edit text-primary"></i>
+                                                    <span>Edit Payment</span>
+                                                </a>
+                                            </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
                                                     onclick="if (confirm('Are you sure you want to revert this payment of ৳{{ number_format($payment->amount, 2) }}? This will restore the purchase due balance.')) { document.getElementById('delVendorPayment{{ $payment->id }}').submit(); }">
@@ -547,6 +575,192 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Vendor Payment Modal -->
+<div class="modal fade" id="editVendorPaymentModal" tabindex="-1" aria-labelledby="editVendorPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 border-0 shadow">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-dark" id="editVendorPaymentModalLabel">
+                    <i class="fe fe-edit me-2 text-primary"></i>Edit Vendor Payment / Disbursement
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editVendorPaymentForm" method="POST" action="">
+                @csrf
+                @method('PUT')
+                <div class="modal-body p-4">
+                    <div class="alert alert-info py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2">
+                        <i class="fe fe-info fs-6"></i>
+                        <span>Adjusting this payment will automatically update the vendor's purchase due balance, bank ledger, and journal vouchers.</span>
+                    </div>
+
+                    <div class="mb-3" id="editVendorModalPoRow" style="display: none;">
+                        <span class="text-muted small d-block">Linked Purchase Order</span>
+                        <strong class="text-dark" id="editVendorModalPoNumber">#PO-0</strong>
+                    </div>
+
+                    <!-- Payment Account / Method Selector -->
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Paying Account / Channel <span class="text-danger">*</span></label>
+                        <select class="form-select border-light-subtle" id="editVendorModalAccountSelector" onchange="handleEditVendorModalAccountChange(this)" required>
+                            <optgroup label="Cash">
+                                <option value="cash" data-method="cash">Hand Cash (Cash in Hand)</option>
+                            </optgroup>
+                            @if($regularVendorBanks->count() > 0)
+                                <optgroup label="Bank Accounts">
+                                    @foreach($regularVendorBanks as $bank)
+                                        <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}">
+                                            {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+                            @if($mfsVendorBanks->count() > 0)
+                                <optgroup label="Mobile Banking / MFS">
+                                    @foreach($mfsVendorBanks as $bank)
+                                        <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}">
+                                            {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+                        </select>
+                        <input type="hidden" name="payment_method" id="hidden_edit_vendor_modal_method" value="cash">
+                        <input type="hidden" name="bank_detail_id" id="hidden_edit_vendor_modal_bank_id" value="">
+                    </div>
+
+                    <!-- Transaction Ref -->
+                    <div class="mb-3" id="editVendorModalRefContainer" style="display: none;">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Transaction Ref / TrxID</label>
+                        <input type="text" name="transaction_ref" id="editVendorModalRef" class="form-control border-light-subtle" placeholder="e.g. TrxID / Cheque #">
+                    </div>
+
+                    <!-- Payment Date -->
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Payment Date</label>
+                        <input type="date" name="payment_date" id="editVendorModalDate" class="form-control border-light-subtle" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Payment Amount (৳) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" min="0.01" name="amount" id="editVendorModalAmount" class="form-control fw-bold text-primary fs-5 border-light-subtle" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Remarks / Note</label>
+                        <textarea name="remarks" id="editVendorModalRemarks" class="form-control border-light-subtle" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top p-3">
+                    <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold text-white">
+                        <i class="fe fe-check me-1"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Return Vendor Advance Modal -->
+@if($advanceBalance > 0)
+<div class="modal fade" id="refundVendorAdvanceModal" tabindex="-1" aria-labelledby="refundVendorAdvanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-success text-white px-4 py-3 border-0">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="avatar avatar-sm bg-white text-success rounded-circle d-flex align-items-center justify-content-center">
+                        <i class="fe fe-corner-down-left fs-6"></i>
+                    </div>
+                    <h5 class="modal-title fw-bold text-white mb-0" id="refundVendorAdvanceModalLabel">Receive Advance Return from Vendor</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('vendor-advances.refund') }}" method="POST">
+                @csrf
+                <input type="hidden" name="vendor_id" value="{{ $vData->id }}">
+
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border border-light-subtle rounded-3 p-3 mb-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted text-uppercase fw-semibold d-block mb-1">Vendor / Supplier</small>
+                            <h6 class="fw-bold text-dark mb-0">{{ $vData->name }}</h6>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted text-uppercase fw-semibold d-block mb-1">Active Advance Balance</small>
+                            <span class="badge badge-soft-success px-3 py-1 rounded-pill fw-bold fs-7">৳{{ number_format($advanceBalance, 2) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">
+                            Returned Amount (৳) <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 fw-bold text-secondary">৳</span>
+                            <input type="number" step="0.01" min="0.01" max="{{ $advanceBalance }}" name="amount" value="{{ number_format($advanceBalance, 2, '.', '') }}" class="form-control border-start-0 ps-0 fw-bold fs-6" required placeholder="0.00">
+                        </div>
+                        <small class="text-muted">Maximum returnable amount is <span class="fw-bold text-dark">৳{{ number_format($advanceBalance, 2) }}</span></small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">
+                            Receiving Method <span class="text-danger">*</span>
+                        </label>
+                        <select name="payment_method" id="show_vendor_refund_payment_method" class="form-select" onchange="toggleShowVendorRefundBankFields()">
+                            <option value="cash" selected>Cash in Hand</option>
+                            <option value="bank">Bank Transfer / Cheque</option>
+                            <option value="mobile_banking">Mobile Banking (bKash / Nagad / Rocket)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="show_vendor_refund_bank_account_row" style="display: none;">
+                        <label class="form-label small fw-bold text-dark">
+                            Receiving Bank / MFS Account <span class="text-danger">*</span>
+                        </label>
+                        <select name="bank_detail_id" id="show_vendor_refund_bank_detail_id" class="form-select">
+                            <option value="">Select Bank / MFS Account</option>
+                            @foreach($bankAccounts as $bank)
+                                <option value="{{ $bank->id }}">
+                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="show_vendor_refund_trx_ref_row" style="display: none;">
+                        <label class="form-label small fw-bold text-dark">
+                            Cheque / Transaction Reference
+                        </label>
+                        <input type="text" name="transaction_ref" class="form-control" placeholder="Cheque No. or TrxID">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">
+                            Return Date <span class="text-danger">*</span>
+                        </label>
+                        <input type="date" name="refund_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold text-dark">Remarks / Reason</label>
+                        <textarea name="remarks" class="form-control" rows="2" placeholder="e.g. Vendor returned unused advance prepayment"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer px-4 py-3 bg-light border-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4 rounded-2 fw-semibold text-white">
+                        <i class="fe fe-check me-1"></i>Confirm Return
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 @endsection
 
 @push('scripts')
@@ -595,6 +809,77 @@ function handleVendorModalAccountChange(select) {
 
     if (refContainer) {
         refContainer.style.display = bankId ? 'block' : 'none';
+    }
+}
+
+function openEditVendorPaymentModal(data) {
+    const form = document.getElementById('editVendorPaymentForm');
+    form.action = '/vendor-payments/' + data.id;
+
+    const poRow = document.getElementById('editVendorModalPoRow');
+    const poNum = document.getElementById('editVendorModalPoNumber');
+    if (data.purchase_id) {
+        poRow.style.display = 'block';
+        poNum.textContent = '#PO-' + data.purchase_id;
+    } else {
+        poRow.style.display = 'none';
+    }
+
+    document.getElementById('editVendorModalAmount').value = parseFloat(data.amount).toFixed(2);
+    document.getElementById('editVendorModalDate').value = data.payment_date || '';
+    document.getElementById('editVendorModalRef').value = data.transaction_ref || '';
+    document.getElementById('editVendorModalRemarks').value = data.remarks || '';
+
+    const selector = document.getElementById('editVendorModalAccountSelector');
+    if (data.bank_detail_id) {
+        for (let i = 0; i < selector.options.length; i++) {
+            if (selector.options[i].getAttribute('data-id') == data.bank_detail_id) {
+                selector.selectedIndex = i;
+                break;
+            }
+        }
+    } else {
+        selector.value = 'cash';
+    }
+    handleEditVendorModalAccountChange(selector);
+
+    const modalEl = document.getElementById('editVendorPaymentModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+function handleEditVendorModalAccountChange(select) {
+    if (!select) return;
+    const selectedOption = select.options[select.selectedIndex];
+    if (!selectedOption) return;
+    const method = selectedOption.getAttribute('data-method') || 'cash';
+    const bankId = selectedOption.getAttribute('data-id') || '';
+
+    document.getElementById('hidden_edit_vendor_modal_method').value = method;
+    document.getElementById('hidden_edit_vendor_modal_bank_id').value = bankId;
+
+    const refContainer = document.getElementById('editVendorModalRefContainer');
+    if (refContainer) {
+        refContainer.style.display = bankId ? 'block' : 'none';
+    }
+}
+
+function toggleShowVendorRefundBankFields() {
+    var select = document.getElementById('show_vendor_refund_payment_method');
+    if (!select) return;
+    var method = select.value;
+    var bankRow = document.getElementById('show_vendor_refund_bank_account_row');
+    var trxRow = document.getElementById('show_vendor_refund_trx_ref_row');
+    var bankSelect = document.getElementById('show_vendor_refund_bank_detail_id');
+
+    if (method === 'cash') {
+        if (bankRow) bankRow.style.display = 'none';
+        if (trxRow) trxRow.style.display = 'none';
+        if (bankSelect) bankSelect.removeAttribute('required');
+    } else {
+        if (bankRow) bankRow.style.display = 'block';
+        if (trxRow) trxRow.style.display = 'block';
+        if (bankSelect) bankSelect.setAttribute('required', 'required');
     }
 }
 </script>

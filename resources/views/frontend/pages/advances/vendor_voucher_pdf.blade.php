@@ -94,13 +94,18 @@
 </head>
 <body>
 
-    <div class="header-title">Vendor Advance Payment Voucher</div>
+    @php
+        $isReturn = $payment->amount < 0;
+        $absAmount = abs($payment->amount);
+    @endphp
+
+    <div class="header-title">{{ $isReturn ? 'Vendor Advance Return Receipt' : 'Vendor Advance Payment Voucher' }}</div>
     
     <div class="meta-card">
         <table style="width: 100%;">
             <tr>
-                <td style="width: 50%;"><strong>Voucher No:</strong> ADV-VOU-{{ str_pad($payment->id, 5, '0', STR_PAD_LEFT) }}</td>
-                <td style="width: 50%; text-align: right;"><strong>Payment Date:</strong> {{ $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') : date('d M Y') }}</td>
+                <td style="width: 50%;"><strong>{{ $isReturn ? 'Receipt No:' : 'Voucher No:' }}</strong> {{ $isReturn ? 'ADV-RET-' : 'ADV-VOU-' }}{{ str_pad($payment->id, 5, '0', STR_PAD_LEFT) }}</td>
+                <td style="width: 50%; text-align: right;"><strong>Date:</strong> {{ $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') : date('d M Y') }}</td>
             </tr>
             <tr>
                 <td><strong>Vendor / Supplier:</strong> {{ $payment->vendor?->name }} ({{ $payment->vendor?->phone }})</td>
@@ -113,16 +118,16 @@
         <thead>
             <tr>
                 <th>Description</th>
-                <th>Disbursed From Account</th>
+                <th>{{ $isReturn ? 'Receiving Account' : 'Disbursed From Account' }}</th>
                 <th>TrxID / Reference</th>
-                <th class="text-end">Amount Disbursed</th>
+                <th class="text-end">{{ $isReturn ? 'Amount Returned' : 'Amount Disbursed' }}</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td>
-                    <div class="fw-bold">{{ $payment->remarks ?: 'Vendor Advance Prepayment / Procurement Deposit' }}</div>
-                    <small style="color: #64748b;">Advance booking deposit credited to supplier ledger</small>
+                    <div class="fw-bold">{{ $payment->remarks ?: ($isReturn ? 'Return/Refund of Vendor Advance Prepayment' : 'Vendor Advance Prepayment / Procurement Deposit') }}</div>
+                    <small style="color: #64748b;">{{ $isReturn ? 'Deducted from vendor advance balance ledger' : 'Advance booking deposit credited to supplier ledger' }}</small>
                 </td>
                 <td>
                     @if($payment->payment_method === 'cash')
@@ -133,9 +138,9 @@
                         {{ ucfirst($payment->payment_method) }}
                     @endif
                 </td>
-                <td>{{ $payment->transaction_ref ?: 'Cash Payment' }}</td>
-                <td class="text-end fw-bold" style="color: #166534; font-size: 14px;">
-                    ৳{{ number_format($payment->amount, 2) }}
+                <td>{{ $payment->transaction_ref ?: ($isReturn ? 'Cash Return' : 'Cash Payment') }}</td>
+                <td class="text-end fw-bold" style="color: {{ $isReturn ? '#166534' : '#1e293b' }}; font-size: 14px;">
+                    ৳{{ number_format($absAmount, 2) }}
                 </td>
             </tr>
         </tbody>
@@ -144,8 +149,8 @@
     <div class="summary-card">
         <table style="width: 100%;">
             <tr>
-                <td>Total Disbursed:</td>
-                <td class="text-end fw-bold" style="color: #166534; font-size: 14px;">৳{{ number_format($payment->amount, 2) }}</td>
+                <td>{{ $isReturn ? 'Total Returned:' : 'Total Disbursed:' }}</td>
+                <td class="text-end fw-bold" style="color: {{ $isReturn ? '#166534' : '#1e293b' }}; font-size: 14px;">৳{{ number_format($absAmount, 2) }}</td>
             </tr>
         </table>
     </div>

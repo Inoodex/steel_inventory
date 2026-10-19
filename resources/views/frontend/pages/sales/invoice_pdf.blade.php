@@ -183,8 +183,7 @@
                 $weightScale = (float)($sales->weight_scale_cost ?? 0);
                 $labourCost = (float)($sales->labour_cost ?? 0);
                 $deliveryCharge = (float)($sales->delivery_charge ?? 0);
-                $transportPayer = $sales->transport_payer ?? 'me';
-                $billedDelivery = ($transportPayer === 'vendor') ? $deliveryCharge : 0;
+                $billedDelivery = $deliveryCharge;
                 $otherCharges = (float)($sales->other_charges ?? 0);
                 $prevDue = (float)($sales->previous_due ?? 0);
                 $grandPayable = (float)($sales->payble ?? ($subTotal - $discount + $vatAmount + $taxAmount + $weightScale + $labourCost + $billedDelivery + $otherCharges)) + $prevDue;
@@ -261,7 +260,7 @@
                 </td>
             </tr>
             @endif
-            @if($deliveryCharge > 0 && $transportPayer === 'vendor')
+            @if($deliveryCharge > 0)
             <tr>
                 <td colspan="2" style="border: none; background: transparent; height: 20px;"></td>
                 <td colspan="2" style="border: 1px solid #334155; padding: 3px 4px; font-size: 11px; font-weight: 600; text-align: right; color: #334155; height: 20px;">

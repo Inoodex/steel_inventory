@@ -109,20 +109,6 @@
     </div>
     <!-- /Page Header -->
 
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fe fe-check-circle me-2"></i>{{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fe fe-alert-triangle me-2"></i>{{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
     <!-- Summary Stats Bar -->
     <div class="row g-3 mb-4">
         <div class="col-xl-3 col-md-6 col-12">
@@ -226,11 +212,12 @@
                         <thead class="bg-light text-secondary fs-7 text-uppercase">
                             <tr>
                                 <th class="ps-4">#</th>
-                                <th>Customer Name</th>
+                                <th>Customer Details</th>
                                 <th>Contact</th>
+                                <th class="text-center">Due Orders</th>
                                 <th>Opening Due</th>
                                 <th>Sales Due</th>
-                                <th>Total Due</th>
+                                <th>Total Outstanding Due</th>
                                 <th class="text-center">Action</th>
                             </tr>
                         </thead>
@@ -257,6 +244,17 @@
                                                 <small class="text-muted fs-8"><i class="fe fe-mail me-1"></i>{{ $cust->email }}</small>
                                             @endif
                                         </div>
+                                    </td>
+                                    <td class="text-center">
+                                        @if(($cust->sales_count ?? 0) > 0)
+                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1 fs-7 fw-semibold shadow-none"
+                                                data-bs-toggle="collapse" data-bs-target="#custOrdersCollapse-{{ $cust->id }}" aria-expanded="false" title="Click to view invoice breakdown">
+                                                <i class="fe fe-shopping-cart me-1"></i>{{ $cust->sales_count }} {{ Str::plural('Order', $cust->sales_count) }}
+                                                <i class="fe fe-chevron-down ms-1"></i>
+                                            </button>
+                                        @else
+                                            <span class="text-muted small">0 Orders</span>
+                                        @endif
                                     </td>
                                     <td>
                                         @if($cust->opening_due > 0)
@@ -316,9 +314,66 @@
                                         </div>
                                     </td>
                                 </tr>
+
+                                @if(($cust->sales_count ?? 0) > 0)
+                                    <tr class="collapse bg-light-subtle" id="custOrdersCollapse-{{ $cust->id }}">
+                                        <td colspan="8" class="p-3">
+                                            <div class="card border border-light-subtle shadow-xs rounded-3 bg-white mb-0">
+                                                <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+                                                    <span class="fw-bold text-dark fs-7">
+                                                        <i class="fe fe-file-text text-primary me-1"></i> Unpaid Sales Orders for {{ $cust->name }}
+                                                    </span>
+                                                    <span class="badge bg-danger-light text-danger rounded-pill fs-8">
+                                                        {{ $cust->sales_count }} {{ Str::plural('Order', $cust->sales_count) }} | Invoices Due: ৳{{ number_format($cust->sales_due, 2) }}
+                                                    </span>
+                                                </div>
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-hover align-middle mb-0">
+                                                        <thead class="bg-light text-secondary fs-8 text-uppercase">
+                                                            <tr>
+                                                                <th class="ps-3">Order #</th>
+                                                                <th>Date</th>
+                                                                <th>Branch / Warehouse</th>
+                                                                <th class="text-end">Payable</th>
+                                                                <th class="text-end">Paid</th>
+                                                                <th class="text-end">Due</th>
+                                                                <th class="text-center pe-3">Action</th>
+                              </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($cust->sales as $saleOrder)
+                                                                <tr>
+                                                                    <td class="ps-3">
+                                                                        <a href="{{ route('sales.show', $saleOrder->id) }}" class="fw-bold text-primary font-monospace text-decoration-none">
+                                                                            #{{ $saleOrder->order_no }}
+                                                                        </a>
+                                                                    </td>
+                                                                    <td class="text-muted fs-8">{{ $saleOrder->created_at ? $saleOrder->created_at->format('d M Y') : 'N/A' }}</td>
+                                                                    <td>
+                                                                        <span class="badge {{ ($saleOrder->warehouse->type ?? '') === 'shop' ? 'badge-soft-info' : 'badge-soft-secondary' }} fs-8">
+                                                                            <i class="fe {{ ($saleOrder->warehouse->type ?? '') === 'shop' ? 'fe-home' : 'fe-box' }} me-1"></i>{{ $saleOrder->warehouse->name ?? 'Main Yard' }}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td class="text-end fs-8">৳{{ number_format($saleOrder->payble, 2) }}</td>
+                                                                    <td class="text-end text-success fs-8">৳{{ number_format($saleOrder->advanced_payment, 2) }}</td>
+                                                                    <td class="text-end fw-bold text-danger fs-8">৳{{ number_format($saleOrder->due_payment, 2) }}</td>
+                                                                    <td class="text-center pe-3">
+                                                                        <a href="{{ route('sales.show', $saleOrder->id) }}" class="btn btn-xs btn-outline-primary rounded px-2 py-0.5 fs-8">
+                                                                            <i class="fe fe-eye me-1"></i>View
+                                                                        </a>
+                                                                    </td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-5">
+                                    <td colspan="8" class="text-center py-5">
                                         <div class="d-flex flex-column align-items-center justify-content-center">
                                             <div class="avatar avatar-xl bg-success-light text-success rounded-circle mb-3 d-flex align-items-center justify-content-center">
                                                 <i class="fe fe-check-circle fs-1"></i>
@@ -359,7 +414,7 @@
                                 <th>Date</th>
                                 <th>Order No</th>
                                 <th>Customer</th>
-                                <!-- <th>Warehouse</th> -->
+                                <th>Branch / Warehouse</th>
                                 <th>Total Amount</th>
                                 <th>Paid Amount</th>
                                 <th>Due Amount</th>
@@ -377,7 +432,7 @@
                                     <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
                                     <td>
                                         <span class="text-secondary small fw-semibold">
-                                            {{ $sale->created_at ? $sale->created_at->format('d M Y') : 'N/A' }}
+                                             {{ $sale->created_at ? $sale->created_at->format('d M Y') : 'N/A' }}
                                         </span>
                                     </td>
                                     <td>
@@ -391,11 +446,11 @@
                                             <small class="text-muted fs-7"><i class="fe fe-phone me-1"></i>{{ $customerPhone }}</small>
                                         </div>
                                     </td>
-                                    <!-- <td>
-                                        <span class="badge bg-light text-secondary border px-2 py-1 fs-8">
-                                            {{ $warehouseName }}
+                                    <td>
+                                        <span class="badge {{ ($sale->warehouse->type ?? '') === 'shop' ? 'badge-soft-info' : 'badge-soft-secondary' }} px-2 py-1 fs-8">
+                                            <i class="fe {{ ($sale->warehouse->type ?? '') === 'shop' ? 'fe-home' : 'fe-box' }} me-1"></i>{{ $warehouseName }}
                                         </span>
-                                    </td> -->
+                                    </td>
                                     <td>
                                         <span class="badge badge-soft-primary px-3 py-1 rounded-pill fs-7">
                                             ৳{{ number_format($sale->payble, 2) }}
@@ -471,10 +526,7 @@
     </div>
 </div>
 
-<!-- ==========================================
-     DIRECT CUSTOMER DUE PAYMENT MODAL
-     (Placed at bottom outside tables per AGENTS.md)
-     ========================================== -->
+<!-- CUSTOMER DUE PAYMENT MODAL -->
 <div class="modal fade" id="customerPaymentModal" tabindex="-1" aria-labelledby="customerPaymentModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3 border-0 shadow">
@@ -508,14 +560,8 @@
                         </div>
                     </div>
 
-                    <!-- Payment Type Selection -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-dark mb-1">Payment Allocation Target <span class="text-danger">*</span></label>
-                        <select name="payment_type" id="modalPaymentType" class="form-select border-light-subtle" required>
-                            <option value="opening_due">Settle Opening Due (Reduces Opening Balance)</option>
-                            <option value="general_payment">General Account Payment / Credit Collection</option>
-                        </select>
-                    </div>
+                    <!-- Hidden Auto Payment Allocation Target -->
+                    <input type="hidden" name="payment_type" id="modalPaymentType" value="auto_due_settlement">
 
                     <!-- Collection Amount -->
                     <div class="mb-3">
@@ -581,9 +627,7 @@
 
                 <div class="modal-footer border-top p-3 bg-light d-flex justify-content-between">
                     <button type="button" class="btn btn-secondary px-3 py-2 rounded-2" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success px-4 py-2 rounded-2 shadow fw-semibold">
-                        <i class="fe fe-check me-1"></i>Confirm Collection
-                    </button>
+                    <button type="submit" class="btn btn-success px-4 py-2 rounded-2 shadow fw-semibold">Confirm Collection</button>
                 </div>
             </form>
         </div>
@@ -598,14 +642,10 @@ function openCustomerPaymentModal(id, name, openingDue, totalDue) {
     document.getElementById('modalCustomerTitle').textContent = 'Settling dues for ' + name;
     document.getElementById('modalOpeningDueDisplay').textContent = '৳ ' + parseFloat(openingDue || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     document.getElementById('modalTotalDueDisplay').textContent = '৳ ' + parseFloat(totalDue || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    document.getElementById('modalAmountInput').value = parseFloat(openingDue > 0 ? openingDue : totalDue).toFixed(2);
+    document.getElementById('modalAmountInput').value = parseFloat(totalDue > 0 ? totalDue : (openingDue || 0)).toFixed(2);
 
     const typeSelect = document.getElementById('modalPaymentType');
-    if (openingDue > 0) {
-        typeSelect.value = 'opening_due';
-    } else {
-        typeSelect.value = 'general_payment';
-    }
+    typeSelect.value = 'auto_due_settlement';
 
     const modal = new bootstrap.Modal(document.getElementById('customerPaymentModal'));
     modal.show();

@@ -107,6 +107,17 @@ class ProductReturn extends Model
 
         // 5. Post double-entry journal voucher to accounting ledger
         $this->postReturnJournalEntry($userId, $refundData, $originalSaleDue);
+
+        // 6. Synchronize Bank Account Balance if bank was selected
+        $bankId = $refundData['bank_detail_id'] ?? null;
+        if (!empty($bankId)) {
+            \App\Models\BankDetail::find($bankId)?->syncCurrentBalance();
+        }
+
+        // 7. Reconcile Customer unallocated payments & dues
+        if ($this->customer_id) {
+            \App\Models\Customer::reconcileUnallocatedPayments($this->customer_id);
+        }
     }
 
     // Alias for complete if called anywhere
@@ -215,16 +226,18 @@ class ProductReturn extends Model
         if (!$sale) {
             return;
         }
-        $refundAmount = $this->total_refund_amount;
+        $refundAmount = (float) $this->total_refund_amount;
 
-        $newPayble = $sale->payble - $refundAmount;
-        $newTotal = $sale->total - $refundAmount;
-        $newDuePayment = max(0, $sale->payble - $sale->advanced_payment - $refundAmount);
+        $newPayble = max(0, (float)$sale->payble - $refundAmount);
+        $newTotal = max(0, (float)$sale->total - $refundAmount);
+        $newDuePayment = max(0, $newPayble - (float)$sale->advanced_payment);
+        $status = $newDuePayment <= 0.0001 ? 'paid' : ((float)$sale->advanced_payment > 0 ? 'partial' : 'credit');
 
         $sale->update([
-            'payble' => max(0, $newPayble),
-            'total' => max(0, $newTotal),
+            'payble' => $newPayble,
+            'total' => $newTotal,
             'due_payment' => $newDuePayment,
+            'status' => $status,
         ]);
     }
 

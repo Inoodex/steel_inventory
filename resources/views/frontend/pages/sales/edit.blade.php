@@ -198,7 +198,7 @@
                 </div>
 
                 <!-- Product Add Builder Card -->
-                <div class="p-3 bg-light rounded-3 mb-4 border" id="form-group-item1">
+                <div class="p-3 bg-light rounded-3 mb-4 border" id="product_add_builder_card">
                     <div class="row g-3 align-items-end">
                         <!-- 1. Stock / Lot Source Select Dropdown -->
                         <div class="col-lg-4 col-md-6 col-12">
@@ -225,12 +225,12 @@
                             <input type="number" id="purchase_price1" class="form-control border-light-subtle bg-white" readonly placeholder="0.00">
                         </div>
 
-                        <!-- 4. Custom Size / Specs (Required) -->
+                        <!-- 4. Custom Size / Specs -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label class="form-label small text-secondary fw-semibold mb-0">Custom Size / Specs <span class="text-danger">*</span></label>
+                                <label class="form-label small text-secondary fw-semibold mb-0">Custom Size / Specs</label>
                             </div>
-                            <input type="text" id="custom_size1" class="form-control border-light-subtle" placeholder="e.g. 4x8 ft cut" required>
+                            <input type="text" id="custom_size1" class="form-control border-light-subtle" placeholder="e.g. 4x8 ft cut">
                         </div>
 
                         <!-- 5. Selling Rate -->
@@ -318,7 +318,7 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <input type="text" name="custom_size[]" class="form-control form-control-sm border-light-subtle" value="{{ $item->custom_size }}" placeholder="Admin custom size...">
+                                        <input type="text" name="custom_size[]" class="form-control form-control-sm border-light-subtle" value="{{ old('custom_size.'.$index, $item->custom_size) }}" placeholder="e.g. 4x8 ft cut">
                                     </td>
                                     <td>
                                         <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" step="0.01" name="unit_price[]" id="unit_price{{ $itemNumber }}" class="form-control border-light-subtle unit-price" value="{{ number_format((float)$item->unit_price, 2, '.', '') }}">
@@ -329,8 +329,11 @@
                                     <td>
                                         <input type="number" step="0.01" name="total" id="total{{ $itemNumber }}" class="form-control border-light-subtle bg-light total fw-bold text-dark" readonly value="{{ number_format((float)$item->total_price, 2, '.', '') }}">
                                     </td>
-                                    <td class="text-end">
-                                        <button onclick="removeItem({{ $itemNumber }})" type="button" class="btn btn-outline-danger btn-sm px-3 rounded-2" title="Remove Item">
+                                    <td class="text-end text-nowrap">
+                                        <button onclick="editItem({{ $itemNumber }})" type="button" class="btn btn-outline-primary btn-sm px-2.5 rounded-2 me-1" title="Edit Item in Builder">
+                                            <i class="fe fe-edit"></i>
+                                        </button>
+                                        <button onclick="removeItem({{ $itemNumber }})" type="button" class="btn btn-outline-danger btn-sm px-2.5 rounded-2" title="Remove Item">
                                             <i class="fa fa-times"></i>
                                         </button>
                                     </td>
@@ -365,19 +368,7 @@
                     </div>
 
                     <div class="col-lg-3 col-md-4 col-6">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label class="form-label small text-secondary fw-semibold mb-0">Delivery / Transport (৳)</label>
-                            <div class="d-inline-flex gap-2 d-none">
-                                <div class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_me" value="me" {{ old('transport_payer', $sales->transport_payer ?? 'me') === 'me' ? 'checked' : '' }} onchange="calculateTotal()">
-                                    <label class="form-check-label small fw-semibold text-muted" for="transport_payer_me" style="font-size: 0.75rem;">Paid by Me</label>
-                                </div>
-                                <div class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_vendor" value="vendor" {{ old('transport_payer', $sales->transport_payer) === 'vendor' ? 'checked' : '' }} onchange="calculateTotal()">
-                                    <label class="form-check-label small fw-semibold text-muted" for="transport_payer_vendor" style="font-size: 0.75rem;">Paid by Vendor</label>
-                                </div>
-                            </div>
-                        </div>
+                        <label class="form-label small text-secondary fw-semibold mb-1">Delivery / Transport (৳)</label>
                         <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" id="delivery_charge" name="delivery_charge" class="form-control border-light-subtle" value="{{ number_format((float)$sales->delivery_charge, 2, '.', '') }}" min="0" step="0.01">
                     </div>
 
@@ -947,8 +938,11 @@ function addItem() {
             <td>
                 <input type="number" step="0.01" name="total" id="total${itemNumber}" class="form-control border-light-subtle bg-light total fw-bold text-dark" readonly value="${rowTotal}">
             </td>
-            <td class="text-end">
-                <button onclick="removeItem(${itemNumber})" type="button" class="btn btn-outline-danger btn-sm px-3 rounded-2" title="Remove Item">
+            <td class="text-end text-nowrap">
+                <button onclick="editItem(${itemNumber})" type="button" class="btn btn-outline-primary btn-sm px-2.5 rounded-2 me-1" title="Edit Item in Builder">
+                    <i class="fe fe-edit"></i>
+                </button>
+                <button onclick="removeItem(${itemNumber})" type="button" class="btn btn-outline-danger btn-sm px-2.5 rounded-2" title="Remove Item">
                     <i class="fa fa-times"></i>
                 </button>
             </td>
@@ -963,6 +957,36 @@ function addItem() {
     resetLotFields();
 
     calculateTotal();
+}
+
+function editItem(itemNum) {
+    const row = document.getElementById('form-group-item' + itemNum);
+    if (!row) return;
+
+    const lotSource = row.getAttribute('data-lot-source') || '';
+    const customSize = row.querySelector('input[name="custom_size[]"]')?.value || '';
+    const unitPrice = parseFloat(row.querySelector('.unit-price')?.value) || 0;
+    const qty = parseFloat(row.querySelector('.qty')?.value) || 0;
+
+    if (lotSource) {
+        $('#builder_lot_id').val(lotSource).trigger('change');
+    }
+    const customSizeInput = document.getElementById('custom_size1');
+    if (customSizeInput) customSizeInput.value = customSize;
+
+    const unitPriceInput = document.getElementById('unit_price1');
+    if (unitPriceInput && unitPrice > 0) unitPriceInput.value = unitPrice.toFixed(2);
+
+    const qtyInput = document.getElementById('qty1');
+    if (qtyInput && qty > 0) qtyInput.value = qty;
+
+    updatePreviewTotal();
+
+    row.remove();
+    calculateTotal();
+
+    document.getElementById('product_add_builder_card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    customSizeInput?.focus();
 }
 
 function removeItem(item) {
@@ -984,14 +1008,12 @@ function calculateTotal() {
     const discount = parseFloat(document.getElementById('discount')?.value) || 0;
     const vatPercent = parseFloat(document.getElementById('vat')?.value) || 0;
     const deliveryCharge = parseFloat(document.getElementById('delivery_charge')?.value) || 0;
-    const transportPayer = document.querySelector('input[name="transport_payer"]:checked')?.value || 'me';
-    const billedDelivery = (transportPayer === 'vendor') ? deliveryCharge : 0;
     const labourCost = parseFloat(document.getElementById('labour_cost')?.value) || 0;
     const weightScaleCost = parseFloat(document.getElementById('weight_scale_cost')?.value) || 0;
     const otherCharges = parseFloat(document.getElementById('other_charges')?.value) || 0;
 
     const vatAmount = (subTotal * vatPercent) / 100;
-    const grandTotal = Math.max(0, subTotal - discount + vatAmount + billedDelivery + labourCost + weightScaleCost + otherCharges);
+    const grandTotal = Math.max(0, subTotal - discount + vatAmount + deliveryCharge + labourCost + weightScaleCost + otherCharges);
     
     document.getElementById('subTotal').value = subTotal.toFixed(2);
     document.getElementById('grandTotal').value = grandTotal.toFixed(2);

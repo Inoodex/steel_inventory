@@ -94,13 +94,18 @@
 </head>
 <body>
 
-    <div class="header-title">Customer Advance Money Receipt</div>
+    @php
+        $isRefund = $payment->amount < 0;
+        $absAmount = abs($payment->amount);
+    @endphp
+
+    <div class="header-title">{{ $isRefund ? 'Customer Advance Refund Voucher' : 'Customer Advance Money Receipt' }}</div>
     
     <div class="meta-card">
         <table style="width: 100%;">
             <tr>
-                <td style="width: 50%;"><strong>Receipt No:</strong> ADV-REC-{{ str_pad($payment->id, 5, '0', STR_PAD_LEFT) }}</td>
-                <td style="width: 50%; text-align: right;"><strong>Receipt Date:</strong> {{ $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') : date('d M Y') }}</td>
+                <td style="width: 50%;"><strong>{{ $isRefund ? 'Voucher No:' : 'Receipt No:' }}</strong> {{ $isRefund ? 'ADV-REF-' : 'ADV-REC-' }}{{ str_pad($payment->id, 5, '0', STR_PAD_LEFT) }}</td>
+                <td style="width: 50%; text-align: right;"><strong>Date:</strong> {{ $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') : date('d M Y') }}</td>
             </tr>
             <tr>
                 <td><strong>Customer:</strong> {{ $payment->customer?->name }} ({{ $payment->customer?->phone }})</td>
@@ -113,16 +118,16 @@
         <thead>
             <tr>
                 <th>Description</th>
-                <th>Receiving Account</th>
+                <th>{{ $isRefund ? 'Disbursing Account' : 'Receiving Account' }}</th>
                 <th>TrxID / Reference</th>
-                <th class="text-end">Amount Received</th>
+                <th class="text-end">{{ $isRefund ? 'Amount Refunded' : 'Amount Received' }}</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td>
-                    <div class="fw-bold">{{ $payment->remarks ?: 'Customer Advance Prepayment / Booking Deposit' }}</div>
-                    <small style="color: #64748b;">Advance credit credited to customer account ledger</small>
+                    <div class="fw-bold">{{ $payment->remarks ?: ($isRefund ? 'Refund of Customer Advance Credit Balance' : 'Customer Advance Prepayment / Booking Deposit') }}</div>
+                    <small style="color: #64748b;">{{ $isRefund ? 'Deducted from customer advance balance ledger' : 'Advance credit credited to customer account ledger' }}</small>
                 </td>
                 <td>
                     @if($payment->payment_method === 'cash')
@@ -133,9 +138,9 @@
                         {{ ucfirst($payment->payment_method) }}
                     @endif
                 </td>
-                <td>{{ $payment->transaction_ref ?: 'Cash Receipt' }}</td>
-                <td class="text-end fw-bold" style="color: #166534; font-size: 14px;">
-                    ৳{{ number_format($payment->amount, 2) }}
+                <td>{{ $payment->transaction_ref ?: ($isRefund ? 'Cash Refund' : 'Cash Receipt') }}</td>
+                <td class="text-end fw-bold" style="color: {{ $isRefund ? '#b91c1c' : '#166534' }}; font-size: 14px;">
+                    ৳{{ number_format($absAmount, 2) }}
                 </td>
             </tr>
         </tbody>
@@ -144,8 +149,8 @@
     <div class="summary-card">
         <table style="width: 100%;">
             <tr>
-                <td>Total Received:</td>
-                <td class="text-end fw-bold" style="color: #166534; font-size: 14px;">৳{{ number_format($payment->amount, 2) }}</td>
+                <td>{{ $isRefund ? 'Total Refunded:' : 'Total Received:' }}</td>
+                <td class="text-end fw-bold" style="color: {{ $isRefund ? '#b91c1c' : '#166534' }}; font-size: 14px;">৳{{ number_format($absAmount, 2) }}</td>
             </tr>
         </table>
     </div>

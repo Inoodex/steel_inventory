@@ -118,9 +118,23 @@
                                                     <div class="dropdown-menu dropdown-menu-end">
                                                         <ul>
                                                             <li>
+                                                                <a class="dropdown-item text-primary py-2 d-flex align-items-center" href="javascript:void(0)"
+                                                                    onclick="openEditBillPaymentModal({{ json_encode([
+                                                                        'id' => $payment->id,
+                                                                        'amount' => (float)$payment->amount,
+                                                                        'payment_method' => $payment->payment_method,
+                                                                        'bank_detail_id' => $payment->bank_detail_id,
+                                                                        'transaction_ref' => $payment->transaction_ref,
+                                                                        'payment_date' => $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('Y-m-d') : ($payment->created_at ? $payment->created_at->format('Y-m-d') : date('Y-m-d')),
+                                                                        'remarks' => $payment->remarks ?? '',
+                                                                    ]) }})">
+                                                                    <i class="far fa-edit me-2 text-primary"></i>Edit
+                                                                </a>
+                                                            </li>
+                                                            <li>
                                                                 <a onclick="if (confirm('Are you sure to delete this payment record? This will adjust the sale due balance.')) { document.getElementById('serviceDelete{{ $payment->id }}').submit(); }"
-                                                                    class="dropdown-item text-danger" href="javascript:void(0)">
-                                                                    <i class="far fa-trash-alt me-2"></i>Delete
+                                                                    class="dropdown-item text-danger py-2 d-flex align-items-center" href="javascript:void(0)">
+                                                                    <i class="far fa-trash-alt me-2 text-danger"></i>Delete
                                                                 </a>
                                                                 <form id="serviceDelete{{ $payment->id }}"
                                                                     action="{{ route('delete.payment', $payment->id) }}"
@@ -232,6 +246,85 @@
             </div>
         </div>
     </div>
+
+    <!-- Edit Payment Modal -->
+    <div id="edit-payment-modal" class="modal fade" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 border-0 shadow">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold text-dark"><i class="fe fe-edit me-2 text-primary"></i>Edit Payment Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editPaymentForm" method="POST" action="">
+                    @csrf
+                    @method('PUT')
+                    <div class="modal-body p-4">
+                        <div class="alert alert-info py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2">
+                            <i class="fe fe-info fs-6"></i>
+                            <span>Editing this payment will adjust the invoice due balance and bank ledger automatically.</span>
+                        </div>
+
+                        <!-- Payment Account Selector -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Receiving Account / Payment Channel <span class="text-danger">*</span></label>
+                            <select class="form-select border-light-subtle" id="editBillPaymentAccountSelector" onchange="handleEditBillPaymentAccountChange(this)" required>
+                                <optgroup label="Cash">
+                                    <option value="cash" data-method="cash">Hand Cash</option>
+                                </optgroup>
+                                @if(isset($regularBanks) && $regularBanks->count() > 0)
+                                    <optgroup label="Bank Accounts">
+                                        @foreach($regularBanks as $bank)
+                                            <option value="bank_{{ $bank->id }}" data-method="bank" data-id="{{ $bank->id }}">
+                                                {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
+                                @if(isset($mfsBanks) && $mfsBanks->count() > 0)
+                                    <optgroup label="Mobile Banking / MFS">
+                                        @foreach($mfsBanks as $bank)
+                                            <option value="mfs_{{ $bank->id }}" data-method="mobile_banking" data-id="{{ $bank->id }}">
+                                                {{ $bank->bank_name }} — {{ $bank->account_number }} ({{ $bank->account_name }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
+                            </select>
+                            <input type="hidden" name="payment_method" id="hidden_edit_bill_payment_method" value="cash">
+                            <input type="hidden" name="bank_detail_id" id="hidden_edit_bill_payment_bank_id" value="">
+                        </div>
+
+                        <!-- Transaction Reference -->
+                        <div class="mb-3" id="editModalRefContainer" style="display: none;">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Transaction Ref / TrxID / Cheque #</label>
+                            <input class="form-control" type="text" name="transaction_ref" id="editBillPaymentRef" placeholder="e.g. TrxID / Cheque #">
+                        </div>
+
+                        <!-- Payment Date -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Payment Date</label>
+                            <input class="form-control" type="date" name="payment_date" id="editBillPaymentDate" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Payment Amount (৳) <span class="text-danger">*</span></label>
+                            <input class="form-control fw-bold text-success fs-5" type="number" step="0.01" min="0.01" name="amount" id="editBillPaymentAmount" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Payment Remarks</label>
+                            <textarea class="form-control" name="remarks" id="editBillPaymentRemarks" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-top p-3">
+                        <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-3" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -250,6 +343,49 @@ function handleBillPaymentAccountChange(select) {
     if (hiddenMethod) hiddenMethod.value = method;
     if (hiddenBank) hiddenBank.value = bankId;
 
+    if (refDiv) {
+        refDiv.style.display = bankId ? 'block' : 'none';
+    }
+}
+
+function openEditBillPaymentModal(data) {
+    const form = document.getElementById('editPaymentForm');
+    form.action = '/payments/' + data.id;
+
+    document.getElementById('editBillPaymentAmount').value = parseFloat(data.amount).toFixed(2);
+    document.getElementById('editBillPaymentDate').value = data.payment_date || '';
+    document.getElementById('editBillPaymentRef').value = data.transaction_ref || '';
+    document.getElementById('editBillPaymentRemarks').value = data.remarks || '';
+
+    const selector = document.getElementById('editBillPaymentAccountSelector');
+    if (data.bank_detail_id) {
+        for (let i = 0; i < selector.options.length; i++) {
+            if (selector.options[i].getAttribute('data-id') == data.bank_detail_id) {
+                selector.selectedIndex = i;
+                break;
+            }
+        }
+    } else {
+        selector.value = 'cash';
+    }
+    handleEditBillPaymentAccountChange(selector);
+
+    const modalEl = document.getElementById('edit-payment-modal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+function handleEditBillPaymentAccountChange(select) {
+    if (!select) return;
+    const selectedOption = select.options[select.selectedIndex];
+    if (!selectedOption) return;
+    const method = selectedOption.getAttribute('data-method') || 'cash';
+    const bankId = selectedOption.getAttribute('data-id') || '';
+
+    document.getElementById('hidden_edit_bill_payment_method').value = method;
+    document.getElementById('hidden_edit_bill_payment_bank_id').value = bankId;
+
+    const refDiv = document.getElementById('editModalRefContainer');
     if (refDiv) {
         refDiv.style.display = bankId ? 'block' : 'none';
     }

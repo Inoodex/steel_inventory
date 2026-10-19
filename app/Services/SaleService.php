@@ -56,7 +56,7 @@ class SaleService
                 'vat'              => $data['vat'] ?? 0,
                 'tax'              => $data['tax'] ?? 0,
                 'delivery_charge'  => $data['delivery_charge'] ?? 0,
-                'transport_payer'  => $data['transport_payer'] ?? 'me',
+                'transport_payer'  => $data['transport_payer'] ?? 'vendor',
                 'labour_cost'      => $data['labour_cost'] ?? 0,
                 'weight_scale_cost'=> $data['weight_scale_cost'] ?? 0,
                 'other_charges'    => $data['other_charges'] ?? 0,
@@ -188,9 +188,7 @@ class SaleService
                     $vatAmount = round(($subtotal * $vatPercent) / 100, 2);
                     $taxAmount = round(($subtotal * $taxPercent) / 100, 2);
 
-                    $transportPayer = $sale->transport_payer ?? 'me';
-                    $billedDelivery = ($transportPayer === 'vendor') ? (float)$sale->delivery_charge : 0;
-                    $extraCharges = $billedDelivery
+                    $extraCharges = (float)$sale->delivery_charge
                                   + (float)$sale->labour_cost
                                   + (float)$sale->weight_scale_cost
                                   + (float)$sale->other_charges
@@ -296,9 +294,7 @@ class SaleService
         $vatAmount  = round(($subtotal * $vatPercent) / 100, 2);
         $taxAmount  = round(($subtotal * $taxPercent) / 100, 2);
 
-        $transportPayer = $data['transport_payer'] ?? 'me';
-        $billedDelivery = ($transportPayer === 'vendor') ? (float)($data['delivery_charge'] ?? 0) : 0;
-        $otherCharges = $billedDelivery
+        $otherCharges = (float)($data['delivery_charge'] ?? 0)
                       + (float)($data['labour_cost'] ?? 0)
                       + (float)($data['weight_scale_cost'] ?? 0)
                       + (float)($data['other_charges'] ?? 0)

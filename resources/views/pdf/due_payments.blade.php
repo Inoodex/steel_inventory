@@ -127,15 +127,16 @@
     </div>
 
     <!-- Section 1: Customer Summary Table -->
-    <div class="section-title">1. Customer Dues Summary (Opening + Sales Dues)</div>
+    <div class="section-title">1. Customer Dues Summary (Consolidated By Customer)</div>
     <table class="items-table" cellpadding="0" cellspacing="0">
         <thead>
             <tr>
                 <th style="width: 5%; text-align: center;">#</th>
                 <th style="width: 35%; text-align: left;">Customer Name &amp; Contact</th>
-                <th style="width: 20%; text-align: right;">Opening Due</th>
-                <th style="width: 20%; text-align: right;">Sales Invoices Due</th>
-                <th style="width: 20%; text-align: right;">Total Due</th>
+                <th style="width: 15%; text-align: center;">Due Orders</th>
+                <th style="width: 15%; text-align: right;">Opening Due</th>
+                <th style="width: 15%; text-align: right;">Sales Invoices Due</th>
+                <th style="width: 15%; text-align: right;">Total Due</th>
             </tr>
         </thead>
         <tbody>
@@ -146,13 +147,14 @@
                         <strong>{{ $c->name }}</strong><br>
                         <small style="color: #64748b;">{{ $c->phone }}</small>
                     </td>
+                    <td class="text-center">{{ $c->sales_count ?? 0 }} Orders</td>
                     <td class="text-right" style="color: #b45309;">৳{{ number_format($c->opening_due, 2) }}</td>
                     <td class="text-right" style="color: #0284c7;">৳{{ number_format($c->sales_due, 2) }}</td>
                     <td class="text-right fw-bold" style="color: #dc2626;">৳{{ number_format($c->total_due, 2) }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="text-center" style="padding: 15px; color: #64748b;">No customer dues outstanding.</td>
+                    <td colspan="6" class="text-center" style="padding: 15px; color: #64748b;">No customer dues outstanding.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -180,7 +182,12 @@
                 <tr style="background-color: {{ $loop->even ? '#f8fafc' : '#ffffff' }};">
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td>{{ $item->created_at ? $item->created_at->format('d-m-Y') : 'N/A' }}</td>
-                    <td class="fw-bold">#{{ $item->order_no }}</td>
+                    <td class="fw-bold">
+                        #{{ $item->order_no }}
+                        @if($item->warehouse)
+                            <div style="font-size: 9px; font-weight: normal; color: #64748b;">{{ ($item->warehouse->type ?? '') === 'shop' ? 'Shop: ' : 'Yard: ' }}{{ $item->warehouse->name }}</div>
+                        @endif
+                    </td>
                     <td class="fw-bold">{{ $customerName }}</td>
                     <td class="text-right">৳{{ number_format($item->payble ?? 0, 2) }}</td>
                     <td class="text-right" style="color: #16a34a;">৳{{ number_format($item->advanced_payment ?? 0, 2) }}</td>

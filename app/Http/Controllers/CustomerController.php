@@ -134,9 +134,10 @@ class CustomerController extends Controller
     {
         $customer = Customer::findOrFail($id);
         $sales = \App\Models\Sale::where('customer_id', $id)->latest()->get();
-        $advancePayments = \App\Models\Payment::where('customer_id', $id)->whereNull('sale_id')->latest()->get();
+        $payments = \App\Models\Payment::with(['bankDetail', 'sale'])->where('customer_id', $id)->latest()->get();
+        $advancePayments = $payments->whereNull('sale_id')->values();
         $bankAccounts = \App\Models\BankDetail::where('is_active', true)->orderBy('bank_name')->get();
-        return view('frontend.pages.customer.show', compact('customer', 'sales', 'advancePayments', 'bankAccounts'));
+        return view('frontend.pages.customer.show', compact('customer', 'sales', 'payments', 'advancePayments', 'bankAccounts'));
     }
 
     /**

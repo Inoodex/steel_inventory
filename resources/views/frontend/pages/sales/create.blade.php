@@ -183,7 +183,7 @@
                 </div>
 
                 <!-- Product Add Builder Card -->
-                <div class="p-3 bg-light rounded-3 mb-4 border" id="form-group-item1">
+                <div class="p-3 bg-light rounded-3 mb-4 border" id="product_add_builder_card">
                     <div class="row g-3 align-items-end">
                         <!-- 1. Stock / Lot Source Select Dropdown -->
                         <div class="col-lg-4 col-md-6 col-12">
@@ -296,19 +296,7 @@
                     </div> -->
 
                     <div class="col-lg-3 col-md-4 col-6">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label class="form-label small text-secondary fw-semibold mb-0">Delivery / Transport (৳)</label>
-                            <div class="d-inline-flex gap-2 d-none">
-                                <div class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_me" value="me" {{ old('transport_payer', 'me') === 'me' ? 'checked' : '' }} onchange="calculateTotal()">
-                                    <label class="form-check-label small fw-semibold text-muted" for="transport_payer_me" style="font-size: 0.75rem;">Paid by Me</label>
-                                </div>
-                                <div class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_vendor" value="vendor" {{ old('transport_payer') === 'vendor' ? 'checked' : '' }} onchange="calculateTotal()">
-                                    <label class="form-check-label small fw-semibold text-muted" for="transport_payer_vendor" style="font-size: 0.75rem;">Paid by Vendor</label>
-                                </div>
-                            </div>
-                        </div>
+                        <label class="form-label small text-secondary fw-semibold mb-1">Delivery / Transport (৳)</label>
                         <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" id="delivery_charge" name="delivery_charge" class="form-control border-light-subtle" value="{{ old('delivery_charge', 0) }}" min="0" step="0.01">
                     </div>
 
@@ -994,8 +982,6 @@ function calculateTotal() {
     const vatPercent = parseFloat(document.getElementById('vat')?.value) || 0;
     const taxPercent = parseFloat(document.getElementById('tax')?.value) || 0;
     const deliveryCharge = parseFloat(document.getElementById('delivery_charge')?.value) || 0;
-    const transportPayer = document.querySelector('input[name="transport_payer"]:checked')?.value || 'me';
-    const billedDelivery = (transportPayer === 'vendor') ? deliveryCharge : 0;
     const labourCost = parseFloat(document.getElementById('labour_cost')?.value) || 0;
     const weightScaleCost = parseFloat(document.getElementById('weight_scale_cost')?.value) || 0;
     const otherCharges = parseFloat(document.getElementById('other_charges')?.value) || 0;
@@ -1003,7 +989,7 @@ function calculateTotal() {
     const vatAmount = (subTotal * vatPercent) / 100;
     const taxAmount = (subTotal * taxPercent) / 100;
 
-    const grandTotal = Math.max(0, subTotal - discount + vatAmount + taxAmount + billedDelivery + labourCost + weightScaleCost + otherCharges);
+    const grandTotal = Math.max(0, subTotal - discount + vatAmount + taxAmount + deliveryCharge + labourCost + weightScaleCost + otherCharges);
     
     document.getElementById('subTotal').value = subTotal.toFixed(2);
     document.getElementById('grandTotal').value = grandTotal.toFixed(2);

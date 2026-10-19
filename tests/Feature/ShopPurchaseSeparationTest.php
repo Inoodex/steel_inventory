@@ -119,10 +119,10 @@ class ShopPurchaseSeparationTest extends TestCase
         $reportResponse->assertSee('LOT-YARD-001');
         $reportResponse->assertDontSee('LOT-SHOP-001');
 
-        // 6. Test Normal Vendor Due Payments
+        // 6. Test Vendor Due Payments includes all supplier liabilities (both Yard & Shop)
         $dueResponse = $this->actingAs($this->user)->get(route('vendor-due-payments.index'));
         $dueResponse->assertStatus(200);
-        $dueResponse->assertDontSee('LOT-SHOP-001');
+        $dueResponse->assertSee('LOT-SHOP-001');
 
         // 7. Test Shop Purchases Index shows shop purchase and lot
         $shopResponse = $this->actingAs($this->user)->get(route('shops.purchases.index'));

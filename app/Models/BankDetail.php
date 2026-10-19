@@ -111,10 +111,16 @@ class BankDetail extends Model
             $opening = (float) ($this->opening_balance ?? 0.00);
             $inflows = (float) Payment::where('bank_detail_id', $this->id)
                 ->whereIn('payment_for', [1, 2]) // 1: Sale payment, 2: Customer advance
+                ->where('amount', '>', 0)
                 ->sum('amount');
-            $outflows = (float) Payment::where('bank_detail_id', $this->id)
-                ->whereIn('payment_for', [3]) // 3: Purchase / Vendor payment / Advance
+            $vendorOutflows = (float) Payment::where('bank_detail_id', $this->id)
+                ->where('payment_for', 3)
+                ->where('amount', '>', 0)
                 ->sum('amount');
+            $refundOutflows = abs((float) Payment::where('bank_detail_id', $this->id)
+                ->where('amount', '<', 0)
+                ->sum('amount'));
+            $outflows = $vendorOutflows + $refundOutflows;
 
             // Daily expenses paid via this bank
             $expenses = (float) DailyExpense::where('bank_detail_id', $this->id)->sum('amount');

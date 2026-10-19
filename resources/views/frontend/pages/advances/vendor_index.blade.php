@@ -194,6 +194,12 @@
                                                             <span>Pay More Advance</span>
                                                         </a>
                                                     </li>
+                                                    <li>
+                                                        <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger fw-semibold" href="javascript:void(0)" onclick="openRefundVendorAdvanceModal({{ $ven->id }}, '{{ addslashes($ven->name) }}', {{ (float)$ven->advance_balance }})">
+                                                            <i class="fe fe-corner-down-left text-danger"></i>
+                                                            <span>Return Advance Money</span>
+                                                        </a>
+                                                    </li>
                                                 </ul>
                                             </div>
                                         </td>
@@ -310,18 +316,21 @@
                                         <td class="font-monospace small text-muted">
                                             {{ $disbursement->transaction_ref ?: '-' }}
                                         </td>
-                                        <td class="text-end fw-bold text-success fs-7">
-                                            ৳{{ number_format($disbursement->amount, 2) }}
+                                        <td class="text-end fw-bold {{ $disbursement->amount < 0 ? 'text-success' : 'text-danger' }} fs-7">
+                                            {{ $disbursement->amount < 0 ? '+' : '' }}৳{{ number_format(abs($disbursement->amount), 2) }}
+                                            @if($disbursement->amount < 0)
+                                                <span class="badge bg-success-light text-success ms-1" style="font-size: 10px;">Returned</span>
+                                            @endif
                                         </td>
                                         <td class="text-muted small">
-                                            {{ $disbursement->remarks ?: 'Vendor Advance Prepayment' }}
+                                            {{ $disbursement->remarks ?: ($disbursement->amount < 0 ? 'Vendor Advance Return' : 'Vendor Advance Prepayment') }}
                                         </td>
                                         <td class="text-muted small">
                                             {{ $disbursement->creator?->name ?? 'System' }}
                                         </td>
                                         <td class="text-center pe-3">
-                                            <a href="{{ route('vendor-advances.voucher-pdf', $disbursement->id) }}" target="_blank" class="btn btn-sm btn-outline-danger py-1 px-2 rounded-2" title="Download Payment Voucher PDF">
-                                                <i class="fe fe-download me-1"></i>Voucher PDF
+                                            <a href="{{ route('vendor-advances.voucher-pdf', $disbursement->id) }}" target="_blank" class="btn btn-sm btn-outline-danger py-1 px-2 rounded-2" title="{{ $disbursement->amount < 0 ? 'Download Advance Return Voucher PDF' : 'Download Payment Voucher PDF' }}">
+                                                <i class="fe fe-download me-1"></i>{{ $disbursement->amount < 0 ? 'Return PDF' : 'Voucher PDF' }}
                                             </a>
                                         </td>
                                     </tr>
@@ -347,4 +356,146 @@
     </div>
 
 </div>
+
+<!-- Return Vendor Advance Modal (Placed outside table per AGENTS.md rules) -->
+<div class="modal fade" id="refundVendorAdvanceModal" tabindex="-1" aria-labelledby="refundVendorAdvanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-success text-white px-4 py-3 border-0">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="avatar avatar-sm bg-white text-success rounded-circle d-flex align-items-center justify-content-center">
+                        <i class="fe fe-corner-down-left fs-6"></i>
+                    </div>
+                    <h5 class="modal-title fw-bold text-white mb-0" id="refundVendorAdvanceModalLabel">Receive Advance Return from Vendor</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('vendor-advances.refund') }}" method="POST">
+                @csrf
+                <input type="hidden" name="vendor_id" id="return_vendor_id" value="">
+
+                <div class="modal-body p-4">
+                    <!-- Vendor Information Banner -->
+                    <div class="alert alert-light border border-light-subtle rounded-3 p-3 mb-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted text-uppercase fw-semibold d-block mb-1">Vendor / Supplier</small>
+                            <h6 class="fw-bold text-dark mb-0" id="return_vendor_name">-</h6>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted text-uppercase fw-semibold d-block mb-1">Active Advance Balance</small>
+                            <span class="badge badge-soft-success px-3 py-1 rounded-pill fw-bold fs-7" id="return_max_balance_badge">৳0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Return Amount Input -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">
+                            Returned Amount (৳) <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 fw-bold text-secondary">৳</span>
+                            <input type="number" step="0.01" min="0.01" name="amount" id="return_amount" class="form-control border-start-0 ps-0 fw-bold fs-6" required placeholder="0.00">
+                        </div>
+                        <small class="text-muted">Maximum returnable amount is <span class="fw-bold text-dark" id="return_max_balance_text">৳0.00</span></small>
+                    </div>
+
+                    <!-- Receiving Method -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">
+                            Receiving Method <span class="text-danger">*</span>
+                        </label>
+                        <select name="payment_method" id="return_payment_method" class="form-select" onchange="toggleReturnBankFields()">
+                            <option value="cash" selected>Cash in Hand</option>
+                            <option value="bank">Bank Transfer / Cheque</option>
+                            <option value="mobile_banking">Mobile Banking (bKash / Nagad / Rocket)</option>
+                        </select>
+                    </div>
+
+                    <!-- Bank Account Selection (Conditional) -->
+                    <div class="mb-3" id="return_bank_account_row" style="display: none;">
+                        <label class="form-label small fw-bold text-dark">
+                            Receiving Bank / MFS Account <span class="text-danger">*</span>
+                        </label>
+                        <select name="bank_detail_id" id="return_bank_detail_id" class="form-select">
+                            <option value="">Select Bank / MFS Account</option>
+                            @foreach($bankAccounts as $bank)
+                                <option value="{{ $bank->id }}">
+                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Transaction Ref -->
+                    <div class="mb-3" id="return_trx_ref_row" style="display: none;">
+                        <label class="form-label small fw-bold text-dark">
+                            Cheque / Transaction Reference
+                        </label>
+                        <input type="text" name="transaction_ref" class="form-control" placeholder="Cheque No. or TrxID">
+                    </div>
+
+                    <!-- Date -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">
+                            Return Date <span class="text-danger">*</span>
+                        </label>
+                        <input type="date" name="refund_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+                    </div>
+
+                    <!-- Remarks -->
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold text-dark">Remarks / Reason</label>
+                        <textarea name="remarks" class="form-control" rows="2" placeholder="e.g. Vendor returned unused advance prepayment"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer px-4 py-3 bg-light border-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4 rounded-2 fw-semibold text-white">
+                        <i class="fe fe-check me-1"></i>Confirm Return
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    function openRefundVendorAdvanceModal(vendorId, vendorName, maxAdvance) {
+        document.getElementById('return_vendor_id').value = vendorId;
+        document.getElementById('return_vendor_name').textContent = vendorName;
+        document.getElementById('return_max_balance_badge').textContent = '৳' + Number(maxAdvance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('return_max_balance_text').textContent = '৳' + Number(maxAdvance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        var amountInput = document.getElementById('return_amount');
+        amountInput.max = maxAdvance;
+        amountInput.value = maxAdvance > 0 ? maxAdvance.toFixed(2) : '';
+        
+        // Reset method
+        document.getElementById('return_payment_method').value = 'cash';
+        toggleReturnBankFields();
+
+        var modal = new bootstrap.Modal(document.getElementById('refundVendorAdvanceModal'));
+        modal.show();
+    }
+
+    function toggleReturnBankFields() {
+        var method = document.getElementById('return_payment_method').value;
+        var bankRow = document.getElementById('return_bank_account_row');
+        var trxRow = document.getElementById('return_trx_ref_row');
+        var bankSelect = document.getElementById('return_bank_detail_id');
+
+        if (method === 'cash') {
+            bankRow.style.display = 'none';
+            trxRow.style.display = 'none';
+            bankSelect.removeAttribute('required');
+        } else {
+            bankRow.style.display = 'block';
+            trxRow.style.display = 'block';
+            bankSelect.setAttribute('required', 'required');
+        }
+    }
+</script>
+@endpush
 @endsection

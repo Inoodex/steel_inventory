@@ -148,6 +148,7 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('/customer-advances', [CustomerAdvanceController::class, 'index'])->name('customer-advances.index');
     Route::get('/customer-advances/create', [CustomerAdvanceController::class, 'create'])->name('customer-advances.create');
     Route::post('/customer-advances', [CustomerAdvanceController::class, 'store'])->name('customer-advances.store');
+    Route::post('/customer-advances/refund', [CustomerAdvanceController::class, 'refund'])->name('customer-advances.refund');
     Route::get('/customer-advances/pdf', [CustomerAdvanceController::class, 'pdf'])->name('customer-advances.pdf');
     Route::get('/customer-advances/{id}/receipt-pdf', [CustomerAdvanceController::class, 'receiptPdf'])->name('customer-advances.receipt-pdf');
 
@@ -155,18 +156,21 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('/vendor-advances', [VendorAdvanceController::class, 'index'])->name('vendor-advances.index');
     Route::get('/vendor-advances/create', [VendorAdvanceController::class, 'create'])->name('vendor-advances.create');
     Route::post('/vendor-advances', [VendorAdvanceController::class, 'store'])->name('vendor-advances.store');
+    Route::post('/vendor-advances/refund', [VendorAdvanceController::class, 'refund'])->name('vendor-advances.refund');
     Route::get('/vendor-advances/pdf', [VendorAdvanceController::class, 'pdf'])->name('vendor-advances.pdf');
     Route::get('/vendor-advances/{id}/voucher-pdf', [VendorAdvanceController::class, 'voucherPdf'])->name('vendor-advances.voucher-pdf');
 
     // Customer Sale Payments
     Route::post('/add-payment', [PaymentController::class, 'addPayment'])->name('add.payment');
     Route::post('/customer-due-payment', [PaymentController::class, 'payCustomerDue'])->name('customer.due.pay');
+    Route::put('/payments/{id}', [PaymentController::class, 'updatePayment'])->name('payments.update');
     Route::delete('/delete-payment/{id}', [PaymentController::class, 'deletePayment'])->name('delete.payment');
     Route::post('/sales/process-payment', [SalesController::class, 'processPayment'])->name('sales.process-payment');
     Route::get('/sales/search-orders', [SalesController::class, 'searchOrders'])->name('sales.search-orders');
 
     // Vendor Due Payments & Disbursements
     Route::post('/vendor-payments', [PaymentController::class, 'addVendorPayment'])->name('vendor-payments.store');
+    Route::put('/vendor-payments/{id}', [PaymentController::class, 'updateVendorPayment'])->name('vendor-payments.update');
     Route::delete('/vendor-payments/{id}', [PaymentController::class, 'deleteVendorPayment'])->name('vendor-payments.destroy');
 
     Route::resource('bank-details', BankDetailController::class);

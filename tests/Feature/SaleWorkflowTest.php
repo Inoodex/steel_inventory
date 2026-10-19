@@ -170,4 +170,150 @@ class SaleWorkflowTest extends TestCase
         $response->assertSee('YARD-SALE-001');
         $response->assertDontSee('SHOP-SALE-999');
     }
+
+    public function test_sale_creation_with_delivery_charge_always_links_to_grand_total(): void
+    {
+        $saleService = app(\App\Services\SaleService::class);
+
+        // Subtotal: 2 * 100,000 = 200,000. Delivery: 2,500. Advanced: 50,000.
+        // Delivery always links to total (202,500), payble (202,500), and due (152,500).
+        $sale = $saleService->createSale([
+            'client_type' => 'existing',
+            'existing_client_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id,
+            'order_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+            'delivery_charge' => 2500.00,
+            'advanced_payment' => 50000.00,
+            'coil_id' => [$this->coil->id],
+            'qty' => [2.000],
+            'unit_price' => [100000.00],
+        ]);
+
+        $this->assertEquals(2500.00, (float)$sale->delivery_charge);
+        $this->assertEquals(200000.00, (float)$sale->subtotal);
+        $this->assertEquals(202500.00, (float)$sale->total);
+        $this->assertEquals(202500.00, (float)$sale->payble);
+        $this->assertEquals(152500.00, (float)$sale->due_payment);
+    }
+
+    public function test_sale_edit_page_and_update_preserves_custom_size(): void
+    {
+        $saleService = app(\App\Services\SaleService::class);
+
+        $sale = $saleService->createSale([
+            'client_type' => 'existing',
+            'existing_client_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id,
+            'order_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+            'custom_size' => ['4x8 ft special cut'],
+            'advanced_payment' => 0.00,
+            'coil_id' => [$this->coil->id],
+            'qty' => [1.000],
+            'unit_price' => [100000.00],
+        ]);
+
+        $this->assertEquals('4x8 ft special cut', $sale->items->first()->custom_size);
+
+        // Edit page loads and displays existing custom size in the table row
+        $response = $this->actingAs($this->admin)->get(route('sales.edit', $sale->id));
+        $response->assertStatus(200);
+        $response->assertSee('value="4x8 ft special cut"', false);
+
+        // Update with modified custom size
+        $updateResponse = $this->actingAs($this->admin)->put(route('sales.update', $sale->id), [
+            'client_type' => 'existing',
+            'existing_client_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id,
+            'delivery_status' => 'delivered',
+            'qty' => [1.000],
+            'unit_price' => [100000.00],
+            'coil_id' => [$this->coil->id],
+            'custom_size' => ['4x10 ft custom sheet'],
+            'payment_method' => 'cash',
+            'advanced_payment' => 0.00,
+        ]);
+
+        $updateResponse->assertRedirect(route('sales.show', $sale->id));
+        $sale->refresh();
+        $this->assertEquals('4x10 ft custom sheet', $sale->items->first()->custom_size);
+    }
+
+    public function test_sale_return_restocks_coil_and_updates_balance(): void
+    {
+        $saleService = app(\App\Services\SaleService::class);
+
+        // 1. Create a sale
+        $initialWeight = (float)$this->coil->remaining_weight; // e.g. 5.000
+        $sale = $saleService->createSale([
+            'client_type' => 'existing',
+            'existing_client_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id,
+            'order_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+            'advanced_payment' => 200000.00,
+            'coil_id' => [$this->coil->id],
+            'qty' => [2.000],
+            'unit_price' => [100000.00],
+        ]);
+
+        $this->coil->refresh();
+        $this->assertEquals($initialWeight - 2.000, (float)$this->coil->remaining_weight);
+
+        $salesItem = $sale->items->first();
+
+        // 2. Create bank for refund
+        $bank = \App\Models\BankDetail::create([
+            'bank_name' => 'City Bank',
+            'account_name' => 'Steel Corp',
+            'account_number' => '1234567890',
+            'opening_balance' => 500000.00,
+            'current_balance' => 500000.00,
+            'is_active' => true,
+        ]);
+
+        // 3. Create return request
+        $return = \App\Models\ProductReturn::create([
+            'sale_id' => $sale->id,
+            'customer_id' => $this->customer->id,
+            'return_date' => now()->toDateString(),
+            'status' => 'pending',
+            'reason' => 'Customer requested return of 1 unit',
+            'total_refund_amount' => 100000.00,
+        ]);
+
+        \App\Models\ReturnItem::create([
+            'return_id' => $return->id,
+            'sales_item_id' => $salesItem->id,
+            'quantity' => 1.000,
+            'unit_price' => 100000.00,
+            'total_price' => 100000.00,
+            'condition' => 'good',
+        ]);
+
+        // 4. Approve Return with Bank refund
+        $return->approve($this->admin->id, [
+            'payment_method' => 'bank',
+            'bank_detail_id' => $bank->id,
+            'transaction_ref' => 'TRX-RET-001',
+        ]);
+
+        // 5. Assert Coil is restocked
+        $this->coil->refresh();
+        $this->assertEquals($initialWeight - 1.000, (float)$this->coil->remaining_weight);
+
+        // 6. Assert Bank balance is properly updated
+        $bank->refresh();
+        $this->assertEquals(400000.00, (float)$bank->current_balance);
+
+        // 7. Assert Sale is adjusted
+        $sale->refresh();
+        $this->assertEquals(100000.00, (float)$sale->payble);
+        $this->assertEquals(0.00, (float)$sale->due_payment);
+        $this->assertEquals('paid', $sale->status);
+    }
 }
+
+
+

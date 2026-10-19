@@ -6,7 +6,7 @@
 > **Database:** MySQL (`steel_inventory`) / SQLite Compatible  
 > **Environment:** Local (Laragon / `127.0.0.1:8000`)  
 > **Active Routes:** 250+ Registered Routes  
-> **Test Suite:** 41 Automated Feature & Unit Tests (169 Assertions — 100% Passing)  
+> **Test Suite:** 75 Automated Feature & Unit Tests (429 Assertions — 100% Passing)  
 > **Last Updated:** October 2026  
 
 ---
@@ -19,13 +19,15 @@
 - **Direct Opening Stock Management**: Dedicated onboarding interface (`/inventory/opening-stock`) allowing yards to register existing coil stock with full dimensional attributes, pricing, and storage location assignments without requiring mill lot purchases.
 - **Mill Lot Procurement Management**: Batch procurement linked to Mill/Consignment Lots (`LOT-YYYYMMDD-####`), recording multi-row physical intake with vendor locking, quick AJAX lot registration, row weight calculations (kg and metric tons), proportional batch payment allocation, and automatic yard coil registration.
 - **Dedicated Creation & Editing Interfaces**: Full-width dedicated interfaces for Purchase Creation (`/purchase/create`) and Purchase Editing (`/purchase/{id}/edit`) with **Sold Weight Protection Checks** ensuring intake weight cannot be reduced below already sold/dispatched quantities.
-- **Commercial Sales & Required Custom Sizing**: Sales order fulfillment (`INV-####`) with fractional coil weight deduction, mandatory custom cutting specifications (`custom_size`), line-item profit tracking against acquisition rates, pass-through logistics charges (labour, weigh scale, freight), third-party handler payout workflow, and real-time WebSocket broadcasting (`SaleCreatedEvent`).
+- **Commercial Sales & Direct Logistics Billing**: Sales order fulfillment (`INV-####`) with fractional coil weight deduction, custom cutting specifications (`custom_size`), line-item profit tracking against acquisition rates, and **direct delivery charge billing to invoice grand total and payable**.
+- **Intuitive Sale Order Editing**: Interactive sale edit screen (`/sales/{id}/edit`) preserving previously entered custom sizes and featuring an inline line-item edit button to load existing items back into the builder card.
+- **Automated FIFO Due Settlement & Categorized History**: Intelligent due collection engine (`/due-payments`) automatically settling opening dues and unpaid orders chronologically via FIFO without manual target selection. On customer profiles (`/customers/{id}`), displays a **Categorized (Invoice-Based) Payment Collections & Due Settlements History** with real-time invoice filtering, financial breakdown pills, and expand/collapse accordions.
 - **Worker Extra Charges & Payouts Settlement**: Comprehensive disbursement engine (`/worker-payouts`) tracking crane labour gangs, weighbridge operators, and freight haulers. Supports batch and single payouts, cash/bank clearing, automated journal voucher generation, and printable payout vouchers.
-- **Customer & Vendor Advances Workflow**: Dedicated prepayments module (`/customer-advances`, `/vendor-advances`) managing unallocated customer deposits (Deferred Revenue / Liability 2130) and upfront vendor disbursements (Asset 1150) with automated receipt/voucher generation and running ledger integration.
+- **Customer & Vendor Advances Workflow**: Dedicated prepayments module (`/customer-advances`, `/vendor-advances`) managing unallocated customer deposits (Deferred Revenue / Liability 2130) and upfront vendor disbursements (Asset 1150) with automated receipt/voucher generation, advance refund workflows, and running ledger integration.
 - **Dedicated Retail Shop Module**: Side-by-side Point-of-Sale (POS) direct retail sales interface (`/shops/sales/create`), side-by-side shop stock procurement intake (`/shops/purchases/create`), shop return management (`/shops/returns`), shop stock reports (`/shops/stock-report`), and Shop Profile & Settings management (`/shops/settings`).
 - **All-in-One Master Transaction & Activity Logs**: Comprehensive consolidated audit trail (`/master-report`) tracking sales, purchases, customer/vendor payments, inventory movements, expenses, and returns with date and module filtering.
-- **Product Returns & Restocking**: Structured return authorization (`returns`, `return_items`) with return condition assessment, refund settlement, and yard restocking.
-- **Full Double-Entry Accounting & Bookkeeping**: 5-Class Chart of Accounts (Asset 1000, Liability 2000, Equity 3000, Revenue 4000, Expense 5000), self-balancing journal vouchers (`JV-YYYYMMDD-####`), General Ledger, Trial Balance, Profit & Loss (P&L), Balance Sheet, Cash Flow Statement, Fiscal Year closing, and Customer/Vendor Party Ledgers.
+- **Product Returns, Restocking & Balance Reconciliation**: Structured return authorization (`returns`, `return_items`) with return condition assessment, automatic physical coil restocking (`remaining_weight` restoration and `in_stock` reactivation), and synchronized refund accounting (invoice due deduction or cash/bank account balance decrements).
+- **Full Double-Entry Accounting & Financial Statements**: 5-Class Chart of Accounts (Asset 1000, Liability 2000, Equity 3000, Revenue 4000, Expense 5000), self-balancing journal vouchers (`JV-YYYYMMDD-####`), General Ledger, Trial Balance, Profit & Loss (P&L with real-time accrual calculation), Balance Sheet, Cash Flow Statement, Fiscal Year closing, and Customer/Vendor Party Ledgers.
 - **Laptop & High-Density Screen Responsiveness**: Global ergonomic optimization for standard laptops (1200px–1440px / 768px–900px), with compact form controls, height-constrained modals, sticky summary calculators, and an **auto-collapsing 62px mini-sidebar** with hover-to-expand drawer navigation.
 - **mPDF Vector Report Standard & Unified PdfService**: High-fidelity vector PDF generation matching the application design system via `App\Services\PdfService` with base64 letterhead watermarks, dark slate header typography, zebra striping, and authorized signature blocks.
 - **Role-Based Access Control (RBAC)**: Spatie Permission (`spatie/laravel-permission ^6.4`) with granular permissions across 11 functional modules and two core roles (`Super Admin` and `Employee`).
@@ -187,11 +189,17 @@ The single source of truth for physical inventory in the yard:
 | `Customer` | `customers` | Client records with opening balances, effective net due, and ledger history |
 | `Payment` | `payments` | Customer receipts, vendor disbursements, advance deposits, and settlement records |
 
-#### Key Sales Features:
-- **Mandatory Custom Sizing (`custom_size`)**: Requires entry of custom slitting/cutting dimensions for every line item, enforced via front-end validation and backend `StoreSaleRequest`.
+#### Key Sales & Customer Settlement Features:
+- **Direct Delivery Charge Billing**: Transport freight (`delivery_charge`) is directly linked and billed to invoice grand total, payable, and due payments across all commercial sales, shop POS sales, and edit workflows. Obsolete `transport_payer` toggles have been removed for streamlined operational billing.
+- **Mandatory Custom Sizing & Edit Persistence**: Requires custom slitting/cutting dimensions (`custom_size`) for each item. The sale editing interface (`/sales/{id}/edit`) preserves existing custom sizes without validation errors, and features an inline line-item **Edit** button that loads the item's Lot, Custom Size, Rate, and Quantity back into the builder card for instant adjustments.
+- **Automated FIFO Due Settlement**: The direct due collection modal on `/due-payments` automatically applies collections via chronological **FIFO** (`auto_due_settlement`): clears opening dues first, then oldest unpaid invoices, and stores surplus as customer advance credit.
+- **Categorized (Invoice-Based) Payment Collections History**: On the customer profile (`/customers/{id}`), payment collections are cleanly organized into **Invoice Category Cards** displaying:
+  - Original invoice total, total receipts collected, and remaining due.
+  - Sub-tables with payment dates, channels, transaction refs, remarks, refund badges, and 3-dot action dropdowns (Edit Payment, Receipt PDF, Delete/Revert).
+  - Client-side category filter pills for instant invoice-by-invoice filtering.
+  - "Expand All" / "Collapse All" panel toggles and a tab switcher to view the flat chronological ledger.
 - **Fractional Weight Deductions**: Selling deducts sold weight from `coils.remaining_weight`. When remaining weight reaches 0, status transitions to `exhausted`.
 - **Pass-Through Extra Charges**: Captures crane/labour fees (`labour_cost`), certified bridge scale fees (`weight_scale_cost`), and transport freight (`delivery_charge`).
-- **Transport Payer Flag (`transport_payer`)**: Clearly tracks whether transport freight is paid by `me` (our yard) or `vendor`/`customer`.
 - **Customer Party Ledger (`/customers/{id}/ledger`)**: Running balance statement showing prior balance, invoices, payments, and balance carried forward, exportable via mPDF (`/customers/{id}/ledger/pdf`).
 - **Customer Due Payments (`/due-payments`)**: Filterable receivable tracking with live invoice balance lookups and vector PDF export (`/due-payments/pdf`).
 - **High-Precision Invoice Generation (`/sales/invoice/{id}/pdf`)**: Print-ready sales invoices on official letterhead with complete specification breakdowns.
@@ -277,8 +285,12 @@ A complete GAAP/IFRS-compliant double-entry accounting engine fully integrated w
 
 ---
 
-### 4.9 🔄 Returns, HR & Personnel
-- **Product Returns (`returns`, `return_items`)**: Structured return workflow with condition recording, inventory restocking, refund tracking, and status transitions (`pending` → `approved` → `completed` / `rejected`).
+### 4.9 🔄 Product Returns, Restocking & Personnel
+- **Product Returns (`returns`, `return_items`)**: Structured return workflow with condition recording, inventory restocking, refund tracking, and status transitions (`pending` → `approved` → `completed` / `rejected`):
+  - **Physical Stock Restoration**: Approving a return immediately adds returned weight back to the physical Coil (`remaining_weight += quantity`). If the coil was marked `exhausted`, its status is automatically switched back to `in_stock`. Synchronizes legacy `inventories` and tracks `sales_items.returned_qty`.
+  - **Synchronized Refund & Balance Reconciliation**:
+    - *Unpaid Invoice Dues*: If the customer still owes money on the order, the return amount reduces the invoice due and credits Accounts Receivable (`1130`) without disbursing liquid funds.
+    - *Paid Invoices*: If already paid, the refund is disbursed via Cash or Bank/MFS. Automatically reduces `bank_details.current_balance`, logs a negative refund payment, and posts a balanced journal entry (Debit 5120 Sales Returns & Allowances, Credit 1110/1120 Cash/Bank).
 - **HR & Payroll (`employees`, `salaries`, `ta_das`)**: Monthly salary generation, advance salary deductions, and employee self-service TA/DA request portal with strict user ID ownership verification.
 - **Operational Expense Tracking (`daily_expenses`, `expense_categories`)**: Categorized petty cash and yard expense tracking with unified Cash/Bank selection and transactional journal cleanup.
 
@@ -436,18 +448,24 @@ The codebase includes an enterprise-grade automated test suite ensuring high rel
 |------------|------|-------|------------|------------------|
 | **Accounting Integrity** | `AccountingDoubleEntryTest.php` | 1 | 4 | Verifies strict double-entry balance equilibrium on journal vouchers. |
 | **Advances Workflow** | `AdvancePaymentsWorkflowTest.php` | 8 | 24 | Tests Customer & Vendor advances index, creation, receipt/voucher PDFs, and ledger impacts. |
+| **Advance Refunds Workflow** | `AdvanceRefundWorkflowTest.php` | 7 | 22 | Tests customer advance refunds, vendor advance returns, validation limits, and ledger sync. |
 | **Authentication & Access** | `AuthAndAccessTest.php` | 4 | 10 | Validates login guards, role-based redirection, dashboard authorization, and safe logout. |
+| **Balance Transfers** | `BalanceTransferWorkflowTest.php` | 6 | 22 | Inter-account transfers (Cash to Bank, Bank to Cash), validation guards, and Storno reversal. |
+| **Customer Due Collections** | `CustomerDueCollectionWorkflowTest.php` | 8 | 42 | FIFO auto due settlements, unallocated reconciliations, payment edits/deletions, and bank sync. |
+| **End-to-End Business Flow** | `EndToEndBusinessFlowDashboardTest.php` | 1 | 18 | Full end-to-end simulation (Purchase → Sale → Payout → Settlement) matching dashboard KPI cards. |
+| **Inventory Stock Reports & PDF** | `InventoryStockPdfTest.php` | 3 | 10 | Validates inventory report vector mPDF generation and segregation of main yard vs retail shop stock. |
 | **Phase 1 Security & Integrity** | `Phase1SecurityAndIntegrityTest.php` | 6 | 28 | IDOR protection on TA/DA claims, negative claim rejection, transactional payment and expense deletions. |
 | **Phase 2 Performance & Aggregation** | `Phase2PerformanceAndAggregationTest.php` | 4 | 20 | Batch account balance calculations vs. single-query baseline, grouped dashboard queries, SQL KPI aggregations. |
 | **Phase 3 Database Indexes** | `Phase3DatabaseIndexesTest.php` | 1 | 35 | Validates presence of performance compound indexes across all high-throughput tables. |
-| **Product Returns** | `ProductReturnWorkflowTest.php` | 2 | 8 | Product return status helpers, condition evaluation, and bank refund settlement. |
-| **Purchase Lifecycle** | `PurchaseWorkflowTest.php` | 1 | 5 | Multi-row batch purchase creation, vendor locking, and automatic physical coil registration. |
-| **Sales Lifecycle** | `SaleWorkflowTest.php` | 1 | 6 | Sale order creation, mandatory custom sizing specs, coil weight deduction, and customer dues. |
+| **Product Returns & Refunds** | `ProductReturnWorkflowTest.php` | 2 | 8 | Product return status helpers, condition evaluation, and bank refund settlement. |
+| **Purchase Lifecycle** | `PurchaseWorkflowTest.php` | 3 | 28 | Multi-row batch purchase creation, vendor locking, coil inventory intake, and cash/bank journal posting. |
+| **Sales Lifecycle & Returns** | `SaleWorkflowTest.php` | 5 | 23 | Sale creation with direct delivery billing, shop sales exclusion, custom size persistence across edits, and coil return restocking with bank refund. |
+| **Shop Purchase Separation** | `ShopPurchaseSeparationTest.php` | 2 | 8 | Verifies isolation of retail shop purchases and lots from industrial yard purchases. |
 | **Shop Returns** | `ShopReturnWorkflowTest.php` | 3 | 9 | Retail shop return creation, AJAX line items loader, and shop stock restoration. |
 | **Unified Payment Options** | `UnifiedPaymentOptionsWorkflowTest.php` | 4 | 12 | Tests unified Cash/Bank selector across expenses, bill payments, and advances. |
-| **Vendor Operations** | `VendorWorkflowTest.php` | 2 | 4 | Vendor balance calculation and soft-delete safeguards. |
-| **Customer Financial Logic** | `CustomerFinancialTest.php` | 4 | 8 | Opening balance, effective due calculation, and advance credit logic. |
-| **Total Automated Coverage** | **13 Test Files** | **41** | **169** | **100% Passing** |
+| **Vendor Operations & Dues** | `VendorWorkflowTest.php` | 5 | 22 | Consolidated vendor due payments page, vector mPDF export, batch settlement, and soft-delete safeguards. |
+| **Customer Financial Calculations** | `CustomerFinancialTest.php` | 4 | 8 | Opening balance, effective due calculation, and advance credit logic. |
+| **Total Automated Coverage** | **19 Test Files** | **75** | **429** | **100% Passing** |
 
 ---
 

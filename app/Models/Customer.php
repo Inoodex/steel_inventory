@@ -105,5 +105,105 @@ class Customer extends Model
     {
         return $this->total_due;
     }
+
+    /**
+     * Automatically reconcile and allocate unallocated customer collections (where sale_id is null)
+     * to unpaid sales orders in FIFO order (oldest unpaid invoice first).
+     */
+    public static function reconcileUnallocatedPayments(?int $customerId = null): void
+    {
+        $customerQuery = static::query();
+        if ($customerId) {
+            $customerQuery->where('id', $customerId);
+        } else {
+            $customerQuery->whereHas('payments', function ($pq) {
+                $pq->whereNull('sale_id')->where('payment_for', 2)->where('amount', '>', 0);
+            })->whereHas('sales', function ($sq) {
+                $sq->where('due_payment', '>', 0)->whereNull('deleted_at');
+            });
+        }
+
+        $customers = $customerQuery->get();
+
+        foreach ($customers as $cust) {
+            $unallocatedPayments = Payment::where('customer_id', $cust->id)
+                ->whereNull('sale_id')
+                ->where('payment_for', 2)
+                ->where('amount', '>', 0)
+                ->orderBy('created_at', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
+
+            if ($unallocatedPayments->isEmpty()) {
+                continue;
+            }
+
+            foreach ($unallocatedPayments as $payment) {
+                // Do not allocate payments dedicated to opening balance settlements
+                if (stripos($payment->remarks ?? '', 'opening balance') !== false || stripos($payment->remarks ?? '', 'opening due') !== false) {
+                    continue;
+                }
+
+                $unpaidSales = Sale::where('customer_id', $cust->id)
+                    ->where('due_payment', '>', 0)
+                    ->whereNull('deleted_at')
+                    ->orderBy('created_at', 'asc')
+                    ->orderBy('id', 'asc')
+                    ->get();
+
+                if ($unpaidSales->isEmpty()) {
+                    break;
+                }
+
+                $remainingAmt = (float) $payment->amount;
+
+                foreach ($unpaidSales as $sale) {
+                    if ($remainingAmt <= 0.0001) {
+                        break;
+                    }
+
+                    $currentDue = (float) $sale->due_payment;
+                    if ($currentDue <= 0.0001) continue;
+
+                    $alloc = min($remainingAmt, $currentDue);
+
+                    $sale->advanced_payment = (float)$sale->advanced_payment + $alloc;
+                    $sale->due_payment = max(0, (float)($sale->payble ?? $sale->total) - (float)$sale->advanced_payment);
+                    $sale->status = $sale->due_payment <= 0.0001 ? 'paid' : 'partial';
+                    $sale->save();
+
+                    if (abs($alloc - (float)$payment->amount) < 0.0001) {
+                        // Entire payment is consumed by this sale
+                        $payment->sale_id = $sale->id;
+                        $prefix = $payment->remarks ? $payment->remarks . ' — ' : '';
+                        $payment->remarks = $prefix . 'Applied to ' . $sale->order_no;
+                        $payment->save();
+                        $remainingAmt = 0;
+                        break;
+                    } else {
+                        // Partially consumed: create the allocated portion for this sale
+                        Payment::create([
+                            'customer_id'    => $cust->id,
+                            'sale_id'        => $sale->id,
+                            'payment_for'    => 2,
+                            'payment_method' => $payment->payment_method,
+                            'bank_detail_id' => $payment->bank_detail_id,
+                            'transaction_ref'=> $payment->transaction_ref,
+                            'payment_date'   => $payment->payment_date ?: now()->toDateString(),
+                            'amount'         => $alloc,
+                            'remarks'        => 'Applied to ' . $sale->order_no,
+                            'status'         => 1,
+                            'created_by'     => $payment->created_by,
+                        ]);
+
+                        // Reduce remaining unallocated amount
+                        $payment->amount = (float)$payment->amount - $alloc;
+                        $payment->save();
+                        $remainingAmt -= $alloc;
+                    }
+                }
+            }
+        }
+    }
 }
 

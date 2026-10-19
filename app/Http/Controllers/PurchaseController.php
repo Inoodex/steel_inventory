@@ -543,17 +543,47 @@ class PurchaseController extends Controller
      */
     public function duePayments()
     {
+        Vendor::reconcileUnallocatedPayments();
+
         $purchases = Purchase::with(['vendor', 'lot', 'warehouse'])
-            ->whereDoesntHave('warehouse', function ($wq) {
-                $wq->where('type', 'shop');
-            })
             ->where('due', '>', 0)
             ->latest()
             ->get();
 
+        $vendorsWithDue = Vendor::withSum(['purchases' => function($q) {
+                $q->whereNull('deleted_at');
+            }], 'due')
+            ->withCount(['purchases' => function($q) {
+                $q->whereNull('deleted_at')
+                  ->where('due', '>', 0);
+            }])
+            ->get()
+            ->map(function($v) {
+                $v->opening_due = max(0, (float)($v->opening_balance ?? 0));
+                $v->purchase_due = (float)($v->purchases_sum_due ?? 0);
+                $v->total_due = $v->opening_due + $v->purchase_due;
+                return $v;
+            })
+            ->filter(function($v) {
+                return $v->total_due > 0;
+            })
+            ->sortByDesc('total_due')
+            ->values();
+
+        $totalOpeningDues = (float) Vendor::where('opening_balance', '>', 0)->sum('opening_balance');
+        $totalPurchaseDues = (float) Purchase::where('due', '>', 0)->sum('due');
+        $grandTotalDues = $totalOpeningDues + $totalPurchaseDues;
+
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
 
-        return view('frontend.pages.purchase.due-payments', compact('purchases', 'bankAccounts'));
+        return view('frontend.pages.purchase.due-payments', compact(
+            'purchases',
+            'vendorsWithDue',
+            'totalOpeningDues',
+            'totalPurchaseDues',
+            'grandTotalDues',
+            'bankAccounts'
+        ));
     }
 
     /**
@@ -561,16 +591,49 @@ class PurchaseController extends Controller
      */
     public function duePaymentsPdf()
     {
+        Vendor::reconcileUnallocatedPayments();
+
         $purchases = Purchase::with(['vendor', 'lot', 'warehouse'])
-            ->whereDoesntHave('warehouse', function ($wq) {
-                $wq->where('type', 'shop');
-            })
             ->where('due', '>', 0)
             ->latest()
             ->get();
 
+        $vendorsWithDue = Vendor::withSum(['purchases' => function($q) {
+                $q->whereNull('deleted_at');
+            }], 'due')
+            ->withCount(['purchases' => function($q) {
+                $q->whereNull('deleted_at')
+                  ->where('due', '>', 0);
+            }])
+            ->get()
+            ->map(function($v) {
+                $v->opening_due = max(0, (float)($v->opening_balance ?? 0));
+                $v->purchase_due = (float)($v->purchases_sum_due ?? 0);
+                $v->total_due = $v->opening_due + $v->purchase_due;
+                return $v;
+            })
+            ->filter(function($v) {
+                return $v->total_due > 0;
+            })
+            ->sortByDesc('total_due')
+            ->values();
+
+        $totalOpeningDues = (float) Vendor::where('opening_balance', '>', 0)->sum('opening_balance');
+        $totalPurchaseDues = (float) Purchase::where('due', '>', 0)->sum('due');
+        $grandTotalDues = $totalOpeningDues + $totalPurchaseDues;
+
         $filename = 'Vendor_Due_Payments_Report_' . now()->format('Y_m_d_His') . '.pdf';
 
-        return PdfService::viewToResponse('pdf.vendor_due_payments', compact('purchases'), $filename);
+        return PdfService::viewToResponse(
+            'pdf.vendor_due_payments',
+            compact(
+                'purchases',
+                'vendorsWithDue',
+                'totalOpeningDues',
+                'totalPurchaseDues',
+                'grandTotalDues'
+            ),
+            $filename
+        );
     }
 }

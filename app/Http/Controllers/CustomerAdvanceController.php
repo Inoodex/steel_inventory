@@ -240,6 +240,125 @@ class CustomerAdvanceController extends Controller
     }
 
     /**
+     * Process a refund of customer advance credit back to customer via cash/bank.
+     */
+    public function refund(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_id'    => 'required|exists:customers,id',
+            'amount'         => 'required|numeric|min:0.01',
+            'payment_method' => 'nullable|string|in:cash,bank,mobile_banking,cheque',
+            'bank_detail_id' => 'nullable|exists:bank_details,id',
+            'transaction_ref'=> 'nullable|string|max:255',
+            'refund_date'    => 'nullable|date',
+            'remarks'        => 'nullable|string|max:500',
+        ]);
+
+        $customer = Customer::findOrFail($validated['customer_id']);
+        $financials = $customer->calculateFinancials();
+        $maxRefund = (float) $financials['advance_credit'];
+        $amount = (float) $validated['amount'];
+
+        if ($amount > $maxRefund + 0.0001) {
+            return back()->with('error', "Refund amount (৳" . number_format($amount, 2) . ") exceeds active advance credit balance (৳" . number_format($maxRefund, 2) . ").")->withInput();
+        }
+
+        $paymentMethod = $validated['payment_method'] ?? 'cash';
+        $bankDetailId = ($paymentMethod !== 'cash') ? ($validated['bank_detail_id'] ?? null) : null;
+        $trxRef = ($paymentMethod !== 'cash') ? ($validated['transaction_ref'] ?? null) : null;
+        $refundDate = $validated['refund_date'] ?? date('Y-m-d');
+        $remarks = $validated['remarks'] ?: "Refund of unallocated advance credit balance to {$customer->name}";
+
+        DB::beginTransaction();
+        try {
+            // Negative payment record reduces customer cumulative payments, reducing advance credit
+            $payment = Payment::create([
+                'payment_for'     => 2,
+                'customer_id'     => $customer->id,
+                'sale_id'         => null,
+                'payment_method'  => $paymentMethod,
+                'bank_detail_id'  => $bankDetailId,
+                'transaction_ref' => $trxRef,
+                'payment_date'    => $refundDate,
+                'amount'          => -$amount,
+                'remarks'         => $remarks,
+                'created_by'      => Auth::id(),
+                'status'          => 1,
+            ]);
+
+            // Auto-post double-entry journal voucher
+            try {
+                $cashAcc = ChartOfAccount::where('account_code', '1110')->first()
+                        ?? ChartOfAccount::where('account_name', 'like', '%Cash%')->first();
+                $arAcc = ChartOfAccount::where('account_code', '1130')->first();
+
+                $disbursingAcc = $cashAcc;
+                if ($paymentMethod !== 'cash' && !empty($bankDetailId)) {
+                    $bank = BankDetail::find($bankDetailId);
+                    $disbursingAcc = $bank?->resolveChartOfAccount()
+                        ?? ChartOfAccount::where('account_code', '1120')->first()
+                        ?? $cashAcc;
+                }
+
+                if ($disbursingAcc && $arAcc && function_exists('postJournalEntry')) {
+                    $methodLabel = match($paymentMethod) {
+                        'bank'           => 'Bank Transfer',
+                        'mobile_banking' => 'Mobile Banking',
+                        'cheque'         => 'Cheque',
+                        default          => 'Cash'
+                    };
+                    $refText = $trxRef ? " [Ref: {$trxRef}]" : "";
+
+                    postJournalEntry([
+                        'entry_date'     => $refundDate,
+                        'reference_type' => 'customer_advance_refund',
+                        'reference_id'   => $payment->id,
+                        'description'    => "Refund of Customer Advance to {$customer->name} via {$methodLabel}{$refText}",
+                        'status'         => 'approved',
+                        'created_by'     => Auth::id(),
+                        'items'          => [
+                            [
+                                'account_id'  => $arAcc->id,
+                                'debit'       => $amount,
+                                'credit'      => 0.00,
+                                'description' => "Advance refund liability reduction for {$customer->name}"
+                            ],
+                            [
+                                'account_id'  => $disbursingAcc->id,
+                                'debit'       => 0.00,
+                                'credit'      => $amount,
+                                'description' => "Disbursement refund to {$customer->name} via {$methodLabel}{$refText}"
+                            ]
+                        ]
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("Customer advance refund journal voucher skipped: " . $e->getMessage());
+            }
+
+            // Sync bank account balance if disbursed via bank
+            if ($bankDetailId) {
+                $bank = BankDetail::find($bankDetailId);
+                $bank?->syncCurrentBalance();
+            }
+
+            DB::commit();
+
+            session()->flash('sweet_alert', [
+                'type'  => 'success',
+                'title' => 'Advance Refunded!',
+                'text'  => "Advance payment of ৳" . number_format($amount, 2) . " successfully refunded to {$customer->name}.",
+            ]);
+
+            return back()->with('success', "Advance payment of ৳" . number_format($amount, 2) . " refunded successfully to {$customer->name}.");
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error("Failed to refund customer advance: " . $e->getMessage());
+            return back()->with('error', "Failed to refund advance: " . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
      * Download customer advance balances report as PDF (mPDF standard).
      */
     public function pdf(Request $request)

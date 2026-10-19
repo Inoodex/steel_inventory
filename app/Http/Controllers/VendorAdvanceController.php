@@ -228,6 +228,125 @@ class VendorAdvanceController extends Controller
     }
 
     /**
+     * Process a return/refund of vendor advance prepayment back into cash/bank.
+     */
+    public function refund(Request $request)
+    {
+        $validated = $request->validate([
+            'vendor_id'      => 'required|exists:vendors,id',
+            'amount'         => 'required|numeric|min:0.01',
+            'payment_method' => 'nullable|string|in:cash,bank,mobile_banking,cheque',
+            'bank_detail_id' => 'nullable|exists:bank_details,id',
+            'transaction_ref'=> 'nullable|string|max:255',
+            'refund_date'    => 'nullable|date',
+            'remarks'        => 'nullable|string|max:500',
+        ]);
+
+        $vendor = Vendor::findOrFail($validated['vendor_id']);
+        $financials = $vendor->calculateFinancials();
+        $maxReturn = (float) $financials['advance_balance'];
+        $amount = (float) $validated['amount'];
+
+        if ($amount > $maxReturn + 0.0001) {
+            return back()->with('error', "Return amount (৳" . number_format($amount, 2) . ") exceeds active vendor advance balance (৳" . number_format($maxReturn, 2) . ").")->withInput();
+        }
+
+        $paymentMethod = $validated['payment_method'] ?? 'cash';
+        $bankDetailId = ($paymentMethod !== 'cash') ? ($validated['bank_detail_id'] ?? null) : null;
+        $trxRef = ($paymentMethod !== 'cash') ? ($validated['transaction_ref'] ?? null) : null;
+        $refundDate = $validated['refund_date'] ?? date('Y-m-d');
+        $remarks = $validated['remarks'] ?: "Advance return received back from supplier {$vendor->name}";
+
+        DB::beginTransaction();
+        try {
+            // Negative payment record reduces vendor cumulative payments, reducing advance balance
+            $payment = Payment::create([
+                'payment_for'     => 3,
+                'vendor_id'       => $vendor->id,
+                'purchase_id'     => null,
+                'payment_method'  => $paymentMethod,
+                'bank_detail_id'  => $bankDetailId,
+                'transaction_ref' => $trxRef,
+                'payment_date'    => $refundDate,
+                'amount'          => -$amount,
+                'remarks'         => $remarks,
+                'created_by'      => Auth::id(),
+                'status'          => 1,
+            ]);
+
+            // Auto-post double-entry journal voucher
+            try {
+                $cashAcc = ChartOfAccount::where('account_code', '1110')->first()
+                        ?? ChartOfAccount::where('account_name', 'like', '%Cash%')->first();
+                $apAcc = ChartOfAccount::where('account_code', '2110')->first();
+
+                $receivingAcc = $cashAcc;
+                if ($paymentMethod !== 'cash' && !empty($bankDetailId)) {
+                    $bank = BankDetail::find($bankDetailId);
+                    $receivingAcc = $bank?->resolveChartOfAccount()
+                        ?? ChartOfAccount::where('account_code', '1120')->first()
+                        ?? $cashAcc;
+                }
+
+                if ($receivingAcc && $apAcc && function_exists('postJournalEntry')) {
+                    $methodLabel = match($paymentMethod) {
+                        'bank'           => 'Bank Transfer',
+                        'mobile_banking' => 'Mobile Banking',
+                        'cheque'         => 'Cheque',
+                        default          => 'Cash'
+                    };
+                    $refText = $trxRef ? " [Ref: {$trxRef}]" : "";
+
+                    postJournalEntry([
+                        'entry_date'     => $refundDate,
+                        'reference_type' => 'vendor_advance_refund',
+                        'reference_id'   => $payment->id,
+                        'description'    => "Advance Refund Received from Supplier {$vendor->name} via {$methodLabel}{$refText}",
+                        'status'         => 'approved',
+                        'created_by'     => Auth::id(),
+                        'items'          => [
+                            [
+                                'account_id'  => $receivingAcc->id,
+                                'debit'       => $amount,
+                                'credit'      => 0.00,
+                                'description' => "Advance refund received from {$vendor->name} into {$receivingAcc->account_name} via {$methodLabel}{$refText}"
+                            ],
+                            [
+                                'account_id'  => $apAcc->id,
+                                'debit'       => 0.00,
+                                'credit'      => $amount,
+                                'description' => "Reduction of advance balance with supplier {$vendor->name}"
+                            ]
+                        ]
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("Vendor advance refund journal voucher skipped: " . $e->getMessage());
+            }
+
+            // Sync bank account balance if received via bank
+            if ($bankDetailId) {
+                $bank = BankDetail::find($bankDetailId);
+                $bank?->syncCurrentBalance();
+            }
+
+            DB::commit();
+
+            session()->flash('sweet_alert', [
+                'type'  => 'success',
+                'title' => 'Advance Returned!',
+                'text'  => "Advance payment of ৳" . number_format($amount, 2) . " successfully returned from {$vendor->name}.",
+            ]);
+
+            return back()->with('success', "Advance payment of ৳" . number_format($amount, 2) . " returned successfully from {$vendor->name}.");
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error("Failed to return vendor advance: " . $e->getMessage());
+            return back()->with('error', "Failed to return advance: " . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
      * Download vendor advance balances report as PDF (mPDF standard).
      */
     public function pdf(Request $request)

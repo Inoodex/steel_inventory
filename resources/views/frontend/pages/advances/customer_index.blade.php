@@ -200,6 +200,12 @@
                                                             <span>Receive Advance Deposit</span>
                                                         </a>
                                                     </li>
+                                                    <li>
+                                                        <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger fw-semibold" href="javascript:void(0)" onclick="openRefundCustomerAdvanceModal({{ $cust->id }}, '{{ addslashes($cust->name) }}', {{ (float)$cust->advance_credit }})">
+                                                            <i class="fe fe-corner-up-left text-danger"></i>
+                                                            <span>Refund Advance Payment</span>
+                                                        </a>
+                                                    </li>
                                                 </ul>
                                             </div>
                                         </td>
@@ -316,18 +322,21 @@
                                         <td class="font-monospace small text-muted">
                                             {{ $deposit->transaction_ref ?: '-' }}
                                         </td>
-                                        <td class="text-end fw-bold text-success fs-7">
-                                            ৳{{ number_format($deposit->amount, 2) }}
+                                        <td class="text-end fw-bold {{ $deposit->amount < 0 ? 'text-danger' : 'text-success' }} fs-7">
+                                            {{ $deposit->amount < 0 ? '-' : '' }}৳{{ number_format(abs($deposit->amount), 2) }}
+                                            @if($deposit->amount < 0)
+                                                <span class="badge bg-danger-light text-danger ms-1" style="font-size: 10px;">Refund</span>
+                                            @endif
                                         </td>
                                         <td class="text-muted small">
-                                            {{ $deposit->remarks ?: 'Customer Advance Deposit' }}
+                                            {{ $deposit->remarks ?: ($deposit->amount < 0 ? 'Customer Advance Refund' : 'Customer Advance Deposit') }}
                                         </td>
                                         <td class="text-muted small">
                                             {{ $deposit->creator?->name ?? 'System' }}
                                         </td>
                                         <td class="text-center pe-3">
-                                            <a href="{{ route('customer-advances.receipt-pdf', $deposit->id) }}" target="_blank" class="btn btn-sm btn-outline-danger py-1 px-2 rounded-2" title="Download Money Receipt PDF">
-                                                <i class="fe fe-download me-1"></i>Receipt PDF
+                                            <a href="{{ route('customer-advances.receipt-pdf', $deposit->id) }}" target="_blank" class="btn btn-sm btn-outline-danger py-1 px-2 rounded-2" title="{{ $deposit->amount < 0 ? 'Download Advance Refund Voucher PDF' : 'Download Money Receipt PDF' }}">
+                                                <i class="fe fe-download me-1"></i>{{ $deposit->amount < 0 ? 'Refund PDF' : 'Receipt PDF' }}
                                             </a>
                                         </td>
                                     </tr>
@@ -353,4 +362,146 @@
     </div>
 
 </div>
+
+<!-- Refund Customer Advance Modal (Placed outside table per AGENTS.md rules) -->
+<div class="modal fade" id="refundCustomerAdvanceModal" tabindex="-1" aria-labelledby="refundCustomerAdvanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-danger text-white px-4 py-3 border-0">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="avatar avatar-sm bg-white text-danger rounded-circle d-flex align-items-center justify-content-center">
+                        <i class="fe fe-corner-up-left fs-6"></i>
+                    </div>
+                    <h5 class="modal-title fw-bold text-white mb-0" id="refundCustomerAdvanceModalLabel">Refund Customer Advance</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('customer-advances.refund') }}" method="POST">
+                @csrf
+                <input type="hidden" name="customer_id" id="refund_customer_id" value="">
+
+                <div class="modal-body p-4">
+                    <!-- Customer Information Banner -->
+                    <div class="alert alert-light border border-light-subtle rounded-3 p-3 mb-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted text-uppercase fw-semibold d-block mb-1">Customer</small>
+                            <h6 class="fw-bold text-dark mb-0" id="refund_customer_name">-</h6>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted text-uppercase fw-semibold d-block mb-1">Available Advance Credit</small>
+                            <span class="badge badge-soft-success px-3 py-1 rounded-pill fw-bold fs-7" id="refund_max_credit_badge">৳0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Refund Amount Input -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">
+                            Refund Amount (৳) <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 fw-bold text-secondary">৳</span>
+                            <input type="number" step="0.01" min="0.01" name="amount" id="refund_amount" class="form-control border-start-0 ps-0 fw-bold fs-6" required placeholder="0.00">
+                        </div>
+                        <small class="text-muted">Maximum refundable amount is <span class="fw-bold text-dark" id="refund_max_credit_text">৳0.00</span></small>
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">
+                            Disbursement Method <span class="text-danger">*</span>
+                        </label>
+                        <select name="payment_method" id="refund_payment_method" class="form-select" onchange="toggleRefundBankFields()">
+                            <option value="cash" selected>Cash in Hand</option>
+                            <option value="bank">Bank Transfer / Cheque</option>
+                            <option value="mobile_banking">Mobile Banking (bKash / Nagad / Rocket)</option>
+                        </select>
+                    </div>
+
+                    <!-- Bank Account Selection (Conditional) -->
+                    <div class="mb-3" id="refund_bank_account_row" style="display: none;">
+                        <label class="form-label small fw-bold text-dark">
+                            Disbursing Bank / MFS Account <span class="text-danger">*</span>
+                        </label>
+                        <select name="bank_detail_id" id="refund_bank_detail_id" class="form-select">
+                            <option value="">Select Bank / MFS Account</option>
+                            @foreach($bankAccounts as $bank)
+                                <option value="{{ $bank->id }}">
+                                    {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Transaction Ref -->
+                    <div class="mb-3" id="refund_trx_ref_row" style="display: none;">
+                        <label class="form-label small fw-bold text-dark">
+                            Cheque / Transaction Reference
+                        </label>
+                        <input type="text" name="transaction_ref" class="form-control" placeholder="Cheque No. or TrxID">
+                    </div>
+
+                    <!-- Date -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">
+                            Refund Date <span class="text-danger">*</span>
+                        </label>
+                        <input type="date" name="refund_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+                    </div>
+
+                    <!-- Remarks -->
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold text-dark">Remarks / Reason</label>
+                        <textarea name="remarks" class="form-control" rows="2" placeholder="e.g. Refund of unallocated advance credit balance on request"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer px-4 py-3 bg-light border-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger px-4 rounded-2 fw-semibold">
+                        <i class="fe fe-check me-1"></i>Confirm Refund
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    function openRefundCustomerAdvanceModal(customerId, customerName, maxAdvance) {
+        document.getElementById('refund_customer_id').value = customerId;
+        document.getElementById('refund_customer_name').textContent = customerName;
+        document.getElementById('refund_max_credit_badge').textContent = '৳' + Number(maxAdvance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('refund_max_credit_text').textContent = '৳' + Number(maxAdvance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        var amountInput = document.getElementById('refund_amount');
+        amountInput.max = maxAdvance;
+        amountInput.value = maxAdvance > 0 ? maxAdvance.toFixed(2) : '';
+        
+        // Reset method
+        document.getElementById('refund_payment_method').value = 'cash';
+        toggleRefundBankFields();
+
+        var modal = new bootstrap.Modal(document.getElementById('refundCustomerAdvanceModal'));
+        modal.show();
+    }
+
+    function toggleRefundBankFields() {
+        var method = document.getElementById('refund_payment_method').value;
+        var bankRow = document.getElementById('refund_bank_account_row');
+        var trxRow = document.getElementById('refund_trx_ref_row');
+        var bankSelect = document.getElementById('refund_bank_detail_id');
+
+        if (method === 'cash') {
+            bankRow.style.display = 'none';
+            trxRow.style.display = 'none';
+            bankSelect.removeAttribute('required');
+        } else {
+            bankRow.style.display = 'block';
+            trxRow.style.display = 'block';
+            bankSelect.setAttribute('required', 'required');
+        }
+    }
+</script>
+@endpush
 @endsection

@@ -335,20 +335,10 @@
                                 </div>
                             </div>
 
-                            <!-- Delivery / Transport (৳) with Two-Tick Selector (Paid by Me / Paid by Vendor) -->
+                            <!-- Delivery / Transport (৳) -->
                             <div class="border rounded-2 p-2 bg-light mb-2">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div class="mb-1">
                                     <span class="small fw-semibold text-secondary">Delivery / Transport (৳):</span>
-                                    <div class="d-flex align-items-center gap-2 d-none">
-                                        <div class="form-check form-check-inline m-0">
-                                            <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_me" value="me" checked onchange="recalculateShopSummary()">
-                                            <label class="form-check-label small fs-8 text-primary fw-semibold" for="transport_payer_me">Paid by Me</label>
-                                        </div>
-                                        <div class="form-check form-check-inline m-0">
-                                            <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_vendor" value="vendor" onchange="recalculateShopSummary()">
-                                            <label class="form-check-label small fs-8 text-secondary fw-semibold" for="transport_payer_vendor">Paid by Vendor</label>
-                                        </div>
-                                    </div>
                                 </div>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white">৳</span>
@@ -847,10 +837,7 @@ function recalculateShopSummary() {
     document.getElementById('subTotal').value = itemsSubtotal.toFixed(2);
     document.getElementById('subtotal').value = itemsSubtotal.toFixed(2);
 
-    const transportPayer = document.querySelector('input[name="transport_payer"]:checked')?.value || 'me';
     const deliveryCharge = parseFloat(document.getElementById('delivery_charge').value) || 0;
-    const billedDelivery = (transportPayer === 'vendor') ? deliveryCharge : 0;
-    
     const labourCost = parseFloat(document.getElementById('labour_cost').value) || 0;
     const scaleCost = parseFloat(document.getElementById('weight_scale_cost').value) || 0;
     const otherCharges = parseFloat(document.getElementById('other_charges').value) || 0;
@@ -858,7 +845,7 @@ function recalculateShopSummary() {
     const vatPercent = parseFloat(document.getElementById('vat').value) || 0;
     const vatAmount = (itemsSubtotal * vatPercent) / 100;
 
-    let grandTotal = itemsSubtotal - discount + vatAmount + billedDelivery + labourCost + scaleCost + otherCharges;
+    let grandTotal = itemsSubtotal - discount + vatAmount + deliveryCharge + labourCost + scaleCost + otherCharges;
     grandTotal = Math.max(0, grandTotal);
 
     document.getElementById('displayGrandTotal').innerText = '৳ ' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});

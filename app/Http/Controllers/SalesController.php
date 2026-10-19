@@ -283,7 +283,7 @@ class SalesController extends Controller
             'thickness' => 'nullable|array',
             'size' => 'nullable|array',
             'custom_size' => 'required|array',
-            'custom_size.*' => 'required|string|max:255',
+            'custom_size.*' => 'nullable|string|max:255',
             'qty' => 'required|array|min:1',
             'qty.*' => 'required|numeric|min:0.01',
             'unit_price' => 'required|array|min:1',
@@ -381,7 +381,7 @@ class SalesController extends Controller
                 $thickness = $request->thickness[$index] ?? null;
                 $size = $request->size[$index] ?? null;
                 $sizeType = $request->size_type[$index] ?? 'ft';
-                $customSize = $request->custom_size[$index] ?? null;
+                $customSize = !empty($request->custom_size[$index]) ? trim($request->custom_size[$index]) : ($thickness ? ($thickness . ($size ? ' ' . $size . ' ' . $sizeType : '')) : 'Standard');
 
                 $purchasePrice = 0;
                 if ($coilId) {
@@ -474,13 +474,12 @@ class SalesController extends Controller
             $taxAmount = round(($totalBill * $taxPercent) / 100, 2);
 
             $deliveryCharge = (float)($validated['delivery_charge'] ?? 0);
-            $transportPayer = $request->input('transport_payer', 'me');
-            $billedDelivery = ($transportPayer === 'vendor') ? $deliveryCharge : 0;
+            $transportPayer = $request->input('transport_payer', 'vendor');
             $labourCost = (float)($validated['labour_cost'] ?? 0);
             $weightScaleCost = (float)($validated['weight_scale_cost'] ?? 0);
             $otherCharges = (float)($validated['other_charges'] ?? 0);
 
-            $extraCharges = $vatAmount + $taxAmount + $billedDelivery + $labourCost + $weightScaleCost + $otherCharges;
+            $extraCharges = $vatAmount + $taxAmount + $deliveryCharge + $labourCost + $weightScaleCost + $otherCharges;
             $total = max(0, round($totalBill + $extraCharges, 2));
             $payble = max(0, round($total - $discount, 2));
 
@@ -829,23 +828,74 @@ class SalesController extends Controller
             // Update the sale
             $sale->update([
                 'advanced_payment' => $newAdvancedPayment,
-                'due_payment' => $newDuePayment,
-                'payment_status' => 1,
+                'due_payment'      => $newDuePayment,
+                'status'           => $newDuePayment <= 0 ? 'paid' : 'partial',
             ]);
 
             // Create payment record
             Payment::create([
-                'customer_id' => $sale->customer_id,
-                'sale_id' => $sale->id,
-                'amount' => $paymentAmount,
+                'customer_id'        => $sale->customer_id,
+                'sale_id'            => $sale->id,
+                'amount'             => $paymentAmount,
                 'due_before_payment' => $dueBeforePayment,
-                'due_after_payment' => $newDuePayment,
-                'payment_method' => $request->payment_method,
-                'bank_detail_id' => ($request->payment_method !== 'cash') ? $request->bank_detail_id : null,
-                'payment_date' => $request->payment_date ?: now(),
-                'notes' => $request->notes,
-                'payment_for' => 2, // Sales
+                'due_after_payment'  => $newDuePayment,
+                'payment_method'     => $request->payment_method,
+                'bank_detail_id'     => ($request->payment_method !== 'cash') ? $request->bank_detail_id : null,
+                'payment_date'       => $request->payment_date ?: now(),
+                'notes'              => $request->notes,
+                'payment_for'        => 2, // Sales
             ]);
+
+            // Sync bank balance if paid via bank
+            if ($request->payment_method !== 'cash' && !empty($request->bank_detail_id)) {
+                \App\Models\BankDetail::find($request->bank_detail_id)?->syncCurrentBalance();
+            }
+
+            // Post double-entry journal voucher for due collection
+            try {
+                $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
+                $arAcc   = \App\Models\ChartOfAccount::where('account_code', '1130')->first();
+
+                $collectionAcc = $cashAcc;
+                if ($request->payment_method !== 'cash' && !empty($request->bank_detail_id)) {
+                    $bank = \App\Models\BankDetail::find($request->bank_detail_id);
+                    $collectionAcc = $bank?->resolveChartOfAccount()
+                        ?? \App\Models\ChartOfAccount::where('account_code', '1120')->first()
+                        ?? $cashAcc;
+                }
+
+                if ($collectionAcc && $arAcc && $paymentAmount > 0 && function_exists('postJournalEntry')) {
+                    $methodLabel = match($request->payment_method) {
+                        'bank' => 'Bank Transfer',
+                        'cheque' => 'Cheque',
+                        'mobile_banking' => 'Mobile Banking',
+                        default => 'Cash'
+                    };
+
+                    postJournalEntry([
+                        'entry_date'     => $request->payment_date ?: date('Y-m-d'),
+                        'reference_type' => 'sale',
+                        'reference_id'   => $sale->id,
+                        'description'    => "Due collection for {$sale->order_no} via {$methodLabel}",
+                        'items' => [
+                            [
+                                'account_id'  => $collectionAcc->id,
+                                'debit'       => (float) $paymentAmount,
+                                'credit'      => 0.00,
+                                'description' => "Due collected for {$sale->order_no} via {$methodLabel}"
+                            ],
+                            [
+                                'account_id'  => $arAcc->id,
+                                'debit'       => 0.00,
+                                'credit'      => (float) $paymentAmount,
+                                'description' => "Accounts Receivable credit for {$sale->order_no}"
+                            ]
+                        ]
+                    ]);
+                }
+            } catch (\Throwable $je) {
+                \Illuminate\Support\Facades\Log::warning("Invoice payment journal skipped for sale #{$sale->id}: " . $je->getMessage());
+            }
 
             DB::commit();
 
@@ -856,17 +906,11 @@ class SalesController extends Controller
         }
     }
 
-//     public function duePayments()
-// {
-//     $sales = Sale::where('due_payment', '>', 0)
-//                 ->latest()
-//                 ->get();
-
-//     return view('frontend.pages.sales.due-payments', compact('sales'));
-// }
-
     public function duePayments()
     {
+        // Auto-reconcile any unallocated collections to open sales orders
+        Customer::reconcileUnallocatedPayments();
+
         $sales = Sale::with(['customer', 'warehouse'])
             ->where('due_payment', '>', 0)
             ->latest()
@@ -875,6 +919,16 @@ class SalesController extends Controller
         $customersWithDue = Customer::withSum(['sales' => function($q) {
                 $q->whereNull('deleted_at');
             }], 'due_payment')
+            ->withCount(['sales' => function($q) {
+                $q->whereNull('deleted_at')
+                  ->where('due_payment', '>', 0);
+            }])
+            ->with(['sales' => function($q) {
+                $q->whereNull('deleted_at')
+                  ->where('due_payment', '>', 0)
+                  ->with('warehouse')
+                  ->latest();
+            }])
             ->get()
             ->map(function($c) {
                 $c->opening_due = (float)($c->opening_balance ?? 0);
@@ -905,6 +959,9 @@ class SalesController extends Controller
 
     public function duePaymentsPdf()
     {
+        // Auto-reconcile any unallocated collections to open sales orders
+        Customer::reconcileUnallocatedPayments();
+
         $sales = Sale::with(['customer', 'warehouse'])
             ->where('due_payment', '>', 0)
             ->latest()
@@ -913,6 +970,10 @@ class SalesController extends Controller
         $customersWithDue = Customer::withSum(['sales' => function($q) {
                 $q->whereNull('deleted_at');
             }], 'due_payment')
+            ->withCount(['sales' => function($q) {
+                $q->whereNull('deleted_at')
+                  ->where('due_payment', '>', 0);
+            }])
             ->get()
             ->map(function($c) {
                 $c->opening_due = (float)($c->opening_balance ?? 0);
