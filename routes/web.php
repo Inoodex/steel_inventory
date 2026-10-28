@@ -69,6 +69,8 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('shops/sales/create', [ShopController::class, 'createSale'])->name('shops.sales.create');
     Route::get('shops/sales', [ShopController::class, 'sales'])->name('shops.sales.index');
     Route::get('shops/purchases/create', [ShopController::class, 'createPurchase'])->name('shops.purchases.create');
+    Route::get('shops/purchases/{id}/edit', [ShopController::class, 'editPurchase'])->name('shops.purchases.edit');
+    Route::put('shops/purchases/{id}', [ShopController::class, 'updatePurchase'])->name('shops.purchases.update');
     Route::get('shops/purchases', [ShopController::class, 'purchases'])->name('shops.purchases.index');
     Route::get('shops/returns', [ShopController::class, 'returns'])->name('shops.returns.index');
     Route::get('shops/returns/create', [ShopController::class, 'createReturn'])->name('shops.returns.create');
@@ -189,9 +191,9 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
         Route::patch('product-returns/{id}/complete', [ReturnController::class, 'complete'])->name('returns.complete');
         Route::patch('product-returns/{id}/reject', [ReturnController::class, 'reject'])->name('returns.reject');
 
-        // =========================================================================
+        // ===================================================
         // DOUBLE-ENTRY ACCOUNTS & BOOKKEEPING (SUPER ADMIN)
-        // =========================================================================
+        // ===================================================
         Route::prefix('accounts')->group(function () {
             // Redirect legacy accounts dashboard to Main Unified Dashboard
             Route::get('dashboard', function () {

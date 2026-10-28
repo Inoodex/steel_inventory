@@ -52,9 +52,15 @@
                     <a href="{{ route('purchase.show', $purchase->id) }}" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm">
                         <i class="fe fe-eye me-1"></i>View Details
                     </a>
-                    <a href="{{ route('purchase.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 shadow-sm">
-                        <i class="fe fe-arrow-left me-1"></i>Back to Purchases
-                    </a>
+                    @if($purchase->warehouse?->isShop())
+                        <a href="{{ route('shops.purchases.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 shadow-sm">
+                            <i class="fe fe-arrow-left me-1"></i>Back to Shop Purchases
+                        </a>
+                    @else
+                        <a href="{{ route('purchase.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 shadow-sm">
+                            <i class="fe fe-arrow-left me-1"></i>Back to Purchases
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
@@ -491,7 +497,6 @@
                             </div>
 
                             <button type="submit" class="btn btn-primary w-100 py-3 rounded-3 shadow-sm fw-bold fs-6 d-flex align-items-center justify-content-center gap-2" id="submitPurchaseBtn">
-                                <i class="fe fe-save"></i>
                                 <span>Save Changes & Update Inventory</span>
                             </button>
                         </div>

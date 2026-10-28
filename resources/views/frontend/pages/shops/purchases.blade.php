@@ -209,7 +209,7 @@
                                                 </a>
                                             </li>
                                             <li>
-                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.edit', $p->id) }}">
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('shops.purchases.edit', $p->id) }}">
                                                     <i class="fe fe-edit text-secondary"></i>
                                                     <span>Edit Purchase</span>
                                                 </a>

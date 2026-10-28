@@ -102,10 +102,17 @@
                     </a>
                 @endif
 
-                <a href="{{ route('purchase.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2">
-                    <i class="fe fe-arrow-left"></i>
-                    <span>Back to Purchases</span>
-                </a>
+                @if($purchase->warehouse?->isShop())
+                    <a href="{{ route('shops.purchases.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2">
+                        <i class="fe fe-arrow-left"></i>
+                        <span>Back to Shop Purchases</span>
+                    </a>
+                @else
+                    <a href="{{ route('purchase.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2">
+                        <i class="fe fe-arrow-left"></i>
+                        <span>Back to Purchases</span>
+                    </a>
+                @endif
             </div>
         </div>
     </div>
@@ -422,7 +429,7 @@
                                         </a>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
-                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.edit', $item->id) }}">
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ ($item->warehouse?->isShop()) ? route('shops.purchases.edit', $item->id) : route('purchase.edit', $item->id) }}">
                                                     <i class="fe fe-edit text-warning"></i>
                                                     <span>Edit Line Item</span>
                                                 </a>

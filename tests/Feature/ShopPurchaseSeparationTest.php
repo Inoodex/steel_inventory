@@ -158,4 +158,146 @@ class ShopPurchaseSeparationTest extends TestCase
         $response = $this->actingAs($this->user)->post(route('purchase.store'), $payload);
         $response->assertRedirect(route('shops.purchases.index'));
     }
+
+    public function test_shop_purchase_edit_page_renders_successfully(): void
+    {
+        $lot = Lot::create([
+            'lot_number' => 'LOT-SHOP-EDIT-01',
+            'vendor_id' => $this->vendor->id,
+            'status' => 'active',
+            'total_quantity' => 10,
+            'total_amount' => 1000,
+        ]);
+
+        $purchase = Purchase::create([
+            'lot_id' => $lot->id,
+            'warehouse_id' => $this->shop->id,
+            'vendor_id' => $this->vendor->id,
+            'thickness' => '2.50mm',
+            'size' => '3x8',
+            'size_type' => 'ft',
+            'unit_weight' => 10,
+            'total_weight' => 10,
+            'quantity' => 1,
+            'unit_price' => 100,
+            'sub_price' => 1000,
+            'total_price' => 1000,
+            'payment' => 500,
+            'due' => 500,
+            'status' => 'completed',
+        ]);
+
+        Coil::create([
+            'lot_id' => $lot->id,
+            'purchase_id' => $purchase->id,
+            'vendor_id' => $this->vendor->id,
+            'warehouse_id' => $this->shop->id,
+            'coil_number' => 'COIL-SHOP-001',
+            'thickness' => '2.50mm',
+            'width' => '3x8',
+            'length' => 'ft',
+            'piece_count' => 1,
+            'gross_weight' => 10,
+            'net_weight' => 10,
+            'remaining_weight' => 10,
+            'rate_per_ton' => 100,
+            'total_price' => 1000,
+            'status' => 'in_stock',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('shops.purchases.edit', $purchase->id));
+        $response->assertStatus(200);
+        $response->assertSee('Edit Shop Purchase Order');
+        $response->assertSee('LOT-SHOP-EDIT-01');
+        $response->assertSee('COIL-SHOP-001');
+        $response->assertSee('2.50mm');
+    }
+
+    public function test_shop_purchase_update_updates_record_and_redirects_to_shop_purchases(): void
+    {
+        $lot = Lot::create([
+            'lot_number' => 'LOT-SHOP-EDIT-02',
+            'vendor_id' => $this->vendor->id,
+            'status' => 'active',
+            'total_quantity' => 10,
+            'total_amount' => 1000,
+        ]);
+
+        $purchase = Purchase::create([
+            'lot_id' => $lot->id,
+            'warehouse_id' => $this->shop->id,
+            'vendor_id' => $this->vendor->id,
+            'thickness' => '2.50mm',
+            'size' => '3x8',
+            'size_type' => 'ft',
+            'unit_weight' => 10,
+            'total_weight' => 10,
+            'quantity' => 1,
+            'unit_price' => 100,
+            'sub_price' => 1000,
+            'total_price' => 1000,
+            'payment' => 500,
+            'due' => 500,
+            'status' => 'completed',
+        ]);
+
+        $coil = Coil::create([
+            'lot_id' => $lot->id,
+            'purchase_id' => $purchase->id,
+            'vendor_id' => $this->vendor->id,
+            'warehouse_id' => $this->shop->id,
+            'coil_number' => 'COIL-SHOP-002',
+            'thickness' => '2.50mm',
+            'width' => '3x8',
+            'length' => 'ft',
+            'piece_count' => 1,
+            'gross_weight' => 10,
+            'net_weight' => 10,
+            'remaining_weight' => 10,
+            'rate_per_ton' => 100,
+            'total_price' => 1000,
+            'status' => 'in_stock',
+        ]);
+
+        $payload = [
+            'lot_id' => $lot->id,
+            'vendor_id' => $this->vendor->id,
+            'thickness' => '3.00mm',
+            'size' => '4x8',
+            'size_type' => 'ft',
+            'quantity' => 2,
+            'unit_weight' => 15,
+            'total_weight' => 30,
+            'unit_price' => 120,
+            'sub_price' => 3600,
+            'delivery_charge' => 100,
+            'transport_payer' => 'vendor',
+            'labour_cost' => 50,
+            'weight_scale_cost' => 50,
+            'other_charges' => 0,
+            'discount' => 0,
+            'total_price' => 3800,
+            'payment' => 2000,
+            'due' => 1800,
+            'payment_method' => 'cash',
+        ];
+
+        $response = $this->actingAs($this->user)->put(route('shops.purchases.update', $purchase->id), $payload);
+        $response->assertRedirect(route('shops.purchases.index'));
+        $response->assertSessionHas('success');
+
+        $purchase->refresh();
+        $this->assertEquals('3.00mm', $purchase->thickness);
+        $this->assertEquals('4x8', $purchase->size);
+        $this->assertEquals(2, $purchase->quantity);
+        $this->assertEquals(30, (float)$purchase->total_weight);
+        $this->assertEquals(3800, (float)$purchase->total_price);
+        $this->assertEquals(2000, (float)$purchase->payment);
+        $this->assertEquals(1800, (float)$purchase->due);
+
+        $coil->refresh();
+        $this->assertEquals('3.00mm', $coil->thickness);
+        $this->assertEquals(30, (float)$coil->net_weight);
+        $this->assertEquals(30, (float)$coil->remaining_weight);
+    }
 }
