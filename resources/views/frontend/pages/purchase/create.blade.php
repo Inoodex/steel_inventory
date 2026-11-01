@@ -195,7 +195,7 @@
                                             data-warehouse-id="{{ $lotWarehouseId }}"
                                             data-vendor-id="{{ $lotVendorId }}"
                                             {{ old('lot_id', request('lot_id')) == $lot->id ? 'selected' : '' }}>
-                                            {{ $lot->lot_number }} {{ $lot->vendor_names ? '('.$lot->vendor_names.')' : '' }}
+                                            {{ $lot->lot_number }}
                                         </option>
                                     @endforeach
                                 </select>

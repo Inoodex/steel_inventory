@@ -30,6 +30,7 @@ class PermissionSeeder extends Seeder
             ['name' => 'Employee Management', 'guard_name' => 'web'],
             ['name' => 'Company Management', 'guard_name' => 'web'],
             ['name' => 'Report Management', 'guard_name' => 'web'],
+            ['name' => 'Sales Only Access', 'guard_name' => 'web'],
         ];
 
         foreach ($permissions as $permission) {
@@ -49,6 +50,15 @@ class PermissionSeeder extends Seeder
             'name' => 'Employee',
             'guard_name' => 'web'
         ]);
+
+        $salesExecutiveRole = Role::firstOrCreate([
+            'name' => 'Sales Executive',
+            'guard_name' => 'web'
+        ]);
+        $salesOnlyPermission = Permission::where('name', 'Sales Only Access')->first();
+        if ($salesOnlyPermission) {
+            $salesExecutiveRole->syncPermissions([$salesOnlyPermission]);
+        }
 
         // Assign ALL permissions to Super Admin
         $superAdminRole->syncPermissions(Permission::all());

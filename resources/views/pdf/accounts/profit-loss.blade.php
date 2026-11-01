@@ -5,11 +5,7 @@
     <title>Income Statement (P&L)</title>
     <style>
         @page {
-            @if(!empty($padBase64))
-            background-image: url('{{ $padBase64 }}');
-            background-image-resize: 6;
-            @endif
-            margin-top: 45mm;
+            margin-top: 15mm;
             margin-bottom: 25mm;
             margin-left: 15mm;
             margin-right: 15mm;

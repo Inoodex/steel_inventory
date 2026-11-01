@@ -77,8 +77,21 @@
                         @enderror
                     </div>
 
+                    <!-- Opening Due Balance -->
+                    <div class="col-md-6 col-lg-6">
+                        <label class="form-label fw-semibold text-secondary small mb-1">Opening Due Balance (৳)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-light-subtle text-muted">৳</span>
+                            <input type="number" step="0.01" min="0" class="form-control @error('opening_due') is-invalid @enderror" name="opening_due" id="opening_due" value="{{ old('opening_due', '0.00') }}" placeholder="0.00">
+                        </div>
+                        <small class="text-muted d-block mt-1" style="font-size: 11px;">Existing payable due owed to supplier before this system</small>
+                        @error('opening_due')
+                            <div class="text-danger fs-7 mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     <!-- Status -->
-                    <div class="col-md-6 col-lg-4">
+                    <div class="col-md-6 col-lg-6">
                         <label class="form-label fw-semibold text-secondary small mb-1">Account Status</label>
                         <select class="form-select" name="status">
                             <option value="active" {{ old('status', 'active') == 'active' ? 'selected' : '' }}>Active</option>

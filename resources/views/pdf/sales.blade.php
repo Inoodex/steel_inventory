@@ -5,21 +5,11 @@
     <title>Sales List Report</title>
     <style>
         @page {
-            margin: 140px 45px 80px 45px;
+            margin: 15mm;
             size: A4 portrait;
         }
-        .pdf-bg-pad {
-            position: fixed;
-            top: -140px;
-            left: -45px;
-            width: 210mm;
-            height: 297mm;
-            z-index: -1000;
-        }
-        .pdf-bg-pad img {
-            width: 210mm;
-            height: 297mm;
-        }
+        
+        
         body {
             font-family: DejaVu Sans, Arial, sans-serif;
             font-size: 10px;
@@ -109,9 +99,7 @@
     </style>
 </head>
 <body>
-    <div class="pdf-bg-pad">
-        <img src="{{ public_path('assets/invoice/final_pad.png') }}" />
-    </div>
+    
 
     <div class="header">
         <table width="100%">

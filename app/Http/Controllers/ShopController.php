@@ -116,7 +116,18 @@ class ShopController extends Controller
     public function createPurchase(Request $request)
     {
         $shop = $this->getShop();
-        $vendors = Vendor::where('status', '1')->orderBy('name')->get();
+        $vendors = Vendor::where('status', '1')
+            ->withSum(['purchases' => function($q) {
+                $q->whereNull('deleted_at');
+            }], 'due')
+            ->orderBy('name')
+            ->get()
+            ->map(function($v) {
+                $v->opening_due = max(0, (float)($v->opening_balance ?? 0));
+                $v->purchase_due = (float)($v->purchases_sum_due ?? 0);
+                $v->total_due = $v->opening_due + $v->purchase_due;
+                return $v;
+            });
         // Only load lots associated with / created under this specific shop
         $lots = Lot::where('status', 'active')
             ->where(function ($q) use ($shop) {
@@ -130,6 +141,7 @@ class ShopController extends Controller
             ->orderBy('id', 'desc')
             ->get();
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
+        $warehouses = collect([$shop]);
         
         $todayCount = Purchase::whereDate('created_at', Carbon::today())->count() + 1;
         $suggestedLotNumber = 'LOT-' . date('Ymd') . '-' . str_pad($todayCount, 2, '0', STR_PAD_LEFT);
@@ -138,6 +150,7 @@ class ShopController extends Controller
             'shop',
             'vendors',
             'lots',
+            'warehouses',
             'bankAccounts',
             'suggestedLotNumber'
         ));

@@ -79,10 +79,4 @@ class User extends Authenticatable
 //     return $this->hasOne(Employee::class, 'employee_id', 'employee_id');
 // }
 
-public function taDas()
-{
-    return $this->hasMany(TaDa::class);
-}
-
-
 }

@@ -34,11 +34,11 @@
                         <label class="form-label small text-secondary fw-semibold mb-2">Customer Type <span class="text-danger">*</span></label>
                         <div class="d-flex gap-4">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="client_type" id="newClient" value="new" checked>
+                                <input class="form-check-input" type="radio" name="client_type" id="newClient" value="new" {{ old('client_type', 'new') === 'new' ? 'checked' : '' }}>
                                 <label class="form-check-label fw-semibold text-dark" for="newClient">New Customer</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="client_type" id="existingClient" value="existing">
+                                <input class="form-check-input" type="radio" name="client_type" id="existingClient" value="existing" {{ old('client_type') === 'existing' ? 'checked' : '' }}>
                                 <label class="form-check-label fw-semibold text-dark" for="existingClient">Existing Customer</label>
                             </div>
                         </div>
@@ -219,28 +219,28 @@
                         </div>
 
                         <!-- 5. Selling Rate -->
-                        <div class="col-lg-3 col-md-6 col-12">
+                        <div class="col-lg-2 col-md-3 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Selling Rate (৳) <span class="text-danger">*</span></label>
                             <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="unit_price1" class="form-control border-light-subtle" step="0.01" min="0" placeholder="0.00">
                         </div>
 
                         <!-- 6. Selling Quantity -->
-                        <div class="col-lg-3 col-md-6 col-12">
+                        <div class="col-lg-2 col-md-3 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Selling Qty / Wt (kg) <span class="text-danger">*</span></label>
-                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="qty1" class="form-control border-light-subtle text-dark fw-bold" step="0.01" min="0.01" placeholder="0.00">
+                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="qty1" class="form-control border-light-subtle text-dark fw-bold text-center" step="0.01" min="0.01" placeholder="0.00">
                         </div>
 
                         <!-- 7. Line Total Preview -->
-                        <div class="col-lg-3 col-md-6 col-12">
+                        <div class="col-lg-3 col-md-6 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Line Total (৳)</label>
-                            <input type="text" id="total1" class="form-control border-light-subtle bg-white fw-bold text-success" readonly value="0.00">
+                            <input type="text" id="total1" class="form-control border-light-subtle bg-white fw-bold text-success text-end" readonly value="0.00">
                         </div>
 
                         <!-- 8. Add Item Button -->
-                        <div class="col-12 text-end pt-1">
-                            <button type="button" onclick="addItem()" class="btn btn-success px-4 rounded-3 d-inline-flex align-items-center justify-content-center gap-2 py-2 shadow-sm">
+                        <div class="col-lg-2 col-md-6 col-12">
+                            <button type="button" onclick="addItem()" class="btn btn-success w-100 rounded-3 d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm fw-semibold" style="height: 38px;">
                                 <i class="fe fe-plus"></i>
-                                <span>Add Steel Item</span>
+                                <span class="text-nowrap">Add Steel Item</span>
                             </button>
                         </div>
                     </div>
@@ -251,12 +251,12 @@
                     <table class="table table-hover align-middle mb-0" id="cartItemsTable">
                         <thead class="bg-light text-secondary fs-7 text-uppercase">
                             <tr>
-                                <th style="width: 32%;">Product & Specifications</th>
-                                <th style="width: 18%;">Lot Source</th>
-                                <th style="width: 15%;">Custom Size (Admin)</th>
-                                <th style="width: 12%;">Unit Price</th>
-                                <th style="width: 10%;">Quantity</th>
-                                <th style="width: 8%;">Total Price</th>
+                                <th style="width: 29%;">Product & Specifications</th>
+                                <th style="width: 16%;">Lot Source</th>
+                                <th style="width: 14%;">Custom Size (Admin)</th>
+                                <th style="width: 11%;">Unit Price</th>
+                                <th style="width: 8%;">Quantity</th>
+                                <th style="width: 17%;">Total Price</th>
                                 <th style="width: 5%;" class="text-end">Action</th>
                             </tr>
                         </thead>
@@ -319,37 +319,59 @@
                     <input type="hidden" id="duePayment" name="duePayment" value="0.00">
                 </div>
 
-                <!-- Minimal Financial Metric Cards Row -->
+                <!-- Financial & Cash Tender / Change Cards Row -->
                 <div class="row g-3 mb-3">
                     <!-- Grand Total -->
-                    <div class="col-lg-3 col-md-6 col-12">
+                    <div class="col-xl-3 col-lg-3 col-md-6 col-12">
                         <div class="p-3 bg-light rounded-3 border h-100">
-                            <span class="text-muted small fw-medium d-block mb-1">Invoice Grand Total</span>
+                            <span class="text-muted small fw-semibold d-block mb-1">Invoice Grand Total</span>
                             <h4 class="mb-0 fw-bold text-dark" id="grandTotalDisplay">৳ 0.00</h4>
                         </div>
                     </div>
 
-                    <!-- Payment Received Input -->
-                    <div class="col-lg-3 col-md-6 col-12">
+                    <!-- Cash Tendered / Received Input -->
+                    <div class="col-xl-3 col-lg-3 col-md-6 col-12">
                         <div class="p-3 bg-light rounded-3 border h-100">
-                            <label class="form-label small text-muted fw-medium mb-1">Current Payment (৳) <span class="text-danger">*</span></label>
-                            <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" name="advanced_payment" id="advancedPayment" 
-                                class="form-control border-light-subtle fw-bold text-dark bg-white" value="0" min="0" step="0.01">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small text-muted fw-semibold mb-0">
+                                    Cash Tendered / Received <span class="text-danger">*</span>
+                                </label>
+                                <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 rounded-pill shadow-none" onclick="setExactTendered()" style="font-size: 11px;">
+                                    Exact
+                                </button>
+                            </div>
+                            <input oninput="handleTenderedInput()" onchange="handleTenderedInput()" type="number" id="tenderedAmount" 
+                                class="form-control border-light-subtle fw-bold text-dark bg-white fs-6" placeholder="0.00" min="0" step="0.01">
+                            <input type="hidden" name="advanced_payment" id="advancedPayment" value="0.00">
+                            <input type="hidden" id="changeReturnAmount" value="0.00">
+                            <small class="text-muted d-block mt-1" style="font-size: 11px;" id="appliedPaymentHelp">
+                                Settled: <strong class="text-success" id="displayAppliedPayment">৳ 0.00</strong>
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Change Return (ফেরত) -->
+                    <div class="col-xl-2 col-lg-2 col-md-4 col-12">
+                        <div class="p-3 rounded-3 border h-100 transition-all" id="changeCardWrapper" style="background-color: #f8fafc; border-color: #e2e8f0;">
+                            <span class="small fw-semibold d-block mb-1 text-success">
+                                <i class="fe fe-corner-down-left me-1"></i>Change Return (ফেরত)
+                            </span>
+                            <h4 class="mb-0 fw-bold text-success" id="changeReturnDisplay">৳ 0.00</h4>
                         </div>
                     </div>
 
                     <!-- Current Invoice Due -->
-                    <div class="col-lg-3 col-md-6 col-12">
+                    <div class="col-xl-2 col-lg-2 col-md-4 col-12">
                         <div class="p-3 bg-light rounded-3 border h-100">
-                            <span class="text-muted small fw-medium d-block mb-1">Current Invoice Due</span>
+                            <span class="text-muted small fw-semibold d-block mb-1">Current Invoice Due</span>
                             <h4 class="mb-0 fw-bold text-danger" id="currentDueDisplay">৳ 0.00</h4>
                         </div>
                     </div>
 
                     <!-- Customer Previous Due -->
-                    <div class="col-lg-3 col-md-6 col-12">
+                    <div class="col-xl-2 col-lg-2 col-md-4 col-12">
                         <div class="p-3 bg-light rounded-3 border h-100">
-                            <span class="text-muted small fw-medium d-block mb-1">Customer Previous Due</span>
+                            <span class="text-muted small fw-semibold d-block mb-1">Customer Previous Due</span>
                             <h4 class="mb-0 fw-bold text-secondary" id="previousDueDisplay">৳ 0.00</h4>
                         </div>
                     </div>
@@ -453,18 +475,20 @@ $(document).ready(function () {
     const newClientInputs = document.querySelectorAll('#newClientForm input');
 
     function toggleClientForms() {
-        if (newClientRadio.checked) {
-            newClientForm.style.display = 'block';
-            existingClientForm.style.display = 'none';
+        if (newClientRadio && newClientRadio.checked) {
+            if (newClientForm) newClientForm.style.display = 'block';
+            if (existingClientForm) existingClientForm.style.display = 'none';
             newClientInputs.forEach(input => input.required = true);
-            document.getElementById('clientSelect').required = false;
+            const clientSel = document.getElementById('clientSelect');
+            if (clientSel) clientSel.required = false;
             window.selectedCustomerPreviousDue = 0;
             updateCustomerBalanceCard(0, null, null);
         } else {
-            newClientForm.style.display = 'none';
-            existingClientForm.style.display = 'block';
+            if (newClientForm) newClientForm.style.display = 'none';
+            if (existingClientForm) existingClientForm.style.display = 'block';
             newClientInputs.forEach(input => input.required = false);
-            document.getElementById('clientSelect').required = true;
+            const clientSel = document.getElementById('clientSelect');
+            if (clientSel) clientSel.required = true;
             handleCustomerChange(document.getElementById('clientSelect'));
         }
         calculateTotal();
@@ -474,6 +498,10 @@ $(document).ready(function () {
         newClientRadio.addEventListener('change', toggleClientForms);
         existingClientRadio.addEventListener('change', toggleClientForms);
         toggleClientForms();
+    } else if (existingClientRadio) {
+        existingClientRadio.addEventListener('change', toggleClientForms);
+        toggleClientForms();
+    }
     }
 
     // Populate initial stock/lot source based on default selected warehouse
@@ -591,6 +619,10 @@ function applyCustomerAdvanceCredit() {
     const grandTotal = parseFloat(document.getElementById('grandTotal')?.value || 0);
     const applyAmt = grandTotal > 0 ? Math.min(grandTotal, adv) : adv;
     
+    const tenderedInput = document.getElementById('tenderedAmount');
+    if (tenderedInput) {
+        tenderedInput.value = applyAmt.toFixed(2);
+    }
     const advInput = document.getElementById('advancedPayment');
     if (advInput) {
         advInput.value = applyAmt.toFixed(2);
@@ -925,10 +957,10 @@ function addItem() {
                 <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" step="0.01" name="unit_price[]" id="unit_price${itemNumber}" class="form-control border-light-subtle unit-price" value="${unitPrice.toFixed(2)}">
             </td>
             <td>
-                <input oninput="validateLotRowQty(this); calculateTotal()" onchange="validateLotRowQty(this); calculateTotal()" type="number" step="0.01" name="qty[]" id="qty${itemNumber}" class="form-control border-light-subtle qty fw-bold" min="0.01" max="${availableStock}" data-available="${availableStock}" data-lot-source="${escapeHtml(lotRawSource)}" data-lot-number="${escapeHtml(lot.lot_number)}" value="${qty}">
+                <input oninput="validateLotRowQty(this); calculateTotal()" onchange="validateLotRowQty(this); calculateTotal()" type="number" step="0.01" name="qty[]" id="qty${itemNumber}" class="form-control border-light-subtle qty fw-bold text-center" min="0.01" max="${availableStock}" data-available="${availableStock}" data-lot-source="${escapeHtml(lotRawSource)}" data-lot-number="${escapeHtml(lot.lot_number)}" value="${qty}">
             </td>
             <td>
-                <input type="number" step="0.01" name="total" id="total${itemNumber}" class="form-control border-light-subtle bg-light total fw-bold text-dark" readonly value="${rowTotal}">
+                <input type="number" step="0.01" name="total" id="total${itemNumber}" class="form-control border-light-subtle bg-light total fw-bold text-dark text-end" readonly value="${rowTotal}">
             </td>
             <td class="text-end">
                 <button onclick="removeItem(${itemNumber})" type="button" class="btn btn-outline-danger btn-sm px-3 rounded-2" title="Remove Item">
@@ -999,25 +1031,9 @@ function calculateTotal() {
         gtDisplay.innerText = '৳ ' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
 
-    const advancedInput = document.getElementById('advancedPayment');
-    let advanced = parseFloat(advancedInput?.value) || 0;
-    if (advancedInput) {
-        advancedInput.setAttribute('max', grandTotal.toFixed(2));
-    }
-    if (advanced > grandTotal) {
-        advanced = grandTotal;
-        if (advancedInput) advancedInput.value = grandTotal.toFixed(2);
-    }
-    const currentDue = Math.max(0, grandTotal - advanced);
-    document.getElementById('duePayment').value = currentDue.toFixed(2);
-    
-    const cdDisplay = document.getElementById('currentDueDisplay');
-    if (cdDisplay) {
-        cdDisplay.innerText = '৳ ' + currentDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    }
+    calculateTenderAndChange(grandTotal);
 
     const previousDue = parseFloat(window.selectedCustomerPreviousDue || 0);
-
     const pdDisplay = document.getElementById('previousDueDisplay');
     if (pdDisplay) {
         pdDisplay.innerText = '৳ ' + previousDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -1044,6 +1060,81 @@ function validateLotRowQty(inputEl) {
         inputEl.classList.add('is-invalid');
         setTimeout(() => inputEl.classList.remove('is-invalid'), 2000);
     }
+}
+
+function handleTenderedInput() {
+    const grandTotal = parseFloat(document.getElementById('grandTotal')?.value) || 0;
+    calculateTenderAndChange(grandTotal);
+}
+
+function calculateTenderAndChange(grandTotal) {
+    const tenderedInput = document.getElementById('tenderedAmount');
+    const advancedInput = document.getElementById('advancedPayment');
+    const changeDisplay = document.getElementById('changeReturnDisplay');
+    const changeCard = document.getElementById('changeCardWrapper');
+    const appliedDisplay = document.getElementById('displayAppliedPayment');
+    const currentDueDisplay = document.getElementById('currentDueDisplay');
+    const duePaymentInput = document.getElementById('duePayment');
+    const changeReturnInput = document.getElementById('changeReturnAmount');
+
+    const tenderedStr = tenderedInput ? tenderedInput.value.trim() : '';
+    const tendered = parseFloat(tenderedStr) || 0;
+
+    let appliedPayment = 0;
+    let changeReturn = 0;
+    let currentDue = grandTotal;
+
+    if (tenderedStr !== '') {
+        if (tendered >= grandTotal && grandTotal > 0) {
+            appliedPayment = grandTotal;
+            changeReturn = tendered - grandTotal;
+            currentDue = 0;
+        } else {
+            appliedPayment = Math.min(tendered, grandTotal);
+            changeReturn = 0;
+            currentDue = Math.max(0, grandTotal - appliedPayment);
+        }
+    } else {
+        appliedPayment = Math.min(parseFloat(advancedInput?.value) || 0, grandTotal);
+        currentDue = Math.max(0, grandTotal - appliedPayment);
+    }
+
+    if (advancedInput) {
+        advancedInput.value = appliedPayment.toFixed(2);
+    }
+    if (changeReturnInput) {
+        changeReturnInput.value = changeReturn.toFixed(2);
+    }
+    if (duePaymentInput) {
+        duePaymentInput.value = currentDue.toFixed(2);
+    }
+    if (appliedDisplay) {
+        appliedDisplay.innerText = '৳ ' + appliedPayment.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+    if (currentDueDisplay) {
+        currentDueDisplay.innerText = '৳ ' + currentDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+    if (changeDisplay) {
+        changeDisplay.innerText = '৳ ' + changeReturn.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+    if (changeCard) {
+        if (changeReturn > 0) {
+            changeCard.style.backgroundColor = '#dcfce7';
+            changeCard.style.borderColor = '#86efac';
+        } else {
+            changeCard.style.backgroundColor = '#f8fafc';
+            changeCard.style.borderColor = '#e2e8f0';
+        }
+    }
+}
+
+function setExactTendered() {
+    const grandTotal = parseFloat(document.getElementById('grandTotal')?.value) || 0;
+    const tenderedInput = document.getElementById('tenderedAmount');
+    if (tenderedInput) {
+        tenderedInput.value = grandTotal.toFixed(2);
+    }
+    calculateTenderAndChange(grandTotal);
 }
 
 function validateSaleFormSubmission(e) {

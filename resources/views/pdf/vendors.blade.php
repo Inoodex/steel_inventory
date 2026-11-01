@@ -3,16 +3,9 @@
 <head>
     <meta charset="UTF-8" />
     <title>Vendor Directory Report</title>
-    @php
-        $padBase64 = function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '';
-    @endphp
-    <style>
+        <style>
         @page {
-            @if($padBase64)
-            background-image: url('{{ $padBase64 }}');
-            background-image-resize: 6;
-            @endif
-            margin-top: 45mm;
+            margin-top: 15mm;
             margin-bottom: 25mm;
             margin-left: 15mm;
             margin-right: 15mm;
@@ -95,7 +88,16 @@
 
         .text-right { text-align: right; }
         .text-center { text-align: center; }
-        .fw-bold { font-weight: bold; }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-active { background-color: #dcfce7; color: #15803d; }
+        .badge-inactive { background-color: #fee2e2; color: #b91c1c; }
     </style>
 </head>
 <body>
@@ -111,7 +113,9 @@
 
     <!-- Summary Card -->
     <div class="summary-card">
-        <strong>Total Vendors:</strong> {{ count($vendors) }}
+        <strong>Total Vendors:</strong> {{ count($vendors) }} &nbsp;|&nbsp;
+        <strong>Active Vendors:</strong> <span style="color: #15803d; font-weight: bold;">{{ $vendors->filter(fn($v) => in_array($v->status, ['1', 1, 'active']))->count() }}</span> &nbsp;|&nbsp;
+        <strong>Inactive Vendors:</strong> <span style="color: #b91c1c; font-weight: bold;">{{ $vendors->filter(fn($v) => !in_array($v->status, ['1', 1, 'active']))->count() }}</span>
     </div>
 
     <!-- Main Data Table -->
@@ -121,22 +125,31 @@
                 <th style="width: 5%; text-align: center;">#</th>
                 <th style="width: 25%; text-align: left;">Vendor Name</th>
                 <th style="width: 18%; text-align: left;">Phone</th>
-                <th style="width: 25%; text-align: left;">Email</th>
-                <th style="width: 27%; text-align: left;">Address</th>
+                <th style="width: 24%; text-align: left;">Address</th>
+                <th style="width: 18%; text-align: right;">Opening Due</th>
+                <th style="width: 10%; text-align: center;">Status</th>
             </tr>
         </thead>
         <tbody>
             @forelse($vendors as $index => $vendor)
+                @php
+                    $isActive = in_array($vendor->status, ['1', 1, 'active']);
+                @endphp
                 <tr style="background-color: {{ $loop->even ? '#f8fafc' : '#ffffff' }};">
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td class="fw-bold">{{ $vendor->name }}</td>
                     <td>{{ $vendor->phone ?? 'N/A' }}</td>
-                    <td>{{ $vendor->email ?? 'N/A' }}</td>
                     <td>{{ $vendor->address ?? 'N/A' }}</td>
+                    <td class="text-right fw-bold">৳{{ number_format((float)($vendor->opening_balance ?? 0), 2) }}</td>
+                    <td class="text-center">
+                        <span class="badge {{ $isActive ? 'badge-active' : 'badge-inactive' }}">
+                            {{ $isActive ? 'Active' : 'Inactive' }}
+                        </span>
+                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="text-center" style="padding: 20px; color: #64748b;">No vendor records found.</td>
+                    <td colspan="6" class="text-center" style="padding: 20px; color: #64748b;">No vendor records found.</td>
                 </tr>
             @endforelse
         </tbody>

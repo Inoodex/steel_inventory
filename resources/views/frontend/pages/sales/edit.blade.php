@@ -22,6 +22,19 @@
     .select2-results__option--highlighted[aria-selected] {
         background-color: #3b82f6 !important;
     }
+    .btn-line-action {
+        width: 24px;
+        height: 24px;
+        padding: 0 !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px !important;
+    }
+    .btn-line-action i {
+        font-size: 11px !important;
+        line-height: 1 !important;
+    }
 </style>
 @endpush
 
@@ -234,28 +247,28 @@
                         </div>
 
                         <!-- 5. Selling Rate -->
-                        <div class="col-lg-3 col-md-6 col-12">
+                        <div class="col-lg-2 col-md-3 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Selling Rate (৳) <span class="text-danger">*</span></label>
                             <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="unit_price1" class="form-control border-light-subtle" step="0.01" min="0" placeholder="0.00">
                         </div>
 
                         <!-- 6. Selling Quantity -->
-                        <div class="col-lg-3 col-md-6 col-12">
+                        <div class="col-lg-2 col-md-3 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Selling Qty / Wt (kg) <span class="text-danger">*</span></label>
-                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="qty1" class="form-control border-light-subtle text-dark fw-bold" step="0.01" min="0.01" placeholder="0.00">
+                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="qty1" class="form-control border-light-subtle text-dark fw-bold text-center" step="0.01" min="0.01" placeholder="0.00">
                         </div>
 
                         <!-- 7. Line Total Preview -->
-                        <div class="col-lg-3 col-md-6 col-12">
+                        <div class="col-lg-3 col-md-6 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Line Total (৳)</label>
-                            <input type="text" id="total1" class="form-control border-light-subtle bg-white fw-bold text-success" readonly value="0.00">
+                            <input type="text" id="total1" class="form-control border-light-subtle bg-white fw-bold text-success text-end" readonly value="0.00">
                         </div>
 
                         <!-- 8. Add Item Button -->
-                        <div class="col-12 text-end pt-1">
-                            <button type="button" onclick="addItem()" class="btn btn-success px-4 rounded-3 d-inline-flex align-items-center justify-content-center gap-2 py-2 shadow-sm">
+                        <div class="col-lg-2 col-md-6 col-12">
+                            <button type="button" onclick="addItem()" class="btn btn-success w-100 rounded-3 d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm fw-semibold" style="height: 38px;">
                                 <i class="fe fe-plus"></i>
-                                <span>Add Steel Item</span>
+                                <span class="text-nowrap">Add Steel Item</span>
                             </button>
                         </div>
                     </div>
@@ -266,12 +279,12 @@
                     <table class="table table-hover align-middle mb-0" id="cartItemsTable">
                         <thead class="bg-light text-secondary fs-7 text-uppercase">
                             <tr>
-                                <th style="width: 32%;">Product & Specifications</th>
-                                <th style="width: 18%;">Lot Source</th>
-                                <th style="width: 15%;">Custom Size (Admin)</th>
-                                <th style="width: 12%;">Unit Price</th>
-                                <th style="width: 10%;">Quantity</th>
-                                <th style="width: 8%;">Total Price</th>
+                                <th style="width: 29%;">Product & Specifications</th>
+                                <th style="width: 16%;">Lot Source</th>
+                                <th style="width: 14%;">Custom Size (Admin)</th>
+                                <th style="width: 11%;">Unit Price</th>
+                                <th style="width: 8%;">Quantity</th>
+                                <th style="width: 17%;">Total Price</th>
                                 <th style="width: 5%;" class="text-end">Action</th>
                             </tr>
                         </thead>
@@ -324,16 +337,16 @@
                                         <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" step="0.01" name="unit_price[]" id="unit_price{{ $itemNumber }}" class="form-control border-light-subtle unit-price" value="{{ number_format((float)$item->unit_price, 2, '.', '') }}">
                                     </td>
                                     <td>
-                                        <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" step="0.01" name="qty[]" id="qty{{ $itemNumber }}" class="form-control border-light-subtle qty fw-bold" min="0.01" value="{{ number_format((float)$item->qty, 2, '.', '') }}">
+                                        <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" step="0.01" name="qty[]" id="qty{{ $itemNumber }}" class="form-control border-light-subtle qty fw-bold text-center" min="0.01" value="{{ number_format((float)$item->qty, 2, '.', '') }}">
                                     </td>
                                     <td>
-                                        <input type="number" step="0.01" name="total" id="total{{ $itemNumber }}" class="form-control border-light-subtle bg-light total fw-bold text-dark" readonly value="{{ number_format((float)$item->total_price, 2, '.', '') }}">
+                                        <input type="number" step="0.01" name="total" id="total{{ $itemNumber }}" class="form-control border-light-subtle bg-light total fw-bold text-dark text-end" readonly value="{{ number_format((float)$item->total_price, 2, '.', '') }}">
                                     </td>
                                     <td class="text-end text-nowrap">
-                                        <button onclick="editItem({{ $itemNumber }})" type="button" class="btn btn-outline-primary btn-sm px-2.5 rounded-2 me-1" title="Edit Item in Builder">
+                                        <button onclick="editItem({{ $itemNumber }})" type="button" class="btn btn-outline-primary btn-line-action me-1" title="Edit Item in Builder">
                                             <i class="fe fe-edit"></i>
                                         </button>
-                                        <button onclick="removeItem({{ $itemNumber }})" type="button" class="btn btn-outline-danger btn-sm px-2.5 rounded-2" title="Remove Item">
+                                        <button onclick="removeItem({{ $itemNumber }})" type="button" class="btn btn-outline-danger btn-line-action" title="Remove Item">
                                             <i class="fa fa-times"></i>
                                         </button>
                                     </td>
@@ -933,16 +946,16 @@ function addItem() {
                 <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" step="0.01" name="unit_price[]" id="unit_price${itemNumber}" class="form-control border-light-subtle unit-price" value="${unitPrice.toFixed(2)}">
             </td>
             <td>
-                <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" step="0.01" name="qty[]" id="qty${itemNumber}" class="form-control border-light-subtle qty fw-bold" min="0.01" value="${qty}">
+                <input oninput="calculateTotal()" onchange="calculateTotal()" type="number" step="0.01" name="qty[]" id="qty${itemNumber}" class="form-control border-light-subtle qty fw-bold text-center" min="0.01" value="${qty}">
             </td>
             <td>
-                <input type="number" step="0.01" name="total" id="total${itemNumber}" class="form-control border-light-subtle bg-light total fw-bold text-dark" readonly value="${rowTotal}">
+                <input type="number" step="0.01" name="total" id="total${itemNumber}" class="form-control border-light-subtle bg-light total fw-bold text-dark text-end" readonly value="${rowTotal}">
             </td>
             <td class="text-end text-nowrap">
-                <button onclick="editItem(${itemNumber})" type="button" class="btn btn-outline-primary btn-sm px-2.5 rounded-2 me-1" title="Edit Item in Builder">
+                <button onclick="editItem(${itemNumber})" type="button" class="btn btn-outline-primary btn-line-action me-1" title="Edit Item in Builder">
                     <i class="fe fe-edit"></i>
                 </button>
-                <button onclick="removeItem(${itemNumber})" type="button" class="btn btn-outline-danger btn-sm px-2.5 rounded-2" title="Remove Item">
+                <button onclick="removeItem(${itemNumber})" type="button" class="btn btn-outline-danger btn-line-action" title="Remove Item">
                     <i class="fa fa-times"></i>
                 </button>
             </td>

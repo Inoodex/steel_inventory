@@ -11,7 +11,6 @@ use App\Models\JournalItem;
 use App\Models\Payment;
 use App\Models\Salary;
 use App\Models\Sale;
-use App\Models\TaDa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -73,42 +72,6 @@ class Phase1SecurityAndIntegrityTest extends TestCase
             'name'    => 'Worker Two',
             'phone'   => '01711000002',
             'status'  => 'active',
-        ]);
-    }
-
-    public function test_employee_cannot_update_another_employees_tada_record_idor(): void
-    {
-        $tada2 = TaDa::create([
-            'employee_id' => $this->employee2->id,
-            'date'        => date('Y-m-d'),
-            'amount'      => 1000.00,
-            'purpose'     => 'Field visit',
-            'status'      => 'pending',
-        ]);
-
-        // Attempt by Worker 1 to update Worker 2's TA/DA record
-        $response = $this->actingAs($this->user1)->put(route('employee.tada.update', $tada2->id), [
-            'used_amount' => 500.00,
-        ]);
-
-        // Must fail with 404 Not Found due to scoped query
-        $response->assertStatus(404);
-    }
-
-    public function test_employee_cannot_submit_negative_tada_claim(): void
-    {
-        $response = $this->actingAs($this->user1)->post(route('employee.tada.store'), [
-            'date'         => date('Y-m-d'),
-            'amount'       => -250.00,
-            'type'         => 'TA',
-            'payment_type' => 'Claim',
-            'purpose'      => 'Malicious negative claim',
-        ]);
-
-        $response->assertSessionHasErrors(['amount']);
-        $this->assertDatabaseMissing('ta_das', [
-            'employee_id' => $this->employee1->id,
-            'amount'      => -250.00,
         ]);
     }
 

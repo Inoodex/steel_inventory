@@ -33,6 +33,10 @@ class FrontendController extends Controller
         /** @var User|null $user */
         $user = Auth::user();
 
+        if ($user && ($user->hasRole('Sales Executive') || $user->can('Sales Only Access')) && !$user->hasRole(['Super Admin', 'Admin', 'admin'])) {
+            return redirect()->route('sales.index');
+        }
+
         if ($user && $user->hasRole('Employee')) {
             return view('frontend.pages.dashboard_employee', [
                 'title' => 'Employee Dashboard',
@@ -162,9 +166,9 @@ class FrontendController extends Controller
 
             // Expense KPIs
             'todaysExpense'     => (float) DailyExpense::whereDate('date', Carbon::today())->sum('amount'),
-            'thisWeeksExpense'  => (float) DailyExpense::whereBetween('date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->sum('amount'),
-            'thisMonthsExpense' => (float) DailyExpense::whereBetween('date', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])->sum('amount'),
-            'thisYearsExpense'  => (float) DailyExpense::whereBetween('date', [Carbon::now()->startOfYear(), Carbon::now()->endOfYear()])->sum('amount'),
+            'thisWeeksExpense'  => (float) DailyExpense::whereBetween('date', [Carbon::now()->startOfWeek()->toDateString(), Carbon::now()->endOfWeek()->toDateString()])->sum('amount'),
+            'thisMonthsExpense' => (float) DailyExpense::whereBetween('date', [Carbon::now()->startOfMonth()->toDateString(), Carbon::now()->endOfMonth()->toDateString()])->sum('amount'),
+            'thisYearsExpense'  => (float) DailyExpense::whereBetween('date', [Carbon::now()->startOfYear()->toDateString(), Carbon::now()->endOfYear()->toDateString()])->sum('amount'),
 
             // Entity Counts
             'totalCustomers'    => $totalCustomers,

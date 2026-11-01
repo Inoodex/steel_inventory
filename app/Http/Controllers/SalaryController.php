@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Salary;
 use App\Models\Employee;
-use App\Models\TaDa;
 use App\Models\ExpenseCategory;
 use App\Models\DailyExpense;
 use Illuminate\Http\Request;
@@ -21,8 +20,7 @@ class SalaryController extends Controller
     {
         $employees = Employee::orderBy('name')->get();
         $currentMonth = date('Y-m');
-        $taDaData = [];
-        return view('frontend.pages.salary.create', compact('employees', 'currentMonth', 'taDaData'));
+        return view('frontend.pages.salary.create', compact('employees', 'currentMonth'));
     }
 
     public function store(Request $request)

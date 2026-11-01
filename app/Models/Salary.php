@@ -16,7 +16,6 @@ class Salary extends Model
         'advance_deduction',
         'allowance',
         'deduction',
-        'tada_amount',
         'net_salary',
         'payment_status',
         'status',

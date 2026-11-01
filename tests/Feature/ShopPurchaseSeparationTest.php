@@ -300,4 +300,27 @@ class ShopPurchaseSeparationTest extends TestCase
         $this->assertEquals(30, (float)$coil->net_weight);
         $this->assertEquals(30, (float)$coil->remaining_weight);
     }
+
+    public function test_shop_purchase_create_page_renders_with_full_sectioned_design(): void
+    {
+        $response = $this->actingAs($this->user)->get(route('shops.purchases.create'));
+        $response->assertStatus(200);
+        $response->assertSee('Shop Direct Stock Purchase &amp; Intake', false);
+        $response->assertSee('Lot &amp; Shop Intake Details', false);
+        $response->assertSee('Steel Items &amp; Stock Intake', false);
+        $response->assertSee('Extra Charges &amp; Logistics Breakdown', false);
+        $response->assertSee('Financial Settlement &amp; Vendor Disbursement', false);
+        $response->assertSee('Shop Locked');
+    }
+
+    public function test_shop_sale_create_page_renders_with_full_sectioned_design(): void
+    {
+        $response = $this->actingAs($this->user)->get(route('shops.sales.create'));
+        $response->assertStatus(200);
+        $response->assertSee('Shop Direct Sale');
+        $response->assertSee('Customer &amp; Dispatch Details', false);
+        $response->assertSee('Add Product / Coils to Invoice', false);
+        $response->assertSee('Operational Charges &amp; Financial Breakdown', false);
+        $response->assertSee('Shop Locked');
+    }
 }

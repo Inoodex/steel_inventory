@@ -54,9 +54,12 @@
         $totalPurchases = $purchases->count();
         $totalSpent = $purchases->sum(fn($p) => (float)($p->total_price ?? $p->total_amount ?? 0));
         $totalWeight = $purchases->sum(fn($p) => (float)($p->total_weight ?? 0));
-        $totalDue = $purchases->sum(fn($p) => (float)($p->due ?? 0));
+        $purchasesDue = $purchases->sum(fn($p) => (float)($p->due ?? 0));
+        $openingDue = max(0, (float)($vData->opening_balance ?? 0));
+        $totalPayableDue = $openingDue + $purchasesDue;
         $financials = $vData->calculateFinancials();
         $advanceBalance = (float)($financials['advance_balance'] ?? 0);
+        $effectiveDue = (float)($financials['payable_due'] ?? 0);
     @endphp
 
     <!-- Page Header -->
@@ -73,10 +76,13 @@
                         <span>Return Advance (৳{{ number_format($advanceBalance, 2) }})</span>
                     </button>
                 @endif
-                @if($totalDue > 0)
-                    <button type="button" class="btn btn-success px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2 shadow-sm text-white" onclick="openVendorPaymentModal('', '{{ $totalDue }}')">
+                @if($totalPayableDue > 0 || $effectiveDue > 0)
+                    @php
+                        $payAmount = $effectiveDue > 0 ? $effectiveDue : $totalPayableDue;
+                    @endphp
+                    <button type="button" class="btn btn-success px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2 shadow-sm text-white" onclick="openVendorPaymentModal('', '{{ $payAmount }}')">
                         <i class="fe fe-dollar-sign"></i>
-                        <span>Pay Vendor Due (৳{{ number_format($totalDue, 2) }})</span>
+                        <span>Pay Vendor Due (৳{{ number_format($payAmount, 2) }})</span>
                     </button>
                 @endif
                 <a href="{{ route('vendors.ledger.pdf', $vData->id) }}" target="_blank" class="btn btn-outline-danger px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2">
@@ -158,7 +164,7 @@
 
     <!-- Procurement Metric Cards -->
     <div class="row g-3 mb-4">
-        <div class="col-xl-3 col-md-6 col-12">
+        <div class="col-xl-3 col-sm-6 col-12">
             <div class="card stat-card border-0 shadow-sm rounded-3 bg-white h-100 mb-0">
                 <div class="card-body p-3 d-flex align-items-center">
                     <div class="avatar avatar-md bg-primary-light text-primary rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
@@ -172,21 +178,7 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 col-12">
-            <div class="card stat-card border-0 shadow-sm rounded-3 bg-white h-100 mb-0">
-                <div class="card-body p-3 d-flex align-items-center">
-                    <div class="avatar avatar-md bg-info-light text-info rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe fe-layers fs-5"></i>
-                    </div>
-                    <div>
-                        <small class="text-muted d-block">Total Steel Procured</small>
-                        <h5 class="fw-bold text-dark mb-0">{{ number_format($totalWeight, 2) }} kg</h5>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 col-12">
+        <div class="col-xl-3 col-sm-6 col-12">
             <div class="card stat-card border-0 shadow-sm rounded-3 bg-white h-100 mb-0">
                 <div class="card-body p-3 d-flex align-items-center">
                     <div class="avatar avatar-md bg-success-light text-success rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
@@ -200,18 +192,32 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 col-12">
-            <div class="card stat-card border-0 shadow-sm rounded-3 bg-white h-100 mb-0 {{ $advanceBalance > 0 ? 'bg-success-subtle border border-success-subtle' : '' }}">
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="card stat-card border-0 shadow-sm rounded-3 bg-white h-100 mb-0">
                 <div class="card-body p-3 d-flex align-items-center">
-                    <div class="avatar avatar-md {{ $advanceBalance > 0 ? 'bg-success text-white' : 'bg-danger-light text-danger' }} rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="fe {{ $advanceBalance > 0 ? 'fe-arrow-down-left' : 'fe-alert-circle' }} fs-5"></i>
+                    <div class="avatar avatar-md bg-warning-light text-warning rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                        <i class="fe fe-clock fs-5"></i>
                     </div>
                     <div>
-                        <small class="{{ $advanceBalance > 0 ? 'text-success fw-bold' : 'text-muted' }} d-block">
-                            {{ $advanceBalance > 0 ? 'Vendor Advance Balance' : 'Outstanding Due' }}
+                        <small class="text-muted d-block">Opening Due Balance</small>
+                        <h5 class="fw-bold text-dark mb-0">৳{{ number_format($openingDue, 2) }}</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="card stat-card border-0 shadow-sm rounded-3 bg-white h-100 mb-0 {{ $advanceBalance > 0 ? 'bg-success-subtle border border-success-subtle' : ($effectiveDue > 0 ? 'bg-danger-subtle border border-danger-subtle' : '') }}">
+                <div class="card-body p-3 d-flex align-items-center">
+                    <div class="avatar avatar-md {{ $advanceBalance > 0 ? 'bg-success text-white' : ($effectiveDue > 0 ? 'bg-danger text-white' : 'bg-success-light text-success') }} rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                        <i class="fe {{ $advanceBalance > 0 ? 'fe-arrow-down-left' : ($effectiveDue > 0 ? 'fe-alert-circle' : 'fe-check-circle') }} fs-5"></i>
+                    </div>
+                    <div>
+                        <small class="{{ $advanceBalance > 0 ? 'text-success fw-bold' : ($effectiveDue > 0 ? 'text-danger fw-bold' : 'text-muted') }} d-block">
+                            {{ $advanceBalance > 0 ? 'Vendor Advance Balance' : ($effectiveDue > 0 ? 'Net Outstanding Due' : 'Account Balance') }}
                         </small>
-                        <h5 class="fw-bold {{ $advanceBalance > 0 ? 'text-success' : 'text-danger' }} mb-0">
-                            ৳{{ number_format($advanceBalance > 0 ? $advanceBalance : $totalDue, 2) }}
+                        <h5 class="fw-bold {{ $advanceBalance > 0 ? 'text-success' : ($effectiveDue > 0 ? 'text-danger' : 'text-dark') }} mb-0">
+                            {{ $advanceBalance > 0 ? '৳' . number_format($advanceBalance, 2) : '৳' . number_format($effectiveDue, 2) }}
                         </h5>
                     </div>
                 </div>

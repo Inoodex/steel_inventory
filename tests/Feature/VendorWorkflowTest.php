@@ -33,6 +33,156 @@ class VendorWorkflowTest extends TestCase
         $this->admin->assignRole($role);
     }
 
+    public function test_can_create_vendor_with_opening_due(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('vendors.store'), [
+            'name' => 'National Steel Mills',
+            'phone' => '01700112233',
+            'email' => 'national@mills.test',
+            'address' => 'Chittagong Yard',
+            'opening_due' => '35000.50',
+            'status' => 'active',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('vendors.index'));
+
+        $this->assertDatabaseHas('vendors', [
+            'name' => 'National Steel Mills',
+            'phone' => '01700112233',
+            'opening_balance' => 35000.50,
+        ]);
+    }
+
+    public function test_can_update_vendor_opening_due(): void
+    {
+        $vendor = Vendor::create([
+            'name' => 'Dhaka Re-Rolling',
+            'phone' => '01800112233',
+            'address' => 'Fatullah',
+            'opening_balance' => 10000.00,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->admin)->put(route('vendors.update', $vendor->id), [
+            'name' => 'Dhaka Re-Rolling Ltd',
+            'phone' => '01800112233',
+            'address' => 'Fatullah Industrial Area',
+            'opening_due' => '45000.00',
+            'status' => 'active',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('vendors.index'));
+
+        $vendor->refresh();
+        $this->assertEquals('Dhaka Re-Rolling Ltd', $vendor->name);
+        $this->assertEquals(45000.00, (float)$vendor->opening_balance);
+    }
+
+    public function test_vendor_opening_due_rejects_negative_value(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('vendors.store'), [
+            'name' => 'Negative Supplier',
+            'phone' => '01900112233',
+            'address' => 'Dhaka',
+            'opening_due' => '-500',
+        ]);
+
+        $response->assertSessionHasErrors('opening_due');
+    }
+
+    public function test_vendor_create_and_edit_pages_render_opening_due_field(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('vendors.create'));
+        $response->assertStatus(200);
+        $response->assertSee('name="opening_due"', false);
+
+        $vendor = Vendor::create([
+            'name' => 'View Test Vendor',
+            'phone' => '01500112233',
+            'address' => 'Dhaka',
+            'opening_balance' => 12500.00,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('vendors.edit', $vendor->id));
+        $response->assertStatus(200);
+        $response->assertSee('name="opening_due"', false);
+        $response->assertSee('12500.00');
+    }
+
+    public function test_vendor_index_renders_identical_columns_and_opening_due(): void
+    {
+        $warehouse = Warehouse::create(['name' => 'Depot 1', 'type' => 'warehouse']);
+        $vendor = Vendor::create([
+            'name' => 'Standard Steel Corp',
+            'phone' => '01600112233',
+            'email' => 'standard@steel.test',
+            'address' => 'Sitakunda, Chittagong',
+            'opening_balance' => 40000.00,
+            'status' => 'active',
+        ]);
+
+        $lot = Lot::create([
+            'vendor_id' => $vendor->id,
+            'lot_number' => 'LOT-STD-01',
+            'date' => now()->toDateString(),
+            'status' => 'received',
+        ]);
+
+        $purchase = Purchase::create([
+            'vendor_id' => $vendor->id,
+            'lot_id' => $lot->id,
+            'warehouse_id' => $warehouse->id,
+            'quantity' => 1,
+            'unit_weight' => 1.0,
+            'total_weight' => 1.0,
+            'unit_price' => 60000.00,
+            'total_price' => 60000.00,
+            'payment' => 20000.00,
+            'due' => 40000.00,
+            'status' => 'partial',
+        ]);
+
+        Payment::create([
+            'payment_for' => 3,
+            'vendor_id' => $vendor->id,
+            'purchase_id' => $purchase->id,
+            'amount' => 20000.00,
+            'payment_method' => 'cash',
+            'status' => 1,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('vendors.index'));
+        $response->assertStatus(200);
+
+        // Assert headers
+        $response->assertSee('Opening Due');
+        $response->assertSee('Purchases Due');
+        $response->assertSee('Account Balance');
+
+        // Assert figures
+        $response->assertSee('40,000.00'); // opening due and purchase due
+        $response->assertSee('80,000.00'); // total payable account balance
+    }
+
+    public function test_vendor_show_displays_opening_due_metric_card(): void
+    {
+        $vendor = Vendor::create([
+            'name' => 'Profile Test Vendor',
+            'phone' => '01400112233',
+            'address' => 'Bhatiary, Chittagong',
+            'opening_balance' => 50000.00,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('vendors.show', $vendor->id));
+        $response->assertStatus(200);
+        $response->assertSee('Opening Due Balance');
+        $response->assertSee('50,000.00');
+    }
+
     public function test_vendor_creation_and_balance(): void
     {
         $vendor = Vendor::create([

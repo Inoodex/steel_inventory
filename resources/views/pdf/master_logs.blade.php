@@ -1,7 +1,3 @@
-@php
-    $padPath = public_path('assets/invoice/inoodex_invoice.jpg');
-    $padBase64 = file_exists($padPath) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($padPath)) : (function_exists('getInvoicePadBase64') ? getInvoicePadBase64() : '');
-@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,11 +5,7 @@
     <title>Master Activity &amp; Transaction Logs Report</title>
     <style>
         @page {
-            @if($padBase64)
-            background-image: url('{{ $padBase64 }}');
-            background-image-resize: 6;
-            @endif
-            margin-top: 35mm;
+            margin-top: 15mm;
             margin-bottom: 20mm;
             margin-left: 12mm;
             margin-right: 12mm;

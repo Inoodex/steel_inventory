@@ -7,6 +7,7 @@
         return $user->hasRole(['Super Admin', 'Admin', 'admin']) || $user->can($permission);
     };
     $isAdmin = auth()->check() && auth()->user()->hasRole(['Super Admin', 'Admin', 'admin']);
+    $isSalesOnly = auth()->check() && (auth()->user()->hasRole('Sales Executive') || auth()->user()->can('Sales Only Access')) && !$isAdmin;
 
     // Helper: is any of these routes active?
     $active = function(array $routes) {
@@ -24,14 +25,16 @@
             <ul class="sidebar-vertical">
 
                 {{-- ===== 1. DASHBOARD ===== --}}
+                @if(!$isSalesOnly)
                 <li class="{{ $active(['index','dashboard']) ? 'active' : '' }}">
                     <a href="{{ route('index') }}">
                         <i class="fe fe-grid"></i><span> Dashboard</span>
                     </a>
                 </li>
+                @endif
 
                 {{-- ===== 2. PROCUREMENT & PURCHASES (Intake & Vendors) ===== --}}
-                @if($canView('Purchase Management') || $canView('Vendor Management'))
+                @if(!$isSalesOnly && ($canView('Purchase Management') || $canView('Vendor Management')))
                     <li class="menu-title"><span>Procurement &amp; Purchases</span></li>
 
                     @if($canView('Purchase Management'))
@@ -101,7 +104,7 @@
                 @endif
 
                 {{-- ===== SHOP OPERATIONS (Direct 1-Click Access) ===== --}}
-                @if($canView('Inventory Management') || $canView('Sales Management'))
+                @if($canView('Inventory Management') || $canView('Sales Management') || $canView('Sales Only Access') || $isSalesOnly)
                     <li class="menu-title"><span>Shop Operations</span></li>
                     <li class="{{ $active(['shops.sales.create']) ? 'active' : '' }}">
                         <a href="{{ route('shops.sales.create') }}">
@@ -113,6 +116,7 @@
                             <i class="fe fe-shopping-bag"></i><span> Shop Sales List</span>
                         </a>
                     </li>
+                    @if(!$isSalesOnly && ($canView('Purchase Management') || $isAdmin))
                     <li class="{{ $active(['shops.purchases.create']) ? 'active' : '' }}">
                         <a href="{{ route('shops.purchases.create') }}">
                             <i class="fe fe-plus-circle"></i><span> Shop Purchase</span>
@@ -123,6 +127,8 @@
                             <i class="fe fe-download"></i><span> Shop Purchases List</span>
                         </a>
                     </li>
+                    @endif
+                    @if(!$isSalesOnly && ($canView('Sales Management') || $isAdmin))
                     <li class="{{ $active(['shops.returns.create']) ? 'active' : '' }}">
                         <a href="{{ route('shops.returns.create') }}">
                             <i class="fe fe-rotate-ccw"></i><span> Shop Return</span>
@@ -133,23 +139,28 @@
                             <i class="fe fe-refresh-cw"></i><span> Shop Returns List</span>
                         </a>
                     </li>
+                    @endif
+                    @if(!$isSalesOnly && ($canView('Inventory Management') || $isAdmin))
                     <li class="{{ $active(['shops.stock.*']) ? 'active' : '' }}">
                         <a href="{{ route('shops.stock.index') }}">
                             <i class="fe fe-pie-chart"></i><span> Shop Stock Report</span>
                         </a>
                     </li>
+                    @endif
+                    @if(!$isSalesOnly && $isAdmin)
                     <li class="{{ $active(['shops.settings', 'shops.edit']) ? 'active' : '' }}">
                         <a href="{{ route('shops.settings') }}">
                             <i class="fe fe-settings"></i><span> Shop Settings</span>
                         </a>
                     </li>
+                    @endif
                 @endif
 
                 {{-- ===== 4. COMMERCIAL & SALES (Outflow & Customers) ===== --}}
-                @if($canView('Sales Management') || $canView('Customer Management') || $canView('Payment Management'))
+                @if($canView('Sales Management') || $canView('Sales Only Access') || $isSalesOnly || (!$isSalesOnly && ($canView('Customer Management') || $canView('Payment Management'))))
                     <li class="menu-title"><span>Commercial &amp; Sales</span></li>
 
-                    @if($canView('Sales Management'))
+                    @if($canView('Sales Management') || $canView('Sales Only Access') || $isSalesOnly)
                         <li class="submenu {{ $active(['sales.create','sales.index','sales.show','sales.edit','sales.invoice','returns.*']) ? 'active' : '' }}">
                             <a href="javascript:void(0)">
                                 <i class="fe fe-shopping-bag"></i><span> Sales</span>
@@ -162,14 +173,16 @@
                                 <li class="{{ $active(['sales.index','sales.show','sales.edit','sales.invoice']) ? 'active' : '' }}">
                                     <a href="{{ route('sales.index') }}"><i class="fe fe-list"></i> Sales List</a>
                                 </li>
+                                @if(!$isSalesOnly && ($canView('Sales Management') || $isAdmin))
                                 <li class="{{ $active(['returns.*']) ? 'active' : '' }}">
                                     <a href="{{ route('returns.index') }}"><i class="fe fe-refresh-cw"></i> Sales Returns</a>
                                 </li>
+                                @endif
                             </ul>
                         </li>
                     @endif
 
-                    @if($canView('Customer Management'))
+                    @if(!$isSalesOnly && $canView('Customer Management'))
                         <li class="{{ $active(['customers.*']) ? 'active' : '' }}">
                             <a href="{{ route('customers.index') }}">
                                 <i class="fe fe-users"></i><span> Customers</span>
@@ -177,7 +190,7 @@
                         </li>
                     @endif
 
-                    @if($canView('Payment Management') || $canView('Sales Management') || $canView('Customer Management'))
+                    @if(!$isSalesOnly && ($canView('Payment Management') || $canView('Sales Management') || $canView('Customer Management')))
                         <li class="{{ $active(['due-payments.*']) ? 'active' : '' }}">
                             <a href="{{ route('due-payments.index') }}">
                                 <i class="fe fe-user-check"></i><span> Customer Dues</span>
@@ -190,7 +203,7 @@
                         </li>
                     @endif
 
-                    @if($canView('Payment Management') || $canView('Sales Management') || $isAdmin)
+                    @if(!$isSalesOnly && ($canView('Payment Management') || $canView('Sales Management') || $isAdmin))
                         <li class="{{ $active(['worker-payouts.*']) ? 'active' : '' }}">
                             <a href="{{ route('worker-payouts.index') }}">
                                 <i class="fe fe-pocket"></i><span> Worker Charges</span>
@@ -292,25 +305,6 @@
                         <a href="{{ route('salary.index') }}">
                             <i class="fe fe-dollar-sign"></i><span> Salary &amp; Payroll</span>
                         </a>
-                    </li>
-                @endif
-
-                {{-- ===== EMPLOYEE SELF-SERVICE (Conditional for Staff) ===== --}}
-                @if(auth()->check() && (auth()->user()->hasRole('Employee') || auth()->user()->employee))
-                    <li class="menu-title"><span>Self-Service</span></li>
-                    <li class="submenu {{ $active(['employee.tada.*']) ? 'active' : '' }}">
-                        <a href="javascript:void(0)">
-                            <i class="fe fe-briefcase"></i><span> My TA/DA Portal</span>
-                            <span class="menu-arrow"></span>
-                        </a>
-                        <ul style="{{ $active(['employee.tada.*']) ? 'display:block' : '' }}">
-                            <li class="{{ $active(['employee.tada.create']) ? 'active' : '' }}">
-                                <a href="{{ route('employee.tada.create') }}"><i class="fe fe-plus-circle"></i> Submit TA/DA</a>
-                            </li>
-                            <li class="{{ $active(['employee.tada.index','employee.tada.edit']) ? 'active' : '' }}">
-                                <a href="{{ route('employee.tada.index') }}"><i class="fe fe-list"></i> My Requests</a>
-                            </li>
-                        </ul>
                     </li>
                 @endif
 

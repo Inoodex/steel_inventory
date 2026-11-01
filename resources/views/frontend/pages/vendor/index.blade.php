@@ -170,14 +170,17 @@
 
         <!-- Table Body -->
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-custom align-middle mb-0 w-100" id="vendorsTable">
+            <div class="table-responsive" style="overflow: visible !important;">
+                <table class="table table-hover table-custom align-middle mb-0" id="vendorsTable">
                     <thead class="bg-light text-secondary fs-7 text-uppercase">
                         <tr>
-                            <th>#</th>
-                            <th>Vendor Details</th>
-                            <th>Contact Information</th>
+                            <th class="ps-4">#</th>
+                            <th>Vendor Name</th>
+                            <th>Phone & Email</th>
                             <th>Address</th>
+                            <th>Opening Due</th>
+                            <th>Purchases Due</th>
+                            <th>Account Balance</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -186,35 +189,70 @@
                         @forelse ($vendors as $key => $vendor)
                             @php
                                 $isActive = in_array($vendor->status, ['active', '1', 1]);
+                                $openingDue = (float)($vendor->opening_due ?? $vendor->opening_balance ?? 0);
+                                $purchasesDue = (float)($vendor->purchase_due ?? 0);
+                                $advanceBalance = (float)($vendor->advance_balance ?? 0);
+                                $netDue = (float)($vendor->net_due ?? 0);
                             @endphp
                             <tr class="vendor-row" data-status="{{ $isActive ? 'active' : 'inactive' }}" data-search="{{ strtolower($vendor->name . ' ' . $vendor->phone . ' ' . $vendor->email . ' ' . $vendor->address) }}">
                                 <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
                                 <td>
                                     <div>
-                                        <a href="{{ route('vendors.show', $vendor->id) }}" class="fw-bold text-dark hover-primary mb-0 text-decoration-none d-inline-block" title="{{ $vendor->name }}">
-                                            {{ Str::limit($vendor->name, 20, '...') }}
+                                        <a href="{{ route('vendors.show', $vendor->id) }}" class="fw-bold text-dark hover-primary mb-0 text-decoration-none d-block text-truncate" title="{{ $vendor->name }}" style="max-width: 200px;">
+                                            {{ Str::limit($vendor->name, 25) }}
                                         </a>
-                                        <small class="text-muted fs-7 d-block">Added {{ $vendor->created_at?->format('d M Y') ?? 'N/A' }}</small>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="d-flex flex-column gap-1">
                                         <div class="fw-semibold text-dark fs-7 d-flex align-items-center gap-1">
-                                            <i class="fe fe-phone text-muted fs-8"></i>
-                                            <span>{{ $vendor->phone ?: 'N/A' }}</span>
+                                            <span>{{ $vendor->phone }}</span>
                                         </div>
                                         @if($vendor->email)
-                                            <div class="text-muted small d-flex align-items-center gap-1" title="{{ $vendor->email }}">
-                                                <i class="fe fe-mail text-muted fs-8"></i>
-                                                <span>{{ $vendor->email }}</span>
+                                            <div class="text-muted small d-flex align-items-center gap-1 text-truncate" style="max-width: 180px;" title="{{ $vendor->email }}">
+                                                <i class="fe fe-mail text-muted fs-8 me-1"></i>
+                                                <span>{{ Str::limit($vendor->email, 22) }}</span>
                                             </div>
                                         @endif
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="text-secondary small d-inline-block" title="{{ $vendor->address }}">
-                                        {{ $vendor->address ?: 'N/A' }}
+                                    <span class="text-secondary small text-truncate d-inline-block" style="max-width: 200px;" title="{{ $vendor->address }}">
+                                        {{ Str::limit($vendor->address, 26) ?: 'N/A' }}
                                     </span>
+                                </td>
+                                <td>
+                                    @if($openingDue > 0)
+                                        <span class="badge badge-soft-warning px-2.5 py-1 rounded-pill fs-7 fw-semibold">
+                                            ৳{{ number_format($openingDue, 2) }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted small">৳0.00</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($purchasesDue > 0)
+                                        <span class="badge badge-soft-info px-2.5 py-1 rounded-pill fs-7 fw-semibold">
+                                            ৳{{ number_format($purchasesDue, 2) }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted small">৳0.00</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($advanceBalance > 0)
+                                        <span class="badge badge-soft-success px-2.5 py-1 rounded-pill fs-7 fw-bold" title="Vendor has Prepayment / Advance Deposit balance">
+                                            <i class="fe fe-arrow-down-left me-1"></i>Advance: ৳{{ number_format($advanceBalance, 2) }}
+                                        </span>
+                                    @elseif($netDue > 0)
+                                        <span class="badge badge-soft-danger px-2.5 py-1 rounded-pill fs-7 fw-bold">
+                                            <i class="fe fe-alert-circle me-1"></i>Due: ৳{{ number_format($netDue, 2) }}
+                                        </span>
+                                    @else
+                                        <span class="badge badge-soft-success px-2.5 py-1 rounded-pill fs-7 fw-semibold">
+                                            ৳0.00 (Clear)
+                                        </span>
+                                    @endif
                                 </td>
                                 <td>
                                     @if ($isActive)
@@ -275,7 +313,7 @@
                             </tr>
                         @empty
                             <tr id="emptyStateRow">
-                                <td colspan="6" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
                                         <div class="avatar avatar-xl bg-primary-light text-primary rounded-circle mb-3 d-flex align-items-center justify-content-center">
                                             <i class="fe fe-truck fs-1"></i>
@@ -283,7 +321,7 @@
                                         <h5 class="fw-bold text-dark mb-1">No Vendors Found</h5>
                                         <p class="text-muted small mb-3">Get started by adding your first vendor record</p>
                                         <a href="{{ route('vendors.create') }}" class="btn btn-primary btn-sm px-3 rounded-2">
-                                            Add Vendor
+                                            <i class="fe fe-plus me-1"></i> Add Vendor
                                         </a>
                                     </div>
                                 </td>

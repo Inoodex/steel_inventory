@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\{
     CustomerController, EmployeeController,
-    EmployeeTaDaController, ExpenseCategoryController, ExpenseController,
+    ExpenseCategoryController, ExpenseController,
     FrontendController, InventoryController, LotController,
     PurchaseController,
     RevenueController, RoleController, PermissionController,
@@ -24,26 +24,40 @@ Route::get('/logout', function () {
 })->name('logout.get');
 
 Route::get('/', function () {
-    return Auth::check() ? redirect()->route('dashboard') : redirect()->route('login');
+    if (!Auth::check()) {
+        return redirect()->route('login');
+    }
+    $user = Auth::user();
+    if ($user->hasRole('Sales Executive') || $user->can('Sales Only Access')) {
+        return redirect()->route('sales.index');
+    }
+    return redirect()->route('dashboard');
 })->name('index');
 
-// 1. DASHBOARD + EMPLOYEE-ONLY ROUTES → accessible by Super Admin AND Employee
-Route::middleware(['auth', 'role:Super Admin|Employee'])->group(function () {
+// 1. DASHBOARD → accessible by Super Admin, Employee, and Sales Executive
+Route::middleware(['auth', 'role_or_permission:Super Admin|Employee|Sales Executive|Sales Only Access'])->group(function () {
 
-    // Dashboard - accessible by both roles
+    // Dashboard - accessible by Super Admin and Employee (Sales Executive auto-redirects to sales.index)
     Route::get('/dashboard', [FrontendController::class, 'index'])->name('dashboard');
-
-    // Employee TA/DA section (they need this too)
-    Route::prefix('employee')->name('employee.')->group(function () {
-        Route::get('tada', [EmployeeTaDaController::class, 'index'])->name('tada.index');
-        Route::get('tada/create', [EmployeeTaDaController::class, 'create'])->name('tada.create');
-        Route::post('tada/store', [EmployeeTaDaController::class, 'store'])->name('tada.store');
-        Route::get('tada/{id}/edit', [EmployeeTaDaController::class, 'edit'])->name('tada.edit');
-        Route::put('tada/{id}', [EmployeeTaDaController::class, 'update'])->name('tada.update');
-    });
 });
 
-// 2. EVERYTHING ELSE → ONLY Super Admin
+// 2. SALES & SHOP SALES MODULE → Super Admin, Sales Executive, or users with Sales Only Access / Sales Management
+Route::middleware(['auth', 'role_or_permission:Super Admin|Sales Executive|Sales Only Access|Sales Management'])->group(function () {
+    // Shop Sales
+    Route::get('shops/sales/create', [ShopController::class, 'createSale'])->name('shops.sales.create');
+    Route::get('shops/sales', [ShopController::class, 'sales'])->name('shops.sales.index');
+
+    // Regular Sales
+    Route::resource('sales', SalesController::class);
+    Route::get('sales/invoice/{id}', [SalesController::class, 'makeInvoice'])->name('sales.invoice');
+    Route::get('sales/invoice/{id}/pdf', [SalesController::class, 'downloadInvoicePdf'])->name('sales.invoice.pdf');
+    Route::get('/sales/payments/{saleId?}', [SalesController::class, 'payments'])->name('sales.payments');
+    Route::get('sales/{id}/details', [SalesController::class, 'getSaleDetails'])->name('sales.details');
+    Route::post('/sales/process-payment', [SalesController::class, 'processPayment'])->name('sales.process-payment');
+    Route::get('/sales/search-orders', [SalesController::class, 'searchOrders'])->name('sales.search-orders');
+});
+
+// 3. EVERYTHING ELSE → ONLY Super Admin
 Route::middleware(['auth', 'role:Super Admin'])->group(function () {
 
     // === Administration ===
@@ -66,8 +80,6 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     // === Shop & Retail Outlets Module ===
     Route::get('shops/stock-report', [ShopController::class, 'stockReport'])->name('shops.stock.index');
     Route::get('shops/stock-report/pdf', [ShopController::class, 'stockReportPdf'])->name('shops.stock.pdf');
-    Route::get('shops/sales/create', [ShopController::class, 'createSale'])->name('shops.sales.create');
-    Route::get('shops/sales', [ShopController::class, 'sales'])->name('shops.sales.index');
     Route::get('shops/purchases/create', [ShopController::class, 'createPurchase'])->name('shops.purchases.create');
     Route::get('shops/purchases/{id}/edit', [ShopController::class, 'editPurchase'])->name('shops.purchases.edit');
     Route::put('shops/purchases/{id}', [ShopController::class, 'updatePurchase'])->name('shops.purchases.update');
@@ -99,12 +111,6 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
 
     Route::resource('purchase', PurchaseController::class);
     Route::get('purchase/latest-price/{id}', [PurchaseController::class, 'getLatestPrice'])->name('purchase.latest_price');
-
-    Route::resource('sales', SalesController::class);
-    Route::get('sales/invoice/{id}', [SalesController::class, 'makeInvoice'])->name('sales.invoice');
-    Route::get('sales/invoice/{id}/pdf', [SalesController::class, 'downloadInvoicePdf'])->name('sales.invoice.pdf');
-    Route::get('/sales/payments/{saleId?}', [SalesController::class, 'payments'])->name('sales.payments');
-    Route::get('sales/{id}/details', [SalesController::class, 'getSaleDetails'])->name('sales.details');
 
     // === HR (Super Admin only) ===
     Route::resource('employees', EmployeeController::class);
@@ -167,8 +173,6 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::post('/customer-due-payment', [PaymentController::class, 'payCustomerDue'])->name('customer.due.pay');
     Route::put('/payments/{id}', [PaymentController::class, 'updatePayment'])->name('payments.update');
     Route::delete('/delete-payment/{id}', [PaymentController::class, 'deletePayment'])->name('delete.payment');
-    Route::post('/sales/process-payment', [SalesController::class, 'processPayment'])->name('sales.process-payment');
-    Route::get('/sales/search-orders', [SalesController::class, 'searchOrders'])->name('sales.search-orders');
 
     // Vendor Due Payments & Disbursements
     Route::post('/vendor-payments', [PaymentController::class, 'addVendorPayment'])->name('vendor-payments.store');

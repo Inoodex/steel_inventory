@@ -14,9 +14,31 @@ class VendorController extends Controller
      */
     public function index(Request $request)
     {
-        $vendors = Vendor::latest()->get();
+        $vendors = Vendor::withSum(['purchases' => function($q) {
+            $q->whereNull('deleted_at');
+        }], 'due')
+        ->withSum(['purchases' => function($q) {
+            $q->whereNull('deleted_at');
+        }], 'total_price')
+        ->withSum('payments', 'amount')
+        ->latest()
+        ->get()
+        ->map(function ($v) {
+            $fin = $v->calculateFinancials(
+                (float)($v->purchases_sum_total_price ?? 0),
+                (float)($v->payments_sum_amount ?? 0)
+            );
+            $v->opening_due = max(0, (float)($v->opening_balance ?? 0));
+            $v->purchase_due = (float)($v->purchases_sum_due ?? 0);
+            $v->advance_balance = $fin['advance_balance'];
+            $v->net_due = $fin['payable_due'];
+            return $v;
+        });
+
         $customers = $vendors; // Alias for compatibility
-        return view('frontend.pages.vendor.index', compact('vendors', 'customers'));
+        $bankAccounts = \App\Models\BankDetail::where('is_active', true)->orderBy('bank_name')->get();
+
+        return view('frontend.pages.vendor.index', compact('vendors', 'customers', 'bankAccounts'));
     }
 
     /**
@@ -34,10 +56,12 @@ class VendorController extends Controller
     {
         $attributes = $request->all();
         $rules = [
-            'name' => 'required',
-            'phone' => 'required|numeric|unique:vendors,phone',
-            'email' => 'nullable|email',
-            'address' => 'required|string',
+            'name'            => 'required|string|max:255',
+            'phone'           => 'required|numeric|unique:vendors,phone',
+            'email'           => 'nullable|email|max:255',
+            'opening_balance' => 'nullable|numeric',
+            'opening_due'     => 'nullable|numeric|min:0',
+            'address'         => 'required|string',
         ];
         $validation = Validator::make($attributes, $rules);
         if ($validation->fails()) {
@@ -49,7 +73,16 @@ class VendorController extends Controller
         $vendor->phone = $request->phone;
         $vendor->email = $request->email;
         $vendor->address = $request->address;
-        $vendor->status = '1';
+
+        if ($request->filled('opening_due')) {
+            $vendor->opening_balance = abs((float)$request->opening_due);
+        } elseif ($request->filled('opening_balance')) {
+            $vendor->opening_balance = (float)$request->opening_balance;
+        } else {
+            $vendor->opening_balance = 0.00;
+        }
+
+        $vendor->status = $request->status ?? '1';
         $vendor->save();
 
         return redirect()->route('vendors.index')->with('success', 'Vendor added successfully.');
@@ -86,10 +119,12 @@ class VendorController extends Controller
     {
         $attributes = $request->all();
         $rules = [
-            'name' => 'required',
-            'phone' => 'required|numeric|unique:vendors,phone,'. $id,
-            'email' => 'nullable|email',
-            'address' => 'required|string',
+            'name'            => 'required|string|max:255',
+            'phone'           => 'required|numeric|unique:vendors,phone,'. $id,
+            'email'           => 'nullable|email|max:255',
+            'opening_balance' => 'nullable|numeric',
+            'opening_due'     => 'nullable|numeric|min:0',
+            'address'         => 'required|string',
         ];
         $validation = Validator::make($attributes, $rules);
         if ($validation->fails()) {
@@ -101,6 +136,18 @@ class VendorController extends Controller
         $vendor->phone = $request->phone;
         $vendor->email = $request->email;
         $vendor->address = $request->address;
+
+        if ($request->filled('opening_due')) {
+            $vendor->opening_balance = abs((float)$request->opening_due);
+        } elseif ($request->filled('opening_balance')) {
+            $vendor->opening_balance = (float)$request->opening_balance;
+        } else {
+            $vendor->opening_balance = 0.00;
+        }
+
+        if ($request->has('status')) {
+            $vendor->status = $request->status;
+        }
         $vendor->save();
 
         return redirect()->route('vendors.index')->with('success', 'Vendor data updated successfully.');
@@ -118,8 +165,29 @@ class VendorController extends Controller
 
     public function downloadPdf()
     {
-        $vendors = Vendor::all();
-        return PdfService::viewToResponse('pdf.vendors', compact('vendors'), 'vendor-list.pdf');
+        ini_set('memory_limit', '512M');
+        $vendors = Vendor::withSum(['purchases' => function($q) {
+            $q->whereNull('deleted_at');
+        }], 'due')
+        ->withSum(['purchases' => function($q) {
+            $q->whereNull('deleted_at');
+        }], 'total_price')
+        ->withSum('payments', 'amount')
+        ->latest()
+        ->get()
+        ->map(function ($v) {
+            $fin = $v->calculateFinancials(
+                (float)($v->purchases_sum_total_price ?? 0),
+                (float)($v->payments_sum_amount ?? 0)
+            );
+            $v->opening_due = max(0, (float)($v->opening_balance ?? 0));
+            $v->purchase_due = (float)($v->purchases_sum_due ?? 0);
+            $v->advance_balance = $fin['advance_balance'];
+            $v->net_due = $fin['payable_due'];
+            return $v;
+        });
+
+        return PdfService::viewToResponse('pdf.vendors', compact('vendors'), 'Vendor_List_' . now()->format('Y_m_d_His') . '.pdf');
     }
 
     /**

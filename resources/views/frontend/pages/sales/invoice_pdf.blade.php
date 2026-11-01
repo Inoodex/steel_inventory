@@ -158,7 +158,13 @@
                                 </span>
                             @endif -->
                         </td>
-                        <td style="border: 1px solid #334155; padding: 4px 6px; font-size: 11px; color: #0f172a; text-align: center; height: 21px;">{{ number_format($item->qty ?? 0) }}</td>
+                        <td style="border: 1px solid #334155; padding: 4px 6px; font-size: 11px; color: #0f172a; text-align: center; height: 21px;">
+                            @php
+                                $rowQty = (float)($item->qty ?? 0);
+                                $qtyDecimals = (round($rowQty, 2) != round($rowQty, 3)) ? 3 : 2;
+                            @endphp
+                            {{ number_format($rowQty, $qtyDecimals) }}
+                        </td>
                         <td style="border: 1px solid #334155; padding: 4px 6px; font-size: 11px; color: #0f172a; text-align: right; height: 21px;">{{ $item->unit_price ? number_format($item->unit_price, 2) : '0.00' }}</td>
                         <td style="border: 1px solid #334155; padding: 4px 8px; font-size: 11px; font-weight: 700; color: #0f172a; text-align: right; height: 21px;">{{ $item->total_price ? number_format($item->total_price, 2) : '0.00' }}</td>
                     </tr>
@@ -196,7 +202,11 @@
                     <strong>TOTAL</strong>
                 </td>
                 <td style="border: 1px solid #334155; padding: 3px 6px; font-size: 11px; font-weight: 800; color: #0f172a; text-align: center; background-color: #f1f5f9; height: 20px;">
-                    <strong>{{ number_format($totalQty) }}</strong>
+                    @php
+                        $sumQty = (float)$totalQty;
+                        $sumDecimals = (round($sumQty, 2) != round($sumQty, 3)) ? 3 : 2;
+                    @endphp
+                    <strong>{{ number_format($sumQty, $sumDecimals) }}</strong>
                 </td>
                 <td style="border: 1px solid #334155; padding: 3px 6px; font-size: 11px; color: #0f172a; text-align: right; background-color: #f1f5f9; height: 20px;">&nbsp;</td>
                 <td style="border: 1px solid #334155; padding: 3px 8px; font-size: 11px; font-weight: 800; color: #0f172a; text-align: right; background-color: #f1f5f9; height: 20px;">
