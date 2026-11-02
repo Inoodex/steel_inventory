@@ -252,4 +252,47 @@ class PurchaseWorkflowTest extends TestCase
         $response->assertSee('Legacy Status One Vendor'); // status: 1
         $response->assertDontSee('Inactive Vendor'); // status: 0
     }
+
+    public function test_purchase_creation_stores_product_name_and_custom_coil_number(): void
+    {
+        $service = app(\App\Services\PurchaseService::class);
+
+        $purchaseData = [
+            'vendor_id'       => $this->vendor->id,
+            'warehouse_id'    => $this->warehouse->id,
+            'lot_type'        => 'new',
+            'new_lot_number'  => 'LOT-PN-001',
+            'purchase_date'   => '2026-11-02',
+            'payment'         => 0.00,
+            'payment_method'  => 'cash',
+            'items'           => [
+                [
+                    'vendor_id'    => $this->vendor->id,
+                    'product_name' => 'HR Coil Heavy',
+                    'coil_number'  => 'CUSTOM-COIL-777',
+                    'thickness'    => '4.50mm',
+                    'size'         => '5x20',
+                    'size_type'    => 'ft',
+                    'quantity'     => 1,
+                    'unit_weight'  => 1200.00,
+                    'total_weight' => 1200.00,
+                    'unit_price'   => 80.00,
+                    'sub_price'    => 96000.00,
+                ],
+            ],
+        ];
+
+        $purchases = $service->createPurchasesBatch($purchaseData);
+        $this->assertCount(1, $purchases);
+        $purchase = $purchases[0];
+
+        $this->assertEquals('HR Coil Heavy', $purchase->product_name);
+
+        $coil = Coil::where('purchase_id', $purchase->id)->first();
+        $this->assertNotNull($coil);
+        $this->assertEquals('HR Coil Heavy', $coil->product_name);
+        $this->assertEquals('CUSTOM-COIL-777', $coil->coil_number);
+        $this->assertStringContainsString('HR Coil Heavy', $coil->name);
+        $this->assertStringContainsString('CUSTOM-COIL-777', $coil->name);
+    }
 }

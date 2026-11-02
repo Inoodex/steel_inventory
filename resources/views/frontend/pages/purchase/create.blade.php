@@ -269,28 +269,35 @@
 
                         <!-- Line 1: Physical Specifications & Dimensions -->
                         <div class="row g-2 mb-3">
-                            <div class="col-lg-2 col-md-3 col-6">
-                                <label for="builder_quantity" class="form-label small text-secondary fw-semibold mb-1">
-                                    Coil / Piece Qty <span class="text-danger">*</span>
+                            <div class="col-lg-3 col-md-6 col-12">
+                                <label for="builder_product_name" class="form-label small text-secondary fw-semibold mb-1">
+                                    Product Name
                                 </label>
-                                <input type="number" min="1" step="1" id="builder_quantity" class="form-control form-control-sm text-center fw-bold" value="1" oninput="calculateBuilderPreview()">
+                                <input type="text" id="builder_product_name" class="form-control form-control-sm">
+                            </div>
+
+                            <div class="col-lg-2 col-md-6 col-12">
+                                <label for="builder_coil_number" class="form-label small text-secondary fw-semibold mb-1">
+                                    Coil / Tag No
+                                </label>
+                                <input type="text" id="builder_coil_number" class="form-control form-control-sm font-monospace">
                             </div>
 
                             <div class="col-lg-2 col-md-3 col-6">
                                 <label for="builder_thickness" class="form-label small text-secondary fw-semibold mb-1">
                                     Thickness
                                 </label>
-                                <input type="text" id="builder_thickness" class="form-control form-control-sm text-center">
+                                <input type="text" id="builder_thickness" class="form-control form-control-sm text-center" placeholder="e.g. 2.50mm">
                             </div>
 
                             <div class="col-lg-3 col-md-3 col-6">
                                 <label for="builder_size" class="form-label small text-secondary fw-semibold mb-1">
                                     Size / Width
                                 </label>
-                                <input type="text" id="builder_size" class="form-control form-control-sm text-center">
+                                <input type="text" id="builder_size" class="form-control form-control-sm text-center" placeholder="e.g. 4x8">
                             </div>
 
-                            <div class="col-lg-2 col-md-3 col-6">
+                            <div class="col-lg-2 col-md-6 col-6">
                                 <label for="builder_size_type" class="form-label small text-secondary fw-semibold mb-1">
                                     Size Type
                                 </label>
@@ -303,18 +310,18 @@
                                     <option value="ton">Ton</option>
                                 </select>
                             </div>
-
-                            <div class="col-lg-3 col-md-12 col-12">
-                                <label for="builder_notes" class="form-label small text-secondary fw-semibold mb-1">
-                                    Notes (Optional)
-                                </label>
-                                <input type="text" id="builder_notes" class="form-control form-control-sm">
-                            </div>
                         </div>
 
                         <!-- Line 2: Weights, Rates & Action Button -->
                         <div class="row g-2 align-items-end p-3 rounded-2 bg-light border border-light-subtle">
-                            <div class="col-lg-2 col-md-6 col-6">
+                            <div class="col-lg-2 col-md-4 col-6">
+                                <label for="builder_quantity" class="form-label small text-secondary fw-semibold mb-1">
+                                    Coil / Piece Qty <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" min="1" step="1" id="builder_quantity" class="form-control form-control-sm text-center fw-bold" value="1" oninput="calculateBuilderPreview()">
+                            </div>
+
+                            <div class="col-lg-2 col-md-4 col-6">
                                 <label for="builder_unit_weight" class="form-label small text-secondary fw-semibold mb-1">
                                     Per Coil Wt (kg) <span class="text-danger">*</span>
                                 </label>
@@ -324,7 +331,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-lg-2 col-md-6 col-6">
+                            <div class="col-lg-2 col-md-4 col-6">
                                 <label for="builder_total_weight" class="form-label small text-secondary fw-semibold mb-1">
                                     Total Weight (kg)
                                 </label>
@@ -334,7 +341,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-lg-3 col-md-6 col-6">
+                            <div class="col-lg-2 col-md-4 col-6">
                                 <label for="builder_unit_price" class="form-label small text-secondary fw-semibold mb-1">
                                     Unit Rate (৳/kg) <span class="text-danger">*</span>
                                 </label>
@@ -344,7 +351,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-lg-3 col-md-6 col-6">
+                            <div class="col-lg-2 col-md-4 col-6">
                                 <label for="builder_sub_price" class="form-label small text-secondary fw-semibold mb-1">
                                     Line Sub Total (৳)
                                 </label>
@@ -354,11 +361,18 @@
                                 </div>
                             </div>
 
-                            <div class="col-lg-2 col-md-12 col-12">
+                            <div class="col-lg-2 col-md-4 col-12">
                                 <button type="button" class="btn btn-primary btn-sm w-100 shadow-sm fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 py-1.5" id="addSteelBtn" onclick="addSteelItemToTable()" style="height: 31px;">
                                     <i class="fe fe-plus-circle"></i>
                                     <span>Add</span>
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- Optional Notes Row -->
+                        <div class="row g-2 mt-2">
+                            <div class="col-12">
+                                <input type="text" id="builder_notes" class="form-control form-control-sm text-secondary" placeholder="Optional notes, challan details, or bundle remarks">
                             </div>
                         </div>
                     </div>
@@ -381,7 +395,7 @@
                                     <tr>
                                         <th class="text-center" style="width: 50px;">#</th>
                                         <th class="vendor-col" style="{{ old('default_vendor_id') ? 'display: none;' : '' }}">Vendor / Supplier</th>
-                                        <th>Specifications & Dimensions</th>
+                                        <th>Product &amp; Specifications</th>
                                         <th class="text-center" style="width: 90px;">Coil Qty</th>
                                         <th class="text-end" style="width: 120px;">Per Coil Wt</th>
                                         <th class="text-end" style="width: 130px;">Total Wt</th>
@@ -416,6 +430,8 @@
                                                 $st = $item['size_type'] ?? 'ft';
                                                 $stText = $sizeTypeLabels[$st] ?? $st;
                                                 $nts = $item['notes'] ?? '';
+                                                $prodName = $item['product_name'] ?? '';
+                                                $coilNo = $item['coil_number'] ?? '';
                                                 $itemVendorId = $item['vendor_id'] ?? old('default_vendor_id', old('vendor_id'));
                                                 $itemVendor = $vendors->firstWhere('id', $itemVendorId);
                                             @endphp
@@ -429,9 +445,15 @@
                                                     </span>
                                                 </td>
                                                 <td>
+                                                    @if($prodName)
+                                                        <div class="fw-bold text-dark fs-7 mb-1"><i class="fe fe-box text-primary me-1"></i>{{ $prodName }}</div>
+                                                    @endif
                                                     <div class="d-flex flex-wrap align-items-center gap-1">
+                                                        @if($coilNo)
+                                                            <span class="badge bg-light text-dark font-monospace border"><i class="fe fe-tag me-1 text-primary"></i>#{{ $coilNo }}</span>
+                                                        @endif
                                                         @if($thk)
-                                                            <span class="badge bg-light text-dark border"><i class="fe fe-layers me-1 text-primary"></i>Thickness:{{ $thk }}</span>
+                                                            <span class="badge bg-light text-dark border"><i class="fe fe-layers me-1 text-primary"></i>Thickness: {{ $thk }}</span>
                                                         @endif
                                                         @if($sz)
                                                             <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><i class="fe fe-maximize-2 me-1"></i>{{ $sz }} ({{ $stText }})</span>
@@ -440,7 +462,7 @@
                                                         @endif
                                                     </div>
                                                     @if($nts)
-                                                        <div class="small text-muted mt-1"><i class="fe fe-tag me-1 text-info"></i>{{ $nts }}</div>
+                                                        <div class="small text-muted mt-1"><i class="fe fe-file-text me-1 text-info"></i>{{ $nts }}</div>
                                                     @endif
                                                 </td>
                                                 <td class="text-center fw-bold">{{ $qty }}</td>
@@ -453,6 +475,8 @@
                                                         <i class="fe fe-trash-2"></i>
                                                     </button>
                                                     <input type="hidden" name="items[{{ $idx }}][vendor_id]" class="item-vendor-id-input" value="{{ $itemVendorId }}">
+                                                    <input type="hidden" name="items[{{ $idx }}][product_name]" value="{{ $prodName }}">
+                                                    <input type="hidden" name="items[{{ $idx }}][coil_number]" value="{{ $coilNo }}">
                                                     <input type="hidden" name="items[{{ $idx }}][quantity]" class="item-qty-input" value="{{ $qty }}">
                                                     <input type="hidden" name="items[{{ $idx }}][thickness]" value="{{ $thk }}">
                                                     <input type="hidden" name="items[{{ $idx }}][size]" value="{{ $sz }}">
@@ -851,6 +875,8 @@
                 }
             }
 
+            const productName = $('#builder_product_name').val().trim();
+            const coilNumber = $('#builder_coil_number').val().trim();
             const qty = parseInt($('#builder_quantity').val()) || 0;
             const thickness = $('#builder_thickness').val().trim();
             const size = $('#builder_size').val().trim();
@@ -886,16 +912,24 @@
             const formattedTotalWeight = totalWeight.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             let specHtml = '';
+            if (productName) {
+                specHtml += `<div class="fw-bold text-dark fs-7 mb-1"><i class="fe fe-box text-primary me-1"></i>${escapeHtml(productName)}</div>`;
+            }
+            let badges = [];
+            if (coilNumber) {
+                badges.push(`<span class="badge bg-light text-dark font-monospace border"><i class="fe fe-tag me-1 text-primary"></i>#${escapeHtml(coilNumber)}</span>`);
+            }
             if (thickness) {
-                specHtml += `<span class="badge bg-light text-dark border me-1"><i class="fe fe-layers me-1 text-primary"></i>Thickness: ${escapeHtml(thickness)}</span>`;
+                badges.push(`<span class="badge bg-light text-dark border"><i class="fe fe-layers me-1 text-primary"></i>Thickness: ${escapeHtml(thickness)}</span>`);
             }
             if (size) {
-                specHtml += `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><i class="fe fe-maximize-2 me-1"></i>${escapeHtml(size)} (${sizeTypeText})</span>`;
+                badges.push(`<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><i class="fe fe-maximize-2 me-1"></i>${escapeHtml(size)} (${sizeTypeText})</span>`);
             } else {
-                specHtml += `<span class="badge bg-light text-muted border">${sizeTypeText}</span>`;
+                badges.push(`<span class="badge bg-light text-muted border">${sizeTypeText}</span>`);
             }
+            specHtml += `<div class="d-flex flex-wrap align-items-center gap-1">${badges.join(' ')}</div>`;
             if (notes) {
-                specHtml += `<div class="small text-muted mt-1"><i class="fe fe-tag me-1 text-info"></i>${escapeHtml(notes)}</div>`;
+                specHtml += `<div class="small text-muted mt-1"><i class="fe fe-file-text me-1 text-info"></i>${escapeHtml(notes)}</div>`;
             }
 
             const rowHtml = `
@@ -909,9 +943,7 @@
                         </span>
                     </td>
                     <td>
-                        <div class="d-flex flex-wrap align-items-center gap-1">
-                            ${specHtml}
-                        </div>
+                        ${specHtml}
                     </td>
                     <td class="text-center fw-bold">${qty}</td>
                     <td class="text-end font-monospace">${formattedUnitWeight} kg</td>
@@ -923,6 +955,8 @@
                             <i class="fe fe-trash-2"></i>
                         </button>
                         <input type="hidden" name="items[${itemIndex}][vendor_id]" class="item-vendor-id-input" value="${vendorId}">
+                        <input type="hidden" name="items[${itemIndex}][product_name]" value="${escapeHtml(productName)}">
+                        <input type="hidden" name="items[${itemIndex}][coil_number]" value="${escapeHtml(coilNumber)}">
                         <input type="hidden" name="items[${itemIndex}][quantity]" class="item-qty-input" value="${qty}">
                         <input type="hidden" name="items[${itemIndex}][thickness]" value="${escapeHtml(thickness)}">
                         <input type="hidden" name="items[${itemIndex}][size]" value="${escapeHtml(size)}">
@@ -945,9 +979,11 @@
                 $('#builder_vendor_id').val('').trigger('change');
                 $('#builder_vendor_id').select2('open');
             } else {
-                $('#builder_quantity').focus();
+                $('#builder_product_name').focus();
             }
 
+            $('#builder_product_name').val('');
+            $('#builder_coil_number').val('');
             $('#builder_quantity').val('1');
             $('#builder_thickness').val('');
             $('#builder_size').val('');

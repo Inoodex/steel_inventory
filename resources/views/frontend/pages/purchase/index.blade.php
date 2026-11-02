@@ -417,7 +417,7 @@
                                                     <tr>
                                                         <th class="ps-3" style="width: 40px;">#</th>
                                                         <th>Vendor</th>
-                                                        <th>Specifications & Dimensions</th>
+                                                        <th>Product &amp; Specifications</th>
                                                         <th>Coil Tag / ID</th>
                                                         <th class="text-center">Qty</th>
                                                         <th class="text-end">Per Coil Wt</th>
@@ -437,6 +437,9 @@
                                                                 </span>
                                                             </td>
                                                             <td>
+                                                                @if($item->product_name)
+                                                                    <div class="fw-bold text-dark fs-7 mb-1"><i class="fe fe-box text-primary me-1"></i>{{ $item->product_name }}</div>
+                                                                @endif
                                                                 <div class="d-flex flex-wrap align-items-center gap-1">
                                                                     @if($item->thickness)
                                                                         <span class="badge bg-light text-dark border"><i class="fe fe-layers me-1 text-primary"></i>Thickness: {{ $item->thickness }}</span>

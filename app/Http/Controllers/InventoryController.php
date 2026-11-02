@@ -461,7 +461,26 @@ class InventoryController extends Controller
             });
         }
 
-        $coils = $query->get();
+        $coils = $query->get()->sort(function ($a, $b) {
+            $parseThickness = function ($val) {
+                if (empty($val)) {
+                    return 999999.0;
+                }
+                if (preg_match('/([0-9]+(?:\.[0-9]+)?)/', trim($val), $m)) {
+                    return (float) $m[1];
+                }
+                return 999999.0;
+            };
+
+            $thkA = $parseThickness($a->thickness);
+            $thkB = $parseThickness($b->thickness);
+
+            if ($thkA != $thkB) {
+                return $thkA <=> $thkB;
+            }
+
+            return strcmp($a->coil_number ?? '', $b->coil_number ?? '');
+        })->values();
         $filename = 'Steel_Inventory_Stock_Report_' . now()->format('Y_m_d_His') . '.pdf';
 
         return PdfService::viewToResponse('pdf.inventory', compact('coils'), $filename);

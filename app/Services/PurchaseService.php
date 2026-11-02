@@ -227,6 +227,8 @@ class PurchaseService
                 $thickness = !empty($item['thickness']) ? trim($item['thickness']) : null;
                 $size = !empty($item['size']) ? trim($item['size']) : (!empty($item['width']) ? trim($item['width']) : null);
                 $sizeType = !empty($item['size_type']) ? trim($item['size_type']) : 'ft';
+                $productName = !empty($item['product_name']) ? trim($item['product_name']) : (!empty($data['product_name']) ? trim($data['product_name']) : null);
+                $coilNumber = !empty($item['coil_number']) ? trim($item['coil_number']) : (!empty($data['coil_number']) ? trim($data['coil_number']) : Coil::generateCoilNumber());
 
                 $paymentMethod = $data['vendor_payments'][$itemVendorId]['payment_method'] ?? ($data['payment_method'] ?? 'cash');
                 $isBank = ($paymentMethod !== 'cash');
@@ -242,6 +244,7 @@ class PurchaseService
                     'lot_id'            => $lotId,
                     'vendor_id'         => $itemVendorId,
                     'warehouse_id'      => $warehouseId,
+                    'product_name'      => $productName,
                     'thickness'         => $thickness,
                     'size'              => $size,
                     'size_type'         => $sizeType,
@@ -266,10 +269,9 @@ class PurchaseService
                 ]);
 
                 // 2. Register Single Batch Coil in Yard Stock
-                $coilNumber = Coil::generateCoilNumber();
-
                 Coil::create([
                     'coil_number'      => $coilNumber,
+                    'product_name'     => $productName,
                     'purchase_id'      => $purchase->id,
                     'lot_id'           => $lotId,
                     'vendor_id'        => $itemVendorId,

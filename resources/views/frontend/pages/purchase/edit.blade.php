@@ -198,13 +198,22 @@
 
                         <!-- Line 1: Physical Specifications & Dimensions -->
                         <div class="row g-2 mb-2">
-                            <div class="col-lg-2 col-md-3 col-6">
+                            <div class="col-lg-3 col-md-6 col-12">
                                 <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Coil / Piece Qty <span class="text-danger">*</span>
+                                    Product Name
                                 </label>
-                                <input oninput="calculateRow()" type="number" min="1" step="1" name="quantity" id="quantityInput"
-                                    class="form-control form-control-sm text-center fw-bold"
-                                    value="{{ old('quantity', (int)$purchase->quantity ?: 1) }}" required>
+                                <input type="text" name="product_name" id="productNameInput"
+                                    class="form-control form-control-sm"
+                                    value="{{ old('product_name', $purchase->product_name ?? ($coil->product_name ?? '')) }}">
+                            </div>
+
+                            <div class="col-lg-2 col-md-6 col-12">
+                                <label class="form-label small text-secondary fw-semibold mb-1">
+                                    Coil / Tag No
+                                </label>
+                                <input type="text" name="coil_number" id="coilNumberInput"
+                                    class="form-control form-control-sm font-monospace"
+                                    value="{{ old('coil_number', $coil->coil_number ?? '') }}">
                             </div>
 
                             <div class="col-lg-2 col-md-3 col-6">
@@ -225,7 +234,7 @@
                                     value="{{ old('size', $purchase->size ?? ($coil->width ?? '')) }}">
                             </div>
 
-                            <div class="col-lg-2 col-md-3 col-6">
+                            <div class="col-lg-2 col-md-6 col-6">
                                 <label class="form-label small text-secondary fw-semibold mb-1">
                                     Size Type
                                 </label>
@@ -241,19 +250,30 @@
                                     <option value="ton" {{ $currentSizeType === 'ton' ? 'selected' : '' }}>Ton</option>
                                 </select>
                             </div>
+                        </div>
 
-                            <div class="col-lg-3 col-md-12 col-12">
+                        <div class="row g-2 mb-2">
+                            <div class="col-12">
                                 <label class="form-label small text-secondary fw-semibold mb-1">
                                     Notes (Optional)
                                 </label>
                                 <input type="text" name="coil_notes" id="coilNotesInput"
                                     class="form-control form-control-sm"
+                                    placeholder="Optional notes, challan details, or bundle remarks"
                                     value="{{ old('coil_notes', $coil->notes ?? '') }}">
                             </div>
                         </div>
 
                         <!-- Line 2: Weights, Rates & Subtotal (Financials) -->
                         <div class="row g-2 align-items-end p-2.5 rounded-2 bg-light border border-light-subtle">
+                            <div class="col-lg-2 col-md-4 col-6">
+                                <label class="form-label small text-secondary fw-semibold mb-1">
+                                    Coil / Piece Qty <span class="text-danger">*</span>
+                                </label>
+                                <input oninput="calculateRow()" type="number" min="1" step="1" name="quantity" id="quantityInput"
+                                    class="form-control form-control-sm text-center fw-bold"
+                                    value="{{ old('quantity', (int)$purchase->quantity ?: 1) }}" required>
+                            </div>
                             <div class="col-lg-3 col-md-6 col-12">
                                 <label class="form-label small text-secondary fw-semibold mb-1">
                                     Per Coil Wt (kg) <span class="text-danger">*</span>

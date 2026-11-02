@@ -140,4 +140,70 @@ class InventoryStockPdfTest extends TestCase
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'application/pdf');
     }
+
+    public function test_inventory_pdf_sorts_coils_thickness_wise_ascending(): void
+    {
+        Coil::create([
+            'coil_number' => 'YARD-040',
+            'warehouse_id' => $this->yardWarehouse->id,
+            'thickness' => '0.40',
+            'width' => '3.0ft',
+            'gross_weight' => 1000,
+            'net_weight' => 1000,
+            'remaining_weight' => 1000,
+            'status' => 'in_stock',
+        ]);
+
+        Coil::create([
+            'coil_number' => 'YARD-020',
+            'warehouse_id' => $this->yardWarehouse->id,
+            'thickness' => '0.20',
+            'width' => '3.0ft',
+            'gross_weight' => 1200,
+            'net_weight' => 1200,
+            'remaining_weight' => 1200,
+            'status' => 'in_stock',
+        ]);
+
+        Coil::create([
+            'coil_number' => 'YARD-030',
+            'warehouse_id' => $this->yardWarehouse->id,
+            'thickness' => '0.30mm',
+            'width' => '3.0ft',
+            'gross_weight' => 800,
+            'net_weight' => 800,
+            'remaining_weight' => 800,
+            'status' => 'in_stock',
+        ]);
+
+        Coil::create([
+            'coil_number' => 'YARD-250',
+            'warehouse_id' => $this->yardWarehouse->id,
+            'thickness' => '2.50',
+            'width' => '3.0ft',
+            'gross_weight' => 1500,
+            'net_weight' => 1500,
+            'remaining_weight' => 1500,
+            'status' => 'in_stock',
+        ]);
+
+        $html = view('pdf.inventory', [
+            'coils' => Coil::where('warehouse_id', $this->yardWarehouse->id)->get(),
+        ])->render();
+
+        $pos020 = strpos($html, 'YARD-020');
+        $pos030 = strpos($html, 'YARD-030');
+        $pos040 = strpos($html, 'YARD-040');
+        $pos250 = strpos($html, 'YARD-250');
+
+        $this->assertNotFalse($pos020);
+        $this->assertNotFalse($pos030);
+        $this->assertNotFalse($pos040);
+        $this->assertNotFalse($pos250);
+
+        // Verify order is 0.20, then 0.30, then 0.40, then 2.50
+        $this->assertTrue($pos020 < $pos030, '0.20 should appear before 0.30');
+        $this->assertTrue($pos030 < $pos040, '0.30 should appear before 0.40');
+        $this->assertTrue($pos040 < $pos250, '0.40 should appear before 2.50');
+    }
 }

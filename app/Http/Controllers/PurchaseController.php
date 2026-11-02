@@ -255,6 +255,8 @@ class PurchaseController extends Controller
             'lot_id'          => 'required|exists:lots,id',
             'warehouse_id'    => 'required|exists:warehouses,id',
             'vendor_id'       => 'required|exists:vendors,id',
+            'product_name'    => 'nullable|string|max:255',
+            'coil_number'     => 'nullable|string|max:100',
             'thickness'       => 'nullable|string|max:100',
             'size'            => 'nullable|string|max:100',
             'size_type'       => 'nullable|string|max:50',
@@ -321,6 +323,7 @@ class PurchaseController extends Controller
             $purchase->lot_id            = $request->lot_id;
             $purchase->warehouse_id      = $request->warehouse_id;
             $purchase->vendor_id         = $request->vendor_id;
+            $purchase->product_name      = $request->product_name;
             $purchase->thickness         = $request->thickness;
             $purchase->size              = $request->size;
             $purchase->size_type         = $request->size_type ?: 'ft';
@@ -355,6 +358,8 @@ class PurchaseController extends Controller
                     'lot_id'           => $request->lot_id,
                     'vendor_id'        => $request->vendor_id,
                     'warehouse_id'     => $request->warehouse_id,
+                    'product_name'     => $request->product_name,
+                    'coil_number'      => !empty($request->coil_number) ? trim($request->coil_number) : $coil->coil_number,
                     'thickness'        => $request->thickness,
                     'width'            => $request->size,
                     'length'           => $request->size_type ?: 'ft',

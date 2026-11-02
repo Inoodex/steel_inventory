@@ -181,7 +181,29 @@
             </tr>
         </thead>
         <tbody>
-            @forelse($coils as $index => $coil)
+            @php
+                $parseThickness = function ($val) {
+                    if (empty($val)) {
+                        return 999999.0;
+                    }
+                    if (preg_match('/([0-9]+(?:\.[0-9]+)?)/', trim($val), $m)) {
+                        return (float) $m[1];
+                    }
+                    return 999999.0;
+                };
+
+                $sortedCoils = $coils->sort(function ($a, $b) use ($parseThickness) {
+                    $thkA = $parseThickness($a->thickness);
+                    $thkB = $parseThickness($b->thickness);
+
+                    if ($thkA != $thkB) {
+                        return $thkA <=> $thkB;
+                    }
+
+                    return strcmp($a->coil_number ?? '', $b->coil_number ?? '');
+                })->values();
+            @endphp
+            @forelse($sortedCoils as $index => $coil)
                 @php
                     // 1. SI
                     $si = $index + 1;
@@ -239,8 +261,13 @@
                 @endphp
                 <tr>
                     <td class="text-center">{{ $si }}</td>
-                    <td class="fw-bold">{{ $coilNo }}</td>
-                    <td>{{ $thickness }}</td>
+                    <td class="fw-bold">
+                        {{ $coilNo }}
+                        @if(!empty($coil->product_name))
+                            <div style="font-size: 8.5px; font-weight: normal; color: #64748b;">{{ $coil->product_name }}</div>
+                        @endif
+                    </td>
+                    <td class="fw-bold">{{ $thickness }}</td>
                     <td>{{ $size }}</td>
                     <td class="fw-bold">{{ $weight }}</td>
                     <!-- <td>{{ $dis }}</td> -->
@@ -254,12 +281,21 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" class="text-center" style="padding: 20px; color: #64748b;">
+                    <td colspan="8" class="text-center" style="padding: 20px; color: #64748b;">
                         No in-stock steel coils found in inventory.
                     </td>
                 </tr>
             @endforelse
         </tbody>
+        @if($coils->count() > 0)
+        <tfoot>
+            <tr>
+                <td colspan="4" class="text-right fw-bold" style="text-transform: uppercase;">Total:</td>
+                <td class="fw-bold">{{ number_format($coils->sum('remaining_weight'), 0) }} Kg</td>
+                <td colspan="3"></td>
+            </tr>
+        </tfoot>
+        @endif
     </table>
 
     <!-- Signature Block -->

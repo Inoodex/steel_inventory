@@ -490,6 +490,8 @@ class ShopController extends Controller
         $request->validate([
             'lot_id'          => 'required|exists:lots,id',
             'vendor_id'       => 'required|exists:vendors,id',
+            'product_name'    => 'nullable|string|max:255',
+            'coil_number'     => 'nullable|string|max:255',
             'thickness'       => 'nullable|string|max:100',
             'size'            => 'nullable|string|max:100',
             'size_type'       => 'nullable|string|max:50',
@@ -554,6 +556,7 @@ class ShopController extends Controller
 
             $purchase->lot_id            = $request->lot_id;
             $purchase->vendor_id         = $request->vendor_id;
+            $purchase->product_name      = $request->product_name;
             $purchase->thickness         = $request->thickness;
             $purchase->size              = $request->size;
             $purchase->size_type         = $request->size_type ?: 'ft';
@@ -584,9 +587,10 @@ class ShopController extends Controller
                 $soldWeight = max(0, $prevNetWeight - (float) $coil->remaining_weight);
                 $newRemainingWeight = max(0, $totalWeight - $soldWeight);
 
-                $coil->update([
+                $coilUpdateData = [
                     'lot_id'           => $request->lot_id,
                     'vendor_id'        => $request->vendor_id,
+                    'product_name'     => $request->product_name,
                     'thickness'        => $request->thickness,
                     'width'            => $request->size,
                     'length'           => $request->size_type ?: 'ft',
@@ -599,7 +603,13 @@ class ShopController extends Controller
                     'status'           => ($newRemainingWeight <= 0) ? 'exhausted' : 'in_stock',
                     'notes'            => $request->coil_notes ?? $coil->notes,
                     'updated_by'       => Auth::id(),
-                ]);
+                ];
+
+                if ($request->filled('coil_number')) {
+                    $coilUpdateData['coil_number'] = $request->coil_number;
+                }
+
+                $coil->update($coilUpdateData);
             }
 
             // Update affected lots totals
@@ -1044,7 +1054,26 @@ class ShopController extends Controller
             });
         }
 
-        $coils = $query->get();
+        $coils = $query->get()->sort(function ($a, $b) {
+            $parseThickness = function ($val) {
+                if (empty($val)) {
+                    return 999999.0;
+                }
+                if (preg_match('/([0-9]+(?:\.[0-9]+)?)/', trim($val), $m)) {
+                    return (float) $m[1];
+                }
+                return 999999.0;
+            };
+
+            $thkA = $parseThickness($a->thickness);
+            $thkB = $parseThickness($b->thickness);
+
+            if ($thkA != $thkB) {
+                return $thkA <=> $thkB;
+            }
+
+            return strcmp($a->coil_number ?? '', $b->coil_number ?? '');
+        })->values();
         $filename = 'Shop_Stock_Report_' . now()->format('Y_m_d_His') . '.pdf';
 
         $headerLabel = 'SHOP INVENTORY';

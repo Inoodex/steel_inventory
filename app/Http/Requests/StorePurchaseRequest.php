@@ -84,6 +84,7 @@ class StorePurchaseRequest extends FormRequest
             // Multi-row items / coils validation
             'items'                => 'required|array|min:1',
             'items.*.vendor_id'    => 'required|exists:vendors,id',
+            'items.*.product_name' => 'nullable|string|max:255',
             'items.*.coil_number'  => 'nullable|string|max:100',
             'items.*.thickness'    => 'nullable|string|max:100',
             'items.*.width'        => 'nullable|string|max:100',

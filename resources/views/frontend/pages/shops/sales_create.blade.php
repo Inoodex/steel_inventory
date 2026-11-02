@@ -838,12 +838,13 @@ function handleLotSelection(lotId) {
 
     filtered.forEach(c => {
         const coilNo = c.coil_number ? `#${c.coil_number}` : `Coil #${c.id}`;
+        const coilTitle = c.product_name ? `${c.product_name} (${coilNo})` : coilNo;
         const thick = c.thickness ? `${c.thickness}` : '';
         const size = c.size ? `${c.size} ${c.size_type || 'ft'}` : '';
         const specs = [thick, size].filter(Boolean).join(' | ');
         const specsLabel = specs ? ` (${specs})` : '';
         const weight = parseFloat(c.remaining_weight).toLocaleString();
-        const text = `${coilNo}${specsLabel} — Available: ${weight} kg`;
+        const text = `${coilTitle}${specsLabel} — Available: ${weight} kg`;
         const coilRate = parseFloat(c.rate_per_ton) || parseFloat(c.cost_per_kg) || parseFloat(c.rate) || 0;
         const coilSellingRate = parseFloat(c.selling_rate) || coilRate;
 

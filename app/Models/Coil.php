@@ -15,6 +15,7 @@ class Coil extends Model
 
     protected $fillable = [
         'coil_number',
+        'product_name',
         'purchase_id',
         'lot_id',
         'vendor_id',
@@ -72,7 +73,8 @@ class Coil extends Model
 
     public function getNameAttribute(): string
     {
-        return 'Coil #' . ($this->coil_number ?? '');
+        $tag = 'Coil #' . ($this->coil_number ?? '');
+        return !empty($this->product_name) ? "{$this->product_name} ({$tag})" : $tag;
     }
 
     /**

@@ -20,6 +20,7 @@ class Purchase extends Model
         'lot_id',
         'vendor_id',
         'warehouse_id',
+        'product_name',
         'thickness',
         'size',
         'size_type',
