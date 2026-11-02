@@ -21,7 +21,7 @@ class InventoryController extends Controller
     {
         $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
         $lots = Lot::where('status', 'active')->latest()->get();
-        $vendors = Vendor::where('status', '1')->orderBy('name')->get();
+        $vendors = Vendor::active()->orderBy('name')->get();
 
         return view('frontend.pages.inventory.opening_stock', compact('warehouses', 'lots', 'vendors'));
     }
@@ -162,7 +162,7 @@ class InventoryController extends Controller
 
         $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
         $lots = Lot::where('status', 'active')->latest()->get();
-        $vendors = Vendor::where('status', '1')->orderBy('name')->get();
+        $vendors = Vendor::active()->orderBy('name')->get();
 
         return view('frontend.pages.inventory.edit_opening_stock', compact('coil', 'warehouses', 'lots', 'vendors'));
     }
@@ -336,7 +336,7 @@ class InventoryController extends Controller
         // Auxiliary data for filters
         $lots = Lot::where('status', 'active')->latest()->get();
         $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
-        $vendors = Vendor::where('status', '1')->orderBy('name')->get();
+        $vendors = Vendor::active()->orderBy('name')->get();
 
         // Top Summary KPI Metrics across the entire yard
         $totalInStockWeight = (float) Coil::where('status', 'in_stock')->sum('remaining_weight');

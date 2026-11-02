@@ -227,4 +227,29 @@ class PurchaseWorkflowTest extends TestCase
         $this->assertNotNull($cashItem);
         $this->assertEquals(15000.00, (float) $cashItem->credit);
     }
+
+    public function test_purchase_create_page_shows_all_active_and_status_1_vendors(): void
+    {
+        // $this->vendor has status 'active'
+        $statusOneVendor = Vendor::create([
+            'name' => 'Legacy Status One Vendor',
+            'phone' => '01822222222',
+            'opening_balance' => 0.00,
+            'status' => '1',
+        ]);
+
+        $inactiveVendor = Vendor::create([
+            'name' => 'Inactive Vendor',
+            'phone' => '01933333333',
+            'opening_balance' => 0.00,
+            'status' => '0',
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('purchase.create'));
+
+        $response->assertOk();
+        $response->assertSee('Shipbreakers Ltd'); // status: active
+        $response->assertSee('Legacy Status One Vendor'); // status: 1
+        $response->assertDontSee('Inactive Vendor'); // status: 0
+    }
 }

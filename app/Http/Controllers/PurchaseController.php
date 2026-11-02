@@ -97,7 +97,7 @@ class PurchaseController extends Controller
         $totalDue        = (float) (clone $yardPurchaseQuery)->sum('due');
         $totalWeight     = (float) (clone $yardPurchaseQuery)->sum('total_weight');
 
-        $vendors      = Vendor::where('status', '1')->latest()->get();
+        $vendors      = Vendor::active()->orderBy('name')->get();
         $allLots      = Lot::where('status', 'active')
             ->whereDoesntHave('purchases', function ($q) {
                 $q->whereHas('warehouse', function ($wq) {
@@ -126,7 +126,7 @@ class PurchaseController extends Controller
     public function create()
     {
         $products   = collect();
-        $vendors    = Vendor::where('status', '1')->latest()->get();
+        $vendors    = Vendor::active()->orderBy('name')->get();
         $lots       = Lot::with(['vendor', 'purchases.warehouse'])
             ->where('status', 'active')
             ->whereDoesntHave('purchases', function ($q) {
@@ -236,7 +236,7 @@ class PurchaseController extends Controller
     public function edit(Purchase $purchase)
     {
         $purchase->load(['vendor', 'lot', 'warehouse', 'coils', 'bankDetail', 'creator']);
-        $vendors = Vendor::where('status', '1')->latest()->get();
+        $vendors = Vendor::active()->orderBy('name')->get();
         $lots = Lot::where('status', 'active')->latest()->get();
         $warehouses = $purchase->warehouse?->isShop() 
             ? Warehouse::where('status', 'active')->orderBy('name')->get() 

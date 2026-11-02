@@ -75,7 +75,7 @@ class VendorAdvanceController extends Controller
 
         // 3. Bank and MFS Accounts for modal
         $bankAccounts = BankDetail::where('is_active', true)->orderBy('bank_name')->get();
-        $vendorList = Vendor::where('status', '1')->orderBy('name')->get();
+        $vendorList = Vendor::active()->orderBy('name')->get();
 
         return view('frontend.pages.advances.vendor_index', compact(
             'vendorsWithAdvance',
@@ -95,7 +95,7 @@ class VendorAdvanceController extends Controller
         $vendorList = Vendor::select('id', 'name', 'company', 'phone', 'email', 'address', 'opening_balance')
             ->withSum('purchases', 'total_price')
             ->withSum('payments', 'amount')
-            ->where('status', '1')
+            ->active()
             ->orderBy('name')
             ->get()
             ->map(function ($v) {

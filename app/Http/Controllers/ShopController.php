@@ -116,7 +116,7 @@ class ShopController extends Controller
     public function createPurchase(Request $request)
     {
         $shop = $this->getShop();
-        $vendors = Vendor::where('status', '1')
+        $vendors = Vendor::active()
             ->withSum(['purchases' => function($q) {
                 $q->whereNull('deleted_at');
             }], 'due')
@@ -426,7 +426,7 @@ class ShopController extends Controller
         }
 
         $purchases = $query->latest()->paginate(15)->withQueryString();
-        $vendors = Vendor::where('status', '1')->orderBy('name')->get();
+        $vendors = Vendor::active()->orderBy('name')->get();
 
         $totalPurchasesCount = (clone $query)->count();
         $totalPurchasesAmount = (float) (clone $query)->sum('total_price');
@@ -456,7 +456,7 @@ class ShopController extends Controller
             ->findOrFail($id);
 
         $shop = $purchase->warehouse ?? $this->getShop();
-        $vendors = Vendor::where('status', '1')->orderBy('name')->get();
+        $vendors = Vendor::active()->orderBy('name')->get();
         $lots = Lot::where('status', 'active')
             ->where(function ($q) use ($shop) {
                 $q->whereHas('purchases', function ($pq) use ($shop) {
@@ -945,7 +945,7 @@ class ShopController extends Controller
         $lots = Lot::where('status', 'active')
             ->whereHas('coils', fn($q) => $q->where('warehouse_id', $shop->id))
             ->latest()->get();
-        $vendors = Vendor::where('status', '1')->orderBy('name')->get();
+        $vendors = Vendor::active()->orderBy('name')->get();
 
         // Top Summary KPI Metrics for this Shop
         $totalInStockWeight = (float) Coil::where('warehouse_id', $shop->id)->where('status', 'in_stock')->sum('remaining_weight');

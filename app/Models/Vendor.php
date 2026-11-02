@@ -21,6 +21,11 @@ class Vendor extends Model
         'status',
     ];
 
+    public function scopeActive($query)
+    {
+        return $query->whereIn('status', ['1', 'active', 1]);
+    }
+
     public function purchases()
     {
         return $this->hasMany(Purchase::class);
