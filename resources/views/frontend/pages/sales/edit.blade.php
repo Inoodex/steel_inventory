@@ -550,7 +550,8 @@ $(document).ready(function () {
             newClientForm.style.display = 'none';
             existingClientForm.style.display = 'block';
             newClientInputs.forEach(input => input.required = false);
-            document.getElementById('clientSelect').required = true;
+            const clientSel = document.getElementById('clientSelect');
+            if (clientSel) clientSel.required = false;
             handleCustomerChange(document.getElementById('clientSelect'));
         }
         calculateTotal();
@@ -571,7 +572,8 @@ function escapeHtml(text) {
 }
 
 function handleCustomerChange(selectEl) {
-    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    if (!selectEl || !selectEl.options) return;
+    const selectedOption = selectEl.selectedIndex >= 0 ? selectEl.options[selectEl.selectedIndex] : null;
     if (selectedOption && selectedOption.value) {
         const openingDue = parseFloat(selectedOption.dataset.openingDue) || 0;
         const salesDue = parseFloat(selectedOption.dataset.salesDue) || 0;

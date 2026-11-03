@@ -57,7 +57,13 @@
                     <h4 class="card-title fw-bold text-dark mb-1">Steel Purchase & Yard Intake</h4>
                     <p class="text-muted small mb-0">Record raw ship steel scrap, coils, plates intake directly into yard inventory</p>
                 </div>
-                <div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-warning text-dark fw-bold px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-1.5" id="headerQuickBtn" onclick="switchPurchaseMode('quick')">
+                        <i class="fe fe-zap"></i> Quick Purchase
+                    </button>
+                    <button type="button" class="btn btn-outline-primary fw-bold px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-1.5" id="headerDetailedBtn" style="display: none;" onclick="switchPurchaseMode('detailed')">
+                        <i class="fe fe-layers"></i> Detailed Form
+                    </button>
                     <a href="{{ route('purchase.index') }}" class="btn btn-outline-secondary px-4 py-2 rounded-3 shadow-sm">
                         <i class="fe fe-arrow-left me-2"></i>Back to Purchases
                     </a>
@@ -68,6 +74,7 @@
 
         <form action="{{ route('purchase.store') }}" method="POST" id="createPurchaseForm">
             @csrf
+            <input type="hidden" name="is_quick_mode" id="is_quick_mode" value="{{ old('is_quick_mode', '0') }}">
 
             <!-- Section 1: Lot & Yard Intake Details -->
             <div class="card border-0 shadow-sm rounded-3 mb-4">
@@ -92,14 +99,14 @@
                         </div>
                     </div>
 
-                    <!-- DEFAULT VENDOR SELECTION (OPTIONAL) -->
+                    <!-- VENDOR SELECTION (REQUIRED IN QUICK MODE, OPTIONAL IN DETAILED MODE) -->
                     <div class="row g-3 mb-3 pb-3 border-bottom align-items-center">
                         <div class="col-lg-5 col-md-6 col-12">
                             <label for="default_vendor_id" class="form-label fw-semibold small text-secondary mb-1">
-                                <i class="fe fe-user text-primary me-1"></i>Default Vendor / Supplier <span class="text-muted fw-normal">(Optional)</span>
+                                <i class="fe fe-user text-primary me-1"></i><span id="vendorLabelTitle">Vendor / Supplier</span> <span class="text-danger" id="vendorRequiredAsterisk">*</span>
                             </label>
                             <select id="default_vendor_id" name="default_vendor_id" class="form-select select2" onchange="handleDefaultVendorChange(this.value)">
-                                <option value="">None (Choose individual vendor per steel item)</option>
+                                <option value="">Select Vendor / Supplier</option>
                                 @foreach ($vendors as $vendor)
                                     <option value="{{ $vendor->id }}" {{ old('default_vendor_id', old('vendor_id')) == $vendor->id ? 'selected' : '' }}>
                                         {{ $vendor->name }} ({{ $vendor->phone }})
@@ -108,8 +115,8 @@
                             </select>
                         </div>
                         <div class="col-lg-7 col-md-6 col-12">
-                            <div class="text-muted small mt-md-4 pt-md-1">
-                                <i class="fe fe-info text-info me-1"></i>If selected, all steel items will automatically use this vendor and per-item vendor selection will be hidden.
+                            <div class="text-muted small mt-md-4 pt-md-1" id="vendorHelpText">
+                                <i class="fe fe-info text-info me-1"></i>Primary supplier for this purchase intake.
                             </div>
                         </div>
                     </div>
@@ -230,14 +237,164 @@
                 </div>
             </div>
 
+            <!-- Section 2A: Quick Steel Intake Card -->
+            <div class="card border-0 shadow-sm rounded-3 mb-4" id="quickPurchaseCard" style="{{ old('is_quick_mode', '0') === '1' ? '' : 'display: none;' }}">
+                <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0">
+                            <i class="fe fe-zap text-warning me-2"></i>Quick Steel Entry
+                        </h6>
+                        <small class="text-muted">Enter Total Weight and Total Amount directly. Optional specifications and extra charges can be expanded below.</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold px-3 py-1.5 rounded-3 shadow-sm d-inline-flex align-items-center gap-1.5" onclick="switchPurchaseMode('detailed')">
+                            <i class="fe fe-layers"></i> Back to Detailed Form
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body p-3 p-md-4">
+                    <!-- Primary Minimal Fields (Total Weight, Total Amount, Unit Rate) -->
+                    <div class="row g-3 p-3 rounded-3 bg-light border border-light-subtle align-items-end mb-3">
+                        <div class="col-lg-4 col-md-4 col-12">
+                            <label for="quick_total_weight" class="form-label small text-secondary fw-bold mb-1">
+                                Total Weight (kg) <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="number" step="any" min="0" name="total_weight" id="quick_total_weight"
+                                    class="form-control form-control-lg text-end fw-bold text-primary"
+                                    value="{{ old('total_weight') }}" placeholder="0.00" oninput="calculateQuickTotals()">
+                                <span class="input-group-text bg-white text-muted fw-semibold">kg</span>
+                            </div>
+                            <small class="text-muted fs-8">Total intake scale weight in kilograms</small>
+                        </div>
+
+                        <div class="col-lg-4 col-md-4 col-12">
+                            <label for="quick_total_amount" class="form-label small text-secondary fw-bold mb-1">
+                                Total Amount (৳) <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white text-success fw-bold">৳</span>
+                                <input type="number" step="any" min="0" name="total_amount" id="quick_total_amount"
+                                    class="form-control form-control-lg text-end fw-bold text-success"
+                                    value="{{ old('total_amount') }}" placeholder="0.00" oninput="calculateQuickTotals()">
+                            </div>
+                            <small class="text-muted fs-8">Total bill / gross cost for this steel</small>
+                        </div>
+
+                        <div class="col-lg-4 col-md-4 col-12">
+                            <label for="quick_unit_price" class="form-label small text-secondary fw-bold mb-1">
+                                Calculated Rate (৳/kg)
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white text-muted">৳</span>
+                                <input type="number" step="any" min="0" name="unit_price" id="quick_unit_price"
+                                    class="form-control form-control-lg text-end fw-semibold text-dark bg-white"
+                                    value="{{ old('unit_price') }}" placeholder="0.00" oninput="calculateQuickFromRate()">
+                                <span class="input-group-text bg-white text-muted fs-8">/ kg</span>
+                            </div>
+                            <small class="text-muted fs-8">Auto-calculated or enter rate to compute amount</small>
+                        </div>
+                    </div>
+
+                    <!-- Expandable Usual Fields Accordion / Button -->
+                    <div class="pt-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 rounded-3 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm"
+                            data-bs-toggle="collapse" data-bs-target="#quickUsualFields" aria-expanded="false" aria-controls="quickUsualFields" id="quickToggleSpecsBtn">
+                            <i class="fe fe-sliders text-primary"></i>
+                            <span id="quickToggleSpecsText">+ Add Usual Fields (Product Name, Thickness, Size, Coil No, Charges)</span>
+                        </button>
+                    </div>
+
+                    <div class="collapse mt-3 border rounded-3 p-3 bg-white shadow-sm" id="quickUsualFields">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3 fs-7">
+                            <i class="fe fe-disc text-primary me-1.5"></i>Optional Steel Specifications
+                        </h6>
+                        <!-- Line 1: Dimensions & Coil Info -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-lg-3 col-md-6 col-12">
+                                <label for="quick_product_name" class="form-label small text-secondary fw-semibold mb-1">Product Name</label>
+                                <input type="text" name="product_name" id="quick_product_name" class="form-control form-control-sm" value="{{ old('product_name') }}">
+                            </div>
+
+                            <div class="col-lg-2 col-md-6 col-12">
+                                <label for="quick_coil_number" class="form-label small text-secondary fw-semibold mb-1">Coil / Tag No</label>
+                                <input type="text" name="coil_number" id="quick_coil_number" class="form-control form-control-sm font-monospace" value="{{ old('coil_number') }}">
+                            </div>
+
+                            <div class="col-lg-2 col-md-3 col-6">
+                                <label for="quick_thickness" class="form-label small text-secondary fw-semibold mb-1">Thickness</label>
+                                <input type="text" name="thickness" id="quick_thickness" class="form-control form-control-sm text-center" value="{{ old('thickness') }}">
+                            </div>
+
+                            <div class="col-lg-3 col-md-3 col-6">
+                                <label for="quick_size" class="form-label small text-secondary fw-semibold mb-1">Size / Width</label>
+                                <input type="text" name="size" id="quick_size" class="form-control form-control-sm text-center" value="{{ old('size') }}">
+                            </div>
+
+                            <div class="col-lg-2 col-md-6 col-6">
+                                <label for="quick_size_type" class="form-label small text-secondary fw-semibold mb-1">Size Type</label>
+                                <select name="size_type" id="quick_size_type" class="form-select form-select-sm">
+                                    <option value="ft" {{ old('size_type') === 'ft' ? 'selected' : '' }}>Feet (ft)</option>
+                                    <option value="mm" {{ old('size_type') === 'mm' ? 'selected' : '' }}>Millimeter (mm)</option>
+                                    <option value="inch" {{ old('size_type') === 'inch' ? 'selected' : '' }}>Inch (in)</option>
+                                    <option value="m" {{ old('size_type') === 'm' ? 'selected' : '' }}>Meter (m)</option>
+                                    <option value="pcs" {{ old('size_type') === 'pcs' ? 'selected' : '' }}>Pieces (pcs)</option>
+                                    <option value="ton" {{ old('size_type') === 'ton' ? 'selected' : '' }}>Ton</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-lg-2 col-md-4 col-6">
+                                <label for="quick_quantity" class="form-label small text-secondary fw-semibold mb-1">Piece / Coil Qty</label>
+                                <input type="number" min="1" step="1" name="quantity" id="quick_quantity" class="form-control form-control-sm text-center fw-bold" value="{{ old('quantity', 1) }}" oninput="calculateQuickTotals()">
+                            </div>
+                        </div>
+
+                        <!-- Line 2: Extra Procurement Charges -->
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3 fs-7 pt-2">
+                            <i class="fe fe-dollar-sign text-success me-1.5"></i>Optional Extra Charges &amp; Adjustments
+                        </h6>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-lg-2 col-md-4 col-6">
+                                <label class="form-label small text-secondary fw-semibold mb-1">Transport (৳)</label>
+                                <input oninput="calculateQuickTotals()" type="number" id="quick_delivery_charge" class="form-control form-control-sm text-end" value="{{ old('delivery_charge', 0) }}" min="0" step="any">
+                            </div>
+                            <div class="col-lg-2 col-md-4 col-6">
+                                <label class="form-label small text-secondary fw-semibold mb-1">Cutting &amp; Labour (৳)</label>
+                                <input oninput="calculateQuickTotals()" type="number" id="quick_labour_cost" class="form-control form-control-sm text-end" value="{{ old('labour_cost', 0) }}" min="0" step="any">
+                            </div>
+                            <div class="col-lg-2 col-md-4 col-6">
+                                <label class="form-label small text-secondary fw-semibold mb-1">Scale Charge (৳)</label>
+                                <input oninput="calculateQuickTotals()" type="number" id="quick_weight_scale_cost" class="form-control form-control-sm text-end" value="{{ old('weight_scale_cost', 0) }}" min="0" step="any">
+                            </div>
+                            <div class="col-lg-2 col-md-4 col-6">
+                                <label class="form-label small text-secondary fw-semibold mb-1">Other Charges (৳)</label>
+                                <input oninput="calculateQuickTotals()" type="number" id="quick_other_charges" class="form-control form-control-sm text-end" value="{{ old('other_charges', 0) }}" min="0" step="any">
+                            </div>
+                            <div class="col-lg-2 col-md-4 col-6">
+                                <label class="form-label small text-secondary fw-semibold mb-1">Discount (৳)</label>
+                                <input oninput="calculateQuickTotals()" type="number" id="quick_discount" class="form-control form-control-sm text-end" value="{{ old('discount', 0) }}" min="0" step="any">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Section 2: Steel & Coil Intake (Persistent Entry Form + Detailed Items Table) -->
-            <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card border-0 shadow-sm rounded-3 mb-4" id="sectionSteelItems" style="{{ old('is_quick_mode', '0') === '1' ? 'display: none;' : '' }}">
                 <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h6 class="fw-bold text-dark mb-0">
                             <i class="fe fe-disc text-primary me-2"></i>Steel Items & Coil Intake
                         </h6>
                         <small class="text-muted">Enter coil dimensions, weight, and rate, then click <strong>"Add to Table"</strong>. The entry form remains ready for your next coil.</small>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 py-1.5 rounded-3 shadow-sm d-inline-flex align-items-center gap-1.5" onclick="switchPurchaseMode('quick')">
+                            <i class="fe fe-zap text-warning"></i> Switch to Quick Purchase
+                        </button>
                     </div>
                 </div>
 
@@ -517,7 +674,7 @@
             </div>
 
             <!-- Section 2.5: Extra Procurement Charges & Adjustments -->
-            <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card border-0 shadow-sm rounded-3 mb-4" id="sectionExtraCharges" style="{{ old('is_quick_mode', '0') === '1' ? 'display: none;' : '' }}">
                 <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h6 class="fw-bold text-dark mb-0">
@@ -1011,6 +1168,102 @@
             return Math.round((num + Number.EPSILON) * 100) / 100;
         }
 
+        function calculateQuickTotals() {
+            const weight = parseFloat($('#quick_total_weight').val()) || 0;
+            const amount = parseFloat($('#quick_total_amount').val()) || 0;
+
+            if (weight > 0 && amount > 0) {
+                const rate = amount / weight;
+                $('#quick_unit_price').val(rate.toFixed(4));
+            }
+
+            const del = parseFloat($('#quick_delivery_charge').val()) || 0;
+            const lab = parseFloat($('#quick_labour_cost').val()) || 0;
+            const sca = parseFloat($('#quick_weight_scale_cost').val()) || 0;
+            const oth = parseFloat($('#quick_other_charges').val()) || 0;
+            const disc = parseFloat($('#quick_discount').val()) || 0;
+
+            // Sync with main hidden extra charge inputs so form submission captures them
+            $('#delivery_charge').val(del);
+            $('#labour_cost').val(lab);
+            $('#weight_scale_cost').val(sca);
+            $('#other_charges').val(oth);
+            $('#discount').val(disc);
+
+            const totalCharges = del + lab + sca + oth;
+            const grandTotal = Math.max(0, (amount + totalCharges) - disc);
+            const qty = parseInt($('#quick_quantity').val()) || 1;
+
+            const formattedSubTotal = amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const formattedTotalCharges = totalCharges.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const formattedGrandTotal = grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const formattedTotalWeight = weight.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            $('#displayTotalCoils').text(qty);
+            $('#displayTotalNetWeight').text(formattedTotalWeight);
+            $('#displaySubTotal').text('৳ ' + formattedSubTotal);
+            $('#displayTotalCharges').text('৳ ' + formattedTotalCharges);
+            $('#displayGrandTotal').text('৳ ' + formattedGrandTotal);
+            $('#grand_total_hidden').val(grandTotal.toFixed(2));
+            $('#purchaseSubTotalDisplay').val(amount.toFixed(2));
+            $('#maxBillFormatted').text('৳ ' + formattedGrandTotal).data('vendor-grand-total', grandTotal);
+
+            // Single Vendor Payment Section
+            $('#singleVendorPaymentSection').show();
+            $('#multiVendorPaymentSection').hide();
+            $('#paymentModeBadge').hide();
+
+            const paymentInput = $('#paymentInput');
+            const payment = parseFloat(paymentInput.val()) || 0;
+
+            if (payment > grandTotal + 0.009) {
+                $('#paymentErrorMsg').fadeIn(150);
+                paymentInput.addClass('is-invalid border-danger');
+                $('#displayDueAmount').text('৳ 0.00');
+                $('#due_hidden').val('0.00');
+            } else {
+                $('#paymentErrorMsg').hide();
+                paymentInput.removeClass('is-invalid border-danger');
+                const due = Math.max(0, grandTotal - payment);
+                $('#displayDueAmount').text('৳ ' + due.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                $('#due_hidden').val(due.toFixed(2));
+            }
+        }
+
+        function calculateQuickFromRate() {
+            const weight = parseFloat($('#quick_total_weight').val()) || 0;
+            const rate = parseFloat($('#quick_unit_price').val()) || 0;
+            if (weight > 0 && rate > 0) {
+                const amount = weight * rate;
+                $('#quick_total_amount').val(amount.toFixed(2));
+            }
+            calculateQuickTotals();
+        }
+
+        function switchPurchaseMode(mode) {
+            if (mode === 'quick') {
+                $('#is_quick_mode').val('1');
+                $('#quickPurchaseCard').slideDown(150);
+                $('#sectionSteelItems').slideUp(150);
+                $('#sectionExtraCharges').slideUp(150);
+                $('#headerQuickBtn').hide();
+                $('#headerDetailedBtn').show();
+                $('#vendorRequiredAsterisk').show();
+                $('#vendorHelpText').html('<i class="fe fe-info text-info me-1"></i>Primary supplier for this purchase intake.');
+                calculateQuickTotals();
+            } else {
+                $('#is_quick_mode').val('0');
+                $('#quickPurchaseCard').slideUp(150);
+                $('#sectionSteelItems').slideDown(150);
+                $('#sectionExtraCharges').slideDown(150);
+                $('#headerQuickBtn').show();
+                $('#headerDetailedBtn').hide();
+                $('#vendorRequiredAsterisk').hide();
+                $('#vendorHelpText').html('<i class="fe fe-info text-info me-1"></i>If selected, all steel items will automatically use this vendor and per-item vendor selection will be hidden.');
+                recalculateSummary();
+            }
+        }
+
         function updateTableNumbers() {
             $('#steelTableBody tr.item-row').each(function (index) {
                 $(this).find('.row-serial-number').text(index + 1);
@@ -1018,6 +1271,11 @@
         }
 
         function recalculateSummary() {
+            if ($('#is_quick_mode').val() === '1') {
+                calculateQuickTotals();
+                return;
+            }
+
             let totalCoils = 0;
             let totalWeight = 0;
             let subTotal = 0;
@@ -1351,6 +1609,64 @@
         }
 
         $('#createPurchaseForm').on('submit', function (e) {
+            const isQuick = $('#is_quick_mode').val() === '1';
+
+            if (isQuick) {
+                const qWeight = parseFloat($('#quick_total_weight').val()) || 0;
+                const qAmount = parseFloat($('#quick_total_amount').val()) || 0;
+                const qVendor = $('#default_vendor_id').val();
+                const qWarehouse = $('#warehouse_id').val();
+
+                if (!qVendor) {
+                    e.preventDefault();
+                    alert('Please select a Vendor / Supplier for the purchase.');
+                    $('#default_vendor_id').select2('open');
+                    return false;
+                }
+                if (!qWarehouse) {
+                    e.preventDefault();
+                    alert('Please select a Stockyard Location.');
+                    $('#warehouse_id').select2('open');
+                    return false;
+                }
+                if (qWeight <= 0) {
+                    e.preventDefault();
+                    alert('Please enter a valid Total Weight (kg) for quick purchase.');
+                    $('#quick_total_weight').focus();
+                    return false;
+                }
+                if (qAmount <= 0) {
+                    e.preventDefault();
+                    alert('Please enter a valid Total Amount (৳) for quick purchase.');
+                    $('#quick_total_amount').focus();
+                    return false;
+                }
+
+                if ($('#lot_type_new').is(':checked')) {
+                    $('#vendor_hidden').val(qVendor);
+                } else {
+                    const existingLot = $('#purchase_lot_id').val();
+                    if (!existingLot) {
+                        e.preventDefault();
+                        alert('Please select an Existing Purchase Lot.');
+                        $('#purchase_lot_id').select2('open');
+                        return false;
+                    }
+                }
+
+                const grandTotal = parseFloat($('#grand_total_hidden').val()) || 0;
+                const payment = parseFloat($('#paymentInput').val()) || 0;
+                if (payment > grandTotal + 0.009) {
+                    e.preventDefault();
+                    $('#paymentErrorMsg').show();
+                    $('#paymentInput').addClass('is-invalid border-danger').focus();
+                    alert('Payment amount (৳ ' + payment.toFixed(2) + ') cannot exceed the total purchase bill (৳ ' + grandTotal.toFixed(2) + '). Please adjust the payment.');
+                    return false;
+                }
+
+                return true;
+            }
+
             const rowCount = $('#steelTableBody tr.item-row').length;
 
             // Check if user filled in builder fields but forgot to click "Add to Table"
@@ -1431,6 +1747,11 @@
                 alert('Payment amount (৳ ' + payment.toFixed(2) + ') cannot exceed the total purchase bill (৳ ' + grandTotal.toFixed(2) + '). Please adjust the payment.');
                 return false;
             }
+        });
+
+        $(document).ready(function () {
+            const initialMode = $('#is_quick_mode').val() === '1' ? 'quick' : 'detailed';
+            switchPurchaseMode(initialMode);
         });
     </script>
 @endpush

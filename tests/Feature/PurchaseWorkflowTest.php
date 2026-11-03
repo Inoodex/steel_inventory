@@ -295,4 +295,73 @@ class PurchaseWorkflowTest extends TestCase
         $this->assertStringContainsString('HR Coil Heavy', $coil->name);
         $this->assertStringContainsString('CUSTOM-COIL-777', $coil->name);
     }
+
+    public function test_quick_purchase_creates_record_and_coil_with_minimal_fields(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('purchase.store'), [
+            'is_quick_mode'  => 1,
+            'vendor_id'      => $this->vendor->id,
+            'warehouse_id'   => $this->warehouse->id,
+            'lot_type'       => 'new',
+            'new_lot_number' => 'LOT-QUICK-001',
+            'purchase_date'  => date('Y-m-d'),
+            'total_weight'   => 5000.00,
+            'total_amount'   => 400000.00,
+            'payment'        => 100000.00,
+            'payment_method' => 'cash',
+        ]);
+
+        $response->assertRedirect(route('purchase.index'));
+
+        $purchase = Purchase::where('total_weight', 5000.00)->latest()->first();
+        $this->assertNotNull($purchase);
+        $this->assertEquals(400000.00, (float) $purchase->total_price);
+        $this->assertEquals(100000.00, (float) $purchase->payment);
+        $this->assertEquals(300000.00, (float) $purchase->due);
+        $this->assertEquals(80.00, (float) $purchase->unit_price);
+
+        $coil = Coil::where('purchase_id', $purchase->id)->first();
+        $this->assertNotNull($coil);
+        $this->assertEquals(5000.00, (float) $coil->net_weight);
+        $this->assertEquals(5000.00, (float) $coil->remaining_weight);
+        $this->assertEquals('in_stock', $coil->status);
+        $this->assertNotEmpty($coil->coil_number);
+    }
+
+    public function test_quick_purchase_with_optional_expanded_specifications(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('purchase.store'), [
+            'is_quick_mode'  => 1,
+            'vendor_id'      => $this->vendor->id,
+            'warehouse_id'   => $this->warehouse->id,
+            'lot_type'       => 'new',
+            'new_lot_number' => 'LOT-QUICK-002',
+            'purchase_date'  => date('Y-m-d'),
+            'total_weight'   => 3000.00,
+            'total_amount'   => 240000.00,
+            'payment'        => 240000.00,
+            'payment_method' => 'cash',
+            'product_name'   => 'CR Plate Special',
+            'coil_number'    => 'QUICK-COIL-999',
+            'thickness'      => '0.40',
+            'size'           => '4x8',
+            'size_type'      => 'ft',
+            'quantity'       => 2,
+        ]);
+
+        $response->assertRedirect(route('purchase.index'));
+
+        $purchase = Purchase::where('total_weight', 3000.00)->latest()->first();
+        $this->assertNotNull($purchase);
+        $this->assertEquals('CR Plate Special', $purchase->product_name);
+        $this->assertEquals('0.40', $purchase->thickness);
+        $this->assertEquals(2, $purchase->quantity);
+
+        $coil = Coil::where('purchase_id', $purchase->id)->first();
+        $this->assertNotNull($coil);
+        $this->assertEquals('QUICK-COIL-999', $coil->coil_number);
+        $this->assertEquals('CR Plate Special', $coil->product_name);
+        $this->assertEquals('0.40', $coil->thickness);
+        $this->assertEquals('4x8', $coil->width);
+    }
 }

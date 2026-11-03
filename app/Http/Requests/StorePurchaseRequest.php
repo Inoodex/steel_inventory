@@ -14,6 +14,43 @@ class StorePurchaseRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $defaultVendor = $this->input('default_vendor_id') ?: $this->input('vendor_id') ?: $this->input('new_vendor_id');
+
+        // Synthesize single item if submitted via Quick Purchase mode
+        if ($this->boolean('is_quick_mode') || $this->input('is_quick_mode') === '1' || $this->input('is_quick_mode') === 1) {
+            $totalWeight = (float) $this->input('total_weight', 0);
+            $totalAmount = (float) $this->input('total_amount', 0);
+            $ratePerKg   = $totalWeight > 0 ? round($totalAmount / $totalWeight, 4) : (float) $this->input('unit_price', 0);
+            if ($totalAmount <= 0 && $totalWeight > 0 && $ratePerKg > 0) {
+                $totalAmount = round($totalWeight * $ratePerKg, 2);
+            }
+
+            $vendorId = $defaultVendor ?: $this->input('vendor_id');
+            $synthesizedItem = [
+                'vendor_id'    => $vendorId,
+                'product_name' => $this->input('product_name') ?: null,
+                'coil_number'  => $this->input('coil_number') ?: null,
+                'thickness'    => $this->input('thickness') ?: null,
+                'width'        => $this->input('size') ?: null,
+                'size'         => $this->input('size') ?: null,
+                'length'       => $this->input('size_type') ?: 'ft',
+                'size_type'    => $this->input('size_type') ?: 'ft',
+                'quantity'     => max(1, (int) $this->input('quantity', 1)),
+                'gross_weight' => $totalWeight,
+                'net_weight'   => $totalWeight,
+                'unit_weight'  => $totalWeight,
+                'total_weight' => $totalWeight,
+                'unit_price'   => $ratePerKg,
+                'sub_price'    => $totalAmount,
+                'rate_per_ton' => $ratePerKg,
+                'notes'        => $this->input('notes') ?: null,
+            ];
+
+            $this->merge([
+                'items'       => [$synthesizedItem],
+                'grand_total' => $totalAmount,
+            ]);
+        }
+
         $items = $this->input('items', []);
         if (is_array($items)) {
             foreach ($items as $k => $item) {
@@ -51,6 +88,8 @@ class StorePurchaseRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'is_quick_mode'       => 'nullable|boolean',
+            'total_amount'        => 'nullable|numeric|min:0',
             'lot_type'            => 'nullable|string|in:existing,new',
             'lot_id'              => 'nullable|required_if:lot_type,existing|exists:lots,id',
             'new_lot_number'      => 'nullable|required_if:lot_type,new|string|max:100|unique:lots,lot_number',

@@ -488,7 +488,7 @@ $(document).ready(function () {
             if (existingClientForm) existingClientForm.style.display = 'block';
             newClientInputs.forEach(input => input.required = false);
             const clientSel = document.getElementById('clientSelect');
-            if (clientSel) clientSel.required = true;
+            if (clientSel) clientSel.required = false;
             handleCustomerChange(document.getElementById('clientSelect'));
         }
         calculateTotal();
@@ -502,23 +502,10 @@ $(document).ready(function () {
         existingClientRadio.addEventListener('change', toggleClientForms);
         toggleClientForms();
     }
-    }
 
     // Populate initial stock/lot source based on default selected warehouse
     populateWarehouseLotSources($('#warehouse_id').val());
 });
-
-function handleSaleAccountChange(selectEl) {
-    const selectedOpt = selectEl.options[selectEl.selectedIndex];
-    if (!selectedOpt) return;
-    const methodInput = document.getElementById('hidden_payment_method');
-    const bankInput = document.getElementById('hidden_bank_detail_id');
-
-    const method = selectedOpt.getAttribute('data-method') || 'bank';
-    const bankId = selectedOpt.getAttribute('data-id') || '';
-    if (methodInput) methodInput.value = method;
-    if (bankInput) bankInput.value = bankId;
-}
 
 function escapeHtml(text) {
     if (!text) return '';
@@ -526,7 +513,8 @@ function escapeHtml(text) {
 }
 
 function handleCustomerChange(selectEl) {
-    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    if (!selectEl || !selectEl.options) return;
+    const selectedOption = selectEl.selectedIndex >= 0 ? selectEl.options[selectEl.selectedIndex] : null;
     if (selectedOption && selectedOption.value) {
         const openingDue = parseFloat(selectedOption.dataset.openingDue) || 0;
         const salesDue = parseFloat(selectedOption.dataset.salesDue) || 0;
@@ -1138,6 +1126,25 @@ function setExactTendered() {
 }
 
 function validateSaleFormSubmission(e) {
+    const isExisting = document.getElementById('existingClient')?.checked;
+    if (isExisting) {
+        const selectedClient = document.getElementById('clientSelect')?.value;
+        if (!selectedClient) {
+            if (e) e.preventDefault();
+            alert('Please select an existing customer.');
+            $('#clientSelect').select2('open');
+            return false;
+        }
+    } else {
+        const clientName = document.getElementById('newClientName')?.value?.trim();
+        if (!clientName) {
+            if (e) e.preventDefault();
+            alert('Please enter customer name.');
+            document.getElementById('newClientName')?.focus();
+            return false;
+        }
+    }
+
     const rows = document.querySelectorAll('#item_container tr');
     if (rows.length === 0) {
         if (e) e.preventDefault();
