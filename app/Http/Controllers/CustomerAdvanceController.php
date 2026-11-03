@@ -19,8 +19,12 @@ class CustomerAdvanceController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. All active customers with their financial balance calculations
+        // 1. Customers with payments or returns who might hold advance credit
         $customersQuery = Customer::select('id', 'name', 'company', 'phone', 'email', 'opening_balance')
+            ->where(function($q) {
+                $q->whereHas('payments')
+                  ->orWhereHas('returns');
+            })
             ->withSum(['sales' => function($q) {
                 $q->whereNull('deleted_at');
             }], 'payble')

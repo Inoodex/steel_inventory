@@ -195,8 +195,12 @@ class SaleService
                                   + $vatAmount
                                   + $taxAmount;
 
+                    $paid = round($paid, 2);
+                    $due = round($due, 2);
                     $totalDebits = round($paid + $due, 2);
-                    $netSalesRevenue = max(0, round($totalDebits - $extraCharges, 2));
+
+                    $chargesCredit = min($totalDebits, round($extraCharges, 2));
+                    $netSalesRevenue = round($totalDebits - $chargesCredit, 2);
 
                     $methodLabel = match($sale->payment_method) {
                         'bank' => 'Bank Transfer',
@@ -235,8 +239,8 @@ class SaleService
                     }
 
                     // 3. Credits: Pass-Through Extra Charges Payable (2140)
-                    if ($extraCharges > 0 && $chargesAcc) {
-                        $items[] = ['account_id' => $chargesAcc->id, 'debit' => 0.00, 'credit' => $extraCharges, 'description' => 'Collected extra charges (delivery/labour/scale/vat/tax) payable to handlers'];
+                    if ($chargesCredit > 0 && $chargesAcc) {
+                        $items[] = ['account_id' => $chargesAcc->id, 'debit' => 0.00, 'credit' => $chargesCredit, 'description' => 'Collected extra charges (delivery/labour/scale/vat/tax) payable to handlers'];
                     }
 
                     postJournalEntry([
@@ -343,7 +347,7 @@ class SaleService
 
             $purchasePrice = 0;
             if ($coilId) {
-                $coil = Coil::find($coilId);
+                $coil = Coil::where('id', $coilId)->lockForUpdate()->first();
                 if ($coil) {
                     $purchasePrice = (float)$coil->rate_per_ton;
                     $thickness = $thickness ?: $coil->thickness;
@@ -375,7 +379,7 @@ class SaleService
                     });
                 }
 
-                $coils = $coilQuery->orderBy('id', 'asc')->get();
+                $coils = $coilQuery->orderBy('id', 'asc')->lockForUpdate()->get();
                 $remainingToDeduct = $qty;
                 $totalCostOfDeducted = 0;
 

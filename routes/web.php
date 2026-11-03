@@ -182,7 +182,7 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::resource('bank-details', BankDetailController::class);
     Route::post('bank-details/{bankDetail}/set-default', [BankDetailController::class, 'setDefault'])->name('bank-details.set-default');
     
-    Route::resource('company-details', CompanyDetailController::class);
+    Route::resource('company-details', CompanyDetailController::class)->except(['create', 'show', 'edit']);
     Route::post('company-details/{companyDetail}/set-default', [CompanyDetailController::class, 'setDefault'])->name('company-details.set-default');
 
         Route::get('product-returns', [ReturnController::class, 'index'])->name('returns.index');

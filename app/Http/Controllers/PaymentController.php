@@ -27,6 +27,11 @@ class PaymentController extends Controller
             return redirect()->back()->with(['error' => 'Sale not found.']);
         }
 
+        $dueOnBill = (float) $bill->due_payment;
+        if ((float) $request->amount > ($dueOnBill + 0.01)) {
+            return redirect()->back()->withInput()->with(['error' => 'Payment amount (৳' . number_format($request->amount, 2) . ') cannot exceed the invoice due amount (৳' . number_format($dueOnBill, 2) . ').']);
+        }
+
         \Illuminate\Support\Facades\DB::beginTransaction();
         try {
             $payment = new Payment;
@@ -334,6 +339,10 @@ class PaymentController extends Controller
             if ($payment->sale_id) {
                 $bill = Sale::where('id', $payment->sale_id)->first();
                 if ($bill) {
+                    if ($diff > ((float) $bill->due_payment + 0.01)) {
+                        $maxAllowed = $oldAmount + (float) $bill->due_payment;
+                        return redirect()->back()->withInput()->with(['error' => 'Updated payment exceeds invoice total. Maximum allowed payment for this sale is ৳' . number_format($maxAllowed, 2) . '.']);
+                    }
                     $bill->advanced_payment = max(0, (float)($bill->advanced_payment ?? 0) + $diff);
                     $bill->due_payment = max(0, (float)($bill->payble ?? $bill->total) - (float)$bill->advanced_payment);
                     $bill->status = $bill->due_payment <= 0.0001 ? 'paid' : ($bill->advanced_payment > 0 ? 'partial' : 'credit');
@@ -547,14 +556,10 @@ class PaymentController extends Controller
 
                             $remainingToAllocate -= $allocation;
                         }
-
-                        if ($remainingToAllocate > 0) {
-                            $purchase->payment = (float)$purchase->payment + $remainingToAllocate;
-                            $purchase->due = max(0, (float)$purchase->total_price - (float)$purchase->payment);
-                            $purchase->save();
-                        }
                     } else {
-                        $purchase->payment = (float)$purchase->payment + $totalAmount;
+                        $dueOnPurchase = (float) $purchase->due;
+                        $allocation = min($remainingToAllocate, $dueOnPurchase);
+                        $purchase->payment = (float)$purchase->payment + $allocation;
                         $purchase->due = max(0, (float)$purchase->total_price - (float)$purchase->payment);
                         $purchase->save();
 
@@ -566,13 +571,14 @@ class PaymentController extends Controller
                         $payRec->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
                         $payRec->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
                         $payRec->payment_date = $paymentDate;
-                        $payRec->amount = $totalAmount;
+                        $payRec->amount = $allocation;
                         $payRec->remarks = $request->remarks ?: ('Due payment for PO #' . $purchase->id);
                         $payRec->created_by = \Illuminate\Support\Facades\Auth::id();
                         $payRec->status = 1;
                         $payRec->save();
                         $createdVendorPayments[] = $payRec;
-                        $remainingToAllocate = 0;
+
+                        $remainingToAllocate -= $allocation;
                     }
                 }
             } else {
@@ -661,7 +667,7 @@ class PaymentController extends Controller
                 $apAcc = \App\Models\ChartOfAccount::where('account_code', '2110')->first();
 
                 $disbursementAcc = $cashAcc;
-                if ($payment->payment_method !== 'cash') {
+                if ($payment && $payment->payment_method !== 'cash') {
                     if (!empty($payment->bank_detail_id)) {
                         $bank = \App\Models\BankDetail::find($payment->bank_detail_id);
                         $disbursementAcc = $bank?->resolveChartOfAccount() 
@@ -672,7 +678,7 @@ class PaymentController extends Controller
                     }
                 }
 
-                if ($disbursementAcc && $apAcc && $totalAmount > 0) {
+                if ($disbursementAcc && $apAcc && $totalAmount > 0 && $payment) {
                     $methodLabel = match($payment->payment_method) {
                         'bank' => 'Bank Transfer',
                         'mobile_banking' => 'Mobile Banking',

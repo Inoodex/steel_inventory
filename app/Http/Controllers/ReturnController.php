@@ -78,7 +78,12 @@ class ReturnController extends Controller
         $sales = Sale::with('customer')
             ->where('status', '!=', 'cancelled')
             ->latest()
+            ->limit(100)
             ->get();
+
+        if ($sale && !$sales->contains('id', $sale->id)) {
+            $sales->prepend($sale);
+        }
 
         $customers = Customer::all();
         $products = collect();

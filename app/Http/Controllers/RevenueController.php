@@ -32,9 +32,32 @@ class RevenueController extends Controller
         $start = Carbon::create($year, $month, 1)->startOfMonth();
         $end = Carbon::create($year, $month, 1)->endOfMonth();
 
-        $totalSales = Sale::whereBetween('created_at', [$start, $end])->sum('payble');
-        $totalPurchases = Purchase::whereBetween('created_at', [$start, $end])->sum('total_price');
-        $totalExpenses = DailyExpense::whereBetween('created_at', [$start, $end])->sum('amount');
+        $startDate = $start->toDateString();
+        $endDate = $end->toDateString();
+
+        $grossSales = (float) Sale::where(function($q) use ($startDate, $endDate) {
+            $q->whereBetween('order_date', [$startDate, $endDate])
+              ->orWhere(function($sub) use ($startDate, $endDate) {
+                  $sub->whereNull('order_date')
+                      ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+              });
+        })->whereNull('deleted_at')->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(payble, total)'));
+
+        $totalReturns = (float) \App\Models\ProductReturn::whereBetween('return_date', [$startDate, $endDate])
+            ->where('status', 'approved')
+            ->sum('total_refund_amount');
+
+        $totalSales = max(0, $grossSales - $totalReturns);
+
+        $totalPurchases = (float) Purchase::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])->sum('total_price');
+
+        $totalExpenses = (float) DailyExpense::where(function($q) use ($startDate, $endDate) {
+            $q->whereBetween('date', [$startDate, $endDate])
+              ->orWhere(function($sub) use ($startDate, $endDate) {
+                  $sub->whereNull('date')
+                      ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+              });
+        })->sum('amount');
 
         Revenue::updateOrCreate(
             ['year' => $year, 'month' => $month],

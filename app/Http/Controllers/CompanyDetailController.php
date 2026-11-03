@@ -13,21 +13,6 @@ class CompanyDetailController extends Controller
         return view('frontend.pages.company-details.index', compact('companies'));
     }
 
-    public function create()
-    {
-        return redirect()->route('company-details.index');
-    }
-
-    public function show(CompanyDetail $companyDetail)
-    {
-        return redirect()->route('company-details.index');
-    }
-
-    public function edit(CompanyDetail $companyDetail)
-    {
-        return redirect()->route('company-details.index');
-    }
-
     public function store(Request $request)
     {
         // Support either company_name or name
