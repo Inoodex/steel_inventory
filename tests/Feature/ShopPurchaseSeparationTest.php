@@ -313,6 +313,70 @@ class ShopPurchaseSeparationTest extends TestCase
         $response->assertSee('Shop Locked');
     }
 
+    public function test_shop_purchase_create_and_update_without_coil_fields(): void
+    {
+        // 1. Store via batch without coil_number, size, or explicit quantity
+        $createPayload = [
+            'warehouse_id' => $this->shop->id,
+            'lot_type' => 'new',
+            'new_lot_number' => 'LOT-SHOP-NOCOIL-01',
+            'purchase_date' => now()->format('Y-m-d'),
+            'payment' => 500,
+            'payment_method' => 'cash',
+            'items' => [
+                [
+                    'vendor_id' => $this->vendor->id,
+                    'product_name' => 'Direct Shop Plate',
+                    'thickness' => '4.00mm',
+                    'total_weight' => 50.5,
+                    'unit_price' => 100,
+                    'sub_price' => 5050,
+                ],
+            ],
+        ];
+
+        $storeResponse = $this->actingAs($this->user)->post(route('purchase.store'), $createPayload);
+        $storeResponse->assertRedirect(route('shops.purchases.index'));
+
+        $purchase = Purchase::where('warehouse_id', $this->shop->id)
+            ->where('product_name', 'Direct Shop Plate')
+            ->first();
+        $this->assertNotNull($purchase);
+        $this->assertEquals(50.5, (float)$purchase->total_weight);
+        $this->assertEquals(1, $purchase->quantity);
+
+        $coil = Coil::where('purchase_id', $purchase->id)->first();
+        $this->assertNotNull($coil);
+        $this->assertEquals(50.5, (float)$coil->net_weight);
+        $this->assertNotEmpty($coil->coil_number); // auto-generated
+
+        // 2. Update without coil_number, size, or quantity
+        $updatePayload = [
+            'lot_id' => $purchase->lot_id,
+            'vendor_id' => $this->vendor->id,
+            'product_name' => 'Direct Shop Plate Updated',
+            'thickness' => '4.50mm',
+            'total_weight' => 60.0,
+            'unit_price' => 110,
+            'sub_price' => 6600,
+            'payment' => 1000,
+            'payment_method' => 'cash',
+        ];
+
+        $updateResponse = $this->actingAs($this->user)->put(route('shops.purchases.update', $purchase->id), $updatePayload);
+        $updateResponse->assertRedirect(route('shops.purchases.index'));
+
+        $purchase->refresh();
+        $this->assertEquals('Direct Shop Plate Updated', $purchase->product_name);
+        $this->assertEquals('4.50mm', $purchase->thickness);
+        $this->assertEquals(60.0, (float)$purchase->total_weight);
+        $this->assertEquals(1, $purchase->quantity);
+
+        $coil->refresh();
+        $this->assertEquals(60.0, (float)$coil->net_weight);
+        $this->assertEquals(60.0, (float)$coil->remaining_weight);
+    }
+
     public function test_shop_sale_create_page_renders_with_full_sectioned_design(): void
     {
         $response = $this->actingAs($this->user)->get(route('shops.sales.create'));

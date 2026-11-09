@@ -193,88 +193,7 @@ class ShopController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $shop = Warehouse::shops()->withCount(['purchases', 'sales', 'coils'])->findOrFail($id);
-
-        // Active Stock Coils in this shop
-        $coilsQuery = $shop->coils()->with(['vendor', 'lot', 'purchase'])->latest();
-
-        if ($request->filled('coil_status')) {
-            $coilsQuery->where('status', $request->coil_status);
-        }
-
-        $coils = $coilsQuery->paginate(15, ['*'], 'coils_page')->withQueryString();
-
-        // Shop stock analytics
-        $inStockCoilsCount = $shop->coils()->where('status', 'in_stock')->count();
-        $inProcessingCoilsCount = $shop->coils()->where('status', 'processing')->count();
-        $totalStockWeightKg = (float) $shop->coils()->whereIn('status', ['in_stock', 'processing'])->sum('remaining_weight');
-        $totalStockWeightTon = $totalStockWeightKg / 1000;
-        
-        $totalStockValuation = (float) $shop->coils()->whereIn('status', ['in_stock', 'processing'])->get()->sum(function($c) {
-            return (float)$c->remaining_weight * (float)$c->rate_per_ton;
-        });
-
-        // Thickness-wise breakdown
-        $activeCoils = $shop->coils()
-            ->whereIn('status', ['in_stock', 'processing'])
-            ->where('remaining_weight', '>', 0)
-            ->get();
-
-        $thicknessBreakdown = $activeCoils->groupBy(function ($coil) {
-            return trim($coil->thickness) ?: 'Standard';
-        })->map(function ($group, $thickness) {
-            $totalCoils = $group->count();
-            $totalPieces = $group->sum(fn($c) => (float)($c->piece_count ?: 1));
-            $totalRemainingWeight = (float) $group->sum('remaining_weight');
-            $totalValuation = (float) $group->sum(fn($c) => (float)$c->remaining_weight * (float)$c->rate_per_ton);
-            $avgPricePerKg = $totalRemainingWeight > 0 ? ($totalValuation / $totalRemainingWeight) : 0;
-            $avgPricePerTon = $avgPricePerKg * 1000;
-
-            return [
-                'thickness' => $thickness,
-                'coils_count' => $totalCoils,
-                'pieces_count' => $totalPieces,
-                'total_weight' => $totalRemainingWeight,
-                'total_weight_mt' => $totalRemainingWeight / 1000,
-                'total_valuation' => $totalValuation,
-                'avg_price_per_kg' => $avgPricePerKg,
-                'avg_price_per_ton' => $avgPricePerTon,
-            ];
-        })->sortByDesc('total_weight');
-
-        // Recent Sales from this Shop
-        $recentSales = $shop->sales()->with(['customer', 'salesBy'])->latest()->take(10)->get();
-        $totalSalesAmount = (float) $shop->sales()->whereNull('deleted_at')->sum('payble');
-        $totalSalesCount = $shop->sales()->whereNull('deleted_at')->count();
-
-        // Recent Purchases into this Shop
-        $recentPurchases = $shop->purchases()->with(['vendor', 'lot'])->latest()->take(10)->get();
-        $totalPurchasesAmount = (float) $shop->purchases()->whereNull('deleted_at')->sum('total_price');
-        $totalPurchasesCount = $shop->purchases()->whereNull('deleted_at')->count();
-
-        // Recent Product Returns for this Shop's sales
-        $shopSaleIds = $shop->sales()->pluck('id');
-        $recentReturns = ProductReturn::whereIn('sale_id', $shopSaleIds)->with(['sale', 'customer'])->latest()->take(10)->get();
-        $totalReturnsAmount = (float) ProductReturn::whereIn('sale_id', $shopSaleIds)->where('status', '!=', 'rejected')->sum('total_refund_amount');
-
-        return view('frontend.pages.shops.show', compact(
-            'shop',
-            'coils',
-            'inStockCoilsCount',
-            'inProcessingCoilsCount',
-            'totalStockWeightKg',
-            'totalStockWeightTon',
-            'totalStockValuation',
-            'thicknessBreakdown',
-            'recentSales',
-            'totalSalesAmount',
-            'totalSalesCount',
-            'recentPurchases',
-            'totalPurchasesAmount',
-            'totalPurchasesCount',
-            'recentReturns',
-            'totalReturnsAmount'
-        ));
+        return redirect()->route('shops.sales.index');
     }
 
     /**
@@ -495,9 +414,9 @@ class ShopController extends Controller
             'thickness'       => 'nullable|string|max:100',
             'size'            => 'nullable|string|max:100',
             'size_type'       => 'nullable|string|max:50',
-            'unit_weight'     => 'required|numeric|min:0.001',
-            'total_weight'    => 'nullable|numeric|min:0',
-            'quantity'        => 'required|numeric|min:1',
+            'unit_weight'     => 'nullable|numeric|min:0.001',
+            'total_weight'    => 'required|numeric|min:0.001',
+            'quantity'        => 'nullable|numeric|min:1',
             'unit_price'        => 'required|numeric|min:0',
             'sub_price'         => 'nullable|numeric',
             'delivery_charge'   => 'nullable|numeric|min:0',
@@ -521,10 +440,10 @@ class ShopController extends Controller
             $oldLotId = $purchase->lot_id;
             $coil = $purchase->coils->first();
 
-            $coilQty = max(1, (int) $request->quantity);
-            $perCoilWeight = (float) $request->unit_weight;
+            $coilQty = max(1, (int) $request->input('quantity', 1));
+            $totalWeight = (float) $request->total_weight;
+            $perCoilWeight = (float) ($request->unit_weight ?: ($totalWeight / $coilQty));
             $calculatedTotalWeight = $coilQty * $perCoilWeight;
-            $totalWeight = (float) ($request->total_weight ?: $calculatedTotalWeight);
             if ($totalWeight <= 0 && $calculatedTotalWeight > 0) {
                 $totalWeight = $calculatedTotalWeight;
             }

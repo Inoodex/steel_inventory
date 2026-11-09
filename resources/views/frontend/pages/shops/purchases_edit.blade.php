@@ -168,17 +168,17 @@
                                     Shipment / Intake Notes <span class="text-muted">(Optional)</span>
                                 </label>
                                 <input type="text" name="notes" id="notes" class="form-control"
-                                    value="{{ old('notes', $purchase->notes ?? $purchase->note) }}" placeholder="Truck receipt #, intake supervisor notes...">
+                                    value="{{ old('notes', $purchase->notes ?? $purchase->note) }}">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 2. Physical Specifications & Dimensions Card -->
+                <!-- 2. Physical Specifications & Stock Details Card -->
                 <div class="card border-0 shadow-sm rounded-3 mb-4 p-2">
                     <div class="pos-card-header rounded-top-3 d-flex justify-content-between align-items-center">
                         <span><i class="fe fe-disc text-primary me-2"></i>Physical Steel Specifications &amp; Stock Details</span>
-                        @if($coil)
+                        @if($coil && !empty($coil->coil_number))
                             <span class="badge bg-dark rounded-pill px-3 py-1 fs-8 fw-bold font-monospace">
                                 <i class="fe fe-tag me-1 text-primary"></i>{{ $coil->coil_number }}
                             </span>
@@ -186,9 +186,34 @@
                     </div>
                     <div class="card-body p-3">
 
-                        <!-- Line 1: Physical Specifications & Dimensions -->
+                        <!-- Line 1: Specifications & Weight -->
                         <div class="row g-2 mb-2">
-                            <div class="col-lg-3 col-md-6 col-12">
+                            <input type="hidden" name="quantity" id="quantityInput" value="{{ old('quantity', (int)$purchase->quantity ?: 1) }}">
+                            <input type="hidden" name="unit_weight" id="unitWeightInput" value="{{ old('unit_weight', $purchase->unit_weight ?: $purchase->total_weight) }}">
+
+                            <div class="col-lg-3 col-md-4 col-12">
+                                <label class="form-label small text-secondary fw-semibold mb-1">
+                                    Thickness
+                                </label>
+                                <input type="text" name="thickness" id="thicknessInput"
+                                    class="form-control form-control-sm text-center"
+                                    value="{{ old('thickness', $purchase->thickness ?? ($coil->thickness ?? '')) }}">
+                            </div>
+
+                            <div class="col-lg-3 col-md-4 col-12">
+                                <label class="form-label small text-secondary fw-semibold mb-1">
+                                    Weight (kg) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <input oninput="calculateFinancials()" type="number" step="any" min="0.001" name="total_weight" id="totalWeightInput"
+                                        class="form-control text-end fw-bold text-primary"
+                                        value="{{ old('total_weight', $purchase->total_weight) }}" required>
+                                    <span class="input-group-text bg-white text-muted">kg</span>
+                                </div>
+                                <input type="hidden" id="minAllowedWeight" value="{{ $soldWeight }}">
+                            </div>
+
+                            <div class="col-lg-6 col-md-4 col-12">
                                 <label class="form-label small text-secondary fw-semibold mb-1">
                                     Product Name
                                 </label>
@@ -196,101 +221,23 @@
                                     class="form-control form-control-sm"
                                     value="{{ old('product_name', $purchase->product_name ?? ($coil->product_name ?? '')) }}">
                             </div>
-
-                            <div class="col-lg-2 col-md-6 col-12">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Coil / Tag No
-                                </label>
-                                <input type="text" name="coil_number" id="coilNumberInput"
-                                    class="form-control form-control-sm font-monospace"
-                                    value="{{ old('coil_number', $coil->coil_number ?? '') }}">
-                            </div>
-
-                            <div class="col-lg-2 col-md-4 col-6">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Thickness
-                                </label>
-                                <input type="text" name="thickness" id="thicknessInput"
-                                    class="form-control form-control-sm text-center"
-                                    value="{{ old('thickness', $purchase->thickness ?? ($coil->thickness ?? '')) }}" placeholder="e.g. 0.45mm">
-                            </div>
-
-                            <div class="col-lg-3 col-md-4 col-6">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Size / Width
-                                </label>
-                                <input type="text" name="size" id="sizeInput"
-                                    class="form-control form-control-sm text-center"
-                                    value="{{ old('size', $purchase->size ?? ($coil->width ?? '')) }}" placeholder="e.g. 3.0ft">
-                            </div>
-
-                            <div class="col-lg-2 col-md-4 col-6">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Size Type
-                                </label>
-                                <select name="size_type" id="sizeTypeInput" class="form-select form-select-sm">
-                                    @php
-                                        $currentSizeType = old('size_type', $purchase->size_type ?? ($coil->length ?? 'ft'));
-                                    @endphp
-                                    <option value="ft" {{ $currentSizeType === 'ft' ? 'selected' : '' }}>Feet (ft)</option>
-                                    <option value="mm" {{ $currentSizeType === 'mm' ? 'selected' : '' }}>Millimeter (mm)</option>
-                                    <option value="inch" {{ $currentSizeType === 'inch' ? 'selected' : '' }}>Inch (in)</option>
-                                    <option value="m" {{ $currentSizeType === 'm' ? 'selected' : '' }}>Meter (m)</option>
-                                    <option value="pcs" {{ $currentSizeType === 'pcs' ? 'selected' : '' }}>Pieces (pcs)</option>
-                                    <option value="ton" {{ $currentSizeType === 'ton' ? 'selected' : '' }}>Ton</option>
-                                </select>
-                            </div>
                         </div>
 
-                        <!-- Line 2: Coil Count, Weights, Unit Rate & Subtotal -->
+                        <!-- Line 2: Rates & Subtotal -->
                         <div class="row g-2 align-items-end p-2.5 rounded-2 bg-light border border-light-subtle">
-                            <div class="col-lg-2 col-md-3 col-6">
+                            <div class="col-md-6 col-12">
                                 <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Coil Qty <span class="text-danger">*</span>
-                                </label>
-                                <input oninput="calculateFinancials()" type="number" min="1" step="1" name="quantity" id="quantityInput"
-                                    class="form-control form-control-sm text-center fw-bold"
-                                    value="{{ old('quantity', (int)$purchase->quantity ?: 1) }}" required>
-                            </div>
-
-                            <div class="col-lg-2 col-md-3 col-6">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Per Coil Wt (kg) <span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group input-group-sm">
-                                    <input oninput="calculateFinancials()" type="number" step="0.001" min="0.001" name="unit_weight" id="unitWeightInput"
-                                        class="form-control text-end fw-bold text-primary"
-                                        value="{{ old('unit_weight', $purchase->unit_weight) }}" required>
-                                    <span class="input-group-text bg-white text-muted">kg</span>
-                                </div>
-                            </div>
-
-                            <div class="col-lg-3 col-md-3 col-6">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Total Intake Wt (kg)
-                                </label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" step="0.001" name="total_weight" id="totalWeightInput"
-                                        class="form-control bg-white text-end fw-bold text-dark"
-                                        value="{{ old('total_weight', $purchase->total_weight) }}" readonly>
-                                    <span class="input-group-text bg-white text-muted">kg</span>
-                                </div>
-                                <input type="hidden" id="minAllowedWeight" value="{{ $soldWeight }}">
-                            </div>
-
-                            <div class="col-lg-2 col-md-3 col-6">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Unit Rate (৳) <span class="text-danger">*</span>
+                                    Unit Rate (৳/kg) <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white text-muted">৳</span>
-                                    <input oninput="calculateFinancials()" type="number" step="0.01" min="0" name="unit_price" id="unitPriceInput"
+                                    <input oninput="calculateFinancials()" type="number" step="any" min="0" name="unit_price" id="unitPriceInput"
                                         class="form-control text-end fw-semibold"
                                         value="{{ old('unit_price', $purchase->unit_price) }}" required>
                                 </div>
                             </div>
 
-                            <div class="col-lg-3 col-md-12 col-12">
+                            <div class="col-md-6 col-12">
                                 <label class="form-label small text-secondary fw-semibold mb-1">
                                     Sub Total (৳)
                                 </label>
@@ -304,15 +251,15 @@
                             </div>
                         </div>
 
-                        <!-- Optional Coil Notes -->
+                        <!-- Optional Notes -->
                         <div class="row g-2 mt-2">
                             <div class="col-12">
                                 <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Coil Notes (Optional)
+                                    Item Notes (Optional)
                                 </label>
                                 <input type="text" name="coil_notes" id="coilNotesInput"
                                     class="form-control form-control-sm"
-                                    value="{{ old('coil_notes', $coil->notes ?? '') }}" placeholder="Brand, colour, grade...">
+                                    value="{{ old('coil_notes', $coil->notes ?? '') }}">
                             </div>
                         </div>
 
@@ -327,23 +274,12 @@
                     <div class="card-body p-3">
                         <div class="row g-3 align-items-end">
                             <div class="col-lg-4 col-md-6 col-12">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <label class="form-label small text-secondary fw-semibold mb-0">Delivery / Transport (৳)</label>
-                                    <div class="d-inline-flex gap-2 d-none">
-                                        <div class="form-check form-check-inline m-0">
-                                            <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_me" value="me" {{ old('transport_payer', $purchase->transport_payer ?? 'me') === 'me' ? 'checked' : '' }} onchange="calculateFinancials()">
-                                            <label class="form-check-label small fw-semibold text-muted" for="transport_payer_me" style="font-size: 0.75rem;">Paid by Me</label>
-                                        </div>
-                                        <div class="form-check form-check-inline m-0">
-                                            <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_vendor" value="vendor" {{ old('transport_payer', $purchase->transport_payer) === 'vendor' ? 'checked' : '' }} onchange="calculateFinancials()">
-                                            <label class="form-check-label small fw-semibold text-muted" for="transport_payer_vendor" style="font-size: 0.75rem;">Paid by Vendor</label>
-                                        </div>
-                                    </div>
-                                </div>
+                                <label class="form-label small text-secondary fw-semibold mb-1">Delivery / Transport (৳)</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white">৳</span>
                                     <input oninput="calculateFinancials()" type="number" id="delivery_charge" name="delivery_charge" class="form-control text-end" value="{{ old('delivery_charge', $purchase->delivery_charge ?? 0) }}" min="0" step="0.01">
                                 </div>
+                                <input type="hidden" name="transport_payer" id="transport_payer" value="me">
                             </div>
 
                             <div class="col-lg-4 col-md-6 col-12">
@@ -389,13 +325,7 @@
 
                     <!-- Live KPI Cards -->
                     <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <div class="p-3 bg-white rounded-3 shadow-sm border text-center">
-                                <small class="text-muted text-uppercase fw-semibold fs-8 d-block mb-1">Coil Quantity</small>
-                                <h5 class="fw-bold text-dark mb-0" id="displayTotalCoils">{{ (int)$purchase->quantity ?: 1 }}</h5>
-                            </div>
-                        </div>
-                        <div class="col-6">
+                        <div class="col-12">
                             <div class="p-3 bg-white rounded-3 shadow-sm border text-center">
                                 <small class="text-muted text-uppercase fw-semibold fs-8 d-block mb-1">Intake Weight</small>
                                 <h5 class="fw-bold text-primary mb-0"><span id="displayTotalWeight">{{ number_format($purchase->total_weight, 2) }}</span> <small class="fs-8 text-muted">kg</small></h5>
@@ -485,7 +415,7 @@
                                 <div id="trxRefContainer" style="{{ $currMethod === 'cash' ? 'display: none;' : '' }}">
                                     <label class="form-label fs-8 text-secondary fw-semibold mb-1">TrxID / Cheque Ref</label>
                                     <input type="text" name="transaction_ref" id="transaction_ref" class="form-control form-control-sm bg-white" 
-                                        value="{{ old('transaction_ref', $purchase->transaction_ref) }}" placeholder="Transaction Reference #">
+                                        value="{{ old('transaction_ref', $purchase->transaction_ref) }}">
                                 </div>
                             </div>
 
@@ -498,10 +428,10 @@
 
                             <!-- Submit & Cancel Buttons -->
                             <div class="d-grid gap-2">
-                                <button type="submit" id="submitBtn" class="btn btn-primary btn-lg rounded-3 fw-bold d-inline-flex align-items-center justify-content-center gap-2 shadow-sm">
+                                <button type="submit" id="submitBtn" class="btn btn-primary py-2 rounded-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-2 shadow-sm">
                                     <span>Update Shop Purchase</span>
                                 </button>
-                                <a href="{{ route('shops.purchases.index') }}" class="btn btn-outline-secondary rounded-3">
+                                <a href="{{ route('shops.purchases.index') }}" class="btn btn-outline-secondary py-1.5 rounded-2">
                                     Cancel
                                 </a>
                             </div>
@@ -554,18 +484,16 @@
     }
 
     function calculateFinancials() {
-        const qty = Math.max(1, parseInt($('#quantityInput').val(), 10) || 1);
-        const unitWeight = parseFloat($('#unitWeightInput').val()) || 0;
-        const totalWeight = Math.round((qty * unitWeight) * 1000) / 1000;
-        $('#totalWeightInput').val(totalWeight.toFixed(3));
-        $('#displayTotalCoils').text(qty);
+        const totalWeight = Math.max(0, parseFloat($('#totalWeightInput').val()) || 0);
+        $('#unitWeightInput').val(totalWeight.toFixed(3));
+        $('#quantityInput').val(1);
         $('#displayTotalWeight').text(totalWeight.toFixed(2));
 
         const rate = parseFloat($('#unitPriceInput').val()) || 0;
         const subPrice = Math.round((totalWeight * rate) * 100) / 100;
         $('#subPriceInput').val(subPrice.toFixed(2));
 
-        const transportPayer = $('input[name="transport_payer"]:checked').val() || 'me';
+        const transportPayer = $('#transport_payer').val() || 'me';
         const delivery = parseFloat($('#delivery_charge').val()) || 0;
         const vendorDelivery = (transportPayer === 'vendor') ? delivery : 0;
         const labour = parseFloat($('#labour_cost').val()) || 0;

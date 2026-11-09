@@ -429,5 +429,76 @@ class VendorWorkflowTest extends TestCase
             'payment_method' => 'cash',
         ]);
     }
+
+    public function test_vendor_due_payment_with_discount_reduces_purchase_due_and_balance(): void
+    {
+        $warehouse = Warehouse::create([
+            'name' => 'Discount Test Yard',
+            'status' => 'active',
+        ]);
+
+        $vendor = Vendor::create([
+            'name' => 'Discount Test Vendor',
+            'phone' => '01555444333',
+            'opening_balance' => 0.00,
+            'status' => 'active',
+        ]);
+
+        $lot = Lot::create([
+            'lot_number' => 'LOT-DISC-001',
+            'vendor_id' => $vendor->id,
+            'warehouse_id' => $warehouse->id,
+            'received_date' => now(),
+            'status' => 'active',
+            'total_amount' => 10000.00,
+        ]);
+
+        $purchase = Purchase::create([
+            'purchase_date' => now(),
+            'vendor_id' => $vendor->id,
+            'lot_id' => $lot->id,
+            'warehouse_id' => $warehouse->id,
+            'quantity' => 1,
+            'unit_weight' => 1.0,
+            'total_weight' => 1.0,
+            'unit_price' => 10000.00,
+            'total_price' => 10000.00,
+            'payment' => 0.00,
+            'due' => 10000.00,
+            'status' => 'unpaid',
+            'created_at' => now(),
+        ]);
+
+        // Pay specific PO with 9,000 cash and 1,000 discount
+        $response = $this->actingAs($this->admin)->post(route('vendor-payments.store'), [
+            'vendor_id' => $vendor->id,
+            'purchase_id' => $purchase->id,
+            'amount' => 9000.00,
+            'discount' => 1000.00,
+            'payment_method' => 'cash',
+            'remarks' => 'Settled with discount rebate',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $purchase->refresh();
+        $this->assertEquals(1000.00, (float)$purchase->discount);
+        $this->assertEquals(9000.00, (float)$purchase->total_price);
+        $this->assertEquals(9000.00, (float)$purchase->payment);
+        $this->assertEquals(0.00, (float)$purchase->due);
+
+        // Verify payment record is for 9,000 cash
+        $this->assertDatabaseHas('payments', [
+            'vendor_id' => $vendor->id,
+            'purchase_id' => $purchase->id,
+            'amount' => 9000.00,
+            'payment_for' => 3,
+        ]);
+
+        // Vendor net balance is 0
+        $vendor->refresh();
+        $this->assertEquals(0.00, (float)$vendor->net_balance);
+    }
 }
 

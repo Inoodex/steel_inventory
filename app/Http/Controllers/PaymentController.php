@@ -8,6 +8,7 @@ use App\Models\Sale;
 use App\Models\Customer;
 use App\Models\Vendor;
 use App\Models\Purchase;
+use App\Models\Lot;
 
 class PaymentController extends Controller
 {
@@ -15,7 +16,8 @@ class PaymentController extends Controller
     {
         $request->validate([
             'id'             => 'required|exists:sales,id',
-            'amount'         => 'required|numeric|min:0.01',
+            'amount'         => 'nullable|numeric|min:0',
+            'discount'       => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|string|in:cash,bank,cheque,mobile_banking',
             'bank_detail_id' => 'nullable|exists:bank_details,id',
             'transaction_ref'=> 'nullable|string|max:255',
@@ -27,29 +29,47 @@ class PaymentController extends Controller
             return redirect()->back()->with(['error' => 'Sale not found.']);
         }
 
+        $amount = max(0, (float) ($request->amount ?? 0));
+        $discount = max(0, (float) ($request->discount ?? 0));
+        $totalSettling = $amount + $discount;
+
+        if ($totalSettling <= 0.0001) {
+            return redirect()->back()->withInput()->with(['error' => 'Please enter a valid payment amount or discount.']);
+        }
+
         $dueOnBill = (float) $bill->due_payment;
-        if ((float) $request->amount > ($dueOnBill + 0.01)) {
-            return redirect()->back()->withInput()->with(['error' => 'Payment amount (৳' . number_format($request->amount, 2) . ') cannot exceed the invoice due amount (৳' . number_format($dueOnBill, 2) . ').']);
+        if ($totalSettling > ($dueOnBill + 0.01)) {
+            return redirect()->back()->withInput()->with(['error' => 'Total settlement (৳' . number_format($totalSettling, 2) . ') cannot exceed invoice due amount (৳' . number_format($dueOnBill, 2) . ').']);
         }
 
         \Illuminate\Support\Facades\DB::beginTransaction();
         try {
-            $payment = new Payment;
-            $payment->payment_for = $request->payment_for ?? 2;
-            $payment->customer_id = $bill->customer_id;
-            $payment->sale_id = $bill->id;
             $paymentMethod = $request->payment_method ?? ($request->payment_method_id ?? 'cash');
             $isBank = ($paymentMethod !== 'cash');
-            $payment->payment_method = $paymentMethod;
-            $payment->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
-            $payment->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
-            $payment->amount = $request->amount;
-            $payment->remarks = $request->remarks;
-            $payment->created_by = \Illuminate\Support\Facades\Auth::id();
-            $payment->status = 1;
-            $payment->save();
 
-            $bill->advanced_payment = ($bill->advanced_payment ?? 0) + $request->amount;
+            if ($discount > 0) {
+                $bill->discount = (float)($bill->discount ?? 0) + $discount;
+                $bill->payble = max(0, (float)($bill->payble ?? $bill->total) - $discount);
+            }
+
+            $payment = null;
+            if ($amount > 0) {
+                $payment = new Payment;
+                $payment->payment_for = $request->payment_for ?? 2;
+                $payment->customer_id = $bill->customer_id;
+                $payment->sale_id = $bill->id;
+                $payment->payment_method = $paymentMethod;
+                $payment->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
+                $payment->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
+                $payment->amount = $amount;
+                $payment->remarks = ($request->remarks ?: 'Invoice Due Payment') . ($discount > 0 ? " (Discount: ৳" . number_format($discount, 2) . ")" : "");
+                $payment->created_by = \Illuminate\Support\Facades\Auth::id();
+                $payment->status = 1;
+                $payment->save();
+
+                $bill->advanced_payment = ($bill->advanced_payment ?? 0) + $amount;
+            }
+
             $bill->due_payment = max(0, ($bill->payble ?? $bill->total) - $bill->advanced_payment);
             $bill->status = $bill->due_payment <= 0 ? 'paid' : 'partial';
             $bill->update();
@@ -58,11 +78,12 @@ class PaymentController extends Controller
             try {
                 $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
                 $arAcc = \App\Models\ChartOfAccount::where('account_code', '1130')->first();
-                
+                $discountAcc = \App\Models\ChartOfAccount::where('account_code', '5120')->first();
+
                 $collectionAcc = $cashAcc;
-                if ($payment->payment_method !== 'cash') {
-                    if (!empty($payment->bank_detail_id)) {
-                        $bank = \App\Models\BankDetail::find($payment->bank_detail_id);
+                if ($paymentMethod !== 'cash') {
+                    if (!empty($request->bank_detail_id)) {
+                        $bank = \App\Models\BankDetail::find($request->bank_detail_id);
                         $collectionAcc = $bank?->resolveChartOfAccount() 
                             ?? \App\Models\ChartOfAccount::where('account_code', '1120')->first() 
                             ?? $cashAcc;
@@ -71,34 +92,45 @@ class PaymentController extends Controller
                     }
                 }
 
-                if ($collectionAcc && $arAcc && (float) $payment->amount > 0 && function_exists('postJournalEntry')) {
-                    $methodLabel = match($payment->payment_method) {
+                if ($arAcc && $totalSettling > 0 && function_exists('postJournalEntry')) {
+                    $methodLabel = match($paymentMethod) {
                         'bank' => 'Bank Transfer',
                         'cheque' => 'Cheque',
                         'mobile_banking' => 'Mobile Banking',
                         default => 'Cash'
                     };
-                    $refText = $payment->transaction_ref ? " [Ref/Cheque: {$payment->transaction_ref}]" : "";
+                    $refText = $request->transaction_ref ? " [Ref/Cheque: {$request->transaction_ref}]" : "";
+
+                    $journalItems = [];
+                    if ($amount > 0 && $collectionAcc) {
+                        $journalItems[] = [
+                            'account_id' => $collectionAcc->id,
+                            'debit' => $amount,
+                            'credit' => 0.00,
+                            'description' => "Due collected for {$bill->order_no} via {$methodLabel}{$refText}"
+                        ];
+                    }
+                    if ($discount > 0 && $discountAcc) {
+                        $journalItems[] = [
+                            'account_id' => $discountAcc->id,
+                            'debit' => $discount,
+                            'credit' => 0.00,
+                            'description' => "Discount allowed for {$bill->order_no}"
+                        ];
+                    }
+                    $journalItems[] = [
+                        'account_id' => $arAcc->id,
+                        'debit' => 0.00,
+                        'credit' => $amount + ($discountAcc ? $discount : 0),
+                        'description' => "Accounts Receivable credit for {$bill->order_no}"
+                    ];
 
                     postJournalEntry([
                         'entry_date' => date('Y-m-d'),
                         'reference_type' => 'sale',
                         'reference_id' => $bill->id,
-                        'description' => "Due collection for {$bill->order_no} via {$methodLabel}{$refText}",
-                        'items' => [
-                            [
-                                'account_id' => $collectionAcc->id,
-                                'debit' => (float) $payment->amount,
-                                'credit' => 0.00,
-                                'description' => "Due collected for {$bill->order_no} via {$methodLabel}{$refText}"
-                            ],
-                            [
-                                'account_id' => $arAcc->id,
-                                'debit' => 0.00,
-                                'credit' => (float) $payment->amount,
-                                'description' => "Accounts Receivable credit for {$bill->order_no}"
-                            ]
-                        ]
+                        'description' => "Due collection for {$bill->order_no} via {$methodLabel}{$refText}" . ($discount > 0 ? " (Discount: ৳" . number_format($discount, 2) . ")" : ""),
+                        'items' => $journalItems
                     ]);
                 }
             } catch (\Throwable $e) {
@@ -106,7 +138,7 @@ class PaymentController extends Controller
             }
 
             \Illuminate\Support\Facades\DB::commit();
-            return redirect()->back()->with(['success' => 'Payment added successfully.']);
+            return redirect()->back()->with(['success' => 'Payment recorded successfully.']);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\DB::rollBack();
             \Illuminate\Support\Facades\Log::error("Failed to add payment for sale #{$bill->id}: " . $e->getMessage());
@@ -121,7 +153,8 @@ class PaymentController extends Controller
     {
         $request->validate([
             'customer_id'    => 'required|exists:customers,id',
-            'amount'         => 'required|numeric|min:0.01',
+            'amount'         => 'nullable|numeric|min:0',
+            'discount'       => 'nullable|numeric|min:0',
             'payment_type'   => 'nullable|string|in:advance_deposit,general_payment,opening_due,auto_due_settlement',
             'payment_method' => 'nullable|string|in:cash,bank,cheque,mobile_banking',
             'bank_detail_id' => 'nullable|exists:bank_details,id',
@@ -131,7 +164,14 @@ class PaymentController extends Controller
         ]);
 
         $customer = Customer::findOrFail($request->customer_id);
-        $amount = (float) $request->amount;
+        $amount = max(0, (float) ($request->amount ?? 0));
+        $discount = max(0, (float) ($request->discount ?? 0));
+        $totalSettling = $amount + $discount;
+
+        if ($totalSettling <= 0.0001) {
+            return redirect()->back()->withInput()->with('error', 'Please enter a valid collection amount or discount.');
+        }
+
         $paymentType = $request->payment_type ?? 'auto_due_settlement';
 
         \Illuminate\Support\Facades\DB::beginTransaction();
@@ -147,35 +187,46 @@ class PaymentController extends Controller
             };
             $remarks = $request->remarks ?: $defaultRemarks;
 
-            $remaining = $amount;
+            $remainingCash = $amount;
+            $remainingDiscount = $discount;
+            $remainingTotal = $totalSettling;
             $createdPayments = [];
 
             // 1. Settle Opening Balance first if customer has opening due and not an advance_deposit
             if ($paymentType !== 'advance_deposit' && (float)($customer->opening_balance ?? 0) > 0) {
-                $openingSettle = min($remaining, (float)$customer->opening_balance);
-                $customer->opening_balance = max(0, (float)$customer->opening_balance - $openingSettle);
-                $customer->save();
-                $remaining -= $openingSettle;
+                $openingDue = (float) $customer->opening_balance;
+                $openingSettle = min($remainingTotal, $openingDue);
 
-                $p = new Payment;
-                $p->payment_for = 2;
-                $p->customer_id = $customer->id;
-                $p->sale_id = null;
-                $p->payment_method = $paymentMethod;
-                $p->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
-                $p->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
-                $p->payment_date = $paymentDate;
-                $p->amount = $openingSettle;
-                $p->remarks = 'Customer Opening Due Settlement';
-                $p->created_by = \Illuminate\Support\Facades\Auth::id();
-                $p->status = 1;
-                $p->save();
-                $createdPayments[] = $p;
+                $openingCash = min($remainingCash, $openingSettle);
+                $openingDisc = min($remainingDiscount, $openingSettle - $openingCash);
+
+                $customer->opening_balance = max(0, $openingDue - $openingSettle);
+                $customer->save();
+
+                $remainingTotal -= $openingSettle;
+                $remainingCash -= $openingCash;
+                $remainingDiscount -= $openingDisc;
+
+                if ($openingCash > 0) {
+                    $p = new Payment;
+                    $p->payment_for = 2;
+                    $p->customer_id = $customer->id;
+                    $p->sale_id = null;
+                    $p->payment_method = $paymentMethod;
+                    $p->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
+                    $p->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
+                    $p->payment_date = $paymentDate;
+                    $p->amount = $openingCash;
+                    $p->remarks = 'Customer Opening Due Settlement' . ($openingDisc > 0 ? " (Discount: ৳" . number_format($openingDisc, 2) . ")" : "");
+                    $p->created_by = \Illuminate\Support\Facades\Auth::id();
+                    $p->status = 1;
+                    $p->save();
+                    $createdPayments[] = $p;
+                }
             }
 
-            // 2. If remaining amount > 0 and not strictly an advance prepayment deposit:
-            // Settle customer's unpaid sales invoices in FIFO order (oldest unpaid invoice first)
-            if ($paymentType !== 'advance_deposit' && $remaining > 0.0001) {
+            // 2. Settle customer's unpaid sales invoices in FIFO order
+            if ($paymentType !== 'advance_deposit' && $remainingTotal > 0.0001) {
                 $unpaidSales = Sale::where('customer_id', $customer->id)
                     ->where('due_payment', '>', 0)
                     ->whereNull('deleted_at')
@@ -184,38 +235,53 @@ class PaymentController extends Controller
                     ->get();
 
                 foreach ($unpaidSales as $sale) {
-                    if ($remaining <= 0.0001) break;
+                    if ($remainingTotal <= 0.0001) break;
 
                     $due = (float) $sale->due_payment;
-                    $alloc = min($remaining, $due);
+                    $alloc = min($remainingTotal, $due);
 
-                    $sale->advanced_payment = (float)$sale->advanced_payment + $alloc;
+                    $cashAlloc = min($remainingCash, $alloc);
+                    $discAlloc = min($remainingDiscount, $alloc - $cashAlloc);
+
+                    if ($discAlloc > 0) {
+                        $sale->discount = (float)($sale->discount ?? 0) + $discAlloc;
+                        $sale->payble = max(0, (float)($sale->payble ?? $sale->total) - $discAlloc);
+                    }
+
+                    if ($cashAlloc > 0) {
+                        $sale->advanced_payment = (float)$sale->advanced_payment + $cashAlloc;
+                    }
+
                     $sale->due_payment = max(0, (float)($sale->payble ?? $sale->total) - (float)$sale->advanced_payment);
                     $sale->status = $sale->due_payment <= 0.0001 ? 'paid' : 'partial';
                     $sale->save();
 
-                    $p = new Payment;
-                    $p->payment_for = 2;
-                    $p->customer_id = $customer->id;
-                    $p->sale_id = $sale->id;
-                    $p->payment_method = $paymentMethod;
-                    $p->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
-                    $p->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
-                    $p->payment_date = $paymentDate;
-                    $p->amount = $alloc;
-                    $p->remarks = 'Due collection for ' . $sale->order_no;
-                    $p->created_by = \Illuminate\Support\Facades\Auth::id();
-                    $p->status = 1;
-                    $p->save();
-                    $createdPayments[] = $p;
+                    if ($cashAlloc > 0) {
+                        $p = new Payment;
+                        $p->payment_for = 2;
+                        $p->customer_id = $customer->id;
+                        $p->sale_id = $sale->id;
+                        $p->payment_method = $paymentMethod;
+                        $p->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
+                        $p->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
+                        $p->payment_date = $paymentDate;
+                        $p->amount = $cashAlloc;
+                        $p->remarks = 'Due collection for ' . $sale->order_no . ($discAlloc > 0 ? " (Discount: ৳" . number_format($discAlloc, 2) . ")" : "");
+                        $p->created_by = \Illuminate\Support\Facades\Auth::id();
+                        $p->status = 1;
+                        $p->save();
+                        $createdPayments[] = $p;
+                    }
 
-                    $remaining -= $alloc;
+                    $remainingTotal -= $alloc;
+                    $remainingCash -= $cashAlloc;
+                    $remainingDiscount -= $discAlloc;
                 }
             }
 
             // 3. Excess collection or direct advance prepayment deposit
-            if ($remaining > 0.0001 || empty($createdPayments)) {
-                $advAmt = ($paymentType === 'advance_deposit') ? $amount : $remaining;
+            if ($remainingCash > 0.0001 || (empty($createdPayments) && $amount > 0)) {
+                $advAmt = ($paymentType === 'advance_deposit') ? $amount : $remainingCash;
                 $p = new Payment;
                 $p->payment_for = 2;
                 $p->customer_id = $customer->id;
@@ -235,7 +301,7 @@ class PaymentController extends Controller
             $payment = $createdPayments[0] ?? null;
 
             // 4. Sync bank balance if bank was used
-            if ($isBank && !empty($payment->bank_detail_id)) {
+            if ($isBank && $payment && !empty($payment->bank_detail_id)) {
                 \App\Models\BankDetail::find($payment->bank_detail_id)?->syncCurrentBalance();
             }
 
@@ -243,47 +309,59 @@ class PaymentController extends Controller
             try {
                 $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
                 $arAcc = \App\Models\ChartOfAccount::where('account_code', '1130')->first();
+                $discountAcc = \App\Models\ChartOfAccount::where('account_code', '5120')->first();
 
                 $collectionAcc = $cashAcc;
-                if ($payment->payment_method !== 'cash' && !empty($payment->bank_detail_id)) {
+                if ($payment && $payment->payment_method !== 'cash' && !empty($payment->bank_detail_id)) {
                     $bank = \App\Models\BankDetail::find($payment->bank_detail_id);
                     $collectionAcc = $bank?->resolveChartOfAccount()
                         ?? \App\Models\ChartOfAccount::where('account_code', '1120')->first()
                         ?? $cashAcc;
                 }
 
-                if ($collectionAcc && $arAcc && $amount > 0 && function_exists('postJournalEntry')) {
-                    $methodLabel = match($payment->payment_method) {
+                if ($arAcc && $totalSettling > 0 && function_exists('postJournalEntry')) {
+                    $methodLabel = $payment ? match($payment->payment_method) {
                         'bank' => 'Bank Transfer',
                         'cheque' => 'Cheque',
                         'mobile_banking' => 'Mobile Banking',
                         default => 'Cash'
-                    };
-                    $refText = $payment->transaction_ref ? " [Ref: {$payment->transaction_ref}]" : "";
+                    } : 'Settlement';
+                    $refText = ($payment && $payment->transaction_ref) ? " [Ref: {$payment->transaction_ref}]" : "";
                     
                     $entryDesc = $paymentType === 'advance_deposit'
                         ? "Advance Prepayment deposit from {$customer->name} via {$methodLabel}{$refText}"
-                        : "Due collection from {$customer->name} via {$methodLabel}{$refText}";
+                        : "Due collection from {$customer->name} via {$methodLabel}{$refText}" . ($discount > 0 ? " (Discount: ৳" . number_format($discount, 2) . ")" : "");
+
+                    $journalItems = [];
+                    if ($amount > 0 && $collectionAcc) {
+                        $journalItems[] = [
+                            'account_id' => $collectionAcc->id,
+                            'debit' => $amount,
+                            'credit' => 0.00,
+                            'description' => "Deposit received from {$customer->name} via {$methodLabel}{$refText}"
+                        ];
+                    }
+                    if ($discount > 0 && $discountAcc) {
+                        $journalItems[] = [
+                            'account_id' => $discountAcc->id,
+                            'debit' => $discount,
+                            'credit' => 0.00,
+                            'description' => "Sales discount/allowance granted to {$customer->name}"
+                        ];
+                    }
+                    $journalItems[] = [
+                        'account_id' => $arAcc->id,
+                        'debit' => 0.00,
+                        'credit' => $amount + ($discountAcc ? $discount : 0),
+                        'description' => ($paymentType === 'advance_deposit' ? "Advance credit balance for " : "AR credit for ") . $customer->name
+                    ];
 
                     postJournalEntry([
-                        'entry_date' => $payment->payment_date ?: date('Y-m-d'),
+                        'entry_date' => ($payment ? $payment->payment_date : null) ?: date('Y-m-d'),
                         'reference_type' => 'customer_payment',
                         'reference_id' => $customer->id,
                         'description' => $entryDesc,
-                        'items' => [
-                            [
-                                'account_id' => $collectionAcc->id,
-                                'debit' => $amount,
-                                'credit' => 0.00,
-                                'description' => "Deposit received from {$customer->name} via {$methodLabel}{$refText}"
-                            ],
-                            [
-                                'account_id' => $arAcc->id,
-                                'debit' => 0.00,
-                                'credit' => $amount,
-                                'description' => ($paymentType === 'advance_deposit' ? "Advance credit balance for " : "AR credit for ") . $customer->name
-                            ]
-                        ]
+                        'items' => $journalItems
                     ]);
                 }
             } catch (\Throwable $e) {
@@ -292,9 +370,10 @@ class PaymentController extends Controller
 
             \Illuminate\Support\Facades\DB::commit();
             
+            $discMsg = $discount > 0 ? " (including ৳" . number_format($discount, 2) . " discount)" : "";
             $successMsg = $paymentType === 'advance_deposit'
                 ? "Advance deposit of ৳" . number_format($amount, 2) . " received successfully for {$customer->name}."
-                : "Payment of ৳" . number_format($amount, 2) . " recorded successfully for {$customer->name}.";
+                : "Due settlement of ৳" . number_format($totalSettling, 2) . "{$discMsg} recorded successfully for {$customer->name}.";
 
             return redirect()->back()->with('success', $successMsg);
         } catch (\Throwable $e) {
@@ -500,16 +579,27 @@ class PaymentController extends Controller
         $request->validate([
             'vendor_id'      => 'required|exists:vendors,id',
             'purchase_id'    => 'nullable|exists:purchases,id',
-            'amount'         => 'required|numeric|min:0.01',
+            'amount'         => 'nullable|numeric|min:0',
+            'discount'       => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|string|in:cash,bank,mobile_banking',
             'bank_detail_id' => 'nullable|exists:bank_details,id',
             'transaction_ref'=> 'nullable|string|max:255',
+            'payment_date'   => 'nullable|date',
             'remarks'        => 'nullable|string|max:500',
         ]);
 
         $vendor = \App\Models\Vendor::findOrFail($request->vendor_id);
-        $totalAmount = (float) $request->amount;
-        $remainingToAllocate = $totalAmount;
+        $totalAmount = max(0, (float) ($request->amount ?? 0));
+        $discount = max(0, (float) ($request->discount ?? 0));
+        $totalSettling = $totalAmount + $discount;
+
+        if ($totalSettling <= 0.0001) {
+            return redirect()->back()->withInput()->with('error', 'Please enter a valid disbursement amount or discount.');
+        }
+
+        $remainingCash = $totalAmount;
+        $remainingDiscount = $discount;
+        $remainingTotal = $totalSettling;
 
         \Illuminate\Support\Facades\DB::beginTransaction();
 
@@ -532,79 +622,131 @@ class PaymentController extends Controller
                             ->get();
 
                         foreach ($consignmentPurchases as $p) {
-                            if ($remainingToAllocate <= 0) break;
+                            if ($remainingTotal <= 0.0001) break;
                             $dueOnThis = (float) $p->due;
-                            $allocation = min($remainingToAllocate, $dueOnThis);
-                            $p->payment = (float)$p->payment + $allocation;
+                            $allocation = min($remainingTotal, $dueOnThis);
+
+                            $cashAlloc = min($remainingCash, $allocation);
+                            $discAlloc = min($remainingDiscount, $allocation - $cashAlloc);
+
+                            if ($discAlloc > 0) {
+                                $p->discount = (float)($p->discount ?? 0) + $discAlloc;
+                                $p->total_price = max(0, (float)$p->total_price - $discAlloc);
+                            }
+                            if ($cashAlloc > 0) {
+                                $p->payment = (float)$p->payment + $cashAlloc;
+                            }
                             $p->due = max(0, (float)$p->total_price - (float)$p->payment);
                             $p->save();
 
+                            if ($p->lot_id) {
+                                $lot = Lot::find($p->lot_id);
+                                if ($lot) {
+                                    $lot->total_amount = $lot->purchases()->sum('total_price');
+                                    $lot->save();
+                                }
+                            }
+
+                            if ($cashAlloc > 0) {
+                                $payRec = new Payment;
+                                $payRec->payment_for = 3;
+                                $payRec->vendor_id = $vendor->id;
+                                $payRec->purchase_id = $p->id;
+                                $payRec->payment_method = $paymentMethod;
+                                $payRec->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
+                                $payRec->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
+                                $payRec->payment_date = $paymentDate;
+                                $payRec->amount = $cashAlloc;
+                                $payRec->remarks = ($request->remarks ?: ('Due payment for PO #' . $p->id)) . ($discAlloc > 0 ? " (Discount: ৳" . number_format($discAlloc, 2) . ")" : "");
+                                $payRec->created_by = \Illuminate\Support\Facades\Auth::id();
+                                $payRec->status = 1;
+                                $payRec->save();
+                                $createdVendorPayments[] = $payRec;
+                            }
+
+                            $remainingTotal -= $allocation;
+                            $remainingCash -= $cashAlloc;
+                            $remainingDiscount -= $discAlloc;
+                        }
+                    } else {
+                        $dueOnPurchase = (float) $purchase->due;
+                        $allocation = min($remainingTotal, $dueOnPurchase);
+
+                        $cashAlloc = min($remainingCash, $allocation);
+                        $discAlloc = min($remainingDiscount, $allocation - $cashAlloc);
+
+                        if ($discAlloc > 0) {
+                            $purchase->discount = (float)($purchase->discount ?? 0) + $discAlloc;
+                            $purchase->total_price = max(0, (float)$purchase->total_price - $discAlloc);
+                        }
+                        if ($cashAlloc > 0) {
+                            $purchase->payment = (float)$purchase->payment + $cashAlloc;
+                        }
+                        $purchase->due = max(0, (float)$purchase->total_price - (float)$purchase->payment);
+                        $purchase->save();
+
+                        if ($purchase->lot_id) {
+                            $lot = Lot::find($purchase->lot_id);
+                            if ($lot) {
+                                $lot->total_amount = $lot->purchases()->sum('total_price');
+                                $lot->save();
+                            }
+                        }
+
+                        if ($cashAlloc > 0) {
                             $payRec = new Payment;
                             $payRec->payment_for = 3;
                             $payRec->vendor_id = $vendor->id;
-                            $payRec->purchase_id = $p->id;
+                            $payRec->purchase_id = $purchase->id;
                             $payRec->payment_method = $paymentMethod;
                             $payRec->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
                             $payRec->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
                             $payRec->payment_date = $paymentDate;
-                            $payRec->amount = $allocation;
-                            $payRec->remarks = $request->remarks ?: ('Due payment for PO #' . $p->id);
+                            $payRec->amount = $cashAlloc;
+                            $payRec->remarks = ($request->remarks ?: ('Due payment for PO #' . $purchase->id)) . ($discAlloc > 0 ? " (Discount: ৳" . number_format($discAlloc, 2) . ")" : "");
                             $payRec->created_by = \Illuminate\Support\Facades\Auth::id();
                             $payRec->status = 1;
                             $payRec->save();
                             $createdVendorPayments[] = $payRec;
-
-                            $remainingToAllocate -= $allocation;
                         }
-                    } else {
-                        $dueOnPurchase = (float) $purchase->due;
-                        $allocation = min($remainingToAllocate, $dueOnPurchase);
-                        $purchase->payment = (float)$purchase->payment + $allocation;
-                        $purchase->due = max(0, (float)$purchase->total_price - (float)$purchase->payment);
-                        $purchase->save();
 
-                        $payRec = new Payment;
-                        $payRec->payment_for = 3;
-                        $payRec->vendor_id = $vendor->id;
-                        $payRec->purchase_id = $purchase->id;
-                        $payRec->payment_method = $paymentMethod;
-                        $payRec->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
-                        $payRec->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
-                        $payRec->payment_date = $paymentDate;
-                        $payRec->amount = $allocation;
-                        $payRec->remarks = $request->remarks ?: ('Due payment for PO #' . $purchase->id);
-                        $payRec->created_by = \Illuminate\Support\Facades\Auth::id();
-                        $payRec->status = 1;
-                        $payRec->save();
-                        $createdVendorPayments[] = $payRec;
-
-                        $remainingToAllocate -= $allocation;
+                        $remainingTotal -= $allocation;
+                        $remainingCash -= $cashAlloc;
+                        $remainingDiscount -= $discAlloc;
                     }
                 }
             } else {
                 // Settle against vendor opening balance if present
                 if ((float)($vendor->opening_balance ?? 0) > 0) {
                     $openingDue = (float) $vendor->opening_balance;
-                    $openingAlloc = min($remainingToAllocate, $openingDue);
+                    $openingAlloc = min($remainingTotal, $openingDue);
+
+                    $cashAlloc = min($remainingCash, $openingAlloc);
+                    $discAlloc = min($remainingDiscount, $openingAlloc - $cashAlloc);
+
                     $vendor->opening_balance = max(0, $openingDue - $openingAlloc);
                     $vendor->save();
 
-                    $payRec = new Payment;
-                    $payRec->payment_for = 3;
-                    $payRec->vendor_id = $vendor->id;
-                    $payRec->purchase_id = null;
-                    $payRec->payment_method = $paymentMethod;
-                    $payRec->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
-                    $payRec->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
-                    $payRec->payment_date = $paymentDate;
-                    $payRec->amount = $openingAlloc;
-                    $payRec->remarks = $request->remarks ?: 'Vendor Opening Balance Settlement';
-                    $payRec->created_by = \Illuminate\Support\Facades\Auth::id();
-                    $payRec->status = 1;
-                    $payRec->save();
-                    $createdVendorPayments[] = $payRec;
+                    if ($cashAlloc > 0) {
+                        $payRec = new Payment;
+                        $payRec->payment_for = 3;
+                        $payRec->vendor_id = $vendor->id;
+                        $payRec->purchase_id = null;
+                        $payRec->payment_method = $paymentMethod;
+                        $payRec->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
+                        $payRec->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
+                        $payRec->payment_date = $paymentDate;
+                        $payRec->amount = $cashAlloc;
+                        $payRec->remarks = ($request->remarks ?: 'Vendor Opening Balance Settlement') . ($discAlloc > 0 ? " (Discount: ৳" . number_format($discAlloc, 2) . ")" : "");
+                        $payRec->created_by = \Illuminate\Support\Facades\Auth::id();
+                        $payRec->status = 1;
+                        $payRec->save();
+                        $createdVendorPayments[] = $payRec;
+                    }
 
-                    $remainingToAllocate -= $openingAlloc;
+                    $remainingTotal -= $openingAlloc;
+                    $remainingCash -= $cashAlloc;
+                    $remainingDiscount -= $discAlloc;
                 }
 
                 // Settle remaining against oldest unpaid purchases of this vendor
@@ -614,34 +756,56 @@ class PaymentController extends Controller
                     ->get();
 
                 foreach ($unpaidPurchases as $p) {
-                    if ($remainingToAllocate <= 0) break;
+                    if ($remainingTotal <= 0.0001) break;
                     $dueOnThis = (float) $p->due;
-                    $allocation = min($remainingToAllocate, $dueOnThis);
-                    $p->payment = (float)$p->payment + $allocation;
+                    $allocation = min($remainingTotal, $dueOnThis);
+
+                    $cashAlloc = min($remainingCash, $allocation);
+                    $discAlloc = min($remainingDiscount, $allocation - $cashAlloc);
+
+                    if ($discAlloc > 0) {
+                        $p->discount = (float)($p->discount ?? 0) + $discAlloc;
+                        $p->total_price = max(0, (float)$p->total_price - $discAlloc);
+                    }
+                    if ($cashAlloc > 0) {
+                        $p->payment = (float)$p->payment + $cashAlloc;
+                    }
                     $p->due = max(0, (float)$p->total_price - (float)$p->payment);
                     $p->save();
 
-                    $payRec = new Payment;
-                    $payRec->payment_for = 3;
-                    $payRec->vendor_id = $vendor->id;
-                    $payRec->purchase_id = $p->id;
-                    $payRec->payment_method = $paymentMethod;
-                    $payRec->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
-                    $payRec->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
-                    $payRec->payment_date = $paymentDate;
-                    $payRec->amount = $allocation;
-                    $payRec->remarks = $request->remarks ?: ('Due payment for PO #' . $p->id);
-                    $payRec->created_by = \Illuminate\Support\Facades\Auth::id();
-                    $payRec->status = 1;
-                    $payRec->save();
-                    $createdVendorPayments[] = $payRec;
+                    if ($p->lot_id) {
+                        $lot = Lot::find($p->lot_id);
+                        if ($lot) {
+                            $lot->total_amount = $lot->purchases()->sum('total_price');
+                            $lot->save();
+                        }
+                    }
 
-                    $remainingToAllocate -= $allocation;
+                    if ($cashAlloc > 0) {
+                        $payRec = new Payment;
+                        $payRec->payment_for = 3;
+                        $payRec->vendor_id = $vendor->id;
+                        $payRec->purchase_id = $p->id;
+                        $payRec->payment_method = $paymentMethod;
+                        $payRec->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
+                        $payRec->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
+                        $payRec->payment_date = $paymentDate;
+                        $payRec->amount = $cashAlloc;
+                        $payRec->remarks = ($request->remarks ?: ('Due payment for PO #' . $p->id)) . ($discAlloc > 0 ? " (Discount: ৳" . number_format($discAlloc, 2) . ")" : "");
+                        $payRec->created_by = \Illuminate\Support\Facades\Auth::id();
+                        $payRec->status = 1;
+                        $payRec->save();
+                        $createdVendorPayments[] = $payRec;
+                    }
+
+                    $remainingTotal -= $allocation;
+                    $remainingCash -= $cashAlloc;
+                    $remainingDiscount -= $discAlloc;
                 }
             }
 
             // Excess amount is vendor advance
-            if ($remainingToAllocate > 0.0001 || empty($createdVendorPayments)) {
+            if ($remainingCash > 0.0001 || (empty($createdVendorPayments) && $totalAmount > 0)) {
                 $payRec = new Payment;
                 $payRec->payment_for = 3;
                 $payRec->vendor_id = $vendor->id;
@@ -650,7 +814,7 @@ class PaymentController extends Controller
                 $payRec->bank_detail_id = $isBank ? ($request->bank_detail_id ?: null) : null;
                 $payRec->transaction_ref = $isBank ? ($request->transaction_ref ?: null) : null;
                 $payRec->payment_date = $paymentDate;
-                $payRec->amount = $remainingToAllocate;
+                $payRec->amount = $remainingCash;
                 $payRec->remarks = $request->remarks ?: 'Advance Prepayment to Vendor';
                 $payRec->created_by = \Illuminate\Support\Facades\Auth::id();
                 $payRec->status = 1;
@@ -660,11 +824,17 @@ class PaymentController extends Controller
 
             $payment = $createdVendorPayments[0] ?? null;
 
+            // Sync bank balance if bank was used
+            if ($isBank && $payment && !empty($payment->bank_detail_id)) {
+                \App\Models\BankDetail::find($payment->bank_detail_id)?->syncCurrentBalance();
+            }
+
             // Auto-post double-entry journal voucher for vendor due disbursement
-            // Debit: 2110 Accounts Payable | Credit: 1110 Cash in Hand or 1120-00X Bank
+            // Debit: 2110 Accounts Payable | Credit: 1110 Cash in Hand or 1120-00X Bank | Credit: 5110 Raw Steel / Discount Received
             try {
                 $cashAcc = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
                 $apAcc = \App\Models\ChartOfAccount::where('account_code', '2110')->first();
+                $purchaseAcc = \App\Models\ChartOfAccount::where('account_code', '5110')->first();
 
                 $disbursementAcc = $cashAcc;
                 if ($payment && $payment->payment_method !== 'cash') {
@@ -678,34 +848,48 @@ class PaymentController extends Controller
                     }
                 }
 
-                if ($disbursementAcc && $apAcc && $totalAmount > 0 && $payment) {
-                    $methodLabel = match($payment->payment_method) {
+                if ($apAcc && $totalSettling > 0) {
+                    $methodLabel = $payment ? match($payment->payment_method) {
                         'bank' => 'Bank Transfer',
                         'mobile_banking' => 'Mobile Banking',
                         default => 'Cash in Hand'
-                    };
-                    $refText = $payment->transaction_ref ? " [Ref: {$payment->transaction_ref}]" : "";
+                    } : 'Settlement';
+                    $refText = ($payment && $payment->transaction_ref) ? " [Ref: {$payment->transaction_ref}]" : "";
                     $poText = $purchase ? " for PO #{$purchase->id}" : "";
 
-                    postJournalEntry([
-                        'entry_date' => date('Y-m-d'),
-                        'reference_type' => 'purchase_payment',
-                        'reference_id' => $payment->id,
-                        'description' => "Vendor Due payment to {$vendor->name}{$poText} via {$methodLabel}{$refText}",
-                        'items' => [
-                            [
-                                'account_id' => $apAcc->id,
-                                'debit' => $totalAmount,
-                                'credit' => 0.00,
-                                'description' => "Accounts Payable settlement to {$vendor->name}{$poText}"
-                            ],
-                            [
-                                'account_id' => $disbursementAcc->id,
-                                'debit' => 0.00,
-                                'credit' => $totalAmount,
-                                'description' => "{$methodLabel} disbursement to {$vendor->name}{$refText}"
-                            ]
+                    $journalItems = [
+                        [
+                            'account_id' => $apAcc->id,
+                            'debit' => $totalSettling,
+                            'credit' => 0.00,
+                            'description' => "Accounts Payable settlement to {$vendor->name}{$poText}"
                         ]
+                    ];
+
+                    if ($totalAmount > 0 && $disbursementAcc) {
+                        $journalItems[] = [
+                            'account_id' => $disbursementAcc->id,
+                            'debit' => 0.00,
+                            'credit' => $totalAmount,
+                            'description' => "{$methodLabel} disbursement to {$vendor->name}{$refText}"
+                        ];
+                    }
+
+                    if ($discount > 0 && $purchaseAcc) {
+                        $journalItems[] = [
+                            'account_id' => $purchaseAcc->id,
+                            'debit' => 0.00,
+                            'credit' => $discount,
+                            'description' => "Purchase discount/rebate received from {$vendor->name}"
+                        ];
+                    }
+
+                    postJournalEntry([
+                        'entry_date' => $paymentDate,
+                        'reference_type' => 'purchase_payment',
+                        'reference_id' => $payment ? $payment->id : $vendor->id,
+                        'description' => "Vendor Due payment to {$vendor->name}{$poText} via {$methodLabel}{$refText}" . ($discount > 0 ? " (Discount: ৳" . number_format($discount, 2) . ")" : ""),
+                        'items' => $journalItems
                     ]);
                 }
             } catch (\Throwable $e) {
@@ -714,7 +898,8 @@ class PaymentController extends Controller
 
             \Illuminate\Support\Facades\DB::commit();
 
-            return redirect()->back()->with(['success' => 'Vendor due payment of ৳' . number_format($totalAmount, 2) . ' recorded successfully.']);
+            $discMsg = $discount > 0 ? " (including ৳" . number_format($discount, 2) . " discount/rebate)" : "";
+            return redirect()->back()->with(['success' => 'Vendor due settlement of ৳' . number_format($totalSettling, 2) . "{$discMsg} recorded successfully."]);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\DB::rollBack();
             return redirect()->back()->with(['error' => 'Failed to record vendor payment: ' . $e->getMessage()]);

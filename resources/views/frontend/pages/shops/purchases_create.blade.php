@@ -190,7 +190,7 @@
                                     Lot / Vessel / Shipment Description <span class="text-muted fw-normal">(Optional)</span>
                                 </label>
                                 <input type="text" name="lot_name" id="lot_name" class="form-control"
-                                    placeholder="e.g. Retail Shop Intake Batch #01" value="{{ old('lot_name') }}">
+                                    value="{{ old('lot_name') }}">
                             </div>
 
                             <div class="col-lg-6 col-md-12 col-12">
@@ -198,7 +198,7 @@
                                     Lot Notes / Shipment Remarks <span class="text-muted fw-normal">(Optional)</span>
                                 </label>
                                 <input type="text" name="lot_notes" id="lot_notes" class="form-control"
-                                    placeholder="Internal memo, delivery challan #, or mill details" value="{{ old('lot_notes') }}">
+                                    value="{{ old('lot_notes') }}">
                             </div>
                         </div>
                     </div>
@@ -278,91 +278,46 @@
                             </div>
                         </div>
 
-                        <!-- Line 1: Physical Specifications & Dimensions -->
+                        <!-- Line 1: Specifications & Weight -->
                         <div class="row g-2 mb-3">
-                            <div class="col-lg-3 col-md-6 col-12">
+                            <div class="col-lg-3 col-md-4 col-12">
+                                <label for="builder_thickness" class="form-label small text-secondary fw-semibold mb-1">
+                                    Thickness
+                                </label>
+                                <input type="text" id="builder_thickness" class="form-control form-control-sm text-center">
+                            </div>
+
+                            <div class="col-lg-3 col-md-4 col-12">
+                                <label for="builder_total_weight" class="form-label small text-secondary fw-semibold mb-1">
+                                    Weight (kg) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" step="any" min="0.001" id="builder_total_weight" class="form-control text-end fw-bold text-primary" oninput="calculateBuilderPreview()">
+                                    <span class="input-group-text bg-white text-muted">kg</span>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6 col-md-4 col-12">
                                 <label for="builder_product_name" class="form-label small text-secondary fw-semibold mb-1">
                                     Product Name
                                 </label>
                                 <input type="text" id="builder_product_name" class="form-control form-control-sm">
                             </div>
-
-                            <div class="col-lg-2 col-md-6 col-12">
-                                <label for="builder_coil_number" class="form-label small text-secondary fw-semibold mb-1">
-                                    Coil / Tag No
-                                </label>
-                                <input type="text" id="builder_coil_number" class="form-control form-control-sm font-monospace">
-                            </div>
-
-                            <div class="col-lg-2 col-md-3 col-6">
-                                <label for="builder_thickness" class="form-label small text-secondary fw-semibold mb-1">
-                                    Thickness
-                                </label>
-                                <input type="text" id="builder_thickness" class="form-control form-control-sm text-center" placeholder="e.g. 2.50mm">
-                            </div>
-
-                            <div class="col-lg-3 col-md-3 col-6">
-                                <label for="builder_size" class="form-label small text-secondary fw-semibold mb-1">
-                                    Size / Width
-                                </label>
-                                <input type="text" id="builder_size" class="form-control form-control-sm text-center" placeholder="e.g. 4x8">
-                            </div>
-
-                            <div class="col-lg-2 col-md-6 col-6">
-                                <label for="builder_size_type" class="form-label small text-secondary fw-semibold mb-1">
-                                    Size Type
-                                </label>
-                                <select id="builder_size_type" class="form-select form-select-sm">
-                                    <option value="ft" selected>Feet (ft)</option>
-                                    <option value="mm">Millimeter (mm)</option>
-                                    <option value="inch">Inch (in)</option>
-                                    <option value="m">Meter (m)</option>
-                                    <option value="pcs">Pieces (pcs)</option>
-                                    <option value="ton">Ton</option>
-                                </select>
-                            </div>
                         </div>
 
                         <!-- Line 2: Weights, Rates & Action Button -->
                         <div class="row g-2 align-items-end p-3 rounded-2 bg-light border border-light-subtle">
-                            <div class="col-lg-2 col-md-4 col-6">
-                                <label for="builder_quantity" class="form-label small text-secondary fw-semibold mb-1">
-                                    Coil / Piece Qty <span class="text-danger">*</span>
-                                </label>
-                                <input type="number" min="1" step="1" id="builder_quantity" class="form-control form-control-sm text-center fw-bold" value="1" oninput="calculateBuilderPreview()">
-                            </div>
-
-                            <div class="col-lg-2 col-md-4 col-6">
-                                <label for="builder_unit_weight" class="form-label small text-secondary fw-semibold mb-1">
-                                    Per Coil Wt (kg) <span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" step="0.01" min="0.01" id="builder_unit_weight" class="form-control text-end fw-bold text-primary" oninput="calculateBuilderPreview()">
-                                    <span class="input-group-text bg-white text-muted">kg</span>
-                                </div>
-                            </div>
-
-                            <div class="col-lg-2 col-md-4 col-6">
-                                <label for="builder_total_weight" class="form-label small text-secondary fw-semibold mb-1">
-                                    Total Weight (kg)
-                                </label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" step="0.01" id="builder_total_weight" class="form-control bg-white text-end fw-bold text-dark" readonly tabindex="-1">
-                                    <span class="input-group-text bg-white text-muted">kg</span>
-                                </div>
-                            </div>
-
-                            <div class="col-lg-2 col-md-4 col-6">
+                            <div class="col-lg-5 col-md-5 col-12">
                                 <label for="builder_unit_price" class="form-label small text-secondary fw-semibold mb-1">
                                     Unit Rate (৳/kg) <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white text-muted">৳</span>
-                                    <input type="number" step="0.01" min="0" id="builder_unit_price" class="form-control text-end fw-semibold" oninput="calculateBuilderPreview()">
+                                    <input type="number" step="any" min="0" id="builder_unit_price" class="form-control text-end fw-semibold" oninput="calculateBuilderPreview()">
                                 </div>
                             </div>
 
-                            <div class="col-lg-2 col-md-4 col-6">
+                            <div class="col-lg-5 col-md-5 col-12">
                                 <label for="builder_sub_price" class="form-label small text-secondary fw-semibold mb-1">
                                     Line Sub Total (৳)
                                 </label>
@@ -372,7 +327,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-lg-2 col-md-4 col-12">
+                            <div class="col-lg-2 col-md-2 col-12">
                                 <button type="button" class="btn btn-primary btn-sm w-100 shadow-sm fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 py-1.5" id="addSteelBtn" onclick="addSteelItemToTable()" style="height: 31px;">
                                     <i class="fe fe-plus-circle"></i>
                                     <span>Add</span>
@@ -383,7 +338,7 @@
                         <!-- Optional Notes Row -->
                         <div class="row g-2 mt-2">
                             <div class="col-12">
-                                <input type="text" id="builder_notes" class="form-control form-control-sm text-secondary" placeholder="Optional notes, challan details, or bundle remarks">
+                                <input type="text" id="builder_notes" class="form-control form-control-sm text-secondary">
                             </div>
                         </div>
                     </div>
@@ -406,12 +361,10 @@
                                     <tr>
                                         <th class="text-center" style="width: 50px;">#</th>
                                         <th class="vendor-col" style="{{ old('default_vendor_id') ? 'display: none;' : '' }}">Vendor / Supplier</th>
-                                        <th>Product &amp; Specifications</th>
-                                        <th class="text-center" style="width: 90px;">Coil Qty</th>
-                                        <th class="text-end" style="width: 120px;">Per Coil Wt</th>
-                                        <th class="text-end" style="width: 130px;">Total Wt</th>
-                                        <th class="text-end" style="width: 110px;">Rate (৳/kg)</th>
-                                        <th class="text-end" style="width: 130px;">Sub Total (৳)</th>
+                                        <th>Product &amp; Thickness</th>
+                                        <th class="text-end" style="width: 150px;">Weight (kg)</th>
+                                        <th class="text-end" style="width: 130px;">Rate (৳/kg)</th>
+                                        <th class="text-end" style="width: 150px;">Sub Total (৳)</th>
                                         <th class="text-center" style="width: 60px;">Action</th>
                                     </tr>
                                 </thead>
@@ -421,8 +374,6 @@
                                 <tfoot class="table-light fw-bold">
                                     <tr>
                                         <td colspan="3" class="text-end text-uppercase fs-8 text-secondary">Batch Totals:</td>
-                                        <td class="text-center text-dark" id="displayTotalQuantity">0</td>
-                                        <td></td>
                                         <td class="text-end text-primary" id="displayTotalWeight">0.00 kg</td>
                                         <td></td>
                                         <td class="text-end text-success fs-7" id="displayTotalSubPrice">৳ 0.00</td>
@@ -454,37 +405,22 @@
                             <label for="delivery_charge" class="form-label fw-semibold small text-secondary mb-1">Delivery / Transport (৳)</label>
                             <input type="number" step="0.01" min="0" name="delivery_charge" id="delivery_charge" class="form-control"
                                 value="{{ old('delivery_charge', 0) }}" oninput="calculateBatchTotals()">
+                            <input type="hidden" name="transport_payer" id="transport_payer" value="me">
                         </div>
 
                         <div class="col-lg-3 col-md-6 col-12">
-                            <label class="form-label fw-semibold small text-secondary mb-1">Transport Payer</label>
-                            <div class="d-flex gap-2 pt-1">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_me" value="me"
-                                        {{ old('transport_payer', 'me') === 'me' ? 'checked' : '' }} onchange="calculateBatchTotals()">
-                                    <label class="form-check-label small fw-semibold" for="transport_payer_me">Paid by Shop</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="transport_payer" id="transport_payer_vendor" value="vendor"
-                                        {{ old('transport_payer') === 'vendor' ? 'checked' : '' }} onchange="calculateBatchTotals()">
-                                    <label class="form-check-label small fw-semibold" for="transport_payer_vendor">Paid by Supplier</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-2 col-md-4 col-6">
                             <label for="labour_cost" class="form-label fw-semibold small text-secondary mb-1">Labour Charge (৳)</label>
                             <input type="number" step="0.01" min="0" name="labour_cost" id="labour_cost" class="form-control"
                                 value="{{ old('labour_cost', 0) }}" oninput="calculateBatchTotals()">
                         </div>
 
-                        <div class="col-lg-2 col-md-4 col-6">
+                        <div class="col-lg-3 col-md-6 col-12">
                             <label for="weight_scale_cost" class="form-label fw-semibold small text-secondary mb-1">Scale Charge (৳)</label>
                             <input type="number" step="0.01" min="0" name="weight_scale_cost" id="weight_scale_cost" class="form-control"
                                 value="{{ old('weight_scale_cost', 0) }}" oninput="calculateBatchTotals()">
                         </div>
 
-                        <div class="col-lg-2 col-md-4 col-6">
+                        <div class="col-lg-3 col-md-6 col-12">
                             <label for="other_charges" class="form-label fw-semibold small text-secondary mb-1">Other Surcharges (৳)</label>
                             <input type="number" step="0.01" min="0" name="other_charges" id="other_charges" class="form-control"
                                 value="{{ old('other_charges', 0) }}" oninput="calculateBatchTotals()">
@@ -533,8 +469,8 @@
                             <div class="row g-2">
                                 <div class="col-6">
                                     <div class="p-2.5 bg-light rounded-3 border text-center">
-                                        <span class="text-muted small d-block mb-1">Total Quantity:</span>
-                                        <span class="fw-bold text-dark" id="displaySummaryQty">0 Pieces</span>
+                                        <span class="text-muted small d-block mb-1">Total Items:</span>
+                                        <span class="fw-bold text-dark" id="displaySummaryQty">0 Items</span>
                                     </div>
                                 </div>
                                 <div class="col-6">
@@ -630,7 +566,7 @@
                                     <!-- Transaction Ref (conditional) -->
                                     <div id="purchaseTransactionRefContainer" style="display: none;">
                                         <label class="form-label fw-semibold small text-secondary mb-1">Transaction Ref / TrxID / Cheque #</label>
-                                        <input type="text" name="transaction_ref" id="purchaseTransactionRef" class="form-control border-light-subtle bg-white" placeholder="e.g. TrxID / Cheque #">
+                                        <input type="text" name="transaction_ref" id="purchaseTransactionRef" class="form-control border-light-subtle bg-white">
                                     </div>
                                 </div>
                             </div>
@@ -667,9 +603,14 @@
                                 <input type="hidden" name="due" id="due_hidden" value="0.00">
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100 py-3 rounded-3 shadow-sm fw-bold fs-6 d-flex align-items-center justify-content-center gap-2" id="submitPurchaseBtn">
-                                <span>Confirm &amp; Save Shop Purchase</span>
-                            </button>
+                            <div class="d-flex justify-content-end align-items-center gap-2">
+                                <a href="{{ route('shops.purchases.index') }}" class="btn btn-outline-secondary px-3 py-2 rounded-2">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary px-4 py-2 rounded-2 fw-semibold shadow-sm d-inline-flex align-items-center gap-1.5" id="submitPurchaseBtn">
+                                    <span>Confirm Purchase</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -755,14 +696,10 @@
         }
 
         function calculateBuilderPreview() {
-            const qty = parseInt($('#builder_quantity').val()) || 0;
-            const uWeight = parseFloat($('#builder_unit_weight').val()) || 0;
+            const tWeight = parseFloat($('#builder_total_weight').val()) || 0;
             const rate = parseFloat($('#builder_unit_price').val()) || 0;
-
-            const tWeight = qty * uWeight;
             const subPrice = tWeight * rate;
 
-            $('#builder_total_weight').val(tWeight.toFixed(2));
             $('#builder_sub_price').val(subPrice.toFixed(2));
         }
 
@@ -783,18 +720,12 @@
                 return;
             }
 
-            const qty = parseInt($('#builder_quantity').val()) || 0;
-            const uWeight = parseFloat($('#builder_unit_weight').val()) || 0;
+            const tWeight = parseFloat($('#builder_total_weight').val()) || 0;
             const rate = parseFloat($('#builder_unit_price').val()) || 0;
 
-            if (qty <= 0) {
-                alert('Please enter a valid coil/piece quantity.');
-                $('#builder_quantity').focus();
-                return;
-            }
-            if (uWeight <= 0) {
-                alert('Please enter a valid weight per coil.');
-                $('#builder_unit_weight').focus();
+            if (tWeight <= 0) {
+                alert('Please enter a valid weight (kg).');
+                $('#builder_total_weight').focus();
                 return;
             }
             if (rate < 0) {
@@ -804,33 +735,24 @@
             }
 
             const productName = $('#builder_product_name').val().trim();
-            const coilNumber = $('#builder_coil_number').val().trim();
             const thickness = $('#builder_thickness').val().trim();
-            const size = $('#builder_size').val().trim();
-            const sizeType = $('#builder_size_type').val() || 'ft';
             const notes = $('#builder_notes').val().trim();
 
-            const tWeight = (qty * uWeight).toFixed(2);
             const subPrice = (tWeight * rate).toFixed(2);
+            const qty = 1;
+            const uWeight = tWeight;
 
-            const sizeTypeLabel = $('#builder_size_type option:selected').text();
             let specHtml = '';
             if (productName) {
                 specHtml += `<div class="fw-bold text-dark fs-7 mb-1"><i class="fe fe-box text-primary me-1"></i>${escapeHtml(productName)}</div>`;
             }
             let badges = [];
-            if (coilNumber) {
-                badges.push(`<span class="badge bg-light text-dark font-monospace border"><i class="fe fe-tag me-1 text-primary"></i>#${escapeHtml(coilNumber)}</span>`);
-            }
             if (thickness) {
                 badges.push(`<span class="badge bg-light text-dark border"><i class="fe fe-layers me-1 text-primary"></i>Thickness: ${escapeHtml(thickness)}</span>`);
             }
-            if (size) {
-                badges.push(`<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><i class="fe fe-maximize-2 me-1"></i>${escapeHtml(size)} (${sizeTypeLabel})</span>`);
-            } else {
-                badges.push(`<span class="badge bg-light text-muted border">${sizeTypeLabel}</span>`);
+            if (badges.length > 0) {
+                specHtml += `<div class="d-flex flex-wrap align-items-center gap-1">${badges.join(' ')}</div>`;
             }
-            specHtml += `<div class="d-flex flex-wrap align-items-center gap-1">${badges.join(' ')}</div>`;
             if (notes) {
                 specHtml += `<div class="small text-muted mt-1"><i class="fe fe-file-text me-1 text-info"></i>${escapeHtml(notes)}</div>`;
             }
@@ -851,18 +773,12 @@
                     <td>
                         ${specHtml}
                         <input type="hidden" name="items[${itemIndex}][product_name]" value="${escapeHtml(productName)}">
-                        <input type="hidden" name="items[${itemIndex}][coil_number]" value="${escapeHtml(coilNumber)}">
+                        <input type="hidden" name="items[${itemIndex}][coil_number]" value="">
                         <input type="hidden" name="items[${itemIndex}][thickness]" value="${escapeHtml(thickness)}">
-                        <input type="hidden" name="items[${itemIndex}][size]" value="${escapeHtml(size)}">
-                        <input type="hidden" name="items[${itemIndex}][size_type]" value="${escapeHtml(sizeType)}">
+                        <input type="hidden" name="items[${itemIndex}][size]" value="">
+                        <input type="hidden" name="items[${itemIndex}][size_type]" value="ft">
                         <input type="hidden" name="items[${itemIndex}][notes]" value="${escapeHtml(notes)}">
-                    </td>
-                    <td class="text-center fw-bold">
-                        ${qty}
-                        <input type="hidden" name="items[${itemIndex}][quantity]" class="row-quantity" value="${qty}">
-                    </td>
-                    <td class="text-end font-monospace">
-                        ${parseFloat(uWeight).toFixed(2)} kg
+                        <input type="hidden" name="items[${itemIndex}][quantity]" class="row-quantity" value="1">
                         <input type="hidden" name="items[${itemIndex}][unit_weight]" class="row-unit-weight" value="${uWeight}">
                     </td>
                     <td class="text-end font-monospace fw-bold text-primary">
@@ -890,10 +806,9 @@
 
             // Reset builder fields
             $('#builder_product_name').val('');
-            $('#builder_coil_number').val('');
-            $('#builder_quantity').val('1');
-            $('#builder_unit_weight').val('');
+            $('#builder_thickness').val('');
             $('#builder_total_weight').val('');
+            $('#builder_unit_price').val('');
             $('#builder_sub_price').val('');
             $('#builder_notes').val('');
 

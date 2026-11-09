@@ -563,10 +563,22 @@
                     <!-- Hidden Auto Payment Allocation Target -->
                     <input type="hidden" name="payment_type" id="modalPaymentType" value="auto_due_settlement">
 
-                    <!-- Collection Amount -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-dark mb-1">Amount to Collect (৳) <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" min="0.01" name="amount" id="modalAmountInput" class="form-control fw-bold text-dark" placeholder="0.00" required>
+                    <!-- Collection Amount & Discount -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-7 col-12">
+                            <label class="form-label fw-bold small text-dark mb-1">Amount to Collect (৳) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" min="0" name="amount" id="modalAmountInput" class="form-control fw-bold text-success fs-6 border-light-subtle" oninput="updateCustomerModalSettlementTotal()" required>
+                        </div>
+                        <div class="col-md-5 col-12">
+                            <label class="form-label fw-bold small text-dark mb-1">Discount (৳) <span class="text-muted fw-normal">(Optional)</span></label>
+                            <input type="number" step="0.01" min="0" name="discount" id="modalDiscountInput" class="form-control fw-semibold text-danger fs-6 border-light-subtle" value="0.00" oninput="updateCustomerModalSettlementTotal()">
+                        </div>
+                        <div class="col-12 mt-1">
+                            <div class="p-2 bg-light-subtle rounded-2 border d-flex justify-content-between align-items-center">
+                                <span class="small text-secondary fw-semibold">Total Due Settled:</span>
+                                <span class="fw-bold text-primary font-monospace" id="modalTotalSettlingDisplay">৳ 0.00</span>
+                            </div>
+                        </div>
                     </div>
 
                     @php
@@ -642,13 +654,26 @@ function openCustomerPaymentModal(id, name, openingDue, totalDue) {
     document.getElementById('modalCustomerTitle').textContent = 'Settling dues for ' + name;
     document.getElementById('modalOpeningDueDisplay').textContent = '৳ ' + parseFloat(openingDue || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     document.getElementById('modalTotalDueDisplay').textContent = '৳ ' + parseFloat(totalDue || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    document.getElementById('modalAmountInput').value = parseFloat(totalDue > 0 ? totalDue : (openingDue || 0)).toFixed(2);
+    const defaultAmount = parseFloat(totalDue > 0 ? totalDue : (openingDue || 0));
+    document.getElementById('modalAmountInput').value = defaultAmount.toFixed(2);
+    document.getElementById('modalDiscountInput').value = '0.00';
+    updateCustomerModalSettlementTotal();
 
     const typeSelect = document.getElementById('modalPaymentType');
     typeSelect.value = 'auto_due_settlement';
 
     const modal = new bootstrap.Modal(document.getElementById('customerPaymentModal'));
     modal.show();
+}
+
+function updateCustomerModalSettlementTotal() {
+    const amt = parseFloat(document.getElementById('modalAmountInput')?.value) || 0;
+    const disc = parseFloat(document.getElementById('modalDiscountInput')?.value) || 0;
+    const total = amt + disc;
+    const el = document.getElementById('modalTotalSettlingDisplay');
+    if (el) {
+        el.textContent = '৳ ' + total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
 }
 
 function handleSalesDueAccountChange(select) {

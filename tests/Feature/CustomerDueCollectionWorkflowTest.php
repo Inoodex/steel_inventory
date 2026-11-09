@@ -547,4 +547,84 @@ class CustomerDueCollectionWorkflowTest extends TestCase
         $response->assertSee('ORD-MULTI-001');
         $response->assertSee('ORD-MULTI-002');
     }
+
+    public function test_customer_due_collection_with_discount_reduces_sale_due_and_balance(): void
+    {
+        $sale = Sale::create([
+            'order_no'         => 'SO-DISC-001',
+            'customer_id'      => $this->customer->id,
+            'warehouse_id'     => $this->warehouse->id,
+            'total'            => 10000.00,
+            'bill'             => 10000.00,
+            'payble'           => 10000.00,
+            'advanced_payment' => 0.00,
+            'due_payment'      => 10000.00,
+            'status'           => 'credit',
+        ]);
+
+        // Reset opening balance so only this sale is due
+        $this->customer->update(['opening_balance' => 0]);
+
+        $initialBankBalance = (float)$this->bank->current_balance;
+
+        $response = $this->actingAs($this->admin)->post(route('customer.due.pay'), [
+            'customer_id'    => $this->customer->id,
+            'amount'         => 9500.00,
+            'discount'       => 500.00,
+            'payment_method' => 'bank',
+            'bank_detail_id' => $this->bank->id,
+            'remarks'        => 'Settled with discount',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $sale->refresh();
+        $this->assertEquals(500.00, (float)$sale->discount);
+        $this->assertEquals(9500.00, (float)$sale->payble);
+        $this->assertEquals(9500.00, (float)$sale->advanced_payment);
+        $this->assertEquals(0.00, (float)$sale->due_payment);
+        $this->assertEquals('paid', $sale->status);
+
+        // Bank receives 9,500.00 (cash actually paid)
+        $this->bank->refresh();
+        $this->assertEquals($initialBankBalance + 9500.00, (float)$this->bank->current_balance);
+
+        // Customer has zero net balance
+        $this->customer->refresh();
+        $this->assertEquals(0.00, (float)$this->customer->net_balance);
+    }
+
+    public function test_single_invoice_payment_with_discount(): void
+    {
+        $sale = Sale::create([
+            'order_no'         => 'SO-DISC-SINGLE',
+            'customer_id'      => $this->customer->id,
+            'warehouse_id'     => $this->warehouse->id,
+            'total'            => 5000.00,
+            'bill'             => 5000.00,
+            'payble'           => 5000.00,
+            'advanced_payment' => 0.00,
+            'due_payment'      => 5000.00,
+            'status'           => 'credit',
+        ]);
+
+        $response = $this->actingAs($this->admin)->post(route('add.payment'), [
+            'id'             => $sale->id,
+            'amount'         => 4700.00,
+            'discount'       => 300.00,
+            'payment_method' => 'cash',
+            'payment_date'   => now()->format('Y-m-d'),
+            'remarks'        => 'Single bill payment with discount',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $sale->refresh();
+        $this->assertEquals(300.00, (float)$sale->discount);
+        $this->assertEquals(4700.00, (float)$sale->payble);
+        $this->assertEquals(4700.00, (float)$sale->advanced_payment);
+        $this->assertEquals(0.00, (float)$sale->due_payment);
+        $this->assertEquals('paid', $sale->status);
+    }
 }

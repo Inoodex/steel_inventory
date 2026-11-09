@@ -227,9 +227,15 @@
                             <input class="form-control" type="text" name="transaction_ref" placeholder="e.g. TrxID / Cheque #">
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold text-secondary mb-1">Payment Amount (৳) <span class="text-danger">*</span></label>
-                            <input class="form-control fw-bold text-success fs-5" type="number" step="0.01" min="0.01" name="amount" required>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-7 col-12">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Payment Amount (৳) <span class="text-danger">*</span></label>
+                                <input class="form-control fw-bold text-success fs-5" type="number" step="0.01" min="0" name="amount" required>
+                            </div>
+                            <div class="col-md-5 col-12">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Discount (৳) <span class="text-muted fw-normal">(Optional)</span></label>
+                                <input class="form-control fw-semibold text-danger fs-5" type="number" step="0.01" min="0" name="discount" value="0.00">
+                            </div>
                         </div>
 
                         <div class="mb-3">

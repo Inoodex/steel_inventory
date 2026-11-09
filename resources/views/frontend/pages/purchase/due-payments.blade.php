@@ -564,9 +564,21 @@
                         <input type="text" name="transaction_ref" class="form-control border-light-subtle" placeholder="e.g. TrxID / Cheque #">
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Payment Amount (৳) <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" min="0.01" name="amount" id="modalAmount" class="form-control fw-bold text-success fs-5 border-light-subtle" required>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-7 col-12">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Payment Amount (৳) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" min="0" name="amount" id="modalAmount" class="form-control fw-bold text-success fs-5 border-light-subtle" required oninput="updateVendorModalSettlementTotal()">
+                        </div>
+                        <div class="col-md-5 col-12">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Discount (৳) <span class="text-muted fw-normal">(Optional)</span></label>
+                            <input type="number" step="0.01" min="0" name="discount" id="modalDiscount" class="form-control fw-semibold text-danger fs-5 border-light-subtle" value="0.00" oninput="updateVendorModalSettlementTotal()">
+                        </div>
+                        <div class="col-12 mt-1">
+                            <div class="p-2 bg-light-subtle rounded-2 border d-flex justify-content-between align-items-center">
+                                <span class="small text-secondary fw-semibold">Total Due Settled:</span>
+                                <span class="fw-bold text-primary font-monospace" id="modalVendorTotalSettlingDisplay">৳ 0.00</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -659,6 +671,8 @@ function openVendorDueModal(purchaseId, vendorId, vendorName, maxDue) {
     const amountInput = document.getElementById('modalAmount');
     amountInput.value = numMax > 0 ? numMax.toFixed(2) : '';
     amountInput.max = numMax > 0 ? numMax : '';
+    document.getElementById('modalDiscount').value = '0.00';
+    updateVendorModalSettlementTotal();
 
     const selector = document.getElementById('purchaseDueAccountSelector');
     if (selector) {
@@ -668,6 +682,16 @@ function openVendorDueModal(purchaseId, vendorId, vendorName, maxDue) {
     const modalEl = document.getElementById('vendorDueModal');
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
+}
+
+function updateVendorModalSettlementTotal() {
+    const amt = parseFloat(document.getElementById('modalAmount')?.value) || 0;
+    const disc = parseFloat(document.getElementById('modalDiscount')?.value) || 0;
+    const total = amt + disc;
+    const el = document.getElementById('modalVendorTotalSettlingDisplay');
+    if (el) {
+        el.textContent = '৳ ' + total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
 }
 
 function handlePurchaseDueAccountChange(select) {
