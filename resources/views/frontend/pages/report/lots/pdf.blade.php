@@ -131,7 +131,7 @@
             <td style="width:50%;"></td>
             <td style="width:50%;" class="report-title">
                 <h1>Lot Report</h1>
-                <p>Generated on: {{ now()->format('d M Y, h:i A') }}</p>
+                <p>Generated on: {{ now()->format('d M Y') }}</p>
             </td>
         </tr>
     </table>

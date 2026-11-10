@@ -187,7 +187,7 @@ class VendorController extends Controller
             return $v;
         });
 
-        return PdfService::viewToResponse('pdf.vendors', compact('vendors'), 'Vendor_List_' . now()->format('Y_m_d_His') . '.pdf');
+        return PdfService::viewToResponse('pdf.vendors', compact('vendors'), 'Vendor_List_' . now()->format('Y_m_d') . '.pdf');
     }
 
     /**

@@ -20,7 +20,7 @@ class RevenueController extends Controller
     public function downloadPdf()
     {
         $revenues = Revenue::orderByDesc('year')->orderByDesc('month')->get();
-        $filename = 'Monthly_Revenue_Report_' . now()->format('Y_m_d_His') . '.pdf';
+        $filename = 'Monthly_Revenue_Report_' . now()->format('Y_m_d') . '.pdf';
 
         return PdfService::viewToResponse('pdf.revenue', compact('revenues'), $filename);
     }

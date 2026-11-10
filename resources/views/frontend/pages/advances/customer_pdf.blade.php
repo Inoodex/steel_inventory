@@ -103,7 +103,7 @@
         <table style="width: 100%;">
             <tr>
                 <td style="width: 50%;"><strong>Report:</strong> Active Customer Prepayment Credits</td>
-                <td style="width: 50%; text-align: right;"><strong>Statement Date:</strong> {{ date('d M Y, h:i A') }}</td>
+                <td style="width: 50%; text-align: right;"><strong>Statement Date:</strong> {{ date('d M Y') }}</td>
             </tr>
             <tr>
                 <td><strong>Customers with Advance:</strong> {{ $customersWithAdvance->count() }}</td>

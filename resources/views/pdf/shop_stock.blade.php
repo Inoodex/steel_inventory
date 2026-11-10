@@ -143,7 +143,7 @@
             <tr>
                 <td style="border: none;">
                     <div class="report-title">Shop Stock &amp; Inventory Report</div>
-                    <div class="report-subtitle">Outlet: <strong>{{ $selectedShopName }}</strong> | Generated on {{ now()->format('d M Y, h:i A') }}</div>
+                    <div class="report-subtitle">Outlet: <strong>{{ $selectedShopName }}</strong> | Generated on {{ now()->format('d M Y') }}</div>
                 </td>
             </tr>
         </table>

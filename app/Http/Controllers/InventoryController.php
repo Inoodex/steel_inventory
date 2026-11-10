@@ -481,7 +481,7 @@ class InventoryController extends Controller
 
             return strcmp($a->coil_number ?? '', $b->coil_number ?? '');
         })->values();
-        $filename = 'Steel_Inventory_Stock_Report_' . now()->format('Y_m_d_His') . '.pdf';
+        $filename = 'Steel_Inventory_Stock_Report_' . now()->format('Y_m_d') . '.pdf';
 
         return PdfService::viewToResponse('pdf.inventory', compact('coils'), $filename);
     }

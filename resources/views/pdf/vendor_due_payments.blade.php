@@ -139,7 +139,7 @@ $totalPurchasesPrice = $purchases->sum('total_price');
             </td>
             <td style="width: 50%; vertical-align: top;" class="report-title">
                 <h1>VENDOR DUE REPORT</h1>
-                <p>Generated on: {{ now()->format('d M, Y h:i A') }}</p>
+                <p>Generated on: {{ now()->format('d M Y') }}</p>
                 <p>Vendors with Balance: {{ count($vendorsWithDue ?? []) }} | Unsettled Orders: {{ $purchases->count() }}</p>
             </td>
         </tr>

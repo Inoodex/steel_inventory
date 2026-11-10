@@ -166,7 +166,7 @@
                 <div class="header-subtitle">Executive Consolidated Operations &amp; Audit Trail</div>
             </td>
             <td class="text-right" style="vertical-align: bottom;">
-                <div style="font-size: 9px; color: #64748b;">Generated on: <strong>{{ date('d M Y, h:i A') }}</strong></div>
+                <div style="font-size: 9px; color: #64748b;">Generated on: <strong>{{ date('d M Y') }}</strong></div>
                 <div style="font-size: 9px; color: #64748b;">Report Period: <strong>{{ \Carbon\Carbon::parse($fromDate)->format('d M Y') }}</strong> to <strong>{{ \Carbon\Carbon::parse($toDate)->format('d M Y') }}</strong></div>
             </td>
         </tr>

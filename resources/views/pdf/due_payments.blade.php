@@ -105,7 +105,7 @@
             <td style="width:50%;"></td>
             <td style="width:50%;" class="report-title">
                 <h1>CUSTOMER DUES REPORT</h1>
-                <p>Generated: {{ date('d M Y, h:i A') }}</p>
+                <p>Generated: {{ date('d M Y') }}</p>
             </td>
         </tr>
     </table>

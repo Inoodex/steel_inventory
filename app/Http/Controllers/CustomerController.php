@@ -74,7 +74,7 @@ class CustomerController extends Controller
             return $c;
         });
 
-        return PdfService::viewToResponse('pdf.customers', compact('customers'), 'Customer_List_' . now()->format('Y_m_d_His') . '.pdf');
+        return PdfService::viewToResponse('pdf.customers', compact('customers'), 'Customer_List_' . now()->format('Y_m_d') . '.pdf');
     }
 
     /**

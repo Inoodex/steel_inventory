@@ -993,7 +993,7 @@ class ShopController extends Controller
 
             return strcmp($a->coil_number ?? '', $b->coil_number ?? '');
         })->values();
-        $filename = 'Shop_Stock_Report_' . now()->format('Y_m_d_His') . '.pdf';
+        $filename = 'Shop_Stock_Report_' . now()->format('Y_m_d') . '.pdf';
 
         $headerLabel = 'SHOP INVENTORY';
         $reportTitle = 'SHOP STOCK INVENTORY REPORT';

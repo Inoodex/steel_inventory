@@ -58,7 +58,7 @@ class SalesController extends Controller
         // Export PDF of all matching sales records
         if ($request->search_for == 'pdf' || $request->export == 'pdf') {
             $services = (clone $query)->orderBy('id', 'desc')->get();
-            $filename = 'Sales_List_Report_' . now()->format('Y_m_d_His') . '.pdf';
+            $filename = 'Sales_List_Report_' . now()->format('Y_m_d') . '.pdf';
             return PdfService::viewToResponse('pdf.sales', compact('services', 'request'), $filename);
         }
 
@@ -991,7 +991,7 @@ class SalesController extends Controller
         $totalInvoiceDues = (float) Sale::where('due_payment', '>', 0)->sum('due_payment');
         $grandTotalDues = $totalOpeningDues + $totalInvoiceDues;
 
-        $filename = 'Due_Payments_Report_' . now()->format('Y_m_d_His') . '.pdf';
+        $filename = 'Due_Payments_Report_' . now()->format('Y_m_d') . '.pdf';
 
         return PdfService::viewToResponse(
             'pdf.due_payments',

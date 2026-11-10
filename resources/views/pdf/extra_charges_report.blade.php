@@ -113,7 +113,7 @@
             <td style="width:50%;"></td>
             <td style="width:50%;" class="report-title">
                 <h1>EXTRA CHARGES & PAYOUTS</h1>
-                <p>Generated: {{ date('d M Y, h:i A') }}</p>
+                <p>Generated: {{ date('d M Y') }}</p>
             </td>
         </tr>
     </table>

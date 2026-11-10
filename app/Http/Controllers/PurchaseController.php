@@ -774,7 +774,7 @@ class PurchaseController extends Controller
         $totalPurchaseDues = (float) Purchase::where('due', '>', 0)->sum('due');
         $grandTotalDues = $totalOpeningDues + $totalPurchaseDues;
 
-        $filename = 'Vendor_Due_Payments_Report_' . now()->format('Y_m_d_His') . '.pdf';
+        $filename = 'Vendor_Due_Payments_Report_' . now()->format('Y_m_d') . '.pdf';
 
         return PdfService::viewToResponse(
             'pdf.vendor_due_payments',

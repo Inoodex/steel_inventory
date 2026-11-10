@@ -164,7 +164,7 @@
             </td>
             <td style="width: 50%; vertical-align: middle;" class="report-title">
                 <h1>CUSTOMER STATEMENT</h1>
-                <p>Generated: {{ date('d M Y, h:i A') }}</p>
+                <p>Generated: {{ date('d M Y') }}</p>
                 @if(!empty($fromDate) || !empty($toDate))
                     <p style="color: #0f172a; font-weight: 600; margin-top: 2px;">
                         Period: {{ $fromDate ? date('d M Y', strtotime($fromDate)) : 'Inception' }} &mdash; {{ $toDate ? date('d M Y', strtotime($toDate)) : date('d M Y') }}
