@@ -95,6 +95,11 @@
                 </p>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a href="{{ route('purchase-returns.create', ['purchase_id' => $purchase->id]) }}" class="btn btn-outline-warning px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2 text-dark fw-semibold">
+                    <i class="fe fe-rotate-ccw text-warning"></i>
+                    <span>Return to Vendor</span>
+                </a>
+
                 @if($purchase->lot)
                     <a href="{{ route('lots.show', $purchase->lot->id) }}" class="btn btn-outline-primary px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2">
                         <i class="fe fe-package"></i>
@@ -442,6 +447,12 @@
                                                     </a>
                                                 </li>
                                             @endif
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase-returns.create', ['purchase_id' => $item->id]) }}">
+                                                    <i class="fe fe-rotate-ccw text-warning"></i>
+                                                    <span>Return to Vendor</span>
+                                                </a>
+                                            </li>
                                             <li><hr class="dropdown-divider my-1"></li>
                                             <li>
                                                 <form action="{{ route('purchase.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this item from the purchase order? Attached coils and stock will be deleted.')">

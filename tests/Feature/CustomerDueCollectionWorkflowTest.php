@@ -627,4 +627,65 @@ class CustomerDueCollectionWorkflowTest extends TestCase
         $this->assertEquals(0.00, (float)$sale->due_payment);
         $this->assertEquals('paid', $sale->status);
     }
+
+    public function test_customer_ledger_renders_custom_size_and_bank_account_details(): void
+    {
+        $sale = Sale::create([
+            'order_no'         => 'SO-LDG-SPEC-001',
+            'customer_id'      => $this->customer->id,
+            'warehouse_id'     => $this->warehouse->id,
+            'total'            => 10000.00,
+            'bill'             => 10000.00,
+            'payble'           => 10000.00,
+            'advanced_payment' => 0.00,
+            'due_payment'      => 10000.00,
+            'status'           => 'credit',
+            'note'             => 'Special Dispatch',
+        ]);
+
+        \App\Models\SalesItem::create([
+            'order_id'    => $sale->id,
+            'custom_size' => '4x8 ft cut (Special Spec)',
+            'unit_price'  => 100.00,
+            'qty'         => 100.00,
+            'total_price' => 10000.00,
+        ]);
+
+        Payment::create([
+            'customer_id'    => $this->customer->id,
+            'sale_id'        => $sale->id,
+            'amount'         => 6000.00,
+            'payment_for'    => 2,
+            'payment_method' => 'bank',
+            'bank_detail_id' => $this->bank->id,
+            'transaction_ref'=> 'TX-CUST-EBL',
+            'status'         => 1,
+            'created_by'     => $this->admin->id,
+        ]);
+
+        Payment::create([
+            'customer_id'    => $this->customer->id,
+            'sale_id'        => $sale->id,
+            'amount'         => 2000.00,
+            'payment_for'    => 2,
+            'payment_method' => 'cash',
+            'remarks'        => 'Counter cash payment',
+            'status'         => 1,
+            'created_by'     => $this->admin->id,
+        ]);
+
+        // Check web ledger
+        $webResponse = $this->actingAs($this->admin)->get(route('customers.ledger', $this->customer->id));
+        $webResponse->assertStatus(200);
+        $webResponse->assertSee('4x8 ft cut (Special Spec)');
+        $webResponse->assertSee('Special Dispatch');
+        $webResponse->assertSee($this->bank->bank_name);
+        $webResponse->assertSee($this->bank->account_number);
+        $webResponse->assertSee('Cash');
+
+        // Check PDF response
+        $pdfResponse = $this->actingAs($this->admin)->get(route('customers.ledger.pdf', $this->customer->id));
+        $pdfResponse->assertStatus(200);
+        $this->assertEquals('application/pdf', $pdfResponse->headers->get('Content-Type'));
+    }
 }

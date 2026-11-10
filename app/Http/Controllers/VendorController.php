@@ -243,28 +243,48 @@ class VendorController extends Controller
                 ->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(payment_date, created_at)'), '<', $fromDate)
                 ->sum('amount');
 
-            $openingBalance += ($priorPurchases - $priorPayments);
+            $priorReturns = \App\Models\PurchaseReturn::where('vendor_id', $vendor->id)
+                ->where('status', '!=', 'cancelled')
+                ->whereDate('return_date', '<', $fromDate)
+                ->sum('total_refund_amount');
+
+            $openingBalance += ($priorPurchases - $priorPayments - $priorReturns);
         }
 
         $purchasesQuery = \App\Models\Purchase::with('lot')->where('vendor_id', $vendor->id);
-        $paymentsQuery = \App\Models\Payment::where('vendor_id', $vendor->id);
+        $paymentsQuery = \App\Models\Payment::with('bankDetail')->where('vendor_id', $vendor->id);
+        $returnsQuery = \App\Models\PurchaseReturn::where('vendor_id', $vendor->id)->where('status', '!=', 'cancelled');
 
         if ($fromDate) {
             $purchasesQuery->whereDate('created_at', '>=', $fromDate);
             $paymentsQuery->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(payment_date, created_at)'), '>=', $fromDate);
+            $returnsQuery->whereDate('return_date', '>=', $fromDate);
         }
         if ($toDate) {
             $purchasesQuery->whereDate('created_at', '<=', $toDate);
             $paymentsQuery->whereDate(\Illuminate\Support\Facades\DB::raw('COALESCE(payment_date, created_at)'), '<=', $toDate);
+            $returnsQuery->whereDate('return_date', '<=', $toDate);
         }
 
         $purchases = $purchasesQuery->get();
         $payments = $paymentsQuery->get();
+        $returns = $returnsQuery->get();
 
         $transactions = collect();
 
         foreach ($purchases as $p) {
             $lotStr = $p->lot ? " (Lot: {$p->lot->lot_number})" : "";
+            $specs = array_filter([$p->product_name, $p->thickness ? "Thick: {$p->thickness}" : null, $p->size ? "Size: {$p->size}" : null]);
+            $specStr = !empty($specs) ? implode(' | ', $specs) : '';
+
+            if ($p->notes) {
+                $desc = $p->notes . ($specStr ? " [{$specStr}]" : "") . $lotStr;
+            } elseif ($specStr) {
+                $desc = $specStr . $lotStr;
+            } else {
+                $desc = "Purchase PO #{$p->id}" . $lotStr;
+            }
+
             $transactions->push([
                 'date' => $p->created_at->format('Y-m-d'),
                 'created_at' => $p->created_at,
@@ -272,15 +292,28 @@ class VendorController extends Controller
                 'badge' => 'primary',
                 'ref' => "PO #{$p->id}",
                 'url' => route('purchase.show', $p->id),
-                'description' => "Purchase intake {$p->quantity} qty ({$p->total_weight} tons)" . $lotStr,
+                'description' => $desc,
                 'debit' => 0.00,
                 'credit' => (float)$p->total_price, // Credit increases vendor payable
             ]);
         }
 
         foreach ($payments as $pay) {
-            $methodLabel = ucfirst($pay->payment_method ?? 'cash');
+            $method = strtolower($pay->payment_method ?? 'cash');
+            $bank = $pay->bankDetail;
+
+            if ($bank) {
+                $accNo = $bank->account_number ? " - {$bank->account_number}" : "";
+                $methodDesc = "{$bank->bank_name}{$accNo}";
+            } elseif ($method === 'cash') {
+                $methodDesc = 'Cash';
+            } else {
+                $methodDesc = ucfirst(str_replace('_', ' ', $method));
+            }
+
             $refStr = $pay->transaction_ref ? " [Ref: {$pay->transaction_ref}]" : "";
+            $remarksStr = $pay->remarks ? " - {$pay->remarks}" : "";
+
             $transactions->push([
                 'date' => $pay->payment_date ? $pay->payment_date : $pay->created_at->format('Y-m-d'),
                 'created_at' => $pay->created_at,
@@ -288,8 +321,24 @@ class VendorController extends Controller
                 'badge' => 'success',
                 'ref' => "DISB-{$pay->id}" . $refStr,
                 'url' => null,
-                'description' => ($pay->remarks ?: "Disbursement via {$methodLabel}") . $refStr,
+                'description' => $methodDesc . $refStr . $remarksStr,
                 'debit' => (float)$pay->amount, // Debit reduces vendor payable
+                'credit' => 0.00,
+            ]);
+        }
+
+        foreach ($returns as $pr) {
+            $desc = "Return {$pr->return_weight} kg" . ($pr->unit_price > 0 ? " @ ৳{$pr->unit_price}" : "") . ($pr->reason ? " ({$pr->reason})" : "") . ($pr->notes ? " - {$pr->notes}" : "");
+
+            $transactions->push([
+                'date' => $pr->return_date ? $pr->return_date->format('Y-m-d') : $pr->created_at->format('Y-m-d'),
+                'created_at' => $pr->created_at,
+                'type' => 'Purchase Return',
+                'badge' => 'warning',
+                'ref' => $pr->return_no,
+                'url' => route('purchase-returns.show', $pr->id),
+                'description' => $desc,
+                'debit' => (float)$pr->total_refund_amount, // Debit reduces vendor payable
                 'credit' => 0.00,
             ]);
         }

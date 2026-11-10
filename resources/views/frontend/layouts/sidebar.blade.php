@@ -18,7 +18,7 @@
     };
 @endphp
 
-<!-- Sidebar — Standard Modern ERP Workflow Hierarchy -->
+<!-- Sidebar â€” Standard Modern ERP Workflow Hierarchy -->
 <div class="sidebar" id="sidebar">
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">
@@ -38,12 +38,12 @@
                     <li class="menu-title"><span>Procurement &amp; Purchases</span></li>
 
                     @if($canView('Purchase Management'))
-                        <li class="submenu {{ $active(['purchase.create','purchase.index','purchase.show','purchase.edit','lots.*']) ? 'active' : '' }}">
+                        <li class="submenu {{ $active(['purchase.create','purchase.index','purchase.show','purchase.edit','lots.*','purchase-returns.*']) ? 'active' : '' }}">
                             <a href="javascript:void(0)">
                                 <i class="fe fe-shopping-cart"></i><span> Purchases</span>
                                 <span class="menu-arrow"></span>
                             </a>
-                            <ul style="{{ $active(['purchase.create','purchase.index','purchase.show','purchase.edit','lots.*']) ? 'display:block' : '' }}">
+                            <ul style="{{ $active(['purchase.create','purchase.index','purchase.show','purchase.edit','lots.*','purchase-returns.*']) ? 'display:block' : '' }}">
                                 <li class="{{ $active(['purchase.create']) ? 'active' : '' }}">
                                     <a href="{{ route('purchase.create') }}"><i class="fe fe-plus-circle"></i> New Purchase Order</a>
                                 </li>
@@ -52,6 +52,9 @@
                                 </li>
                                 <li class="{{ $active(['lots.*']) ? 'active' : '' }}">
                                     <a href="{{ route('lots.index') }}"><i class="fe fe-layers"></i> Lots &amp; Consignments</a>
+                                </li>
+                                <li class="{{ $active(['purchase-returns.*']) ? 'active' : '' }}">
+                                    <a href="{{ route('purchase-returns.index') }}"><i class="fe fe-rotate-ccw"></i> Purchase Returns</a>
                                 </li>
                             </ul>
                         </li>

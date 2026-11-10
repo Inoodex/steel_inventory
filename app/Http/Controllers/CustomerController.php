@@ -278,8 +278,8 @@ class CustomerController extends Controller
             $openingBalance += ($priorSales - $priorPayments - $priorReturns);
         }
 
-        $salesQuery = \App\Models\Sale::where('customer_id', $customer->id);
-        $paymentsQuery = \App\Models\Payment::where('customer_id', $customer->id);
+        $salesQuery = \App\Models\Sale::with('items')->where('customer_id', $customer->id);
+        $paymentsQuery = \App\Models\Payment::with('bankDetail')->where('customer_id', $customer->id);
         $returnsQuery = \App\Models\ProductReturn::where('customer_id', $customer->id)->where('status', '!=', 'rejected');
 
         if ($fromDate) {
@@ -330,6 +330,26 @@ class CustomerController extends Controller
         $transactions = collect();
 
         foreach ($sales as $s) {
+            $customSizes = $s->items->pluck('custom_size')->map(function($v) {
+                return trim($v);
+            })->filter()->values();
+
+            if ($customSizes->isNotEmpty()) {
+                $itemDesc = $customSizes->unique()->implode(', ');
+            } else {
+                $itemDesc = $s->qty > 0 ? "{$s->qty} pcs/units" : "";
+            }
+
+            if ($itemDesc && $s->note) {
+                $desc = "{$itemDesc} - {$s->note}";
+            } elseif ($itemDesc) {
+                $desc = $itemDesc;
+            } elseif ($s->note) {
+                $desc = $s->note;
+            } else {
+                $desc = "Invoice #{$s->order_no}";
+            }
+
             $transactions->push([
                 'date' => $s->order_date ? $s->order_date : $s->created_at->format('Y-m-d'),
                 'created_at' => $s->created_at,
@@ -337,15 +357,28 @@ class CustomerController extends Controller
                 'badge' => 'primary',
                 'ref' => $s->order_no,
                 'url' => route('sales.show', $s->id),
-                'description' => "Invoice for {$s->qty} pcs/units" . ($s->note ? " - {$s->note}" : ""),
+                'description' => $desc,
                 'debit' => (float)($s->payble ?: $s->total),
                 'credit' => 0.00,
             ]);
         }
 
         foreach ($payments as $p) {
-            $methodLabel = ucfirst(str_replace('_', ' ', $p->payment_method ?? 'cash'));
+            $method = strtolower($p->payment_method ?? 'cash');
+            $bank = $p->bankDetail;
+
+            if ($bank) {
+                $accNo = $bank->account_number ? " - {$bank->account_number}" : "";
+                $methodDesc = "{$bank->bank_name}{$accNo}";
+            } elseif ($method === 'cash') {
+                $methodDesc = 'Cash';
+            } else {
+                $methodDesc = ucfirst(str_replace('_', ' ', $method));
+            }
+
             $refStr = $p->transaction_ref ? " [Ref: {$p->transaction_ref}]" : "";
+            $remarksStr = $p->remarks ? " - {$p->remarks}" : "";
+
             $isAdvance = empty($p->sale_id);
             $typeLabel = $isAdvance ? 'Advance Deposit' : 'Payment Receipt';
             $typeBadge = $isAdvance ? 'info' : 'success';
@@ -358,7 +391,7 @@ class CustomerController extends Controller
                 'badge' => $typeBadge,
                 'ref' => "{$refPrefix}-{$p->id}" . $refStr,
                 'url' => $p->sale_id ? route('sales.show', $p->sale_id) : null,
-                'description' => ($p->remarks ?: ($isAdvance ? "Advance deposit via {$methodLabel}" : "Collection via {$methodLabel}")) . $refStr,
+                'description' => $methodDesc . $refStr . $remarksStr,
                 'debit' => 0.00,
                 'credit' => (float)$p->amount,
             ]);

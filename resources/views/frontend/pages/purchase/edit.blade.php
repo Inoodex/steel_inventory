@@ -161,170 +161,289 @@
                 </div>
             </div>
 
-            <!-- Section 2: Physical Specifications & Coil Inventory (2-Line Layout) -->
+            <!-- Section 2: Physical Specifications & Coil Inventory (Single or Multiple Coils Breakdown) -->
+            @php
+                $isMultiCoils = (old('breakdown_mode', $purchase->coils->count() > 1 ? '1' : '0') === '1');
+            @endphp
             <div class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h6 class="fw-bold text-dark mb-0">
-                            <i class="fe fe-disc text-primary me-2"></i>Physical Steel Specifications & Coil Details
+                            <i class="fe fe-disc text-primary me-2"></i>Physical Steel Specifications & Coil Intake Details
                         </h6>
-                        <small class="text-muted">Line 1: Physical specifications & dimensions | Line 2: Weights, unit rate & line subtotal</small>
+                        <small class="text-muted">Manage coil dimensions, weights, and tag numbers for this purchase</small>
                     </div>
-                    @if($coil)
-                        <span class="badge bg-dark rounded-pill px-3 py-2 fs-7 fw-bold font-monospace">
-                            <i class="fe fe-tag me-1 text-primary"></i>{{ $coil->coil_number }}
-                        </span>
-                    @endif
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="hidden" name="breakdown_mode" id="breakdownModeInput" value="{{ $isMultiCoils ? '1' : '0' }}">
+                        <button type="button" class="btn btn-sm btn-outline-primary fw-semibold px-3 py-1.5 rounded-3 shadow-sm d-inline-flex align-items-center gap-1.5" id="toggleBreakdownBtn" onclick="toggleCoilsBreakdown()">
+                            <i class="fe {{ $isMultiCoils ? 'fe-minus-circle' : 'fe-layers' }}" id="toggleBreakdownIcon"></i>
+                            <span id="toggleBreakdownBtnText">{{ $isMultiCoils ? 'Switch to Single Coil Mode' : 'Break Down into Multiple Coils' }}</span>
+                        </button>
+                        @if($coil && !$isMultiCoils)
+                            <span class="badge bg-dark rounded-pill px-3 py-2 fs-7 fw-bold font-monospace" id="headerSingleCoilTag">
+                                <i class="fe fe-tag me-1 text-primary"></i>{{ $coil->coil_number }}
+                            </span>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="card-body p-3 bg-light-subtle">
-                    <div class="steel-row bg-white border rounded-3 p-3 shadow-sm position-relative">
-                        <!-- Header / Item Index Bar -->
-                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="badge bg-primary rounded-pill px-2.5 py-1 fs-8 fw-bold">Steel Item Details</span>
-                                @if($coil)
-                                    <span class="text-muted small">
-                                        Current Yard Status: 
-                                        @if($coil->status === 'exhausted' || $coil->remaining_weight <= 0)
-                                            <span class="badge badge-soft-danger">Exhausted (0 kg)</span>
-                                        @else
-                                            <span class="badge badge-soft-success">In Stock ({{ number_format($coil->remaining_weight, 2) }} kg remaining)</span>
-                                        @endif
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
-
-                        <!-- Line 1: Physical Specifications & Dimensions -->
-                        <div class="row g-2 mb-2">
-                            <div class="col-lg-3 col-md-6 col-12">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Product Name
-                                </label>
-                                <input type="text" name="product_name" id="productNameInput"
-                                    class="form-control form-control-sm"
-                                    value="{{ old('product_name', $purchase->product_name ?? ($coil->product_name ?? '')) }}">
-                            </div>
-
-                            <div class="col-lg-2 col-md-6 col-12">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Coil / Tag No
-                                </label>
-                                <input type="text" name="coil_number" id="coilNumberInput"
-                                    class="form-control form-control-sm font-monospace"
-                                    value="{{ old('coil_number', $coil->coil_number ?? '') }}">
-                            </div>
-
-                            <div class="col-lg-2 col-md-3 col-6">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Thickness
-                                </label>
-                                <input type="text" name="thickness" id="thicknessInput"
-                                    class="form-control form-control-sm text-center"
-                                    value="{{ old('thickness', $purchase->thickness ?? ($coil->thickness ?? '')) }}">
-                            </div>
-
-                            <div class="col-lg-3 col-md-3 col-6">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Size / Width
-                                </label>
-                                <input type="text" name="size" id="sizeInput"
-                                    class="form-control form-control-sm text-center"
-                                    value="{{ old('size', $purchase->size ?? ($coil->width ?? '')) }}">
-                            </div>
-
-                            <div class="col-lg-2 col-md-6 col-6">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Size Type
-                                </label>
-                                <select name="size_type" id="sizeTypeInput" class="form-select form-select-sm">
-                                    @php
-                                        $currentSizeType = old('size_type', $purchase->size_type ?? ($coil->length ?? 'ft'));
-                                    @endphp
-                                    <option value="ft" {{ $currentSizeType === 'ft' ? 'selected' : '' }}>Feet (ft)</option>
-                                    <option value="mm" {{ $currentSizeType === 'mm' ? 'selected' : '' }}>Millimeter (mm)</option>
-                                    <option value="inch" {{ $currentSizeType === 'inch' ? 'selected' : '' }}>Inch (in)</option>
-                                    <option value="m" {{ $currentSizeType === 'm' ? 'selected' : '' }}>Meter (m)</option>
-                                    <option value="pcs" {{ $currentSizeType === 'pcs' ? 'selected' : '' }}>Pieces (pcs)</option>
-                                    <option value="ton" {{ $currentSizeType === 'ton' ? 'selected' : '' }}>Ton</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row g-2 mb-2">
-                            <div class="col-12">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Notes (Optional)
-                                </label>
-                                <input type="text" name="coil_notes" id="coilNotesInput"
-                                    class="form-control form-control-sm"
-                                    placeholder="Optional notes, challan details, or bundle remarks"
-                                    value="{{ old('coil_notes', $coil->notes ?? '') }}">
-                            </div>
-                        </div>
-
-                        <!-- Line 2: Weights, Rates & Subtotal (Financials) -->
-                        <div class="row g-2 align-items-end p-2.5 rounded-2 bg-light border border-light-subtle">
-                            <div class="col-lg-2 col-md-4 col-6">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Coil / Piece Qty <span class="text-danger">*</span>
-                                </label>
-                                <input oninput="calculateRow()" type="number" min="1" step="1" name="quantity" id="quantityInput"
-                                    class="form-control form-control-sm text-center fw-bold"
-                                    value="{{ old('quantity', (int)$purchase->quantity ?: 1) }}" required>
-                            </div>
-                            <div class="col-lg-3 col-md-6 col-12">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Per Coil Wt (kg) <span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group input-group-sm">
-                                    <input oninput="calculateRow()" type="number" step="0.001" min="0.001" name="unit_weight" id="unitWeightInput"
-                                        class="form-control text-end fw-bold text-primary"
-                                        value="{{ old('unit_weight', $purchase->unit_weight) }}" required>
-                                    <span class="input-group-text bg-white text-muted">kg</span>
+                    
+                    <!-- Mode A: Single Coil Entry Container -->
+                    <div id="singleCoilContainer" style="{{ $isMultiCoils ? 'display: none;' : '' }}">
+                        <div class="steel-row bg-white border rounded-3 p-3 shadow-sm position-relative">
+                            <!-- Header / Item Index Bar -->
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-primary rounded-pill px-2.5 py-1 fs-8 fw-bold">Single Coil Details</span>
+                                    @if($coil)
+                                        <span class="text-muted small">
+                                            Current Yard Status: 
+                                            @if($coil->status === 'exhausted' || $coil->remaining_weight <= 0)
+                                                <span class="badge badge-soft-danger">Exhausted (0 kg)</span>
+                                            @else
+                                                <span class="badge badge-soft-success">In Stock ({{ number_format($coil->remaining_weight, 2) }} kg remaining)</span>
+                                            @endif
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
 
-                            <div class="col-lg-3 col-md-6 col-12">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Total Weight (kg)
-                                </label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" step="0.001" name="total_weight" id="totalWeightInput"
-                                        class="form-control bg-white text-end fw-bold text-dark"
-                                        value="{{ old('total_weight', $purchase->total_weight) }}" readonly>
-                                    <span class="input-group-text bg-white text-muted">kg</span>
+                            <!-- Line 1: Physical Specifications & Dimensions -->
+                            <div class="row g-2 mb-2">
+                                <div class="col-lg-3 col-md-6 col-12">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">
+                                        Product Name
+                                    </label>
+                                    <input type="text" name="product_name" id="productNameInput"
+                                        class="form-control form-control-sm"
+                                        value="{{ old('product_name', $purchase->product_name ?? ($coil->product_name ?? '')) }}">
                                 </div>
-                                <input type="hidden" id="minAllowedWeight" value="{{ $soldWeight }}">
+
+                                <div class="col-lg-2 col-md-6 col-12">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">
+                                        Coil / Tag No
+                                    </label>
+                                    <input type="text" name="coil_number" id="coilNumberInput"
+                                        class="form-control form-control-sm font-monospace"
+                                        value="{{ old('coil_number', $coil->coil_number ?? '') }}">
+                                </div>
+
+                                <div class="col-lg-2 col-md-3 col-6">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">
+                                        Thickness
+                                    </label>
+                                    <input type="text" name="thickness" id="thicknessInput"
+                                        class="form-control form-control-sm text-center"
+                                        value="{{ old('thickness', $purchase->thickness ?? ($coil->thickness ?? '')) }}">
+                                </div>
+
+                                <div class="col-lg-3 col-md-3 col-6">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">
+                                        Size / Width
+                                    </label>
+                                    <input type="text" name="size" id="sizeInput"
+                                        class="form-control form-control-sm text-center"
+                                        value="{{ old('size', $purchase->size ?? ($coil->width ?? '')) }}">
+                                </div>
+
+                                <div class="col-lg-2 col-md-6 col-6">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">
+                                        Size Type
+                                    </label>
+                                    <select name="size_type" id="sizeTypeInput" class="form-select form-select-sm">
+                                        @php
+                                            $currentSizeType = old('size_type', $purchase->size_type ?? ($coil->length ?? 'ft'));
+                                        @endphp
+                                        <option value="ft" {{ $currentSizeType === 'ft' ? 'selected' : '' }}>Feet (ft)</option>
+                                        <option value="mm" {{ $currentSizeType === 'mm' ? 'selected' : '' }}>Millimeter (mm)</option>
+                                        <option value="inch" {{ $currentSizeType === 'inch' ? 'selected' : '' }}>Inch (in)</option>
+                                        <option value="m" {{ $currentSizeType === 'm' ? 'selected' : '' }}>Meter (m)</option>
+                                        <option value="pcs" {{ $currentSizeType === 'pcs' ? 'selected' : '' }}>Pieces (pcs)</option>
+                                        <option value="ton" {{ $currentSizeType === 'ton' ? 'selected' : '' }}>Ton</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            <div class="col-lg-3 col-md-6 col-12">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Unit Rate (৳) <span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-white text-muted">৳</span>
-                                    <input oninput="calculateRow()" type="number" step="0.01" min="0" name="unit_price" id="unitPriceInput"
-                                        class="form-control text-end fw-semibold"
-                                        value="{{ old('unit_price', $purchase->unit_price) }}" required>
+                            <div class="row g-2 mb-2">
+                                <div class="col-12">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">
+                                        Notes (Optional)
+                                    </label>
+                                    <input type="text" name="coil_notes" id="coilNotesInput"
+                                        class="form-control form-control-sm"
+                                        placeholder="Optional notes, challan details, or bundle remarks"
+                                        value="{{ old('coil_notes', $coil->notes ?? '') }}">
                                 </div>
                             </div>
 
-                            <div class="col-lg-3 col-md-6 col-12">
-                                <label class="form-label small text-secondary fw-semibold mb-1">
-                                    Line Sub Total (৳)
-                                </label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-white text-muted">৳</span>
-                                    <input type="number" step="0.01" name="sub_price" id="subPriceInput"
-                                        class="form-control bg-white text-end fw-bold text-success"
-                                        value="{{ old('sub_price', $purchase->sub_price) }}" readonly>
+                            <!-- Line 2: Weights, Rates & Subtotal (Financials) -->
+                            <div class="row g-2 align-items-end p-2.5 rounded-2 bg-light border border-light-subtle">
+                                <div class="col-lg-2 col-md-4 col-6">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">
+                                        Coil / Piece Qty <span class="text-danger">*</span>
+                                    </label>
+                                    <input oninput="calculateRow()" type="number" min="1" step="1" name="quantity" id="quantityInput"
+                                        class="form-control form-control-sm text-center fw-bold"
+                                        value="{{ old('quantity', (int)$purchase->quantity ?: 1) }}">
                                 </div>
-                                <input type="hidden" name="total_price" id="totalPriceInput" value="{{ old('total_price', $purchase->total_price) }}">
+                                <div class="col-lg-3 col-md-6 col-12">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">
+                                        Per Coil Wt (kg) <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        <input oninput="calculateRow()" type="number" step="0.001" min="0.001" name="unit_weight" id="unitWeightInput"
+                                            class="form-control text-end fw-bold text-primary"
+                                            value="{{ old('unit_weight', $purchase->unit_weight) }}">
+                                        <span class="input-group-text bg-white text-muted">kg</span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3 col-md-6 col-12">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">
+                                        Total Weight (kg)
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" step="0.001" name="total_weight" id="totalWeightInput"
+                                            class="form-control bg-white text-end fw-bold text-dark"
+                                            value="{{ old('total_weight', $purchase->total_weight) }}" readonly>
+                                        <span class="input-group-text bg-white text-muted">kg</span>
+                                    </div>
+                                    <input type="hidden" id="minAllowedWeight" value="{{ $soldWeight }}">
+                                </div>
+
+                                <div class="col-lg-2 col-md-3 col-6">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">
+                                        Unit Rate (৳) <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-white text-muted">৳</span>
+                                        <input oninput="handleRateChange()" type="number" step="0.01" min="0" name="unit_price" id="unitPriceInput"
+                                            class="form-control text-end fw-semibold"
+                                            value="{{ old('unit_price', $purchase->unit_price) }}" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-2 col-md-3 col-6">
+                                    <label class="form-label small text-secondary fw-semibold mb-1">
+                                        Line Sub Total (৳)
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-white text-muted">৳</span>
+                                        <input type="number" step="0.01" name="sub_price" id="subPriceInput"
+                                            class="form-control bg-white text-end fw-bold text-success"
+                                            value="{{ old('sub_price', $purchase->sub_price) }}" readonly>
+                                    </div>
+                                    <input type="hidden" name="total_price" id="totalPriceInput" value="{{ old('total_price', $purchase->total_price) }}">
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Mode B: Multiple Coils Breakdown Container -->
+                    <div id="multipleCoilsContainer" style="{{ $isMultiCoils ? '' : 'display: none;' }}">
+                        <div class="bg-white border rounded-3 p-3 shadow-sm">
+                            <div class="alert alert-info py-2 px-3 border-0 rounded-3 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fe fe-info fs-5 text-primary"></i>
+                                    <span class="small">Break down this purchase into individual physical coils (e.g. 250 kg, 350 kg, 400 kg). Each row registers its own coil tag in yard inventory.</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-primary rounded-pill px-2.5 py-1 fs-8" id="breakdownCoilsCountBadge">{{ $purchase->coils->count() ?: 1 }} Coils</span>
+                                    <span class="badge bg-dark rounded-pill px-2.5 py-1 fs-8 font-monospace" id="breakdownTotalWeightBadge">{{ number_format($purchase->total_weight, 2) }} kg</span>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive mb-3 border rounded-3 bg-white">
+                                <table class="table table-hover table-custom align-middle mb-0" id="coilsBreakdownTable">
+                                    <thead class="bg-light text-secondary fs-8 text-uppercase">
+                                        <tr>
+                                            <th class="ps-3" style="width: 45px;">#</th>
+                                            <th style="min-width: 140px;">Coil / Tag No</th>
+                                            <th style="min-width: 140px;">Product Name</th>
+                                            <th style="min-width: 95px;">Thickness</th>
+                                            <th style="min-width: 95px;">Size / Width</th>
+                                            <th style="width: 110px;">Size Type</th>
+                                            <th style="min-width: 130px;" class="text-end">Weight (kg) <span class="text-danger">*</span></th>
+                                            <th style="min-width: 120px;">Notes</th>
+                                            <th class="text-center" style="width: 50px;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="coilsBreakdownTableBody">
+                                        @foreach($purchase->coils as $cIndex => $cItem)
+                                            <tr class="coil-breakdown-row" data-index="{{ $cIndex }}">
+                                                <td class="ps-3 fw-semibold text-muted coil-row-number">{{ $loop->iteration }}</td>
+                                                <td>
+                                                    <input type="hidden" name="coils[{{ $cIndex }}][id]" value="{{ $cItem->id }}">
+                                                    <input type="text" name="coils[{{ $cIndex }}][coil_number]" class="form-control form-control-sm font-monospace" value="{{ $cItem->coil_number }}" placeholder="Auto if blank">
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="coils[{{ $cIndex }}][product_name]" class="form-control form-control-sm" value="{{ $cItem->product_name ?? $purchase->product_name }}" placeholder="Product name">
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="coils[{{ $cIndex }}][thickness]" class="form-control form-control-sm text-center" value="{{ $cItem->thickness ?? $purchase->thickness }}" placeholder="e.g. 2.50mm">
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="coils[{{ $cIndex }}][size]" class="form-control form-control-sm text-center" value="{{ $cItem->width ?? $purchase->size }}" placeholder="e.g. 4x8">
+                                                </td>
+                                                <td>
+                                                    <select name="coils[{{ $cIndex }}][size_type]" class="form-select form-select-sm">
+                                                        <option value="ft" {{ ($cItem->length ?? $purchase->size_type) === 'ft' ? 'selected' : '' }}>Feet</option>
+                                                        <option value="mm" {{ ($cItem->length ?? $purchase->size_type) === 'mm' ? 'selected' : '' }}>mm</option>
+                                                        <option value="inch" {{ ($cItem->length ?? $purchase->size_type) === 'inch' ? 'selected' : '' }}>Inch</option>
+                                                        <option value="m" {{ ($cItem->length ?? $purchase->size_type) === 'm' ? 'selected' : '' }}>Meter</option>
+                                                        <option value="pcs" {{ ($cItem->length ?? $purchase->size_type) === 'pcs' ? 'selected' : '' }}>Pieces</option>
+                                                        <option value="ton" {{ ($cItem->length ?? $purchase->size_type) === 'ton' ? 'selected' : '' }}>Ton</option>
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="number" step="0.001" min="0.001" name="coils[{{ $cIndex }}][weight]" class="form-control form-control-sm text-end fw-bold text-primary coil-weight-input" value="{{ $cItem->net_weight }}" required oninput="calculateBreakdownTotals()">
+                                                        <span class="input-group-text bg-white text-muted fs-8">kg</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="coils[{{ $cIndex }}][notes]" class="form-control form-control-sm" value="{{ $cItem->notes }}" placeholder="Notes">
+                                                </td>
+                                                <td class="text-center">
+                                                    @php
+                                                        $cSold = max(0, (float)$cItem->net_weight - (float)$cItem->remaining_weight);
+                                                    @endphp
+                                                    @if($cSold > 0)
+                                                        <span class="badge badge-soft-warning fs-8" title="Cannot delete: {{ number_format($cSold, 2) }} kg already sold">Sold</span>
+                                                    @else
+                                                        <button type="button" class="btn btn-outline-danger btn-sm p-1 rounded-2 shadow-none border-0" onclick="removeCoilBreakdownRow(this)" title="Remove coil">
+                                                            <i class="fe fe-trash-2"></i>
+                                                        </button>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-1 border-top">
+                                <div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm rounded-2 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="addCoilBreakdownRow()">
+                                        <i class="fe fe-plus-circle"></i>
+                                        <span>Add Another Coil</span>
+                                    </button>
+                                </div>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="text-end small">
+                                        <span class="text-secondary fw-semibold">Unit Rate:</span>
+                                        <span class="fw-bold text-dark font-monospace ms-1" id="breakdownRateDisplay">৳ {{ number_format($purchase->unit_price, 2) }} /kg</span>
+                                    </div>
+                                    <div class="text-end small">
+                                        <span class="text-secondary fw-semibold">Breakdown Total:</span>
+                                        <span class="fw-bold text-primary fs-6 font-monospace ms-1" id="breakdownTotalWeightDisplay">{{ number_format($purchase->total_weight, 2) }} kg</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -516,9 +635,14 @@
                                 <input type="hidden" name="due" id="due_hidden" value="{{ $purchase->due }}">
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100 py-3 rounded-3 shadow-sm fw-bold fs-6 d-flex align-items-center justify-content-center gap-2" id="submitPurchaseBtn">
-                                <span>Save Changes & Update Inventory</span>
-                            </button>
+                            <div class="d-flex justify-content-end align-items-center gap-2">
+                                <a href="{{ route('purchase.show', $purchase->id) }}" class="btn btn-outline-secondary px-3 py-2 rounded-2">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary px-4 py-2 rounded-2 fw-semibold shadow-sm d-inline-flex align-items-center gap-2" id="submitPurchaseBtn">
+                                    <span>Update Purchase</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -545,6 +669,176 @@
             calculateRow();
             handlePurchasePaymentMethodChange($('#purchasePaymentMethod').val());
         });
+
+        function handleRateChange() {
+            const rate = parseFloat($('#unitPriceInput').val()) || 0;
+            $('#breakdownRateDisplay').text('৳ ' + rate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' /kg');
+            const isBreakdown = document.getElementById('breakdownModeInput')?.value === '1';
+            if (isBreakdown) {
+                calculateBreakdownTotals();
+            } else {
+                calculateRow();
+            }
+        }
+
+        let coilRowCounter = {{ max($purchase->coils->count(), 1) + 1 }};
+
+        function toggleCoilsBreakdown() {
+            const modeInput = document.getElementById('breakdownModeInput');
+            const isCurrentlyBreakdown = modeInput.value === '1';
+            const singleContainer = document.getElementById('singleCoilContainer');
+            const multipleContainer = document.getElementById('multipleCoilsContainer');
+            const btnText = document.getElementById('toggleBreakdownBtnText');
+            const btnIcon = document.getElementById('toggleBreakdownIcon');
+            const headerSingleTag = document.getElementById('headerSingleCoilTag');
+
+            if (isCurrentlyBreakdown) {
+                // Switch to Single Coil Mode
+                modeInput.value = '0';
+                singleContainer.style.display = 'block';
+                multipleContainer.style.display = 'none';
+                btnText.textContent = 'Break Down into Multiple Coils';
+                if (btnIcon) btnIcon.className = 'fe fe-layers';
+                if (headerSingleTag) headerSingleTag.style.display = 'inline-block';
+                calculateRow();
+            } else {
+                // Switch to Multiple Coils Breakdown Mode
+                modeInput.value = '1';
+                singleContainer.style.display = 'none';
+                multipleContainer.style.display = 'block';
+                btnText.textContent = 'Switch to Single Coil Mode';
+                if (btnIcon) btnIcon.className = 'fe fe-minus-circle';
+                if (headerSingleTag) headerSingleTag.style.display = 'none';
+
+                const tbody = document.getElementById('coilsBreakdownTableBody');
+                if (tbody && tbody.children.length === 0) {
+                    addCoilBreakdownRow({
+                        coil_number: document.getElementById('coilNumberInput')?.value || '',
+                        product_name: document.getElementById('productNameInput')?.value || '',
+                        thickness: document.getElementById('thicknessInput')?.value || '',
+                        size: document.getElementById('sizeInput')?.value || '',
+                        size_type: document.getElementById('sizeTypeInput')?.value || 'ft',
+                        weight: document.getElementById('totalWeightInput')?.value || '',
+                        notes: document.getElementById('coilNotesInput')?.value || '',
+                    });
+                }
+                calculateBreakdownTotals();
+            }
+        }
+
+        function addCoilBreakdownRow(data = {}) {
+            const tbody = document.getElementById('coilsBreakdownTableBody');
+            const index = coilRowCounter++;
+            const defaultThickness = document.getElementById('thicknessInput')?.value || '';
+            const defaultSize = document.getElementById('sizeInput')?.value || '';
+            const defaultSizeType = document.getElementById('sizeTypeInput')?.value || 'ft';
+            const defaultProduct = document.getElementById('productNameInput')?.value || '';
+
+            const tr = document.createElement('tr');
+            tr.className = 'coil-breakdown-row';
+            tr.setAttribute('data-index', index);
+            tr.innerHTML = `
+                <td class="ps-3 fw-semibold text-muted coil-row-number"></td>
+                <td>
+                    <input type="text" name="coils[${index}][coil_number]" class="form-control form-control-sm font-monospace" value="${data.coil_number || ''}" placeholder="Auto if blank">
+                </td>
+                <td>
+                    <input type="text" name="coils[${index}][product_name]" class="form-control form-control-sm" value="${data.product_name || defaultProduct}" placeholder="Product name">
+                </td>
+                <td>
+                    <input type="text" name="coils[${index}][thickness]" class="form-control form-control-sm text-center" value="${data.thickness || defaultThickness}" placeholder="e.g. 2.50mm">
+                </td>
+                <td>
+                    <input type="text" name="coils[${index}][size]" class="form-control form-control-sm text-center" value="${data.size || defaultSize}" placeholder="e.g. 4x8">
+                </td>
+                <td>
+                    <select name="coils[${index}][size_type]" class="form-select form-select-sm">
+                        <option value="ft" ${(data.size_type || defaultSizeType) === 'ft' ? 'selected' : ''}>Feet</option>
+                        <option value="mm" ${(data.size_type || defaultSizeType) === 'mm' ? 'selected' : ''}>mm</option>
+                        <option value="inch" ${(data.size_type || defaultSizeType) === 'inch' ? 'selected' : ''}>Inch</option>
+                        <option value="m" ${(data.size_type || defaultSizeType) === 'm' ? 'selected' : ''}>Meter</option>
+                        <option value="pcs" ${(data.size_type || defaultSizeType) === 'pcs' ? 'selected' : ''}>Pieces</option>
+                        <option value="ton" ${(data.size_type || defaultSizeType) === 'ton' ? 'selected' : ''}>Ton</option>
+                    </select>
+                </td>
+                <td>
+                    <div class="input-group input-group-sm">
+                        <input type="number" step="0.001" min="0.001" name="coils[${index}][weight]" class="form-control form-control-sm text-end fw-bold text-primary coil-weight-input" value="${data.weight || ''}" placeholder="0.00" required oninput="calculateBreakdownTotals()">
+                        <span class="input-group-text bg-white text-muted fs-8">kg</span>
+                    </div>
+                </td>
+                <td>
+                    <input type="text" name="coils[${index}][notes]" class="form-control form-control-sm" value="${data.notes || ''}" placeholder="Notes">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm p-1 rounded-2 shadow-none border-0" onclick="removeCoilBreakdownRow(this)" title="Remove coil">
+                        <i class="fe fe-trash-2"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            reindexCoilBreakdownRows();
+            calculateBreakdownTotals();
+        }
+
+        function removeCoilBreakdownRow(btn) {
+            const rows = document.querySelectorAll('.coil-breakdown-row');
+            if (rows.length <= 1) {
+                alert('At least one coil item is required in the breakdown.');
+                return;
+            }
+            const tr = btn.closest('tr');
+            tr.remove();
+            reindexCoilBreakdownRows();
+            calculateBreakdownTotals();
+        }
+
+        function reindexCoilBreakdownRows() {
+            const rows = document.querySelectorAll('.coil-breakdown-row');
+            rows.forEach((row, i) => {
+                const numCell = row.querySelector('.coil-row-number');
+                if (numCell) numCell.textContent = i + 1;
+            });
+            const countBadge = document.getElementById('breakdownCoilsCountBadge');
+            if (countBadge) countBadge.textContent = `${rows.length} Coils`;
+        }
+
+        function calculateBreakdownTotals() {
+            const isBreakdown = document.getElementById('breakdownModeInput')?.value === '1';
+            if (!isBreakdown) return;
+
+            let sumWeight = 0;
+            const inputs = document.querySelectorAll('.coil-weight-input');
+            inputs.forEach(inp => {
+                sumWeight += parseFloat(inp.value) || 0;
+            });
+
+            const displayBadge = document.getElementById('breakdownTotalWeightBadge');
+            if (displayBadge) {
+                displayBadge.textContent = sumWeight.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg';
+            }
+            const totalDisplay = document.getElementById('breakdownTotalWeightDisplay');
+            if (totalDisplay) {
+                totalDisplay.textContent = sumWeight.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg';
+            }
+
+            // Synchronize purchase master fields
+            $('#totalWeightInput').val(sumWeight > 0 ? sumWeight.toFixed(3) : '0.000');
+            $('#quantityInput').val(inputs.length);
+            if (inputs.length > 0) {
+                $('#unitWeightInput').val((sumWeight / inputs.length).toFixed(3));
+            }
+
+            const rate = parseFloat($('#unitPriceInput').val()) || 0;
+            const subPrice = sumWeight * rate;
+            $('#subPriceInput').val(subPrice > 0 ? subPrice.toFixed(2) : '0.00');
+            $('#purchaseSubTotalDisplay').val(subPrice.toFixed(2));
+
+            $('#displayTotalCoils').text(inputs.length);
+            $('#displayTotalWeight').text(sumWeight.toFixed(2));
+
+            calculateFinancials();
+        }
 
         function calculateRow() {
             const qty = parseInt($('#quantityInput').val()) || 1;
@@ -632,6 +926,29 @@
         }
 
         $('#editPurchaseForm').on('submit', function (e) {
+            if ($('#breakdownModeInput').val() === '1') {
+                const rows = $('.coil-breakdown-row');
+                if (rows.length === 0) {
+                    e.preventDefault();
+                    alert('Please add at least one coil item in the breakdown.');
+                    return false;
+                }
+                let hasInvalidWeight = false;
+                $('.coil-weight-input').each(function () {
+                    const wt = parseFloat($(this).val()) || 0;
+                    if (wt <= 0) {
+                        hasInvalidWeight = true;
+                        $(this).focus();
+                        return false;
+                    }
+                });
+                if (hasInvalidWeight) {
+                    e.preventDefault();
+                    alert('Please enter a valid weight (kg) greater than 0 for each coil item.');
+                    return false;
+                }
+            }
+
             const totalWeight = parseFloat($('#totalWeightInput').val()) || 0;
             const minAllowedWeight = parseFloat($('#minAllowedWeight').val()) || 0;
             const grandTotal = parseFloat($('#totalPriceInput').val()) || 0;

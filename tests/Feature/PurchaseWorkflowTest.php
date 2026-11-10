@@ -364,4 +364,161 @@ class PurchaseWorkflowTest extends TestCase
         $this->assertEquals('0.40', $coil->thickness);
         $this->assertEquals('4x8', $coil->width);
     }
+
+    public function test_can_edit_quick_purchase_and_break_down_into_multiple_coils(): void
+    {
+        // 1. Create a Quick Purchase of 1000 kg
+        $response = $this->actingAs($this->admin)->post(route('purchase.store'), [
+            'is_quick_mode'  => 1,
+            'vendor_id'      => $this->vendor->id,
+            'warehouse_id'   => $this->warehouse->id,
+            'lot_type'       => 'new',
+            'new_lot_number' => 'LOT-BREAKDOWN-001',
+            'purchase_date'  => date('Y-m-d'),
+            'total_weight'   => 1000.00,
+            'total_amount'   => 80000.00,
+            'payment'        => 50000.00,
+            'payment_method' => 'cash',
+        ]);
+
+        $response->assertRedirect(route('purchase.index'));
+
+        $purchase = Purchase::where('total_weight', 1000.00)->latest()->first();
+        $this->assertNotNull($purchase);
+        $this->assertEquals(1, $purchase->coils()->count());
+
+        // 2. Edit purchase and break down into 3 coils: 250, 350, 400 kg
+        $editResponse = $this->actingAs($this->admin)->put(route('purchase.update', $purchase->id), [
+            'lot_id'          => $purchase->lot_id,
+            'warehouse_id'    => $this->warehouse->id,
+            'vendor_id'       => $this->vendor->id,
+            'breakdown_mode'  => '1',
+            'product_name'    => 'HR Steel Plates',
+            'thickness'       => '2.50mm',
+            'size'            => '4x8',
+            'size_type'       => 'ft',
+            'unit_price'      => 80.00,
+            'sub_price'       => 80000.00,
+            'total_price'     => 80000.00,
+            'payment'         => 50000.00,
+            'due'             => 30000.00,
+            'payment_method'  => 'cash',
+            'coils' => [
+                [
+                    'coil_number'  => 'COIL-SPLIT-250',
+                    'product_name' => 'HR Plate Small',
+                    'thickness'    => '2.50mm',
+                    'size'         => '4x8',
+                    'size_type'    => 'ft',
+                    'weight'       => 250.00,
+                    'notes'        => 'First coil piece',
+                ],
+                [
+                    'coil_number'  => 'COIL-SPLIT-350',
+                    'product_name' => 'HR Plate Medium',
+                    'thickness'    => '2.50mm',
+                    'size'         => '4x8',
+                    'size_type'    => 'ft',
+                    'weight'       => 350.00,
+                    'notes'        => 'Second coil piece',
+                ],
+                [
+                    'coil_number'  => 'COIL-SPLIT-400',
+                    'product_name' => 'HR Plate Large',
+                    'thickness'    => '2.50mm',
+                    'size'         => '4x8',
+                    'size_type'    => 'ft',
+                    'weight'       => 400.00,
+                    'notes'        => 'Third coil piece',
+                ],
+            ],
+        ]);
+
+        $editResponse->assertSessionHasNoErrors();
+        $editResponse->assertRedirect(route('purchase.show', $purchase->id));
+
+        // 3. Verify Purchase record updated
+        $purchase->refresh();
+        $this->assertEquals(3, $purchase->quantity);
+        $this->assertEquals(1000.00, (float)$purchase->total_weight);
+        $this->assertEquals(80000.00, (float)$purchase->total_price);
+        $this->assertEquals(50000.00, (float)$purchase->payment);
+        $this->assertEquals(30000.00, (float)$purchase->due);
+
+        // 4. Verify 3 individual coils created in inventory
+        $this->assertEquals(3, $purchase->coils()->count());
+
+        $coil1 = Coil::where('coil_number', 'COIL-SPLIT-250')->first();
+        $this->assertNotNull($coil1);
+        $this->assertEquals(250.00, (float)$coil1->net_weight);
+        $this->assertEquals(250.00, (float)$coil1->remaining_weight);
+        $this->assertEquals('in_stock', $coil1->status);
+
+        $coil2 = Coil::where('coil_number', 'COIL-SPLIT-350')->first();
+        $this->assertNotNull($coil2);
+        $this->assertEquals(350.00, (float)$coil2->net_weight);
+        $this->assertEquals(350.00, (float)$coil2->remaining_weight);
+        $this->assertEquals('in_stock', $coil2->status);
+
+        $coil3 = Coil::where('coil_number', 'COIL-SPLIT-400')->first();
+        $this->assertNotNull($coil3);
+        $this->assertEquals(400.00, (float)$coil3->net_weight);
+        $this->assertEquals(400.00, (float)$coil3->remaining_weight);
+        $this->assertEquals('in_stock', $coil3->status);
+    }
+
+    public function test_cannot_remove_sold_coil_during_breakdown(): void
+    {
+        $purchase = Purchase::create([
+            'lot_id' => $this->lot->id,
+            'vendor_id' => $this->vendor->id,
+            'warehouse_id' => $this->warehouse->id,
+            'unit_weight' => 1000.00,
+            'total_weight' => 1000.00,
+            'quantity' => 1,
+            'unit_price' => 80.00,
+            'sub_price' => 80000.00,
+            'total_price' => 80000.00,
+            'payment' => 80000.00,
+            'due' => 0.00,
+            'payment_method' => 'cash',
+        ]);
+
+        $coil = Coil::create([
+            'coil_number' => 'COIL-PROTECT-01',
+            'purchase_id' => $purchase->id,
+            'lot_id' => $this->lot->id,
+            'vendor_id' => $this->vendor->id,
+            'warehouse_id' => $this->warehouse->id,
+            'gross_weight' => 1000.00,
+            'net_weight' => 1000.00,
+            'remaining_weight' => 600.00, // 400 kg has been sold!
+            'rate_per_ton' => 80.00,
+            'total_price' => 80000.00,
+            'status' => 'in_stock',
+        ]);
+
+        // Attempt to reduce its weight to 300 kg (below the 400 kg sold)
+        $response = $this->actingAs($this->admin)->put(route('purchase.update', $purchase->id), [
+            'lot_id' => $purchase->lot_id,
+            'warehouse_id' => $this->warehouse->id,
+            'vendor_id' => $this->vendor->id,
+            'breakdown_mode' => '1',
+            'unit_price' => 80.00,
+            'payment' => 80000.00,
+            'coils' => [
+                [
+                    'id' => $coil->id,
+                    'coil_number' => $coil->coil_number,
+                    'weight' => 300.00, // Invalid! 400 kg sold
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHas('error');
+
+        // Coil net weight remains untouched
+        $coil->refresh();
+        $this->assertEquals(1000.00, (float)$coil->net_weight);
+    }
 }

@@ -251,6 +251,8 @@ class PurchaseController extends Controller
      */
     public function update(Request $request, Purchase $purchase)
     {
+        $isBreakdown = $request->boolean('breakdown_mode') || $request->input('breakdown_mode') === '1' || $request->has('coils');
+
         $request->validate([
             'lot_id'          => 'required|exists:lots,id',
             'warehouse_id'    => 'required|exists:warehouses,id',
@@ -260,47 +262,83 @@ class PurchaseController extends Controller
             'thickness'       => 'nullable|string|max:100',
             'size'            => 'nullable|string|max:100',
             'size_type'       => 'nullable|string|max:50',
-            'unit_weight'     => 'required|numeric|min:0.001',
+            'unit_weight'     => $isBreakdown ? 'nullable|numeric|min:0' : 'required|numeric|min:0.001',
             'total_weight'    => 'nullable|numeric|min:0',
-            'quantity'        => 'required|numeric|min:1',
-            'unit_price'        => 'required|numeric|min:0',
-            'sub_price'         => 'nullable|numeric',
-            'delivery_charge'   => 'nullable|numeric|min:0',
-            'transport_payer'   => 'nullable|string|in:me,vendor',
-            'labour_cost'       => 'nullable|numeric|min:0',
+            'quantity'        => 'nullable|numeric|min:1',
+            'unit_price'      => 'required|numeric|min:0',
+            'sub_price'       => 'nullable|numeric',
+            'delivery_charge' => 'nullable|numeric|min:0',
+            'transport_payer' => 'nullable|string|in:me,vendor',
+            'labour_cost'     => 'nullable|numeric|min:0',
             'weight_scale_cost' => 'nullable|numeric|min:0',
-            'other_charges'     => 'nullable|numeric|min:0',
-            'discount'          => 'nullable|numeric|min:0',
-            'total_price'       => 'nullable|numeric|min:0',
-            'payment'           => 'required|numeric|min:0',
-            'due'               => 'nullable|numeric|min:0',
-            'payment_method'    => 'nullable|string|in:cash,bank,cheque,mobile_banking',
-            'bank_detail_id'    => 'nullable|exists:bank_details,id',
-            'transaction_ref'   => 'nullable|string|max:255',
-            'notes'             => 'nullable|string|max:500',
-            'coil_notes'        => 'nullable|string|max:500',
+            'other_charges'   => 'nullable|numeric|min:0',
+            'discount'        => 'nullable|numeric|min:0',
+            'total_price'     => 'nullable|numeric|min:0',
+            'payment'         => 'required|numeric|min:0',
+            'due'             => 'nullable|numeric|min:0',
+            'payment_method'  => 'nullable|string|in:cash,bank,cheque,mobile_banking',
+            'bank_detail_id'  => 'nullable|exists:bank_details,id',
+            'transaction_ref' => 'nullable|string|max:255',
+            'notes'           => 'nullable|string|max:500',
+            'coil_notes'      => 'nullable|string|max:500',
+            'coils'           => $isBreakdown ? 'required|array|min:1' : 'nullable|array',
+            'coils.*.weight'  => $isBreakdown ? 'required|numeric|min:0.001' : 'nullable|numeric',
         ]);
 
         \Illuminate\Support\Facades\DB::beginTransaction();
         try {
             $purchase = Purchase::with('coils')->findOrFail($purchase->id);
             $oldLotId = $purchase->lot_id;
-            $coil = $purchase->coils->first();
+            $existingCoils = $purchase->coils->keyBy('id');
 
-            $coilQty = max(1, (int) $request->quantity);
-            $perCoilWeight = (float) $request->unit_weight;
-            $calculatedTotalWeight = $coilQty * $perCoilWeight;
-            $totalWeight = (float) ($request->total_weight ?: $calculatedTotalWeight);
-            if ($totalWeight <= 0 && $calculatedTotalWeight > 0) {
-                $totalWeight = $calculatedTotalWeight;
-            }
+            if ($isBreakdown) {
+                $submittedCoils = $request->input('coils', []);
+                $totalBreakdownWeight = 0;
+                foreach ($submittedCoils as $sc) {
+                    $totalBreakdownWeight += (float) ($sc['weight'] ?? 0);
+                }
 
-            // Sold weight protection check
-            if ($coil) {
-                $soldWeight = max(0, (float)$coil->net_weight - (float)$coil->remaining_weight);
-                if ($soldWeight > 0 && $totalWeight < $soldWeight) {
+                if ($totalBreakdownWeight <= 0) {
                     \Illuminate\Support\Facades\DB::rollBack();
-                    return redirect()->back()->withInput()->with('error', "Cannot reduce total intake weight below " . number_format($soldWeight, 2) . " kg because this amount has already been sold and dispatched.");
+                    return redirect()->back()->withInput()->with('error', 'Total breakdown weight must be greater than 0 kg.');
+                }
+
+                // Sold weight safety check across existing coils
+                foreach ($existingCoils as $oldCoil) {
+                    $soldWeight = max(0, (float)$oldCoil->net_weight - (float)$oldCoil->remaining_weight);
+                    if ($soldWeight > 0) {
+                        $matched = collect($submittedCoils)->first(fn($sc) => isset($sc['id']) && $sc['id'] == $oldCoil->id);
+                        if (!$matched) {
+                            \Illuminate\Support\Facades\DB::rollBack();
+                            return redirect()->back()->withInput()->with('error', "Cannot remove coil #{$oldCoil->coil_number} because " . number_format($soldWeight, 2) . " kg has already been sold.");
+                        }
+                        if ((float)$matched['weight'] < $soldWeight) {
+                            \Illuminate\Support\Facades\DB::rollBack();
+                            return redirect()->back()->withInput()->with('error', "Cannot reduce weight of coil #{$oldCoil->coil_number} below " . number_format($soldWeight, 2) . " kg because that amount has already been sold.");
+                        }
+                    }
+                }
+
+                $coilQty = count($submittedCoils);
+                $totalWeight = $totalBreakdownWeight;
+                $perCoilWeight = $coilQty > 0 ? round($totalWeight / $coilQty, 3) : $totalWeight;
+            } else {
+                $coil = $existingCoils->first();
+                $coilQty = max(1, (int) $request->quantity);
+                $perCoilWeight = (float) $request->unit_weight;
+                $calculatedTotalWeight = $coilQty * $perCoilWeight;
+                $totalWeight = (float) ($request->total_weight ?: $calculatedTotalWeight);
+                if ($totalWeight <= 0 && $calculatedTotalWeight > 0) {
+                    $totalWeight = $calculatedTotalWeight;
+                }
+
+                // Sold weight protection check
+                if ($coil) {
+                    $soldWeight = max(0, (float)$coil->net_weight - (float)$coil->remaining_weight);
+                    if ($soldWeight > 0 && $totalWeight < $soldWeight) {
+                        \Illuminate\Support\Facades\DB::rollBack();
+                        return redirect()->back()->withInput()->with('error', "Cannot reduce total intake weight below " . number_format($soldWeight, 2) . " kg because this amount has already been sold and dispatched.");
+                    }
                 }
             }
 
@@ -348,31 +386,137 @@ class PurchaseController extends Controller
             $purchase->updated_by        = Auth::id();
             $purchase->save();
 
-            // Synchronize linked Coil record in yard stock
-            if ($coil) {
-                $prevNetWeight = (float) $coil->net_weight;
-                $soldWeight = max(0, $prevNetWeight - (float) $coil->remaining_weight);
-                $newRemainingWeight = max(0, $totalWeight - $soldWeight);
+            // Synchronize linked Coil record(s) in yard stock
+            if ($isBreakdown) {
+                $retainedCoilIds = [];
+                foreach ($submittedCoils as $sc) {
+                    $cWeight = (float) ($sc['weight'] ?? 0);
+                    if ($cWeight <= 0) continue;
 
-                $coil->update([
-                    'lot_id'           => $request->lot_id,
-                    'vendor_id'        => $request->vendor_id,
-                    'warehouse_id'     => $request->warehouse_id,
-                    'product_name'     => $request->product_name,
-                    'coil_number'      => !empty($request->coil_number) ? trim($request->coil_number) : $coil->coil_number,
-                    'thickness'        => $request->thickness,
-                    'width'            => $request->size,
-                    'length'           => $request->size_type ?: 'ft',
-                    'piece_count'      => $coilQty,
-                    'gross_weight'     => $totalWeight,
-                    'net_weight'       => $totalWeight,
-                    'remaining_weight' => $newRemainingWeight,
-                    'rate_per_ton'     => $rate,
-                    'total_price'      => $totalPrice,
-                    'status'           => ($newRemainingWeight <= 0) ? 'exhausted' : 'in_stock',
-                    'notes'            => $request->coil_notes ?? $coil->notes,
-                    'updated_by'       => Auth::id(),
-                ]);
+                    $cNumber = !empty($sc['coil_number']) ? trim($sc['coil_number']) : null;
+                    $cProduct = !empty($sc['product_name']) ? trim($sc['product_name']) : $request->product_name;
+                    $cThickness = !empty($sc['thickness']) ? trim($sc['thickness']) : $request->thickness;
+                    $cSize = !empty($sc['size']) ? trim($sc['size']) : $request->size;
+                    $cSizeType = !empty($sc['size_type']) ? trim($sc['size_type']) : ($request->size_type ?: 'ft');
+                    $cNotes = $sc['notes'] ?? null;
+
+                    $cExistingId = $sc['id'] ?? null;
+                    if ($cExistingId && isset($existingCoils[$cExistingId])) {
+                        $cModel = $existingCoils[$cExistingId];
+                        $cSold = max(0, (float)$cModel->net_weight - (float)$cModel->remaining_weight);
+                        $cNewRemaining = max(0, $cWeight - $cSold);
+
+                        $cModel->update([
+                            'lot_id'           => $request->lot_id,
+                            'vendor_id'        => $request->vendor_id,
+                            'warehouse_id'     => $request->warehouse_id,
+                            'product_name'     => $cProduct,
+                            'coil_number'      => $cNumber ?: $cModel->coil_number,
+                            'thickness'        => $cThickness,
+                            'width'            => $cSize,
+                            'length'           => $cSizeType,
+                            'piece_count'      => 1,
+                            'gross_weight'     => $cWeight,
+                            'net_weight'       => $cWeight,
+                            'remaining_weight' => $cNewRemaining,
+                            'rate_per_ton'     => $rate,
+                            'total_price'      => round($cWeight * $rate, 2),
+                            'status'           => ($cNewRemaining <= 0) ? 'exhausted' : 'in_stock',
+                            'notes'            => $cNotes,
+                            'updated_by'       => Auth::id(),
+                        ]);
+                        $retainedCoilIds[] = $cModel->id;
+                    } else {
+                        // Reuse an unclaimed existing coil if unsold
+                        $unclaimed = $existingCoils->whereNotIn('id', $retainedCoilIds)->first();
+                        if ($unclaimed && max(0, (float)$unclaimed->net_weight - (float)$unclaimed->remaining_weight) <= 0.0001) {
+                            $unclaimed->update([
+                                'lot_id'           => $request->lot_id,
+                                'vendor_id'        => $request->vendor_id,
+                                'warehouse_id'     => $request->warehouse_id,
+                                'product_name'     => $cProduct,
+                                'coil_number'      => $cNumber ?: $unclaimed->coil_number,
+                                'thickness'        => $cThickness,
+                                'width'            => $cSize,
+                                'length'           => $cSizeType,
+                                'piece_count'      => 1,
+                                'gross_weight'     => $cWeight,
+                                'net_weight'       => $cWeight,
+                                'remaining_weight' => $cWeight,
+                                'rate_per_ton'     => $rate,
+                                'total_price'      => round($cWeight * $rate, 2),
+                                'status'           => 'in_stock',
+                                'notes'            => $cNotes,
+                                'updated_by'       => Auth::id(),
+                            ]);
+                            $retainedCoilIds[] = $unclaimed->id;
+                        } else {
+                            $newCoilNumber = $cNumber ?: Coil::generateCoilNumber();
+                            if (Coil::where('coil_number', $newCoilNumber)->exists()) {
+                                $newCoilNumber = Coil::generateCoilNumber();
+                            }
+                            $createdCoil = Coil::create([
+                                'coil_number'      => $newCoilNumber,
+                                'product_name'     => $cProduct,
+                                'purchase_id'      => $purchase->id,
+                                'lot_id'           => $request->lot_id,
+                                'vendor_id'        => $request->vendor_id,
+                                'warehouse_id'     => $request->warehouse_id,
+                                'thickness'        => $cThickness,
+                                'width'            => $cSize,
+                                'length'           => $cSizeType,
+                                'piece_count'      => 1,
+                                'gross_weight'     => $cWeight,
+                                'tare_weight'      => 0,
+                                'net_weight'       => $cWeight,
+                                'remaining_weight' => $cWeight,
+                                'rate_per_ton'     => $rate,
+                                'total_price'      => round($cWeight * $rate, 2),
+                                'status'           => 'in_stock',
+                                'notes'            => $cNotes,
+                                'created_by'       => Auth::id(),
+                            ]);
+                            $retainedCoilIds[] = $createdCoil->id;
+                        }
+                    }
+                }
+
+                // Delete any un-retained coils (only if 0 sold weight)
+                foreach ($existingCoils as $oldCoil) {
+                    if (!in_array($oldCoil->id, $retainedCoilIds)) {
+                        $cSold = max(0, (float)$oldCoil->net_weight - (float)$oldCoil->remaining_weight);
+                        if ($cSold <= 0.0001) {
+                            $oldCoil->delete();
+                        }
+                    }
+                }
+            } else {
+                $coil = $existingCoils->first();
+                if ($coil) {
+                    $prevNetWeight = (float) $coil->net_weight;
+                    $soldWeight = max(0, $prevNetWeight - (float) $coil->remaining_weight);
+                    $newRemainingWeight = max(0, $totalWeight - $soldWeight);
+
+                    $coil->update([
+                        'lot_id'           => $request->lot_id,
+                        'vendor_id'        => $request->vendor_id,
+                        'warehouse_id'     => $request->warehouse_id,
+                        'product_name'     => $request->product_name,
+                        'coil_number'      => !empty($request->coil_number) ? trim($request->coil_number) : $coil->coil_number,
+                        'thickness'        => $request->thickness,
+                        'width'            => $request->size,
+                        'length'           => $request->size_type ?: 'ft',
+                        'piece_count'      => $coilQty,
+                        'gross_weight'     => $totalWeight,
+                        'net_weight'       => $totalWeight,
+                        'remaining_weight' => $newRemainingWeight,
+                        'rate_per_ton'     => $rate,
+                        'total_price'      => $totalPrice,
+                        'status'           => ($newRemainingWeight <= 0) ? 'exhausted' : 'in_stock',
+                        'notes'            => $request->coil_notes ?? $coil->notes,
+                        'updated_by'       => Auth::id(),
+                    ]);
+                }
             }
 
             // Update affected lots totals
@@ -387,8 +531,11 @@ class PurchaseController extends Controller
 
             \Illuminate\Support\Facades\DB::commit();
 
-            return redirect()->route('purchase.show', $purchase->id)
-                ->with('success', 'Purchase order #PO-' . $purchase->id . ' and physical coil specifications updated successfully.');
+            $msg = $isBreakdown
+                ? "Purchase order #PO-{$purchase->id} updated with {$coilQty} coil items (" . number_format($totalWeight, 2) . " kg) successfully."
+                : "Purchase order #PO-{$purchase->id} and physical coil specifications updated successfully.";
+
+            return redirect()->route('purchase.show', $purchase->id)->with('success', $msg);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\DB::rollBack();
             \Illuminate\Support\Facades\Log::error("Failed to update purchase #PO-{$purchase->id}: " . $e->getMessage());

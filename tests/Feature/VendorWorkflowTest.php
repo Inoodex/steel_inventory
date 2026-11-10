@@ -500,5 +500,75 @@ class VendorWorkflowTest extends TestCase
         $vendor->refresh();
         $this->assertEquals(0.00, (float)$vendor->net_balance);
     }
+
+    public function test_vendor_ledger_renders_purchase_description_and_bank_account_details(): void
+    {
+        $vendor = Vendor::create([
+            'name' => 'Ledger Test Mills',
+            'phone' => '01999888777',
+            'opening_balance' => 0,
+            'status' => 'active',
+        ]);
+
+        $bank = \App\Models\BankDetail::create([
+            'account_name' => 'Steel Treasury',
+            'bank_name' => 'Eastern Bank PLC',
+            'account_number' => 'EBL-998877',
+            'account_type' => 'Current',
+            'is_active' => true,
+        ]);
+
+        $lot = Lot::create([
+            'lot_number' => 'LOT-LDG-100',
+            'vendor_id' => $vendor->id,
+            'status' => 'active',
+        ]);
+
+        $purchase = Purchase::create([
+            'vendor_id' => $vendor->id,
+            'lot_id' => $lot->id,
+            'product_name' => 'Galvanized Sheet',
+            'thickness' => '2.0mm',
+            'size' => '3x6 ft',
+            'quantity' => 10,
+            'unit_price' => 500,
+            'total_price' => 5000,
+            'notes' => 'Direct mill consignment note #55',
+            'status' => 'received',
+        ]);
+
+        Payment::create([
+            'vendor_id' => $vendor->id,
+            'amount' => 3000,
+            'payment_for' => 3,
+            'payment_method' => 'bank',
+            'bank_detail_id' => $bank->id,
+            'transaction_ref' => 'TRX-EBL-01',
+            'status' => 1,
+            'created_by' => $this->admin->id,
+        ]);
+
+        Payment::create([
+            'vendor_id' => $vendor->id,
+            'amount' => 1000,
+            'payment_for' => 3,
+            'payment_method' => 'cash',
+            'remarks' => 'Cash handed to representative',
+            'status' => 1,
+            'created_by' => $this->admin->id,
+        ]);
+
+        // Check web ledger
+        $webResponse = $this->actingAs($this->admin)->get(route('vendors.ledger', $vendor->id));
+        $webResponse->assertStatus(200);
+        $webResponse->assertSee('Direct mill consignment note #55');
+        $webResponse->assertSee('Eastern Bank PLC - EBL-998877');
+        $webResponse->assertSee('Cash');
+
+        // Check PDF response
+        $pdfResponse = $this->actingAs($this->admin)->get(route('vendors.ledger.pdf', $vendor->id));
+        $pdfResponse->assertStatus(200);
+        $this->assertEquals('application/pdf', $pdfResponse->headers->get('Content-Type'));
+    }
 }
 

@@ -13,7 +13,8 @@ use App\Http\Controllers\{
     TrialBalanceController, FinancialStatementController,
     FiscalYearController, WarehouseController,
     WorkerPayoutController, ShopController, MasterLogReportController,
-    CustomerAdvanceController, VendorAdvanceController, BalanceTransferController
+    CustomerAdvanceController, VendorAdvanceController, BalanceTransferController,
+    PurchaseReturnController
 };
 
 use Illuminate\Support\Facades\{Auth, Route};
@@ -34,14 +35,14 @@ Route::get('/', function () {
     return redirect()->route('dashboard');
 })->name('index');
 
-// 1. DASHBOARD → accessible by Super Admin, Employee, and Sales Executive
+// 1. DASHBOARD â†’ accessible by Super Admin, Employee, and Sales Executive
 Route::middleware(['auth', 'role_or_permission:Super Admin|Employee|Sales Executive|Sales Only Access'])->group(function () {
 
     // Dashboard - accessible by Super Admin and Employee (Sales Executive auto-redirects to sales.index)
     Route::get('/dashboard', [FrontendController::class, 'index'])->name('dashboard');
 });
 
-// 2. SALES & SHOP SALES MODULE → Super Admin, Sales Executive, or users with Sales Only Access / Sales Management
+// 2. SALES & SHOP SALES MODULE â†’ Super Admin, Sales Executive, or users with Sales Only Access / Sales Management
 Route::middleware(['auth', 'role_or_permission:Super Admin|Sales Executive|Sales Only Access|Sales Management'])->group(function () {
     // Shop Sales
     Route::get('shops/sales/create', [ShopController::class, 'createSale'])->name('shops.sales.create');
@@ -57,7 +58,7 @@ Route::middleware(['auth', 'role_or_permission:Super Admin|Sales Executive|Sales
     Route::get('/sales/search-orders', [SalesController::class, 'searchOrders'])->name('sales.search-orders');
 });
 
-// 3. EVERYTHING ELSE → ONLY Super Admin
+// 3. EVERYTHING ELSE â†’ ONLY Super Admin
 Route::middleware(['auth', 'role:Super Admin'])->group(function () {
 
     // === Administration ===
@@ -111,6 +112,11 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
 
     Route::resource('purchase', PurchaseController::class);
     Route::get('purchase/latest-price/{id}', [PurchaseController::class, 'getLatestPrice'])->name('purchase.latest_price');
+
+    // === Purchase Returns / Debit Notes ===
+    Route::get('purchase-returns/ajax/vendor-purchases/{vendorId}', [PurchaseReturnController::class, 'getVendorPurchases'])->name('purchase-returns.vendor-purchases');
+    Route::get('purchase-returns/{id}/pdf', [PurchaseReturnController::class, 'downloadPdf'])->name('purchase-returns.pdf');
+    Route::resource('purchase-returns', PurchaseReturnController::class)->only(['index', 'create', 'store', 'show']);
 
     // === HR (Super Admin only) ===
     Route::resource('employees', EmployeeController::class);

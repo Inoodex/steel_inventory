@@ -41,13 +41,19 @@ class Vendor extends Model
         return $this->hasMany(Lot::class);
     }
 
+    public function purchaseReturns()
+    {
+        return $this->hasMany(PurchaseReturn::class, 'vendor_id');
+    }
+
     public function getNetBalanceAttribute(): float
     {
         $opening = (float) ($this->opening_balance ?? 0);
         $purchasesTotal = (float) $this->purchases()->sum('total_price');
         $paymentsTotal = (float) $this->payments()->sum('amount');
+        $returnsTotal = (float) $this->purchaseReturns()->where('status', '!=', 'cancelled')->sum('total_refund_amount');
 
-        return $opening + $purchasesTotal - $paymentsTotal;
+        return $opening + $purchasesTotal - $paymentsTotal - $returnsTotal;
     }
 
     public function getAdvanceBalanceAttribute(): float
@@ -148,7 +154,7 @@ class Vendor extends Model
                     if (abs($alloc - (float)$payment->amount) < 0.0001) {
                         // Entire payment is consumed by this purchase
                         $payment->purchase_id = $purchase->id;
-                        $prefix = $payment->remarks ? $payment->remarks . ' — ' : '';
+                        $prefix = $payment->remarks ? $payment->remarks . ' â€” ' : '';
                         $payment->remarks = $prefix . 'Applied to PO #' . $purchase->id;
                         $payment->saveQuietly();
                         $remainingAmt = 0;
