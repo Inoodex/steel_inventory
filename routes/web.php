@@ -29,7 +29,7 @@ Route::get('/', function () {
         return redirect()->route('login');
     }
     $user = Auth::user();
-    if ($user->hasRole('Sales Executive') || $user->can('Sales Only Access')) {
+    if (($user->hasRole('Sales Executive') || $user->can('Sales Only Access')) && !$user->hasRole(['Super Admin', 'Admin', 'admin'])) {
         return redirect()->route('sales.index');
     }
     return redirect()->route('dashboard');
