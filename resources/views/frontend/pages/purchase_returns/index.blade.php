@@ -138,7 +138,7 @@
                     </div>
                     <div>
                         <span class="text-muted small fw-medium d-block mb-1">Total Refund Value</span>
-                        <h4 class="mb-0 fw-bold text-success font-monospace">à§³ {{ number_format($totalRefundValue, 2) }}</h4>
+                        <h4 class="mb-0 fw-bold text-success font-monospace">৳ {{ number_format($totalRefundValue, 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -270,10 +270,10 @@
                                     @endif
                                 </td>
                                 <td class="text-end font-monospace">
-                                    à§³ {{ number_format($ret->unit_price, 2) }}
+                                    ৳ {{ number_format($ret->unit_price, 2) }}
                                 </td>
                                 <td class="text-end font-monospace fw-bold text-success">
-                                    à§³ {{ number_format($ret->total_refund_amount, 2) }}
+                                    ৳ {{ number_format($ret->total_refund_amount, 2) }}
                                 </td>
                                 <td>
                                     @if($ret->refund_type === 'reduce_due')

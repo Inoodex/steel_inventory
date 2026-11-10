@@ -154,7 +154,7 @@ class Vendor extends Model
                     if (abs($alloc - (float)$payment->amount) < 0.0001) {
                         // Entire payment is consumed by this purchase
                         $payment->purchase_id = $purchase->id;
-                        $prefix = $payment->remarks ? $payment->remarks . ' â€” ' : '';
+                        $prefix = $payment->remarks ? $payment->remarks . ' — ' : '';
                         $payment->remarks = $prefix . 'Applied to PO #' . $purchase->id;
                         $payment->saveQuietly();
                         $remainingAmt = 0;

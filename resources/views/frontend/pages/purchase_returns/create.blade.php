@@ -125,31 +125,31 @@
                             <div class="row g-2 small">
                                 <div class="col-6 col-md-3">
                                     <span class="text-muted d-block">Coil Tag / ID:</span>
-                                    <strong class="text-dark font-monospace" id="sumCoilTag">â€”</strong>
+                                    <strong class="text-dark font-monospace" id="sumCoilTag">—</strong>
                                 </div>
                                 <div class="col-6 col-md-3">
                                     <span class="text-muted d-block">Specifications:</span>
-                                    <strong class="text-dark" id="sumSpecs">â€”</strong>
+                                    <strong class="text-dark" id="sumSpecs">—</strong>
                                 </div>
                                 <div class="col-6 col-md-3">
                                     <span class="text-muted d-block">Intake Weight:</span>
-                                    <strong class="text-dark" id="sumIntakeWeight">â€”</strong>
+                                    <strong class="text-dark" id="sumIntakeWeight">—</strong>
                                 </div>
                                 <div class="col-6 col-md-3">
                                     <span class="text-muted d-block">Available In Stock:</span>
-                                    <strong class="text-primary font-monospace fw-bold" id="sumAvailableStock">â€”</strong>
+                                    <strong class="text-primary font-monospace fw-bold" id="sumAvailableStock">—</strong>
                                 </div>
                                 <div class="col-6 col-md-3 mt-2">
                                     <span class="text-muted d-block">Location / Stockyard:</span>
-                                    <strong class="text-dark" id="sumWarehouse">â€”</strong>
+                                    <strong class="text-dark" id="sumWarehouse">—</strong>
                                 </div>
                                 <div class="col-6 col-md-3 mt-2">
                                     <span class="text-muted d-block">Purchase Cost Rate:</span>
-                                    <strong class="text-dark font-monospace" id="sumCostRate">â€”</strong>
+                                    <strong class="text-dark font-monospace" id="sumCostRate">—</strong>
                                 </div>
                                 <div class="col-12 col-md-6 mt-2">
                                     <span class="text-muted d-block">Current Open Due on PO:</span>
-                                    <strong class="text-danger font-monospace" id="sumDueAmount">à§³ 0.00</strong>
+                                    <strong class="text-danger font-monospace" id="sumDueAmount">৳ 0.00</strong>
                                 </div>
                             </div>
                         </div>
@@ -204,10 +204,10 @@
                         <div class="bg-light p-3 rounded-3 mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <div>
                                 <span class="text-muted small fw-medium d-block">Total Return Value (Credit to Claim):</span>
-                                <span class="small text-muted" id="calcBreakdown">0 kg Ã— à§³0.00</span>
+                                <span class="small text-muted" id="calcBreakdown">0 kg × ৳0.00</span>
                             </div>
                             <div class="text-end">
-                                <h3 class="mb-0 fw-bold text-success font-monospace" id="totalRefundDisplay">à§³ 0.00</h3>
+                                <h3 class="mb-0 fw-bold text-success font-monospace" id="totalRefundDisplay">৳ 0.00</h3>
                             </div>
                         </div>
                     </div>
@@ -280,7 +280,7 @@
                                     <option value="">-- Choose Bank Account --</option>
                                     @foreach($bankAccounts as $bank)
                                         <option value="{{ $bank->id }}">
-                                            {{ $bank->bank_name }} - {{ $bank->account_number }} (Bal: à§³{{ number_format($bank->current_balance, 2) }})
+                                            {{ $bank->bank_name }} - {{ $bank->account_number }} (Bal: ৳{{ number_format($bank->current_balance, 2) }})
                                         </option>
                                     @endforeach
                                 </select>
