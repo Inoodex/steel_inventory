@@ -34,7 +34,7 @@
                 <div class="d-flex align-items-center gap-2 mb-1">
                     <h4 class="card-title fw-bold text-dark mb-0">Create Shop Return</h4>
                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill small">
-                        <i class="fe fe-home me-1"></i>{{ $shop->name }}
+                        {{ $shop->name }}
                     </span>
                 </div>
                 <p class="text-muted small mb-0">Process customer returns and restock inventory exclusively for retail outlet: <strong>{{ $shop->name }}</strong></p>
@@ -52,7 +52,6 @@
     @if ($errors->any())
         <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4" role="alert">
             <div class="d-flex align-items-center mb-2">
-                <i class="fe fe-alert-triangle fs-4 me-2"></i>
                 <strong class="fs-6">Please check the form below for errors:</strong>
             </div>
             <ul class="mb-0 ps-3">
@@ -108,7 +107,7 @@
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="fw-bold text-dark mb-0">
-                        <i class="fe fe-box me-2 text-primary"></i>2. Items to Return & Restock
+                        2. Items to Return & Restock
                     </h6>
                     <small class="text-muted">Enter quantity to return for applicable items. Leave 0 for items not being returned.</small>
                 </div>
@@ -201,7 +200,6 @@
 
                 <div class="alert alert-info border-0 rounded-3 mt-3 mb-0" id="noItemsMessage" style="display: {{ ($sale && count($saleItems) > 0) ? 'none' : 'block' }}">
                     <div class="d-flex align-items-center">
-                        <i class="fe fe-info fs-5 me-2"></i>
                         <span>Select a sale order above to load items available for return.</span>
                     </div>
                 </div>
@@ -212,7 +210,7 @@
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-4">
                 <h6 class="fw-bold text-dark mb-3">
-                    <i class="fe fe-file-text me-2 text-primary"></i>3. Return Details & Financial Refund Summary
+                    3. Return Details & Financial Refund Summary
                 </h6>
 
                 <div class="row g-4 align-items-center mb-4">
@@ -267,7 +265,7 @@
             if (saleItemsSection) saleItemsSection.classList.add('d-none');
             if (noItemsMessage) {
                 noItemsMessage.style.display = 'block';
-                noItemsMessage.innerHTML = '<div class="d-flex align-items-center"><i class="fe fe-info fs-5 me-2"></i><span>Select a sale order above to load items available for return.</span></div>';
+                noItemsMessage.innerHTML = '<div class="d-flex align-items-center"><span>Select a sale order above to load items available for return.</span></div>';
             }
             calculateTotal();
             return;
@@ -366,7 +364,7 @@
                 if (saleItemsSection) saleItemsSection.classList.add('d-none');
                 if (noItemsMessage) {
                     noItemsMessage.style.display = 'block';
-                    noItemsMessage.innerHTML = '<div class="d-flex align-items-center"><i class="fe fe-alert-circle fs-5 me-2"></i><span>No items found or all items have already been returned for this sale order.</span></div>';
+                    noItemsMessage.innerHTML = '<div class="d-flex align-items-center"><span>No items found or all items have already been returned for this sale order.</span></div>';
                 }
             }
             calculateTotal();

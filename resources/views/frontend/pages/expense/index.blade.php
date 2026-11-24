@@ -272,15 +272,15 @@
                                 <td>
                                     @if($item->spend_method === 'cash')
                                         <span class="badge badge-soft-success px-2.5 py-1 rounded-pill fs-8 fw-semibold">
-                                            <i class="fe fe-dollar-sign me-1"></i>Cash
+                                            Cash
                                         </span>
                                     @else
                                         <span class="badge badge-soft-info px-2.5 py-1 rounded-pill fs-8 fw-semibold">
-                                            <i class="fe fe-credit-card me-1"></i>{{ $spendFormatted }}
+                                            {{ $spendFormatted }}
                                         </span>
                                         @if($item->bankDetail)
                                             <div class="text-secondary mt-1" style="font-size: 11px; line-height: 1.2;">
-                                                <i class="fe fe-layers me-1 text-primary"></i><strong>{{ $item->bankDetail->bank_name }}</strong>
+                                                <strong>{{ $item->bankDetail->bank_name }}</strong>
                                                 <span class="text-muted d-block font-monospace">{{ $item->bankDetail->account_number }}</span>
                                             </div>
                                         @endif

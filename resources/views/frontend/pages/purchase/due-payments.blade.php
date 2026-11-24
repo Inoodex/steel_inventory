@@ -111,14 +111,14 @@
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fe fe-check-circle me-2"></i>{{ session('success') }}
+            {{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fe fe-alert-triangle me-2"></i>{{ session('error') }}
+            {{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
@@ -189,13 +189,13 @@
             <ul class="nav nav-tabs nav-tabs-custom px-3 pt-2" id="vendorDuesTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="vendor-summary-tab" data-bs-toggle="tab" data-bs-target="#vendorSummaryPane" type="button" role="tab" aria-selected="true">
-                        <i class="fe fe-users me-2"></i>By Vendor Summary (Consolidated)
+                        By Vendor Summary (Consolidated)
                         <span class="badge bg-primary ms-2 rounded-pill">{{ $vendorsWithDue->count() }}</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="purchase-orders-tab" data-bs-toggle="tab" data-bs-target="#purchaseOrdersPane" type="button" role="tab" aria-selected="false">
-                        <i class="fe fe-file-text me-2"></i>By Purchase Orders (PO / Lots)
+                        By Purchase Orders (PO / Lots)
                         <span class="badge bg-danger ms-2 rounded-pill">{{ $purchases->count() }}</span>
                     </button>
                 </li>
@@ -302,19 +302,16 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="javascript:void(0)"
                                                         onclick="openVendorDueModal('', '{{ $vendor->id }}', '{{ addslashes($vendor->name) }}', '{{ $vendor->total_due }}')">
-                                                        <i class="fe fe-dollar-sign text-success"></i>
                                                         <span>Pay Due</span>
                                                     </a>
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('vendors.ledger', $vendor->id) }}">
-                                                        <i class="fe fe-book-open text-primary"></i>
                                                         <span>Vendor Ledger</span>
                                                     </a>
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('vendors.show', $vendor->id) }}">
-                                                        <i class="fe fe-user text-dark"></i>
                                                         <span>Vendor Profile</span>
                                                     </a>
                                                 </li>
@@ -426,7 +423,6 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="javascript:void(0)"
                                                         onclick="openVendorDueModal('{{ $purchase->id }}', '{{ $purchase->vendor_id }}', '{{ addslashes($vendorName) }}', '{{ $purchase->due }}')">
-                                                        <i class="fe fe-dollar-sign text-success"></i>
                                                         <span>Pay Due</span>
                                                     </a>
                                                 </li>
@@ -439,7 +435,6 @@
                                                 @if($purchase->lot_id)
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $purchase->lot_id) }}">
-                                                            <i class="fe fe-package text-primary"></i>
                                                             <span>View Lot / Batch</span>
                                                         </a>
                                                     </li>
@@ -447,13 +442,11 @@
                                                 @if($purchase->vendor_id)
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('vendors.ledger', $purchase->vendor_id) }}">
-                                                            <i class="fe fe-book-open text-secondary"></i>
                                                             <span>Vendor Ledger</span>
                                                         </a>
                                                     </li>
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('vendors.show', $purchase->vendor_id) }}">
-                                                            <i class="fe fe-user text-dark"></i>
                                                             <span>Vendor Profile</span>
                                                         </a>
                                                     </li>
@@ -490,7 +483,7 @@
         <div class="modal-content rounded-3 border-0 shadow">
             <div class="modal-header border-bottom">
                 <h5 class="modal-title fw-bold text-dark" id="vendorDueModalLabel">
-                    <i class="fe fe-dollar-sign me-2 text-success"></i>Pay Vendor Due
+                    Pay Vendor Due
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

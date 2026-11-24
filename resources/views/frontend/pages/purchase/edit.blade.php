@@ -77,7 +77,6 @@
         <!-- Sold Weight Protection Banner -->
         @if($soldWeight > 0)
             <div class="alert alert-warning border-warning d-flex align-items-center gap-3 rounded-3 shadow-sm mb-4" role="alert">
-                <i class="fe fe-alert-triangle fs-3 text-warning flex-shrink-0"></i>
                 <div class="flex-grow-1">
                     <h6 class="fw-bold mb-1 text-dark">Partial Steel Stock Dispatched</h6>
                     <p class="mb-0 small text-secondary">
@@ -98,7 +97,7 @@
             <div class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-body p-4">
                     <h6 class="fw-bold text-dark mb-3 pb-2 border-bottom">
-                        <i class="fe fe-anchor text-primary me-2"></i>Lot & Stockyard Information
+                        Lot & Stockyard Information
                     </h6>
 
                     <div class="row g-3">
@@ -169,7 +168,7 @@
                 <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h6 class="fw-bold text-dark mb-0">
-                            <i class="fe fe-disc text-primary me-2"></i>Physical Steel Specifications & Coil Intake Details
+                            Physical Steel Specifications & Coil Intake Details
                         </h6>
                         <small class="text-muted">Manage coil dimensions, weights, and tag numbers for this purchase</small>
                     </div>
@@ -181,7 +180,7 @@
                         </button>
                         @if($coil && !$isMultiCoils)
                             <span class="badge bg-dark rounded-pill px-3 py-2 fs-7 fw-bold font-monospace" id="headerSingleCoilTag">
-                                <i class="fe fe-tag me-1 text-primary"></i>{{ $coil->coil_number }}
+                                {{ $coil->coil_number }}
                             </span>
                         @endif
                     </div>
@@ -345,7 +344,6 @@
                         <div class="bg-white border rounded-3 p-3 shadow-sm">
                             <div class="alert alert-info py-2 px-3 border-0 rounded-3 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
                                 <div class="d-flex align-items-center gap-2">
-                                    <i class="fe fe-info fs-5 text-primary"></i>
                                     <span class="small">Break down this purchase into individual physical coils (e.g. 250 kg, 350 kg, 400 kg). Each row registers its own coil tag in yard inventory.</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
@@ -452,7 +450,7 @@
                 <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h6 class="fw-bold text-dark mb-0">
-                            <i class="fe fe-dollar-sign text-primary me-2"></i>Procurement Charges & Financial Adjustments
+                            Procurement Charges & Financial Adjustments
                         </h6>
                         <small class="text-muted">Transport freight, yard crane/labour fees, weighbridge scale slips, and vendor discounts</small>
                     </div>
@@ -511,7 +509,7 @@
                     <div class="card border-0 shadow-sm rounded-3 h-100 summary-card">
                         <div class="card-body p-4">
                             <h6 class="fw-bold text-dark mb-3">
-                                <i class="fe fe-check-square text-primary me-2"></i>Purchase Summary
+                                Purchase Summary
                             </h6>
                             <div class="row g-3 text-center">
                                 <div class="col-sm-3 col-6">
@@ -552,7 +550,7 @@
                     <div class="card border-0 shadow-sm rounded-3 h-100">
                         <div class="card-body p-4">
                             <h6 class="fw-bold text-dark mb-3">
-                                <i class="fe fe-dollar-sign text-success me-2"></i>Payment Settlement
+                                Payment Settlement
                             </h6>
 
                             <div class="mb-3">
@@ -571,7 +569,7 @@
                                         value="{{ old('payment', $purchase->payment) }}" oninput="calculateFinancials()" required>
                                 </div>
                                 <div id="paymentErrorMsg" class="text-danger small mt-1 fw-semibold" style="display: none;">
-                                    <i class="fe fe-alert-triangle me-1"></i> Payment cannot exceed the total bill of <span id="maxBillFormatted">৳ 0.00</span>.
+                                    Payment cannot exceed the total bill of <span id="maxBillFormatted">৳ 0.00</span>.
                                 </div>
                             </div>
 
@@ -593,7 +591,7 @@
                             <!-- Settlement Payment Method & Channel -->
                             <div class="mb-3 p-3 bg-light rounded-3 border border-light-subtle">
                                 <label class="form-label fw-semibold small text-secondary mb-1">
-                                    <i class="fe fe-credit-card me-1 text-primary"></i> Settlement Account / Method <span class="text-danger">*</span>
+                                    Settlement Account / Method <span class="text-danger">*</span>
                                 </label>
                                 <select id="purchaseEditAccountSelector" class="form-select border-light-subtle mb-2" onchange="handlePurchaseEditAccountChange(this)" required>
                                     <optgroup label="Cash">

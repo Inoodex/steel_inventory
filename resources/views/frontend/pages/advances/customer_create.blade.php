@@ -154,7 +154,7 @@
                                 Cancel
                             </a>
                             <button type="submit" class="btn btn-success px-4 py-2 rounded-2 fw-semibold shadow-sm">
-                                <i class="fe fe-check-circle me-1"></i>Confirm &amp; Record Deposit
+                                Confirm &amp; Record Deposit
                             </button>
                         </div>
                     </div>
@@ -166,12 +166,11 @@
                 <div class="card customer-snapshot-card shadow-sm border-0 mb-3">
                     <div class="card-body p-4">
                         <h6 class="fw-bold text-dark mb-3 border-bottom pb-2">
-                            <i class="fe fe-user text-primary me-2"></i>Customer Account Snapshot
+                            Customer Account Snapshot
                         </h6>
 
                         <!-- Customer Details Display -->
                         <div id="noCustomerSelected" class="text-center py-4 text-muted">
-                            <i class="fe fe-user-x fs-1 d-block mb-2 text-secondary"></i>
                             <span>Select a customer from the left to preview live balances and projected advance credit.</span>
                         </div>
 
@@ -211,7 +210,7 @@
                             </div>
 
                             <div class="alert alert-info py-2 px-3 small rounded-2 mb-0">
-                                <i class="fe fe-info me-1"></i> This advance deposit will be credited to the customer's account and automatically deducted when recording their next sales order.
+                                This advance deposit will be credited to the customer's account and automatically deducted when recording their next sales order.
                             </div>
                         </div>
 

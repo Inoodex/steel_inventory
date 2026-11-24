@@ -116,7 +116,7 @@
                         <div class="d-flex align-items-center gap-2">
                             @if ($isActive)
                                 <span class="badge badge-soft-success px-3 py-1 rounded-pill fs-7">
-                                    <i class="fe fe-check-circle me-1"></i> Active Customer
+                                    Active Customer
                                 </span>
                             @else
                                 <span class="badge badge-soft-danger px-3 py-1 rounded-pill fs-7">
@@ -337,7 +337,6 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.invoice', $sale->id) }}">
-                                                    <i class="fe fe-file-text text-primary"></i>
                                                     <span>View Invoice</span>
                                                 </a>
                                             </li>
@@ -350,7 +349,6 @@
                                             @if($saleDue > 0)
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="{{ route('sales.payments', $sale->id) }}">
-                                                        <i class="fe fe-credit-card text-success"></i>
                                                         <span>Collect Payment</span>
                                                     </a>
                                                 </li>
@@ -412,7 +410,7 @@
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link px-3 py-1 rounded-pill fs-7 fw-semibold" id="flat-tab" data-bs-toggle="tab" data-bs-target="#flat-view" type="button" role="tab">
-                            <i class="fe fe-list me-1"></i> All Payments (Flat)
+                            All Payments (Flat)
                         </button>
                     </li>
                 </ul>
@@ -426,7 +424,6 @@
                 <div class="tab-pane fade show active" id="categorized-view" role="tabpanel">
                     @if($groupedPayments->isEmpty())
                         <div class="text-center py-5 text-muted">
-                            <i class="fe fe-inbox fs-1 mb-2 text-secondary d-block"></i>
                             <span>No payment collections recorded for this customer yet.</span>
                         </div>
                     @else
@@ -456,7 +453,7 @@
                             </div>
                             <div class="d-flex align-items-center gap-1">
                                 <button type="button" class="btn btn-sm btn-outline-secondary px-2.5 py-1 rounded-2" style="font-size: 11px;" onclick="toggleAllInvoiceCards(true)">
-                                    <i class="fe fe-maximize-2 me-1"></i>Expand All
+                                    Expand All
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary px-2.5 py-1 rounded-2" style="font-size: 11px;" onclick="toggleAllInvoiceCards(false)">
                                     <i class="fe fe-minimize-2 me-1"></i>Collapse All
@@ -486,19 +483,19 @@
                                         <i class="fe fe-chevron-down toggle-icon text-muted fs-6" style="transition: transform 0.2s ease;"></i>
                                         @if($isUnallocated)
                                             <span class="badge bg-secondary text-white px-2.5 py-1.5 rounded-2 fs-7 fw-bold">
-                                                <i class="fe fe-folder me-1"></i> Opening Due &amp; Advance / General Collections
+                                                Opening Due &amp; Advance / General Collections
                                             </span>
                                             <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill" style="font-size: 11px;">Unallocated</span>
                                         @else
                                             <a href="{{ route('sales.invoice', $sale->id) }}" class="badge bg-primary text-white px-2.5 py-1.5 rounded-2 fs-7 fw-bold text-decoration-none" onclick="event.stopPropagation();" target="_blank">
-                                                <i class="fe fe-file-text me-1"></i> #{{ $sale->order_no ?? ('SO-' . $sale->id) }}
+                                                #{{ $sale->order_no ?? ('SO-' . $sale->id) }}
                                             </a>
                                             <span class="text-muted small">
                                                 <i class="fe fe-calendar me-1"></i>{{ $sale->created_at?->format('d M Y') }}
                                             </span>
                                             @if($saleDue <= 0)
                                                 <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill" style="font-size: 11px;">
-                                                    <i class="fe fe-check-circle me-1"></i>Paid in Full
+                                                    Paid in Full
                                                 </span>
                                             @elseif($salePaid > 0)
                                                 <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2.5 py-1 rounded-pill" style="font-size: 11px;">
@@ -506,7 +503,7 @@
                                                 </span>
                                             @else
                                                 <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 rounded-pill" style="font-size: 11px;">
-                                                    <i class="fe fe-alert-circle me-1"></i>Unpaid
+                                                    Unpaid
                                                 </span>
                                             @endif
                                         @endif
@@ -540,7 +537,7 @@
                                                 </a>
                                                 @if($saleDue > 0)
                                                     <a href="{{ route('sales.payments', $sale->id) }}" class="btn btn-sm btn-success px-2.5 py-1 rounded-2 text-white fw-semibold" title="Collect Due Payment">
-                                                        <i class="fe fe-credit-card me-1"></i>Pay
+                                                        Pay
                                                     </a>
                                                 @endif
                                             </div>
@@ -585,7 +582,7 @@
                                                             </span>
                                                             @if($pay->bankDetail)
                                                                 <small class="text-muted d-block mt-0.5">
-                                                                    <i class="fe fe-layers me-1 text-primary"></i>{{ $pay->bankDetail->bank_name }} ({{ $pay->bankDetail->account_number }})
+                                                                    {{ $pay->bankDetail->bank_name }} ({{ $pay->bankDetail->account_number }})
                                                                 </small>
                                                             @endif
                                                         </td>
@@ -711,7 +708,7 @@
                                             </span>
                                             @if($pay->bankDetail)
                                                 <small class="text-muted d-block mt-1">
-                                                    <i class="fe fe-layers me-1 text-primary"></i>{{ $pay->bankDetail->bank_name }} ({{ $pay->bankDetail->account_number }})
+                                                    {{ $pay->bankDetail->bank_name }} ({{ $pay->bankDetail->account_number }})
                                                 </small>
                                             @endif
                                         </td>

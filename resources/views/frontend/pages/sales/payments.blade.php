@@ -130,7 +130,7 @@
         @if ($sale->due_payment > 0)
             <div class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-body p-4">
-                    <h6 class="fw-bold text-dark mb-3"><i class="fe fe-credit-card me-2 text-primary"></i>Receive Payment Entry</h6>
+                    <h6 class="fw-bold text-dark mb-3">Receive Payment Entry</h6>
 
                     <form action="{{ route('sales.process-payment') }}" method="POST">
                         @csrf
@@ -226,7 +226,7 @@
     <div class="card border-0 shadow-sm rounded-3 mb-4">
         <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
             <h5 class="fw-bold text-dark mb-0">
-                <i class="fe fe-list text-primary me-2"></i>Payment Collections &amp; Receipts History
+                Payment Collections &amp; Receipts History
             </h5>
             <span class="badge bg-light text-secondary border px-3 py-1.5 rounded-pill fs-7">
                 {{ count($payments ?? []) }} Records Found
@@ -276,7 +276,7 @@
                                     </span>
                                     @if($pay->bankDetail)
                                         <small class="text-muted d-block mt-1">
-                                            <i class="fe fe-layers me-1 text-primary"></i>{{ $pay->bankDetail->bank_name }} ({{ $pay->bankDetail->account_number }})
+                                            {{ $pay->bankDetail->bank_name }} ({{ $pay->bankDetail->account_number }})
                                         </small>
                                     @endif
                                 </td>

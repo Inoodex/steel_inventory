@@ -104,7 +104,6 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)"
                                                         onclick="document.getElementById('setActiveForm{{ $fy->id }}').submit();">
-                                                        <i class="fe fe-check-circle text-primary"></i>
                                                         <span>Set Active</span>
                                                     </a>
                                                     <form id="setActiveForm{{ $fy->id }}" method="POST" action="{{ route('fiscal-years.set-active', $fy->id) }}" class="d-none">

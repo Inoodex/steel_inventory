@@ -81,7 +81,7 @@
         <div class="content-page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
                 <h4 class="card-title fw-bold text-dark mb-1">
-                    <i class="fe fe-rotate-ccw text-warning me-2"></i>Purchase Returns &amp; Debit Notes
+                    Purchase Returns &amp; Debit Notes
                 </h4>
                 <p class="text-muted small mb-0">Record and track steel returns to vendors, stock deductions, and refund settlements.</p>
             </div>
@@ -196,7 +196,7 @@
                             <i class="fe fe-filter me-1"></i> Filter
                         </button>
                         <a href="{{ route('purchase-returns.index') }}" class="btn btn-outline-secondary px-3 py-2">
-                            <i class="fe fe-refresh-cw me-1"></i> Reset
+                            Reset
                         </a>
                     </div>
                 </div>
@@ -282,15 +282,15 @@
                                         </span>
                                     @elseif($ret->refund_type === 'advance_credit')
                                         <span class="badge badge-soft-primary">
-                                            <i class="fe fe-plus-circle me-1"></i>Advance Credit
+                                            Advance Credit
                                         </span>
                                     @elseif($ret->refund_type === 'cash_refund')
                                         <span class="badge badge-soft-success">
-                                            <i class="fe fe-dollar-sign me-1"></i>Cash Refund
+                                            Cash Refund
                                         </span>
                                     @elseif($ret->refund_type === 'bank_refund')
                                         <span class="badge badge-soft-info">
-                                            <i class="fe fe-credit-card me-1"></i>Bank Refund
+                                            Bank Refund
                                         </span>
                                     @endif
                                 </td>
@@ -308,7 +308,6 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase-returns.pdf', $ret->id) }}" target="_blank">
-                                                    <i class="fe fe-file-text text-danger"></i>
                                                     <span>Print / PDF Voucher</span>
                                                 </a>
                                             </li>
@@ -316,7 +315,6 @@
                                                 <li><hr class="dropdown-divider my-1"></li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $ret->purchase->id) }}">
-                                                        <i class="fe fe-shopping-cart text-secondary"></i>
                                                         <span>View Original Consignment</span>
                                                     </a>
                                                 </li>
@@ -335,7 +333,7 @@
                                         <h6 class="fw-bold text-dark mb-1">No Purchase Returns Found</h6>
                                         <p class="text-muted small mb-3">No return vouchers recorded matching your search or filters.</p>
                                         <a href="{{ route('purchase-returns.create') }}" class="btn btn-sm btn-primary px-3 rounded-pill">
-                                            <i class="fe fe-plus-circle me-1"></i>Record First Return
+                                            Record First Return
                                         </a>
                                     </div>
                                 </td>

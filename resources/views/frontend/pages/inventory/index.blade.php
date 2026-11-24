@@ -260,7 +260,7 @@
                     <strong>{{ $lotGroups->count() }}</strong> Lots &bull; <strong>{{ $totalCoilsCount }}</strong> Coils
                 </span>
                 <button type="button" class="btn btn-sm btn-outline-primary rounded-2 px-2.5 py-1 d-inline-flex align-items-center gap-1" onclick="expandAllLots()">
-                    <i class="fe fe-maximize-2 fs-8"></i> Expand All
+                    Expand All
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 px-2.5 py-1 d-inline-flex align-items-center gap-1" onclick="collapseAllLots()">
                     <i class="fe fe-minimize-2 fs-8"></i> Collapse All
@@ -309,14 +309,14 @@
                                                 </a>
                                             @else
                                                 <span class="fw-bold text-dark fs-6 d-block">
-                                                    <i class="fe fe-box text-primary me-1"></i>{{ $group['lot_number'] }}
+                                                    {{ $group['lot_number'] }}
                                                 </span>
                                             @endif
                                             <div class="d-flex flex-wrap align-items-center gap-1 mt-0.5">
                                                 <span class="text-muted small fs-8"><i class="fe fe-calendar me-1"></i>{{ $group['lot_date'] }}</span>
                                                 @if($group['warehouses']->isNotEmpty())
                                                     <span class="badge bg-light text-secondary border fs-8">
-                                                        <i class="fe fe-map-pin me-1"></i>{{ $group['warehouses']->join(', ') }}
+                                                        {{ $group['warehouses']->join(', ') }}
                                                     </span>
                                                 @endif
                                             </div>
@@ -326,10 +326,10 @@
                                 <td>
                                     @if($group['vendor'])
                                         <a href="{{ route('vendors.show', $group['vendor']->id) }}" class="fw-semibold text-secondary text-decoration-none d-block" onclick="event.stopPropagation()">
-                                            <i class="fe fe-truck me-1 text-primary"></i>{{ Str::limit($group['vendor_name'], 25) }}
+                                            {{ Str::limit($group['vendor_name'], 25) }}
                                         </a>
                                     @else
-                                        <span class="text-secondary small"><i class="fe fe-truck me-1 text-muted"></i>{{ $group['vendor_name'] }}</span>
+                                        <span class="text-secondary small">{{ $group['vendor_name'] }}</span>
                                     @endif
                                 </td>
                                 <td class="text-center">
@@ -377,12 +377,10 @@
                                             <div class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                                                 @if(!$isDirect && $group['lot'])
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $group['lot_id']) }}">
-                                                        <i class="fe fe-layers text-primary"></i>
                                                         <span>View Lot Profile</span>
                                                     </a>
                                                 @endif
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('inventory.pdf', ['lot_id' => $group['lot_id']]) }}" target="_blank">
-                                                    <i class="fe fe-file-text text-danger"></i>
                                                     <span>Export PDF</span>
                                                 </a>
                                             </div>
@@ -399,7 +397,7 @@
                                         <div class="d-flex justify-content-between align-items-center mb-2 px-1">
                                             <div>
                                                 <span class="fw-bold text-dark fs-7">
-                                                    <i class="fe fe-disc text-primary me-1"></i>Physical Steel Coils &amp; Plates in {{ $group['lot_number'] }}
+                                                    Physical Steel Coils &amp; Plates in {{ $group['lot_number'] }}
                                                 </span>
                                                 <span class="badge bg-secondary-subtle text-secondary ms-2">{{ $group['coils']->count() }} Batches</span>
                                             </div>
@@ -490,7 +488,7 @@
                                                             </td>
                                                             <td>
                                                                 <span class="badge bg-light text-dark border px-2 py-0.5 fs-8">
-                                                                    <i class="fe fe-map-pin text-primary me-1"></i>{{ $whName }}
+                                                                    {{ $whName }}
                                                                 </span>
                                                             </td>
                                                             <td class="text-center">
@@ -627,7 +625,6 @@
                     <div class="col-md-6 col-12">
                         <div class="p-3 rounded-3 border h-100 bg-white">
                             <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2 border-bottom pb-2">
-                                <i class="fe fe-sliders text-primary"></i>
                                 <span>Physical Specifications</span>
                             </h6>
                             <div class="d-flex flex-column gap-2 small">
@@ -655,7 +652,6 @@
                     <div class="col-md-6 col-12">
                         <div class="p-3 rounded-3 border h-100 bg-white">
                             <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2 border-bottom pb-2">
-                                <i class="fe fe-truck text-success"></i>
                                 <span>Commercial &amp; Source</span>
                             </h6>
                             <div class="d-flex flex-column gap-2 small">
@@ -691,7 +687,7 @@
                 <!-- Notes / Remarks -->
                 <div class="mb-3">
                     <label class="form-label small fw-semibold text-secondary mb-1">
-                        <i class="fe fe-file-text me-1"></i>Coil Notes &amp; Consignment Remarks:
+                        Coil Notes &amp; Consignment Remarks:
                     </label>
                     <div class="p-3 bg-light rounded-3 border small text-dark" id="modalNotes">
                         No special notes recorded.
@@ -749,7 +745,7 @@
                 @csrf
                 <div class="modal-body p-4">
                     <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-center justify-content-between flex-wrap gap-2">
-                        <span><i class="fe fe-info me-1"></i>Need to enter multiple items at once?</span>
+                        <span>Need to enter multiple items at once?</span>
                         <a href="{{ route('inventory.opening-stock.create') }}" class="fw-bold text-primary text-decoration-none">
                             Open Batch Intake Grid &rarr;
                         </a>

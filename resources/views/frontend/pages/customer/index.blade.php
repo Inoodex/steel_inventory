@@ -246,7 +246,7 @@
                                         </span>
                                     @elseif($netDue > 0)
                                         <span class="badge badge-soft-danger px-2.5 py-1 rounded-pill fs-7 fw-bold">
-                                            <i class="fe fe-alert-circle me-1"></i>Due: ৳{{ number_format($netDue, 2) }}
+                                            Due: ৳{{ number_format($netDue, 2) }}
                                         </span>
                                     @else
                                         <span class="badge badge-soft-success px-2.5 py-1 rounded-pill fs-7 fw-semibold">
@@ -257,7 +257,7 @@
                                 <td>
                                     @if ($isActive)
                                         <span class="badge badge-soft-success px-3 py-2 rounded-pill fs-7">
-                                            <i class="fe fe-check-circle me-1"></i> Active
+                                            Active
                                         </span>
                                     @else
                                         <span class="badge badge-soft-danger px-3 py-2 rounded-pill fs-7">
@@ -279,7 +279,6 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.ledger', $customer->id) }}">
-                                                    <i class="fe fe-book-open text-primary"></i>
                                                     <span>Account Ledger</span>
                                                 </a>
                                             </li>

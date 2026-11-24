@@ -40,7 +40,7 @@
         <div class="content-page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
                 <h4 class="card-title fw-bold text-dark mb-1">
-                    <i class="fe fe-rotate-ccw text-warning me-2"></i>Create Purchase Return / Debit Note
+                    Create Purchase Return / Debit Note
                 </h4>
                 <p class="text-muted small mb-0">Return full or partial steel weight to vendor, auto-deduct stock from coil, and settle refund or due.</p>
             </div>
@@ -56,7 +56,7 @@
 
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
-            <i class="fe fe-alert-triangle me-2"></i>{{ session('error') }}
+            {{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
@@ -118,7 +118,7 @@
                         <div id="consignmentSummaryCard" class="info-strip p-3 mt-4" style="display: none;">
                             <div class="d-flex align-items-center justify-content-between mb-2">
                                 <h6 class="fw-bold text-dark mb-0">
-                                    <i class="fe fe-info text-primary me-1"></i>Consignment Details
+                                    Consignment Details
                                 </h6>
                                 <span class="badge bg-success-light text-success fw-bold" id="badgeStockStatus">In Stock</span>
                             </div>

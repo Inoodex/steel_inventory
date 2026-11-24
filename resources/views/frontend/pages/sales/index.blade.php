@@ -208,7 +208,7 @@
                                 </td>
                                 <!-- <td>
                                     <span class="badge bg-light text-dark border px-2 py-1 fs-7">
-                                        <i class="fe fe-map-pin text-primary me-1"></i>{{ Str::limit($warehouseName, 18) }}
+                                        {{ Str::limit($warehouseName, 18) }}
                                     </span>
                                 </td> -->
                                 <td>
@@ -219,15 +219,15 @@
                                 <td>
                                     @if($deliveryStatus == 'delivered')
                                         <span class="badge badge-soft-success px-3 py-1 rounded-pill text-capitalize fs-7">
-                                             <i class="fe fe-check-circle me-1"></i> Delivered
+                                             Delivered
                                         </span>
                                     @elseif($deliveryStatus == 'dispatched')
                                         <span class="badge badge-soft-primary px-3 py-1 rounded-pill text-capitalize fs-7">
-                                            <i class="fe fe-truck me-1"></i> Dispatched
+                                            Dispatched
                                         </span>
                                     @elseif($deliveryStatus == 'partial_delivered')
                                         <span class="badge badge-soft-info px-3 py-1 rounded-pill text-capitalize fs-7">
-                                            <i class="fe fe-package me-1"></i> Partial
+                                            Partial
                                         </span>
                                     @else
                                         <span class="badge badge-soft-warning px-3 py-1 rounded-pill text-capitalize fs-7">

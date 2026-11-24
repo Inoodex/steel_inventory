@@ -176,7 +176,7 @@
                         </div>
                         @if($totalDueCharges > 0.001)
                             <button type="button" class="btn btn-sm btn-outline-primary w-100 mt-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-none" data-bs-toggle="modal" data-bs-target="#quickPayAllModal">
-                                <i class="fe fe-check-circle fs-7"></i> Pay All Charges (৳{{ number_format($totalDueCharges, 2) }})
+                                Pay All Charges (৳{{ number_format($totalDueCharges, 2) }})
                             </button>
                         @endif
                     </div>
@@ -204,7 +204,7 @@
                         </div>
                         @if($totalDueLabour > 0.001)
                             <button type="button" class="btn btn-sm btn-outline-success w-100 mt-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-none" data-bs-toggle="modal" data-bs-target="#quickPayLabourModal">
-                                <i class="fe fe-check-circle fs-7"></i> Pay All Labour (৳{{ number_format($totalDueLabour, 2) }})
+                                Pay All Labour (৳{{ number_format($totalDueLabour, 2) }})
                             </button>
                         @endif
                     </div>
@@ -232,7 +232,7 @@
                         </div>
                         @if($totalDueDelivery > 0.001)
                             <button type="button" class="btn btn-sm btn-outline-info w-100 mt-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-none" data-bs-toggle="modal" data-bs-target="#quickPayDeliveryModal">
-                                <i class="fe fe-check-circle fs-7"></i> Pay All Delivery (৳{{ number_format($totalDueDelivery, 2) }})
+                                Pay All Delivery (৳{{ number_format($totalDueDelivery, 2) }})
                             </button>
                         @endif
                     </div>
@@ -260,7 +260,7 @@
                         </div>
                         @if($totalDueScale > 0.001)
                             <button type="button" class="btn btn-sm btn-outline-warning w-100 mt-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-1 shadow-none" data-bs-toggle="modal" data-bs-target="#quickPayScaleModal">
-                                <i class="fe fe-check-circle fs-7"></i> Pay All Scale (৳{{ number_format($totalDueScale, 2) }})
+                                Pay All Scale (৳{{ number_format($totalDueScale, 2) }})
                             </button>
                         @endif
                     </div>
@@ -281,7 +281,7 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
-                        <i class="fe fe-file-text me-1"></i> Payout Records &amp; Vouchers Ledger
+                        Payout Records &amp; Vouchers Ledger
                         @if($payouts->count() > 0)
                             <span class="badge bg-primary-light text-primary ms-2 rounded-pill">{{ $payouts->total() }}</span>
                         @endif
@@ -408,11 +408,11 @@
                                         <td class="pe-4 text-end">
                                             @if($sale->charges_payout_status === 'paid' || $isFullyPaid)
                                                 <span class="badge badge-soft-success px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1">
-                                                    <i class="fe fe-check-circle"></i> Fully Settled
+                                                    Fully Settled
                                                 </span>
                                             @elseif($sale->charges_payout_status === 'partial')
                                                 <span class="badge badge-soft-info px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1">
-                                                    <i class="fe fe-pie-chart"></i> Partially Settled
+                                                    Partially Settled
                                                 </span>
                                             @else
                                                 <span class="badge badge-soft-warning px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1">
@@ -424,7 +424,6 @@
                                 @empty
                                     <tr>
                                         <td colspan="8" class="text-center py-5 text-muted">
-                                            <i class="fe fe-check-circle fs-2 text-success d-block mb-2"></i>
                                             No pending sales with extra charges matching the filter criteria.
                                         </td>
                                     </tr>
@@ -585,7 +584,7 @@
             <div class="modal-content border-0 shadow rounded-3">
                 <div class="modal-header bg-light border-bottom">
                     <h5 class="modal-title fw-bold text-dark">
-                        <i class="fe fe-file-text text-primary me-1"></i> Payout Voucher #{{ $payout->payout_no }}
+                        Payout Voucher #{{ $payout->payout_no }}
                     </h5>
                     <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -698,7 +697,7 @@
 
                 <div class="modal-header bg-light border-bottom">
                     <h5 class="modal-title fw-bold text-dark">
-                        <i class="fe fe-users text-success me-1"></i> Pay All Labour / Loading Charges
+                        Pay All Labour / Loading Charges
                     </h5>
                     <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -828,7 +827,7 @@
                         </div>
                         <div class="col-md-7 col-12">
                             <label class="form-label small fw-semibold text-secondary mb-1">
-                                <i class="fe fe-credit-card me-1 text-primary"></i> Disbursement Account / Method <span class="text-danger">*</span>
+                                Disbursement Account / Method <span class="text-danger">*</span>
                             </label>
                             <select class="form-select payout-unified-account-select" onchange="handlePayoutUnifiedAccountChange(this)" required>
                                 <optgroup label="Cash">
@@ -890,7 +889,7 @@
 
                 <div class="modal-header bg-light border-bottom">
                     <h5 class="modal-title fw-bold text-dark">
-                        <i class="fe fe-truck text-info me-1"></i> Pay All Delivery / Transport Charges
+                        Pay All Delivery / Transport Charges
                     </h5>
                     <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -1020,7 +1019,7 @@
                         </div>
                         <div class="col-md-7 col-12">
                             <label class="form-label small fw-semibold text-secondary mb-1">
-                                <i class="fe fe-credit-card me-1 text-primary"></i> Disbursement Account / Method <span class="text-danger">*</span>
+                                Disbursement Account / Method <span class="text-danger">*</span>
                             </label>
                             <select class="form-select payout-unified-account-select" onchange="handlePayoutUnifiedAccountChange(this)" required>
                                 <optgroup label="Cash">
@@ -1212,7 +1211,7 @@
                         </div>
                         <div class="col-md-7 col-12">
                             <label class="form-label small fw-semibold text-secondary mb-1">
-                                <i class="fe fe-credit-card me-1 text-primary"></i> Disbursement Account / Method <span class="text-danger">*</span>
+                                Disbursement Account / Method <span class="text-danger">*</span>
                             </label>
                             <select class="form-select payout-unified-account-select" onchange="handlePayoutUnifiedAccountChange(this)" required>
                                 <optgroup label="Cash">
@@ -1274,7 +1273,7 @@
 
                 <div class="modal-header bg-light border-bottom">
                     <h5 class="modal-title fw-bold text-dark">
-                        <i class="fe fe-layers text-primary me-1"></i> Pay All Extra Charges Together
+                        Pay All Extra Charges Together
                     </h5>
                     <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -1412,7 +1411,7 @@
                         </div>
                         <div class="col-md-7 col-12">
                             <label class="form-label small fw-semibold text-secondary mb-1">
-                                <i class="fe fe-credit-card me-1 text-primary"></i> Disbursement Account / Method <span class="text-danger">*</span>
+                                Disbursement Account / Method <span class="text-danger">*</span>
                             </label>
                             <select class="form-select payout-unified-account-select" onchange="handlePayoutUnifiedAccountChange(this)" required>
                                 <optgroup label="Cash">

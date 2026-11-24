@@ -61,11 +61,6 @@ class EmployeeController extends Controller
 
     public function store(StoreEmployeeRequest $request)
     {
-        $request->validate([
-            'employee_id' => 'required|unique:employees',
-            'name' => 'required',
-        ]);
-
         $employee = new Employee($request->except('image'));
 
         if ($request->hasFile('image')) {
@@ -86,14 +81,9 @@ class EmployeeController extends Controller
         return view('frontend.pages.employees.edit', compact('employee'));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateEmployeeRequest $request, $id)
     {
         $employee = Employee::findOrFail($id);
-
-        $request->validate([
-            'employee_id' => 'required|unique:employees,employee_id,'.$employee->id,
-            'name' => 'required',
-        ]);
 
         $employee->fill($request->except('image'));
 

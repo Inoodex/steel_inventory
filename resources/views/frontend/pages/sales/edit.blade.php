@@ -72,7 +72,7 @@
             <div class="card-body p-4">
                 <div class="row align-items-center mb-3">
                     <div class="col-md-6 col-12">
-                        <h6 class="fw-bold text-dark mb-0"><i class="fe fe-user me-2 text-primary"></i>Customer & Dispatch Information</h6>
+                        <h6 class="fw-bold text-dark mb-0">Customer & Dispatch Information</h6>
                     </div>
                     <div class="col-md-6 col-12 text-md-end mt-2 mt-md-0">
                         @php
@@ -206,7 +206,7 @@
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-4">
                 <div class="mb-3">
-                    <h6 class="fw-bold text-dark mb-0"><i class="fe fe-shopping-cart me-2 text-primary"></i>Steel Items & Stock Selection</h6>
+                    <h6 class="fw-bold text-dark mb-0">Steel Items & Stock Selection</h6>
                     <small class="text-muted">Add new steel lots to this sale or adjust existing lines below</small>
                 </div>
 
@@ -325,9 +325,9 @@
                                     </td>
                                     <td>
                                         @if($lotObj)
-                                            <span class="badge bg-light text-dark border px-2 py-1 fs-8"><i class="fe fe-package text-primary me-1"></i>{{ $lotObj->lot_number }}</span>
+                                            <span class="badge bg-light text-dark border px-2 py-1 fs-8">{{ $lotObj->lot_number }}</span>
                                         @else
-                                            <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-8"><i class="fe fe-archive me-1"></i>Opening Stock</span>
+                                            <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-8">Opening Stock</span>
                                         @endif
                                     </td>
                                     <td>
@@ -361,7 +361,7 @@
         <!-- Section 3: Summary Breakdown & Financials -->
         <div id="summerySection" class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fe fe-dollar-sign me-2 text-primary"></i>Operational Charges & Financial Breakdown</h6>
+                <h6 class="fw-bold text-dark mb-3">Operational Charges & Financial Breakdown</h6>
 
                 <!-- Charges & Adjustments Row -->
                 <div class="row g-3 align-items-end mb-4">
@@ -460,7 +460,7 @@
                     <div class="row g-3 align-items-center">
                         <div class="col-lg-6 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">
-                                <i class="fe fe-credit-card me-1 text-primary"></i> Receiving Account / Payment Method <span class="text-danger">*</span>
+                                Receiving Account / Payment Method <span class="text-danger">*</span>
                             </label>
                             <select id="salesEditAccountSelector" class="form-select border-light-subtle" onchange="handleSalesEditAccountChange(this)" required>
                                 <optgroup label="Cash">
@@ -492,7 +492,7 @@
                         <!-- Transaction Reference / Notes -->
                         <div class="col-lg-6 col-md-6 col-12" id="salesEditTrxContainer" style="{{ $currSaleMethod === 'cash' ? 'display: none;' : '' }}">
                             <label class="form-label small text-secondary fw-semibold mb-1">
-                                <i class="fe fe-file-text me-1 text-secondary"></i> Transaction Ref / TrxID
+                                Transaction Ref / TrxID
                             </label>
                             <input type="text" name="transaction_ref" id="transactionRefInput" class="form-control border-light-subtle bg-white" value="{{ old('transaction_ref', $sales->transaction_ref) }}" placeholder="e.g. TrxID / Cheque #">
                         </div>
@@ -909,14 +909,14 @@ function addItem() {
 
     let lotBadge = '';
     if (!lotId || lot.lot_number === 'Opening Stock') {
-        lotBadge = `<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-8"><i class="fe fe-archive me-1"></i>Opening Stock</span>`;
+        lotBadge = `<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-8">Opening Stock</span>`;
     } else {
-        lotBadge = `<span class="badge bg-light text-dark border px-2 py-1 fs-8"><i class="fe fe-package text-primary me-1"></i>${escapeHtml(lot.lot_number)}</span>`;
+        lotBadge = `<span class="badge bg-light text-dark border px-2 py-1 fs-8">${escapeHtml(lot.lot_number)}</span>`;
     }
 
     let specBadges = ``;
     if (lot.coilsCount > 1) {
-        specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1"><i class="fe fe-layers me-1 text-primary"></i>${lot.coilsCount} Coils Consolidated</span>`;
+        specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1">${lot.coilsCount} Coils Consolidated</span>`;
     }
     if (thickness) {
         specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1">Thickness: ${escapeHtml(thickness)}</span>`;

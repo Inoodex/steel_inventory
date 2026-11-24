@@ -121,7 +121,7 @@
                                 <span class="badge bg-secondary text-uppercase">{{ $selectedAccount->account_type }}</span>
                                 @if($selectedParty)
                                     <span class="badge bg-primary px-2 py-1">
-                                        <i class="fe fe-user me-1"></i>{{ ucfirst($partyType) }}: {{ $selectedParty->name }}
+                                        {{ ucfirst($partyType) }}: {{ $selectedParty->name }}
                                     </span>
                                 @endif
                             </div>

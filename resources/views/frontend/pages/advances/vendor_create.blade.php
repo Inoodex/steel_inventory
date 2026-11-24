@@ -154,7 +154,7 @@
                                 Cancel
                             </a>
                             <button type="submit" class="btn btn-success px-4 py-2 rounded-2 fw-semibold shadow-sm">
-                                <i class="fe fe-check-circle me-1"></i>Confirm &amp; Record Advance
+                                Confirm &amp; Record Advance
                             </button>
                         </div>
                     </div>
@@ -166,12 +166,11 @@
                 <div class="card vendor-snapshot-card shadow-sm border-0 mb-3">
                     <div class="card-body p-4">
                         <h6 class="fw-bold text-dark mb-3 border-bottom pb-2">
-                            <i class="fe fe-truck text-primary me-2"></i>Vendor Account Snapshot
+                            Vendor Account Snapshot
                         </h6>
 
                         <!-- Vendor Details Display -->
                         <div id="noVendorSelected" class="text-center py-4 text-muted">
-                            <i class="fe fe-truck fs-1 d-block mb-2 text-secondary"></i>
                             <span>Select a vendor from the left to preview live balances and projected advance position.</span>
                         </div>
 
@@ -211,7 +210,7 @@
                             </div>
 
                             <div class="alert alert-info py-2 px-3 small rounded-2 mb-0">
-                                <i class="fe fe-info me-1"></i> This advance disbursement will be credited to the vendor's ledger and automatically deducted when recording your upcoming procurement/purchases from this supplier.
+                                This advance disbursement will be credited to the vendor's ledger and automatically deducted when recording your upcoming procurement/purchases from this supplier.
                             </div>
                         </div>
 

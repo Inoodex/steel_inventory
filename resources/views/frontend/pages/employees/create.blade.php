@@ -37,18 +37,18 @@
                     </div>
 
                     <div class="col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Email Address</label>
-                        <input type="email" name="email" class="form-control border-light-subtle">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Email Address <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="email" name="email" value="{{ old('email') }}" class="form-control border-light-subtle">
                     </div>
 
                     <div class="col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Phone Number</label>
-                        <input type="text" name="phone" class="form-control border-light-subtle">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Phone Number <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="text" name="phone" value="{{ old('phone') }}" class="form-control border-light-subtle">
                     </div>
 
                     <div class="col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Designation</label>
-                        <input type="text" name="designation" class="form-control border-light-subtle">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Designation <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="text" name="designation" value="{{ old('designation') }}" class="form-control border-light-subtle">
                     </div>
 
                     <div class="col-md-6 col-12">

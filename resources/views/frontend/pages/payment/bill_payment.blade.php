@@ -92,7 +92,7 @@
                                                 </span>
                                                 @if($payment->bankDetail)
                                                     <small class="text-muted d-block mt-1">
-                                                        <i class="fe fe-layers me-1 text-primary"></i>{{ $payment->bankDetail->bank_name }} ({{ $payment->bankDetail->account_number }})
+                                                        {{ $payment->bankDetail->bank_name }} ({{ $payment->bankDetail->account_number }})
                                                     </small>
                                                 @endif
                                             </td>
@@ -169,7 +169,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-3 border-0 shadow">
                 <div class="modal-header border-bottom">
-                    <h5 class="modal-title fw-bold text-dark"><i class="fe fe-credit-card me-2 text-primary"></i>Record Due Payment</h5>
+                    <h5 class="modal-title fw-bold text-dark">Record Due Payment</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form method="post" action="{{ route('add.payment') }}">

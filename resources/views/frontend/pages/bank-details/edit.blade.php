@@ -31,7 +31,7 @@
                         <span class="fw-bold text-dark">General Ledger Connected Account:</span>
                         @if($bankDetail->chartOfAccount)
                             <a href="{{ route('chart-of-accounts.index', ['search' => $bankDetail->chartOfAccount->account_code]) }}" class="badge badge-primary font-monospace fs-7 text-decoration-none" title="View General Ledger Account">
-                                <i class="fe fe-external-link me-1"></i>{{ $bankDetail->chartOfAccount->account_code }} - {{ $bankDetail->chartOfAccount->account_name }}
+                                {{ $bankDetail->chartOfAccount->account_code }} - {{ $bankDetail->chartOfAccount->account_name }}
                             </a>
                         @else
                             <span class="badge badge-soft-warning fs-8">Auto-Syncing</span>

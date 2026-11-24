@@ -74,7 +74,7 @@
 
                     <div class="col-lg-4 col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">
-                            <i class="fe fe-credit-card me-1 text-primary"></i> Paid From Account / Method <span class="text-danger">*</span>
+                            Paid From Account / Method <span class="text-danger">*</span>
                         </label>
                         <select id="expenseAccountSelector" class="form-select border-light-subtle" onchange="handleExpenseAccountChange(this)" required>
                             <optgroup label="Cash">

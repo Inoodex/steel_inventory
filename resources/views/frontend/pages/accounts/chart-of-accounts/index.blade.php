@@ -228,7 +228,7 @@
 
                                             @if($acc->bankDetail)
                                                 <a href="{{ route('bank-details.edit', $acc->bank_detail_id) }}" class="badge bg-info-light text-info ms-2 text-decoration-none" style="font-size: 9px;" title="View Bank/MFS Profile">
-                                                    <i class="fe fe-credit-card me-1"></i> {{ $acc->bankDetail->bank_name }}
+                                                    {{ $acc->bankDetail->bank_name }}
                                                 </a>
                                             @endif
                                         </div>
@@ -265,7 +265,6 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2"
                                                         href="{{ route('ledger.index', ['account_id' => $acc->id]) }}">
-                                                        <i class="fe fe-book text-info"></i>
                                                         <span>General Ledger</span>
                                                     </a>
                                                 </li>

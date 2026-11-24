@@ -189,7 +189,7 @@
                                 </td>
                                 <td>
                                     <a href="{{ route('revenues.export', $rev->id) }}" target="_blank" class="btn btn-sm btn-outline-danger rounded-2 px-3 shadow-none">
-                                        <i class="fe fe-file-text me-1"></i>Export PDF
+                                        Export PDF
                                     </a>
                                 </td>
                             </tr>

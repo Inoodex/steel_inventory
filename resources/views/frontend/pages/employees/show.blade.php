@@ -269,7 +269,7 @@
                                     <td class="text-dark py-2">
                                         @if($employee->user)
                                             <span class="badge bg-light text-dark border px-2 py-1">
-                                                <i class="fe fe-user text-primary me-1"></i>{{ $employee->user->name }} ({{ $employee->user->email }})
+                                                {{ $employee->user->name }} ({{ $employee->user->email }})
                                             </span>
                                         @else
                                             <span class="text-muted italic">No portal login linked</span>

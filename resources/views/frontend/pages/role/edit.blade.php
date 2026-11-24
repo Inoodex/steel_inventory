@@ -50,7 +50,7 @@
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-header bg-white py-3 border-bottom border-light">
                 <h5 class="card-title fw-bold text-dark mb-0">
-                    <i class="fe fe-shield text-primary me-2"></i> Role Information
+                    Role Information
                 </h5>
             </div>
             <div class="card-body p-4">
@@ -80,7 +80,7 @@
                 </div>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-sm btn-outline-primary rounded-2 px-3" id="selectAllBtn">
-                        <i class="fe fe-check-square me-1"></i> Select All
+                        Select All
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 px-3" id="deselectAllBtn">
                         <i class="fe fe-square me-1"></i> Deselect All

@@ -240,7 +240,6 @@
                                                         @csrf
                                                         @method('PATCH')
                                                         <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-success">
-                                                            <i class="fe fe-check-circle text-success"></i>
                                                             <span>Approve & Restock</span>
                                                         </button>
                                                     </form>

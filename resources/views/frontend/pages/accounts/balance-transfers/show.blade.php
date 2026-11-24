@@ -102,7 +102,7 @@
     <div class="row g-4">
         <div class="col-lg-8 col-12">
             <div class="voucher-card p-4 shadow-sm mb-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fe fe-layers text-primary me-2"></i>Double-Entry Journal Postings</h6>
+                <h6 class="fw-bold text-dark mb-3">Double-Entry Journal Postings</h6>
                 
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -155,7 +155,7 @@
         <div class="col-lg-4 col-12">
             <!-- Audit & Metadata Card -->
             <div class="voucher-card p-4 shadow-sm mb-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fe fe-info text-primary me-2"></i>Audit Information</h6>
+                <h6 class="fw-bold text-dark mb-3">Audit Information</h6>
                 
                 <ul class="list-unstyled mb-0 d-flex flex-column gap-3 small">
                     <li class="d-flex justify-content-between align-items-center">
@@ -176,7 +176,7 @@
                     </li>
                     @if($transfer->reversedEntry)
                         <li class="border-top pt-2">
-                            <span class="text-danger fw-bold d-block mb-1"><i class="fe fe-alert-circle me-1"></i>Reversal Voucher:</span>
+                            <span class="text-danger fw-bold d-block mb-1">Reversal Voucher:</span>
                             <a href="{{ route('journal-entries.show', $transfer->reversedEntry->id) }}" class="fw-bold text-primary font-monospace">
                                 #{{ $transfer->reversedEntry->journal_no }}
                             </a>
@@ -195,7 +195,7 @@
         <div class="modal-content border-0 shadow-lg rounded-3">
             <div class="modal-header border-bottom">
                 <h5 class="modal-title fw-bold text-dark" id="reverseTransferModalLabel">
-                    <i class="fe fe-rotate-ccw text-danger me-2"></i>Reverse Balance Transfer
+                    Reverse Balance Transfer
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -214,7 +214,7 @@
                 <div class="modal-footer border-top p-3">
                     <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-3" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger px-4 py-2 rounded-3 fw-semibold">
-                        <i class="fe fe-check-circle me-1"></i>Confirm Reversal
+                        Confirm Reversal
                     </button>
                 </div>
             </form>

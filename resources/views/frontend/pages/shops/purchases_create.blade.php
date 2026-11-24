@@ -56,7 +56,7 @@
                 <div>
                     <div class="d-flex align-items-center gap-2 mb-1">
                         <h4 class="card-title fw-bold text-dark mb-0">Shop Direct Stock Purchase &amp; Intake</h4>
-                        <span class="badge bg-primary text-white px-2.5 py-1 rounded-pill"><i class="fe fe-shopping-cart me-1"></i>{{ $shop->name }}</span>
+                        <span class="badge bg-primary text-white px-2.5 py-1 rounded-pill">{{ $shop->name }}</span>
                     </div>
                     <p class="text-muted small mb-0">Record procurement lots and inward steel coils directly into retail shop stock</p>
                 </div>
@@ -80,19 +80,19 @@
                     <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom gap-2">
                         <div>
                             <h6 class="fw-bold text-dark mb-1">
-                                <i class="fe fe-anchor text-primary me-2"></i>Lot &amp; Shop Intake Details
+                                Lot &amp; Shop Intake Details
                             </h6>
                             <p class="text-muted small mb-0">Create a new procurement lot or assign inward items to an existing lot in this shop</p>
                         </div>
                         <div class="btn-group shadow-sm rounded-3 gap-2" role="group" aria-label="Lot Mode Selection">
                             <input type="radio" class="btn-check" name="lot_type" id="lot_type_new" value="new" {{ old('lot_type', 'new') === 'new' ? 'checked' : '' }} onchange="toggleLotMode('new')">
                             <label class="btn btn-outline-primary btn-sm px-3 py-2 fw-semibold" for="lot_type_new">
-                                <i class="fe fe-plus-circle me-1"></i> Create New Lot
+                                Create New Lot
                             </label>
 
                             <input type="radio" class="btn-check" name="lot_type" id="lot_type_existing" value="existing" {{ old('lot_type') === 'existing' ? 'checked' : '' }} onchange="toggleLotMode('existing')">
                             <label class="btn btn-outline-primary btn-sm px-3 py-2 fw-semibold" for="lot_type_existing">
-                                <i class="fe fe-layers me-1"></i> Select Existing Lot
+                                Select Existing Lot
                             </label>
                         </div>
                     </div>
@@ -101,7 +101,7 @@
                     <div class="row g-3 mb-3 pb-3 border-bottom align-items-center">
                         <div class="col-lg-5 col-md-6 col-12">
                             <label for="default_vendor_id" class="form-label fw-semibold small text-secondary mb-1">
-                                <i class="fe fe-user text-primary me-1"></i>Default Vendor / Supplier <span class="text-muted fw-normal">(Optional)</span>
+                                Default Vendor / Supplier <span class="text-muted fw-normal">(Optional)</span>
                             </label>
                             <select id="default_vendor_id" name="default_vendor_id" class="form-select select2" onchange="handleDefaultVendorChange(this.value)">
                                 <option value="">None (Choose individual vendor per steel item)</option>
@@ -143,7 +143,7 @@
                                 </div>
                             </div>
                             <div class="text-muted small" id="defaultVendorHelpText">
-                                <i class="fe fe-info text-info me-1"></i>If selected, all steel items will automatically use this vendor and per-item vendor selection will be hidden.
+                                If selected, all steel items will automatically use this vendor and per-item vendor selection will be hidden.
                             </div>
                         </div>
                     </div>
@@ -166,7 +166,7 @@
                             <div class="col-lg-4 col-md-6 col-12">
                                 <label class="form-label fw-semibold small text-secondary mb-1">
                                     Shop Intake Location <span class="text-danger">*</span>
-                                    <span class="badge bg-primary-subtle text-primary border ms-1"><i class="fe fe-shopping-cart me-1"></i>Shop Locked</span>
+                                    <span class="badge bg-primary-subtle text-primary border ms-1">Shop Locked</span>
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light text-primary border-primary-subtle"><i class="fe fe-home"></i></span>
@@ -246,7 +246,7 @@
                 <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h6 class="fw-bold text-dark mb-0">
-                            <i class="fe fe-disc text-primary me-2"></i>Steel Items &amp; Stock Intake
+                            Steel Items &amp; Stock Intake
                         </h6>
                         <small class="text-muted">Enter coil dimensions, weight, and rate, then click <strong>"Add to Table"</strong>. The entry form remains ready for your next item.</small>
                     </div>
@@ -260,7 +260,7 @@
                         <div class="row g-3 mb-3 pb-3 border-bottom align-items-center" id="builderVendorRow">
                             <div class="col-lg-5 col-md-6 col-12">
                                 <label for="builder_vendor_id" class="form-label small text-secondary fw-bold mb-1">
-                                    <i class="fe fe-user text-primary me-1"></i>Vendor / Supplier <span class="text-danger">*</span>
+                                    Vendor / Supplier <span class="text-danger">*</span>
                                 </label>
                                 <select id="builder_vendor_id" class="form-select select2">
                                     <option value="">Select Vendor / Supplier</option>
@@ -273,7 +273,7 @@
                             </div>
                             <div class="col-lg-7 col-md-6 col-12">
                                 <div class="text-muted small mt-md-4 pt-md-1">
-                                    <i class="fe fe-info text-info me-1"></i>Select the supplier for the coils/steel plates you are adding below.
+                                    Select the supplier for the coils/steel plates you are adding below.
                                 </div>
                             </div>
                         </div>
@@ -348,7 +348,7 @@
                         <div class="card-header bg-light py-2.5 px-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                             <div class="d-flex align-items-center gap-2">
                                 <h6 class="fw-bold text-dark mb-0">
-                                    <i class="fe fe-list text-primary me-1"></i>Added Steel Items &amp; Stock Table
+                                    Added Steel Items &amp; Stock Table
                                 </h6>
                                 <span class="badge bg-primary rounded-pill px-2 py-0.5 fs-8" id="itemsCountBadge">0 Items</span>
                             </div>
@@ -391,7 +391,7 @@
                 <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h6 class="fw-bold text-dark mb-0">
-                            <i class="fe fe-truck text-primary me-2"></i>Extra Charges &amp; Logistics Breakdown
+                            Extra Charges &amp; Logistics Breakdown
                         </h6>
                         <small class="text-muted">Pass-through freight, delivery, handling &amp; weighbridge surcharges</small>
                     </div>
@@ -433,7 +433,7 @@
             <div class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-header bg-white py-3 border-bottom">
                     <h6 class="fw-bold text-dark mb-0">
-                        <i class="fe fe-dollar-sign text-primary me-2"></i>Financial Settlement &amp; Vendor Disbursement
+                        Financial Settlement &amp; Vendor Disbursement
                     </h6>
                 </div>
                 <div class="card-body p-4">
@@ -534,7 +534,7 @@
 
                                     <div class="col-12">
                                         <label class="form-label fw-semibold small text-secondary mb-1">
-                                            <i class="fe fe-layers me-1 text-primary"></i> Disbursing Account / Channel <span class="text-danger">*</span>
+                                            Disbursing Account / Channel <span class="text-danger">*</span>
                                         </label>
                                         <select id="purchaseAccountSelector" class="form-select border-light-subtle" onchange="handlePurchaseAccountChange(this)">
                                             <optgroup label="Cash">
@@ -575,11 +575,11 @@
                             <div id="multiVendorPaymentSection" style="display: none;">
                                 <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                                     <span class="small text-muted fw-semibold">
-                                        <i class="fe fe-info text-info me-1"></i>Pay each vendor individually:
+                                        Pay each vendor individually:
                                     </span>
                                     <div class="d-flex gap-2">
                                         <button type="button" class="btn btn-outline-success btn-sm py-0.5 px-2 fs-8 rounded-pill" onclick="setAllVendorsFullPayment()">
-                                            <i class="fe fe-check-circle me-1"></i>Pay All Full
+                                            Pay All Full
                                         </button>
                                         <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 fs-8 rounded-pill" onclick="clearAllVendorPayments()">
                                             Clear All
@@ -744,17 +744,17 @@
 
             let specHtml = '';
             if (productName) {
-                specHtml += `<div class="fw-bold text-dark fs-7 mb-1"><i class="fe fe-box text-primary me-1"></i>${escapeHtml(productName)}</div>`;
+                specHtml += `<div class="fw-bold text-dark fs-7 mb-1">${escapeHtml(productName)}</div>`;
             }
             let badges = [];
             if (thickness) {
-                badges.push(`<span class="badge bg-light text-dark border"><i class="fe fe-layers me-1 text-primary"></i>Thickness: ${escapeHtml(thickness)}</span>`);
+                badges.push(`<span class="badge bg-light text-dark border">Thickness: ${escapeHtml(thickness)}</span>`);
             }
             if (badges.length > 0) {
                 specHtml += `<div class="d-flex flex-wrap align-items-center gap-1">${badges.join(' ')}</div>`;
             }
             if (notes) {
-                specHtml += `<div class="small text-muted mt-1"><i class="fe fe-file-text me-1 text-info"></i>${escapeHtml(notes)}</div>`;
+                specHtml += `<div class="small text-muted mt-1">${escapeHtml(notes)}</div>`;
             }
 
             const isVendorHidden = defaultVendorId ? 'display: none;' : '';
@@ -766,7 +766,7 @@
                     </td>
                     <td class="vendor-col" style="${isVendorHidden}">
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 vendor-col-badge">
-                            <i class="fe fe-user me-1"></i>${escapeHtml(vendorName || 'Vendor #' + vendorId)}
+                            ${escapeHtml(vendorName || 'Vendor #' + vendorId)}
                         </span>
                         <input type="hidden" name="items[${itemIndex}][vendor_id]" class="row-vendor-id" value="${vendorId}">
                     </td>

@@ -199,7 +199,7 @@
                                 <td>{{ \Carbon\Carbon::parse($sale->order_date)->format('d M Y') }}</td>
                                 <td>
                                     <span class="badge bg-light text-dark border">
-                                        <i class="fe fe-home text-primary me-1"></i> {{ $sale->warehouse?->name ?? 'Shop' }}
+                                        {{ $sale->warehouse?->name ?? 'Shop' }}
                                     </span>
                                 </td>
                                 <td>
@@ -253,7 +253,7 @@
                                     <h6 class="fw-bold">No Shop Sales Found</h6>
                                     <p class="small text-muted mb-3">Create your first sale originating from a shop.</p>
                                     <a href="{{ route('shops.sales.create', ['warehouse_id' => $shop->id, 'locked' => 1, 'from' => 'shop']) }}" class="btn btn-primary btn-sm px-3 rounded-3">
-                                        <i class="fe fe-plus-circle me-1"></i> New Shop Sale
+                                        New Shop Sale
                                     </a>
                                 </td>
                             </tr>

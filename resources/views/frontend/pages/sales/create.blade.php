@@ -26,7 +26,7 @@
         <!-- Section 1: Customer & Order Dispatch Information -->
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fe fe-user me-2 text-primary"></i>Customer & Dispatch Details</h6>
+                <h6 class="fw-bold text-dark mb-3">Customer & Dispatch Details</h6>
 
                 <!-- Customer Type Toggle -->
                 <div class="row g-3 mb-3">
@@ -138,7 +138,7 @@
                         <label class="form-label small text-secondary fw-semibold mb-1">
                             Warehouse / Dispatch Yard <span class="text-danger">*</span>
                             @if($isLocked && $selectedWh)
-                                <span class="badge bg-primary-subtle text-primary border ms-1"><i class="fe fe-shopping-cart me-1"></i>Shop Locked</span>
+                                <span class="badge bg-primary-subtle text-primary border ms-1">Shop Locked</span>
                             @endif
                         </label>
                         @if($isLocked && $selectedWh)
@@ -178,7 +178,7 @@
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-4">
                 <div class="mb-3">
-                    <h6 class="fw-bold text-dark mb-0"><i class="fe fe-shopping-cart me-2 text-primary"></i>Steel Items & Stock Selection</h6>
+                    <h6 class="fw-bold text-dark mb-0">Steel Items & Stock Selection</h6>
                     <small class="text-muted">1. Select Stock / Lot Source &rarr; 2. Select specific Coil / Stock Piece &rarr; 3. Enter selling rate and selling quantity</small>
                 </div>
 
@@ -279,7 +279,7 @@
         <!-- Section 3: Summary Breakdown & Financials -->
         <div id="summerySection" class="card border-0 shadow-sm rounded-3 mb-4 d-none">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fe fe-dollar-sign me-2 text-primary"></i>Operational Charges & Financial Breakdown</h6>
+                <h6 class="fw-bold text-dark mb-3">Operational Charges & Financial Breakdown</h6>
 
                 <!-- Charges & Adjustments Row -->
                 <div class="row g-3 align-items-end mb-4">
@@ -404,7 +404,7 @@
                     <div class="row g-3 align-items-center">
                         <div class="col-lg-7 col-md-7 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">
-                                <i class="fe fe-layers me-1 text-primary"></i> Receiving Account / Method
+                                Receiving Account / Method
                             </label>
                             <select id="saleAccountSelector" class="form-select border-light-subtle" onchange="handleSaleAccountChange(this)">
                                 <optgroup label="Cash">
@@ -436,7 +436,7 @@
                         <!-- Transaction Reference / Notes -->
                         <div class="col-lg-5 col-md-5 col-12" id="transactionRefContainer">
                             <label class="form-label small text-secondary fw-semibold mb-1">
-                                <i class="fe fe-file-text me-1 text-secondary"></i> TrxID / Ref #
+                                TrxID / Ref #
                             </label>
                             <input type="text" name="transaction_ref" id="transactionRefInput" class="form-control border-light-subtle bg-white" placeholder="e.g. TXN-12345">
                         </div>
@@ -802,7 +802,7 @@ function handleLotSelection(lotId) {
     const avgRate = totalWeight > 0 ? (totalCost / totalWeight).toFixed(2) : '0.00';
     if (lotAvgBadge && totalWeight > 0) {
         lotAvgBadge.style.display = 'inline-block';
-        lotAvgBadge.innerHTML = `<i class="fe fe-dollar-sign me-1"></i>Avg Cost: ৳${avgRate}/kg (${totalWeight.toLocaleString()} kg)`;
+        lotAvgBadge.innerHTML = `Avg Cost: ৳${avgRate}/kg (${totalWeight.toLocaleString()} kg)`;
     }
 
     currentSelectedLot = {

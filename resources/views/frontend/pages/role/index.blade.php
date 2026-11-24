@@ -174,7 +174,7 @@
                                 </td>
                                 <td>
                                     <span class="badge badge-soft-info px-2 py-1 rounded-2">
-                                        <i class="fe fe-user me-1"></i>{{ $role->users_count }} Users
+                                        {{ $role->users_count }} Users
                                     </span>
                                 </td>
                                 <td>
@@ -261,7 +261,7 @@
                 <div class="modal-content border-0 shadow rounded-3 text-start">
                     <div class="modal-header bg-light border-bottom">
                         <h5 class="modal-title fw-bold text-dark" id="deleteModalLabel{{ $role->id }}">
-                            <i class="fe fe-alert-triangle text-danger me-1"></i> Confirm Role Deletion
+                            Confirm Role Deletion
                         </h5>
                         <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>

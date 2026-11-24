@@ -36,8 +36,7 @@
                         <input type="date" name="to_date" class="form-control" value="{{ $toDate }}">
                     </div>
                     <div class="col-md-3 mt-auto">
-                        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-chart-line me-1"></i>
-                            Run P&L</button>
+                        <button type="submit" class="btn btn-primary w-100">Run P&L</button>
                     </div>
                 </form>
             </div>

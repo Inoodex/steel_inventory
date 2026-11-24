@@ -56,7 +56,7 @@
             <div class="col-lg-6 col-12 mb-4">
                 <div class="card shadow-sm border-0 h-100" style="border-radius: 12px;">
                     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0 fw-bold text-success"><i class="fas fa-building me-2"></i> Assets (1000)
+                        <h5 class="card-title mb-0 fw-bold text-success">Assets (1000)
                         </h5>
                         <span class="badge bg-success">{{ number_format($totalAssets, 2) }}</span>
                     </div>
@@ -102,7 +102,7 @@
             <div class="col-lg-6 col-12 mb-4">
                 <div class="card shadow-sm border-0 h-100" style="border-radius: 12px;">
                     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0 fw-bold text-danger"><i class="fas fa-coins me-2"></i> Liabilities &
+                        <h5 class="card-title mb-0 fw-bold text-danger">Liabilities &
                             Equity</h5>
                         <span class="badge bg-primary">{{ number_format($totalLiabAndEquity, 2) }}</span>
                     </div>

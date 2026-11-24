@@ -97,22 +97,22 @@
             <div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <h4 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-shopping-cart text-primary me-2"></i>Sales Order #{{ $sale->order_no }}
+                        Sales Order #{{ $sale->order_no }}
                     </h4>
                     @if($dueAmount <= 0)
-                        <span class="badge badge-soft-success px-3 py-1 rounded-pill"><i class="fe fe-check-circle me-1"></i>Paid in Full</span>
+                        <span class="badge badge-soft-success px-3 py-1 rounded-pill">Paid in Full</span>
                     @elseif($paidAmount > 0)
-                        <span class="badge badge-soft-warning px-3 py-1 rounded-pill"><i class="fe fe-activity me-1"></i>Partial Paid</span>
+                        <span class="badge badge-soft-warning px-3 py-1 rounded-pill">Partial Paid</span>
                     @else
-                        <span class="badge badge-soft-danger px-3 py-1 rounded-pill"><i class="fe fe-alert-circle me-1"></i>Credit (Unpaid)</span>
+                        <span class="badge badge-soft-danger px-3 py-1 rounded-pill">Credit (Unpaid)</span>
                     @endif
 
                     @if($deliveryStatus === 'delivered')
-                        <span class="badge badge-soft-success px-3 py-1 rounded-pill"><i class="fe fe-truck me-1"></i>Delivered</span>
+                        <span class="badge badge-soft-success px-3 py-1 rounded-pill">Delivered</span>
                     @elseif($deliveryStatus === 'dispatched')
                         <span class="badge badge-soft-info px-3 py-1 rounded-pill"><i class="fe fe-navigation me-1"></i>Dispatched</span>
                     @elseif($deliveryStatus === 'partial_delivered')
-                        <span class="badge badge-soft-warning px-3 py-1 rounded-pill"><i class="fe fe-truck me-1"></i>Partial Delivered</span>
+                        <span class="badge badge-soft-warning px-3 py-1 rounded-pill">Partial Delivered</span>
                     @else
                         <span class="badge badge-soft-secondary px-3 py-1 rounded-pill"><i class="fe fe-clock me-1"></i>Pending Dispatch</span>
                     @endif
@@ -216,11 +216,11 @@
             <div class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
                     <h5 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-user text-primary me-2"></i>Customer & Buyer Details
+                        Customer & Buyer Details
                     </h5>
                     @if($customer)
                         <a href="{{ route('customers.ledger', $customer->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                            <i class="fe fe-file-text me-1"></i>Customer Ledger
+                            Customer Ledger
                         </a>
                     @endif
                 </div>
@@ -263,7 +263,7 @@
             <div class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
                     <h5 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-truck text-primary me-2"></i>Dispatch & Order Logistics
+                        Dispatch & Order Logistics
                     </h5>
                     <span class="badge bg-light text-secondary border px-2.5 py-1 fs-8">
                         Order #{{ $sale->order_no }}
@@ -275,7 +275,6 @@
                             <tr>
                                 <td class="text-muted" style="width: 35%;">Warehouse / Yard:</td>
                                 <td class="fw-bold text-dark">
-                                    <i class="fe fe-map-pin text-danger me-1"></i>
                                     {{ $sale->warehouse->name ?? 'Main Stockyard' }} {{ $sale->warehouse && $sale->warehouse->code ? '('.$sale->warehouse->code.')' : '' }}
                                 </td>
                             </tr>
@@ -283,11 +282,11 @@
                                 <td class="text-muted">Delivery Status:</td>
                                 <td>
                                     @if($deliveryStatus === 'delivered')
-                                        <span class="badge badge-soft-success px-2.5 py-1 rounded-pill"><i class="fe fe-check-circle me-1"></i>Delivered</span>
+                                        <span class="badge badge-soft-success px-2.5 py-1 rounded-pill">Delivered</span>
                                     @elseif($deliveryStatus === 'dispatched')
                                         <span class="badge badge-soft-info px-2.5 py-1 rounded-pill"><i class="fe fe-navigation me-1"></i>Dispatched</span>
                                     @elseif($deliveryStatus === 'partial_delivered')
-                                        <span class="badge badge-soft-warning px-2.5 py-1 rounded-pill"><i class="fe fe-truck me-1"></i>Partial Delivered</span>
+                                        <span class="badge badge-soft-warning px-2.5 py-1 rounded-pill">Partial Delivered</span>
                                     @else
                                         <span class="badge badge-soft-secondary px-2.5 py-1 rounded-pill"><i class="fe fe-clock me-1"></i>Pending</span>
                                     @endif
@@ -313,7 +312,7 @@
         <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
                 <h5 class="card-title fw-bold text-dark mb-0">
-                    <i class="fe fe-disc text-primary me-2"></i>Sold Steel Items & Coils ({{ $items->count() }} Items)
+                    Sold Steel Items & Coils ({{ $items->count() }} Items)
                 </h5>
                 <small class="text-muted">Specification breakdown, coil tags, standard sizes, custom sizes (admin), selling quantities, and rates</small>
             </div>
@@ -365,12 +364,12 @@
                                     <div class="d-flex flex-wrap align-items-center gap-1">
                                         @if($thickness)
                                             <span class="badge bg-light text-dark border">
-                                                <i class="fe fe-layers me-1 text-primary"></i>Thick: {{ $thickness }}
+                                                Thick: {{ $thickness }}
                                             </span>
                                         @endif
                                         @if($size)
                                             <span class="badge bg-light text-secondary border">
-                                                <i class="fe fe-maximize-2 me-1"></i>Size: {{ $size }} {{ $sizeType }}
+                                                Size: {{ $size }} {{ $sizeType }}
                                             </span>
                                         @endif
                                     </div>
@@ -378,11 +377,11 @@
                                 <td>
                                     @if($item->lot)
                                         <span class="badge bg-light text-dark border fs-8">
-                                            <i class="fe fe-package text-primary me-1"></i>{{ $item->lot->lot_number }}
+                                            {{ $item->lot->lot_number }}
                                         </span>
                                     @elseif($coil && $coil->lot)
                                         <span class="badge bg-light text-dark border fs-8">
-                                            <i class="fe fe-package text-primary me-1"></i>{{ $coil->lot->lot_number }}
+                                            {{ $coil->lot->lot_number }}
                                         </span>
                                     @else
                                         <span class="badge bg-info-subtle text-info border border-info-subtle fs-8">Opening Stock</span>
@@ -440,7 +439,7 @@
             <div class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-header bg-white py-3 border-bottom border-light">
                     <h5 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-dollar-sign text-primary me-2"></i>Invoice Charges & Adjustments Breakdown
+                        Invoice Charges & Adjustments Breakdown
                     </h5>
                     <small class="text-muted">Summary of base product price, added handling fees, and discounts</small>
                 </div>
@@ -449,7 +448,7 @@
                         <tbody>
                             <tr>
                                 <td class="text-muted" style="width: 50%;">
-                                    <i class="fe fe-box me-2 text-secondary"></i>Base Steel Subtotal:
+                                    Base Steel Subtotal:
                                 </td>
                                 <td class="text-end font-monospace fw-bold text-dark fs-6">
                                     ৳ {{ number_format($subTotal, 2) }}
@@ -458,7 +457,7 @@
                             @if((float)$sale->discount > 0)
                                 <tr>
                                     <td class="text-danger fw-semibold">
-                                        <i class="fe fe-tag me-2 text-danger"></i>Discount:
+                                        Discount:
                                     </td>
                                     <td class="text-end font-monospace fw-bold text-danger">
                                         - ৳ {{ number_format($sale->discount, 2) }}
@@ -468,7 +467,7 @@
                             @if((float)$sale->vat > 0)
                                 <tr>
                                     <td class="text-muted">
-                                        <i class="fe fe-percent me-2 text-info"></i>VAT ({{ number_format($sale->vat, 2) }}%):
+                                        VAT ({{ number_format($sale->vat, 2) }}%):
                                     </td>
                                     <td class="text-end font-monospace fw-semibold text-dark">
                                         + ৳ {{ number_format(($subTotal * $sale->vat) / 100, 2) }}
@@ -478,7 +477,7 @@
                             @if((float)$sale->delivery_charge > 0)
                                 <tr>
                                     <td class="text-muted">
-                                        <i class="fe fe-truck me-2 text-primary"></i>Delivery / Transport Charge:
+                                        Delivery / Transport Charge:
                                     </td>
                                     <td class="text-end font-monospace fw-semibold text-dark">
                                         + ৳ {{ number_format($sale->delivery_charge, 2) }}
@@ -488,7 +487,7 @@
                             @if((float)$sale->labour_cost > 0)
                                 <tr>
                                     <td class="text-muted">
-                                        <i class="fe fe-user-check me-2 text-info"></i>Cutting & Labour Handling:
+                                        Cutting & Labour Handling:
                                     </td>
                                     <td class="text-end font-monospace fw-semibold text-dark">
                                         + ৳ {{ number_format($sale->labour_cost, 2) }}
@@ -498,7 +497,7 @@
                             @if((float)$sale->weight_scale_cost > 0)
                                 <tr>
                                     <td class="text-muted">
-                                        <i class="fe fe-activity me-2 text-warning"></i>Scale & Weight Slip Charge:
+                                        Scale & Weight Slip Charge:
                                     </td>
                                     <td class="text-end font-monospace fw-semibold text-dark">
                                         + ৳ {{ number_format($sale->weight_scale_cost, 2) }}
@@ -508,7 +507,7 @@
                             @if((float)$sale->other_charges > 0)
                                 <tr>
                                     <td class="text-muted">
-                                        <i class="fe fe-plus-circle me-2 text-secondary"></i>Other Shipment Charges:
+                                        Other Shipment Charges:
                                     </td>
                                     <td class="text-end font-monospace fw-semibold text-dark">
                                         + ৳ {{ number_format($sale->other_charges, 2) }}
@@ -517,7 +516,7 @@
                             @endif
                             <tr class="border-top pt-2">
                                 <td class="fw-bold text-dark fs-6 pt-3">
-                                    <i class="fe fe-check-circle me-2 text-success"></i>Invoice Payable Grand Total:
+                                    Invoice Payable Grand Total:
                                 </td>
                                 <td class="text-end font-monospace fw-bold text-primary fs-5 pt-3">
                                     ৳ {{ number_format($grandTotal, 2) }}
@@ -534,7 +533,7 @@
             <div class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-header bg-white py-3 border-bottom border-light">
                     <h5 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-credit-card text-primary me-2"></i>Payment Settlement & Channels
+                        Payment Settlement & Channels
                     </h5>
                     <small class="text-muted">Collection methods and account information</small>
                 </div>
@@ -553,11 +552,11 @@
                                 <td class="text-muted">Payment Method:</td>
                                 <td>
                                     @if($sale->payment_method === 'bank')
-                                        <span class="badge badge-soft-primary px-3 py-1 rounded-pill"><i class="fe fe-credit-card me-1"></i>Bank Transfer</span>
+                                        <span class="badge badge-soft-primary px-3 py-1 rounded-pill">Bank Transfer</span>
                                     @elseif($sale->payment_method === 'mobile_banking')
                                         <span class="badge badge-soft-info px-3 py-1 rounded-pill"><i class="fe fe-smartphone me-1"></i>Mobile Banking</span>
                                     @else
-                                        <span class="badge badge-soft-success px-3 py-1 rounded-pill"><i class="fe fe-dollar-sign me-1"></i>Cash in Hand</span>
+                                        <span class="badge badge-soft-success px-3 py-1 rounded-pill">Cash in Hand</span>
                                     @endif
                                 </td>
                             </tr>
@@ -603,7 +602,7 @@
             <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                     <h5 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-dollar-sign text-success me-2"></i>Collection & Payment Receipts History
+                        Collection & Payment Receipts History
                         <span class="badge badge-soft-primary ms-2">{{ $sale->payments->count() }}</span>
                     </h5>
                     <small class="text-muted">All payment vouchers recorded against this sale</small>

@@ -146,7 +146,6 @@
     <div class="card border-0 shadow-sm rounded-3 mb-4 bg-light p-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-2">
-                <i class="fe fe-activity text-primary fs-5"></i>
                 <span class="fw-bold text-dark small">Live Liquid Balances:</span>
             </div>
             <div class="d-flex flex-wrap gap-2">
@@ -213,7 +212,7 @@
                             <tr class="{{ $isReversed ? 'opacity-75 bg-light-subtle' : '' }}">
                                 <td class="ps-4">
                                     <a href="{{ route('balance-transfers.show', $trf->id) }}" class="fw-bold text-primary font-monospace text-decoration-none">
-                                        <i class="fe fe-file-text me-1"></i>{{ $trf->journal_no }}
+                                        {{ $trf->journal_no }}
                                     </a>
                                 </td>
                                 <td>{{ $trf->entry_date ? $trf->entry_date->format('d M Y') : '—' }}</td>
@@ -289,7 +288,7 @@
                                     <h6 class="fw-bold">No Balance Transfers Found</h6>
                                     <p class="small text-muted mb-3">Transfer liquid balances between Hand Cash and Bank accounts with instant double-entry ledger posting.</p>
                                     <a href="{{ route('balance-transfers.create') }}" class="btn btn-primary btn-sm px-3 rounded-2">
-                                        <i class="fe fe-plus-circle me-1"></i> New Balance Transfer
+                                        New Balance Transfer
                                     </a>
                                 </td>
                             </tr>
@@ -314,7 +313,7 @@
         <div class="modal-content border-0 shadow-lg rounded-3">
             <div class="modal-header border-bottom">
                 <h5 class="modal-title fw-bold text-dark" id="reverseTransferModalLabel">
-                    <i class="fe fe-rotate-ccw text-danger me-2"></i>Reverse Balance Transfer
+                    Reverse Balance Transfer
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -333,7 +332,7 @@
                 <div class="modal-footer border-top p-3">
                     <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-3" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger px-4 py-2 rounded-3 fw-semibold">
-                        <i class="fe fe-check-circle me-1"></i>Confirm Reversal
+                        Confirm Reversal
                     </button>
                 </div>
             </form>

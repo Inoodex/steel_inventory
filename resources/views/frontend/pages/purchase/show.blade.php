@@ -86,7 +86,7 @@
             <div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <h4 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-shopping-cart text-primary me-2"></i>Purchase Consignment #PO-{{ $purchase->id }}
+                        Purchase Consignment #PO-{{ $purchase->id }}
                     </h4>
                 </div>
                 <p class="text-muted small mb-0 mt-1">
@@ -96,7 +96,6 @@
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <a href="{{ route('purchase-returns.create', ['purchase_id' => $purchase->id]) }}" class="btn btn-outline-warning px-3 py-2 rounded-3 d-inline-flex align-items-center gap-2 text-dark fw-semibold">
-                    <i class="fe fe-rotate-ccw text-warning"></i>
                     <span>Return to Vendor</span>
                 </a>
 
@@ -201,14 +200,14 @@
             <div class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
                     <h5 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-user text-primary me-2"></i>Vendor / Supplier Details
+                        Vendor / Supplier Details
                     </h5>
                     @php
                         $consignmentVendors = $consignmentPurchases->map(fn($p) => $p->vendor)->filter()->unique('id');
                     @endphp
                     @if($consignmentVendors->count() === 1 && $consignmentVendors->first())
                         <a href="{{ route('vendors.show', $consignmentVendors->first()->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                            <i class="fe fe-external-link me-1"></i>View Profile
+                            View Profile
                         </a>
                     @endif
                 </div>
@@ -216,7 +215,7 @@
                     @if($consignmentVendors->count() > 1)
                         <div class="mb-3">
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 mb-2">
-                                <i class="fe fe-users me-1"></i>Multi-Vendor Consignment ({{ $consignmentVendors->count() }} Vendors)
+                                Multi-Vendor Consignment ({{ $consignmentVendors->count() }} Vendors)
                             </span>
                         </div>
                         <div class="d-flex flex-column gap-2">
@@ -275,11 +274,11 @@
             <div class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
                     <h5 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-package text-primary me-2"></i>Consignment Logistics & Lot
+                        Consignment Logistics & Lot
                     </h5>
                     @if($purchase->lot)
                         <a href="{{ route('lots.show', $purchase->lot->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                            <i class="fe fe-package me-1"></i>View Lot
+                            View Lot
                         </a>
                     @endif
                 </div>
@@ -291,7 +290,7 @@
                                 <td>
                                     @if($purchase->lot)
                                         <a href="{{ route('lots.show', $purchase->lot->id) }}" class="fw-bold text-primary text-decoration-none">
-                                            <i class="fe fe-package me-1"></i>{{ $purchase->lot->lot_number }}
+                                            {{ $purchase->lot->lot_number }}
                                         </a>
                                     @else
                                         <span class="badge bg-light text-muted border">Direct Stock Intake</span>
@@ -301,7 +300,6 @@
                             <tr>
                                 <td class="text-muted">Stockyard Depot:</td>
                                 <td class="fw-bold text-dark">
-                                    <i class="fe fe-map-pin text-danger me-1"></i>
                                     @php
                                         $warehouses = $consignmentPurchases->map(fn($p) => $p->warehouse?->name)->filter()->unique();
                                     @endphp
@@ -320,10 +318,10 @@
                                 <td class="text-muted">Consignment Scope:</td>
                                 <td>
                                     <span class="badge bg-light text-dark border px-2.5 py-1 fs-8">
-                                        <i class="fe fe-layers text-primary me-1"></i>{{ $consignmentPurchases->count() }} Line Items
+                                        {{ $consignmentPurchases->count() }} Line Items
                                     </span>
                                     <span class="badge bg-light text-dark border px-2.5 py-1 fs-8 ms-1">
-                                        <i class="fe fe-disc text-primary me-1"></i>{{ $consignmentTotalQty }} Coils / Pieces
+                                        {{ $consignmentTotalQty }} Coils / Pieces
                                     </span>
                                 </td>
                             </tr>
@@ -343,7 +341,7 @@
         <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
                 <h5 class="card-title fw-bold text-dark mb-0">
-                    <i class="fe fe-disc text-primary me-2"></i>Received Steel Items & Coils
+                    Received Steel Items & Coils
                 </h5>
                 <small class="text-muted">All steel line items, coil tags, weights, and pure steel rates in this consignment</small>
             </div>
@@ -377,24 +375,24 @@
                                 <td class="ps-4 text-muted fw-semibold fs-8">{{ $loop->iteration }}</td>
                                 <td>
                                     <span class="badge bg-light text-dark border fs-8">
-                                        <i class="fe fe-user text-primary me-1"></i>{{ $item->vendor->name ?? 'N/A' }}
+                                        {{ $item->vendor->name ?? 'N/A' }}
                                     </span>
                                 </td>
                                 <td>
                                     <div class="d-flex flex-wrap align-items-center gap-1">
                                         @if($item->thickness)
                                             <span class="badge bg-light text-dark border">
-                                                <i class="fe fe-layers me-1 text-primary"></i>{{ $item->thickness }}
+                                                {{ $item->thickness }}
                                             </span>
                                         @endif
                                         @if($item->size)
                                             <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
-                                                <i class="fe fe-maximize-2 me-1"></i>{{ $item->size }} {{ $item->size_type ? "({$item->size_type})" : '' }}
+                                                {{ $item->size }} {{ $item->size_type ? "({$item->size_type})" : '' }}
                                             </span>
                                         @endif
                                     </div>
                                     @if($item->notes)
-                                        <div class="small text-muted mt-1"><i class="fe fe-tag me-1 text-info"></i>{{ $item->notes }}</div>
+                                        <div class="small text-muted mt-1">{{ $item->notes }}</div>
                                     @endif
                                 </td>
                                 <td>
@@ -424,7 +422,7 @@
                                 </td>
                                 <!-- <td>
                                     <span class="text-muted small">
-                                        <i class="fe fe-map-pin me-1 text-danger"></i>{{ $item->warehouse ? $item->warehouse->name : 'Main Stockyard' }}
+                                        {{ $item->warehouse ? $item->warehouse->name : 'Main Stockyard' }}
                                     </span>
                                 </td> -->
                                 <td class="text-end pe-4">
@@ -442,14 +440,12 @@
                                             @if($item->coils && $item->coils->count() > 0)
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('inventory.index', ['search' => $item->coils->first()->coil_number]) }}">
-                                                        <i class="fe fe-disc text-info"></i>
                                                         <span>View Attached Coils</span>
                                                     </a>
                                                 </li>
                                             @endif
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase-returns.create', ['purchase_id' => $item->id]) }}">
-                                                    <i class="fe fe-rotate-ccw text-warning"></i>
                                                     <span>Return to Vendor</span>
                                                 </a>
                                             </li>
@@ -502,7 +498,7 @@
             <div class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-header bg-white py-3 border-bottom border-light">
                     <h5 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-dollar-sign text-primary me-2"></i>Consignment Financial Adjustments & Landed Costs
+                        Consignment Financial Adjustments & Landed Costs
                     </h5>
                     <small class="text-muted">Total extra delivery, handling charges, and supplier discount for this consignment</small>
                 </div>
@@ -511,7 +507,7 @@
                         <tbody>
                             <tr>
                                 <td class="text-muted" style="width: 45%;">
-                                    <i class="fe fe-box me-2 text-secondary"></i>Base Steel Net Subtotal:
+                                    Base Steel Net Subtotal:
                                 </td>
                                 <td class="text-end font-monospace fw-bold text-dark fs-6">
                                     ৳ {{ number_format($consignmentSubTotal, 2) }}
@@ -519,7 +515,7 @@
                             </tr>
                             <tr>
                                 <td class="text-muted">
-                                    <i class="fe fe-truck me-2 text-primary"></i>Delivery / Freight Charge:
+                                    Delivery / Freight Charge:
                                 </td>
                                 <td class="text-end font-monospace fw-semibold {{ $consignmentDelivery > 0 ? 'text-dark' : 'text-muted' }}">
                                     ৳ {{ number_format($consignmentDelivery, 2) }}
@@ -527,7 +523,7 @@
                             </tr>
                             <tr>
                                 <td class="text-muted">
-                                    <i class="fe fe-user-check me-2 text-info"></i>Cutting & Labour / Crane Handling:
+                                    Cutting & Labour / Crane Handling:
                                 </td>
                                 <td class="text-end font-monospace fw-semibold {{ $consignmentLabour > 0 ? 'text-dark' : 'text-muted' }}">
                                     ৳ {{ number_format($consignmentLabour, 2) }}
@@ -535,7 +531,7 @@
                             </tr>
                             <tr>
                                 <td class="text-muted">
-                                    <i class="fe fe-activity me-2 text-warning"></i>Weight Scale Slip Fee:
+                                    Weight Scale Slip Fee:
                                 </td>
                                 <td class="text-end font-monospace fw-semibold {{ $consignmentScale > 0 ? 'text-dark' : 'text-muted' }}">
                                     ৳ {{ number_format($consignmentScale, 2) }}
@@ -543,7 +539,7 @@
                             </tr>
                             <tr>
                                 <td class="text-muted">
-                                    <i class="fe fe-plus-circle me-2 text-secondary"></i>Other Shipment Charges:
+                                    Other Shipment Charges:
                                 </td>
                                 <td class="text-end font-monospace fw-semibold {{ $consignmentOther > 0 ? 'text-dark' : 'text-muted' }}">
                                     ৳ {{ number_format($consignmentOther, 2) }}
@@ -552,7 +548,7 @@
                             @if($consignmentExtra > 0)
                                 <tr class="bg-light-subtle rounded-2">
                                     <td class="text-primary fw-semibold ps-2">
-                                        <i class="fe fe-trending-up me-2"></i>Total Procurement Extra Costs:
+                                        Total Procurement Extra Costs:
                                     </td>
                                     <td class="text-end font-monospace fw-bold text-primary pe-2">
                                         + ৳ {{ number_format($consignmentExtra, 2) }}
@@ -562,7 +558,7 @@
                             @if($consignmentDiscount > 0)
                                 <tr>
                                     <td class="text-danger fw-semibold">
-                                        <i class="fe fe-tag me-2 text-danger"></i>Supplier Discount:
+                                        Supplier Discount:
                                     </td>
                                     <td class="text-end font-monospace fw-bold text-danger">
                                         - ৳ {{ number_format($consignmentDiscount, 2) }}
@@ -571,7 +567,7 @@
                             @endif
                             <tr class="border-top pt-2">
                                 <td class="fw-bold text-dark fs-6 pt-3">
-                                    <i class="fe fe-check-circle me-2 text-success"></i>Net Payable Grand Total:
+                                    Net Payable Grand Total:
                                 </td>
                                 <td class="text-end font-monospace fw-bold text-primary fs-5 pt-3">
                                     ৳ {{ number_format($consignmentGrandTotal, 2) }}
@@ -588,7 +584,7 @@
             <div class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-header bg-white py-3 border-bottom border-light">
                     <h5 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-credit-card text-primary me-2"></i>Payment & Settlement
+                        Payment & Settlement
                     </h5>
                     <small class="text-muted">Disbursements and due settlement balance</small>
                 </div>
@@ -665,12 +661,12 @@
             <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                     <h5 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-disc text-primary me-2"></i>Physical Coils / Yard Inventory Stock ({{ $allCoils->count() }} Coils)
+                        Physical Coils / Yard Inventory Stock ({{ $allCoils->count() }} Coils)
                     </h5>
                     <small class="text-muted">Track actual physical coil pieces, current stockyard location, and remaining weights</small>
                 </div>
                 <a href="{{ route('inventory.index', ['search' => $purchase->lot ? $purchase->lot->lot_number : '']) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                    <i class="fe fe-external-link me-1"></i>View in Steel Inventory
+                    View in Steel Inventory
                 </a>
             </div>
             <div class="card-body p-0">
@@ -704,18 +700,18 @@
                                     <td class="fw-bold text-primary font-monospace">{{ number_format($coil->remaining_weight, 2) }} kg</td>
                                     <td>
                                         <span class="text-muted small">
-                                            <i class="fe fe-map-pin me-1 text-danger"></i>{{ $coil->warehouse ? $coil->warehouse->name : ($purchase->warehouse ? $purchase->warehouse->name : 'Main Yard') }}
+                                            {{ $coil->warehouse ? $coil->warehouse->name : ($purchase->warehouse ? $purchase->warehouse->name : 'Main Yard') }}
                                         </span>
                                     </td>
                                     <td class="text-end pe-4">
                                         @if($coil->status === 'in_stock')
-                                            <span class="badge badge-soft-success px-3 py-1 rounded-pill"><i class="fe fe-check-circle me-1"></i>In Stock</span>
+                                            <span class="badge badge-soft-success px-3 py-1 rounded-pill">In Stock</span>
                                         @elseif($coil->status === 'processing')
-                                            <span class="badge badge-soft-warning px-3 py-1 rounded-pill"><i class="fe fe-activity me-1"></i>Processing</span>
+                                            <span class="badge badge-soft-warning px-3 py-1 rounded-pill">Processing</span>
                                         @elseif($coil->status === 'reserved')
-                                            <span class="badge badge-soft-info px-3 py-1 rounded-pill"><i class="fe fe-bookmark me-1"></i>Reserved</span>
+                                            <span class="badge badge-soft-info px-3 py-1 rounded-pill">Reserved</span>
                                         @elseif($coil->status === 'exhausted')
-                                            <span class="badge badge-soft-secondary px-3 py-1 rounded-pill"><i class="fe fe-archive me-1"></i>Exhausted</span>
+                                            <span class="badge badge-soft-secondary px-3 py-1 rounded-pill">Exhausted</span>
                                         @elseif($coil->status === 'scrapped')
                                             <span class="badge badge-soft-danger px-3 py-1 rounded-pill"><i class="fe fe-trash-2 me-1"></i>Scrapped</span>
                                         @else
@@ -739,7 +735,7 @@
         <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
                 <h5 class="card-title fw-bold text-dark mb-0">
-                    <i class="fe fe-dollar-sign text-success me-2"></i>Payment & Disbursement History
+                    Payment & Disbursement History
                     <span class="badge badge-soft-primary ms-2">{{ $consignmentPayments->count() }}</span>
                 </h5>
                 <small class="text-muted">Recorded payment vouchers for this consignment</small>
@@ -841,7 +837,7 @@
         <div class="modal-content rounded-3 border-0 shadow">
             <div class="modal-header border-bottom">
                 <h5 class="modal-title fw-bold text-dark" id="purchaseDuePaymentModalLabel">
-                    <i class="fe fe-dollar-sign me-2 text-success"></i>Pay Consignment Due
+                    Pay Consignment Due
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -941,7 +937,7 @@
                 <div class="modal-footer border-top p-3">
                     <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-3" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success px-4 py-2 rounded-3 fw-semibold text-white">
-                        <i class="fe fe-check-circle me-1"></i>Confirm Disbursement
+                        Confirm Disbursement
                     </button>
                 </div>
             </form>

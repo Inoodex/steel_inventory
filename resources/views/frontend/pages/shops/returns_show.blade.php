@@ -35,7 +35,7 @@
 
     @if(!$return)
         <div class="alert alert-warning rounded-3">
-            <i class="fe fe-alert-triangle me-2"></i> Shop return record not found.
+            Shop return record not found.
             <a href="{{ route('shops.returns.index') }}" class="alert-link ms-2">Back to Shop Returns</a>
         </div>
     @else
@@ -46,7 +46,7 @@
                     <div class="d-flex align-items-center gap-2 mb-1">
                         <h4 class="card-title fw-bold text-dark mb-0">Shop Return Details #{{ $return->id }}</h4>
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill small">
-                            <i class="fe fe-home me-1"></i>{{ $shop->name }}
+                            {{ $shop->name }}
                         </span>
                     </div>
                     <p class="text-muted small mb-0">Customer return record and restocking history for <strong>{{ $shop->name }}</strong></p>
@@ -91,7 +91,7 @@
             <div class="col-lg-6 col-12">
                 <div class="card border-0 shadow-sm rounded-3 h-100 mb-0">
                     <div class="card-body p-4">
-                        <h6 class="fw-bold text-dark mb-3"><i class="fe fe-rotate-ccw me-2 text-primary"></i>Return Information</h6>
+                        <h6 class="fw-bold text-dark mb-3">Return Information</h6>
                         <table class="table table-borderless align-middle mb-0">
                             <tr>
                                 <td class="text-secondary small fw-semibold ps-0" style="width: 40%">Return Record ID:</td>
@@ -101,7 +101,7 @@
                                 <td class="text-secondary small fw-semibold ps-0">Retail Outlet:</td>
                                 <td>
                                     <span class="badge bg-light text-dark border px-2 py-1 rounded-2">
-                                        <i class="fe fe-home me-1 text-primary"></i>{{ $shop->name }}
+                                        {{ $shop->name }}
                                     </span>
                                 </td>
                             </tr>
@@ -142,7 +142,7 @@
             <div class="col-lg-6 col-12">
                 <div class="card border-0 shadow-sm rounded-3 h-100 mb-0">
                     <div class="card-body p-4">
-                        <h6 class="fw-bold text-dark mb-3"><i class="fe fe-user me-2 text-primary"></i>Sale & Customer Details</h6>
+                        <h6 class="fw-bold text-dark mb-3">Sale & Customer Details</h6>
                         <table class="table table-borderless align-middle mb-0">
                             <tr>
                                 <td class="text-secondary small fw-semibold ps-0" style="width: 40%">Shop Order No:</td>
@@ -243,7 +243,7 @@
                     </div>
 
                     <div class="mt-3 p-3 rounded-3 bg-white border d-flex align-items-start gap-3">
-                        <div class="mt-1"><i class="fe fe-info fs-5 text-primary"></i></div>
+                        <div class="mt-1"></div>
                         <div>
                             @if($saleDue > 0)
                                 <div class="fw-bold text-dark mb-1">Applied as Due Deduction (No Cash Payout Needed)</div>
@@ -265,7 +265,7 @@
         <!-- Returned Items Table Card -->
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fe fe-box me-2 text-primary"></i>Returned Items Breakdown</h6>
+                <h6 class="fw-bold text-dark mb-3">Returned Items Breakdown</h6>
 
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -365,7 +365,7 @@
                             @method('PATCH')
                             <div class="modal-header border-bottom">
                                 <h5 class="modal-title fw-bold text-dark">
-                                    <i class="fe fe-check-circle text-success me-2"></i>Approve Return &amp; Refund
+                                    Approve Return &amp; Refund
                                 </h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
@@ -398,15 +398,15 @@
                                         </div>
                                         @if($saleDue >= $refundTotal)
                                             <div class="mt-2 pt-2 border-top text-success small">
-                                                <i class="fe fe-info me-1"></i>Full return amount will be adjusted against invoice due balance.
+                                                Full return amount will be adjusted against invoice due balance.
                                             </div>
                                         @elseif($saleDue > 0)
                                             <div class="mt-2 pt-2 border-top text-primary small">
-                                                <i class="fe fe-info me-1"></i>৳{{ number_format($saleDue, 2) }} will reduce invoice due. The remaining <strong>৳{{ number_format($refundTotal - $saleDue, 2) }}</strong> will be refunded from the account selected below.
+                                                ৳{{ number_format($saleDue, 2) }} will reduce invoice due. The remaining <strong>৳{{ number_format($refundTotal - $saleDue, 2) }}</strong> will be refunded from the account selected below.
                                             </div>
                                         @else
                                             <div class="mt-2 pt-2 border-top text-primary small">
-                                                <i class="fe fe-info me-1"></i>Full <strong>৳{{ number_format($refundTotal, 2) }}</strong> will be refunded to customer from the account selected below.
+                                                Full <strong>৳{{ number_format($refundTotal, 2) }}</strong> will be refunded to customer from the account selected below.
                                             </div>
                                         @endif
                                     @endif

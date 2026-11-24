@@ -243,7 +243,7 @@
             <div class="modal-content border-0 shadow rounded-3 text-start">
                 <div class="modal-header bg-light border-bottom">
                     <h5 class="modal-title fw-bold text-dark" id="deleteModalLabel{{ $permission->id }}">
-                        <i class="fe fe-alert-triangle text-danger me-1"></i> Confirm Delete
+                        Confirm Delete
                     </h5>
                     <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>

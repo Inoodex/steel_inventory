@@ -56,7 +56,7 @@
             <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
                     <h4 class="card-title fw-bold text-dark mb-0">Shop Direct Sale</h4>
-                    <span class="badge bg-primary text-white px-2.5 py-1 rounded-pill"><i class="fe fe-shopping-cart me-1"></i>{{ $shop->name }}</span>
+                    <span class="badge bg-primary text-white px-2.5 py-1 rounded-pill">{{ $shop->name }}</span>
                 </div>
                 <p class="text-muted small mb-0">Fast retail point-of-sale invoicing from shop inventory with live calculation &amp; instant billing</p>
             </div>
@@ -78,7 +78,7 @@
         <!-- Section 1: Customer & Order Dispatch Information -->
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fe fe-user me-2 text-primary"></i>Customer &amp; Dispatch Details</h6>
+                <h6 class="fw-bold text-dark mb-3">Customer &amp; Dispatch Details</h6>
 
                 <!-- Customer Type Toggle -->
                 <div class="row g-3 mb-3">
@@ -169,7 +169,7 @@
                                         <span class="fw-bold text-secondary fs-7" id="custBalanceBadge">৳ 0.00</span>
                                     </div>
                                     <button type="button" class="btn btn-sm btn-outline-success py-1 px-2.5 rounded-pill shadow-none" id="btnApplyAdvance" style="display:none; font-size:11px;" onclick="applyCustomerAdvanceCredit()">
-                                        <i class="fe fe-check-circle me-1"></i>Apply Advance
+                                        Apply Advance
                                     </button>
                                 </div>
                             </div>
@@ -192,7 +192,7 @@
                     <div class="col-lg-3 col-md-6 col-12">
                         <label class="form-label small text-secondary fw-semibold mb-1">
                             Dispatch Shop Location <span class="text-danger">*</span>
-                            <span class="badge bg-primary-subtle text-primary border ms-1"><i class="fe fe-shopping-cart me-1"></i>Shop Locked</span>
+                            <span class="badge bg-primary-subtle text-primary border ms-1">Shop Locked</span>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text bg-light text-primary border-primary-subtle"><i class="fe fe-home"></i></span>
@@ -211,7 +211,7 @@
                 <!-- Section 2: Add Product / Coils to Invoice -->
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fe fe-box me-2 text-primary"></i>Add Product / Lot Stock to Invoice</h6>
+                <h6 class="fw-bold text-dark mb-3">Add Product / Lot Stock to Invoice</h6>
 
                 <!-- Lot Builder Card -->
                 <div class="bg-light p-3 rounded-3 mb-3 border">
@@ -298,7 +298,7 @@
         <!-- Section 3: Summary Breakdown & Financials -->
         <div id="summerySection" class="card border-0 shadow-sm rounded-3 mb-4 d-none">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fe fe-dollar-sign me-2 text-primary"></i>Operational Charges &amp; Financial Breakdown</h6>
+                <h6 class="fw-bold text-dark mb-3">Operational Charges &amp; Financial Breakdown</h6>
 
                 <!-- Charges & Adjustments Row -->
                 <div class="row g-3 align-items-end mb-4">
@@ -417,7 +417,7 @@
                     <div class="row g-3 align-items-center">
                         <div class="col-lg-7 col-md-7 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">
-                                <i class="fe fe-layers me-1 text-primary"></i> Receiving Account / Method
+                                Receiving Account / Method
                             </label>
                             <select id="saleAccountSelector" class="form-select border-light-subtle" onchange="handleSaleAccountChange(this)">
                                 <optgroup label="Cash">
@@ -449,7 +449,7 @@
                         <!-- Transaction Reference / Notes -->
                         <div class="col-lg-5 col-md-5 col-12" id="transactionRefContainer">
                             <label class="form-label small text-secondary fw-semibold mb-1">
-                                <i class="fe fe-file-text me-1 text-secondary"></i> TrxID / Ref #
+                                TrxID / Ref #
                             </label>
                             <input type="text" name="transaction_ref" id="transactionRefInput" class="form-control border-light-subtle bg-white" placeholder="e.g. TXN-12345">
                         </div>
@@ -923,14 +923,14 @@ function addItem() {
 
     let lotBadge = '';
     if (!lotId || lot.lot_number === 'Opening Stock') {
-        lotBadge = `<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-8"><i class="fe fe-archive me-1"></i>Opening Stock</span>`;
+        lotBadge = `<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-8">Opening Stock</span>`;
     } else {
-        lotBadge = `<span class="badge bg-light text-dark border px-2 py-1 fs-8"><i class="fe fe-package text-primary me-1"></i>${escapeHtml(lot.lot_number)}</span>`;
+        lotBadge = `<span class="badge bg-light text-dark border px-2 py-1 fs-8">${escapeHtml(lot.lot_number)}</span>`;
     }
 
     let specBadges = ``;
     if (lot.coilsCount > 1) {
-        specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1"><i class="fe fe-layers me-1 text-primary"></i>${lot.coilsCount} Items Consolidated</span>`;
+        specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1">${lot.coilsCount} Items Consolidated</span>`;
     }
     if (thickness) {
         specBadges += `<span class="badge bg-light text-dark border px-2 py-1 fs-8 me-1">Thickness: ${escapeHtml(thickness)}</span>`;

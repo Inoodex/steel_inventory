@@ -211,7 +211,7 @@
                         Showing <span id="visiblePurchaseCount" class="fw-bold text-dark">{{ $purchases->count() }}</span> consignments
                     </span>
                     <button type="button" class="btn btn-sm btn-outline-primary rounded-3 px-2 py-1 shadow-none" id="toggleAllPurchasesBtn" onclick="toggleAllPurchases()" title="Expand or collapse all consignment details">
-                        <i class="fe fe-maximize-2 me-1" id="toggleAllIcon"></i><span id="toggleAllText">Expand All</span>
+                        <span id="toggleAllText">Expand All</span>
                     </button>
                 </div>
             </div>
@@ -278,7 +278,7 @@
                                 </td>
                                 <td>
                                     <span class="badge bg-light text-dark border px-2 py-1 fs-7">
-                                        <i class="fe fe-map-pin text-primary me-1"></i>{{ $whNames }}
+                                        {{ $whNames }}
                                     </span>
                                 </td>
                                 <td class="text-center">
@@ -332,7 +332,7 @@
                                         </span>
                                     @else
                                         <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 fs-8 rounded-pill">
-                                            <i class="fe fe-alert-triangle me-1"></i>Unpaid
+                                            Unpaid
                                         </span>
                                     @endif
                                 </td>
@@ -392,7 +392,7 @@
                                         @endphp
                                         @if($lotNotesText)
                                             <div class="mt-1 text-muted small fst-italic ps-2">
-                                                <i class="fe fe-file-text me-1 text-info"></i>{{ $lotNotesText }}
+                                                {{ $lotNotesText }}
                                             </div>
                                         @endif
                                     @endif

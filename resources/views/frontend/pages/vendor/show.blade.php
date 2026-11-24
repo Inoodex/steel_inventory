@@ -116,7 +116,7 @@
                         <div class="d-flex align-items-center gap-2 mb-2">
                             @if ($isActive)
                                 <span class="badge badge-soft-success px-3 py-1 rounded-pill fs-7">
-                                    <i class="fe fe-check-circle me-1"></i> Active Vendor
+                                    Active Vendor
                                 </span>
                             @else
                                 <span class="badge badge-soft-danger px-3 py-1 rounded-pill fs-7">
@@ -155,7 +155,6 @@
             <!-- Address Row -->
             <div class="mt-4 pt-3 border-top border-light">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="fe fe-map-pin text-primary"></i>
                     <span class="text-secondary small">{{ $vData->address }}</span>
                 </div>
             </div>
@@ -260,7 +259,7 @@
                                     @if($purchase->lot)
                                         <div class="mt-1">
                                             <a href="{{ route('lots.show', $purchase->lot_id) }}" class="badge bg-light text-primary border text-decoration-none px-2 py-1 fs-8 d-inline-flex align-items-center">
-                                                <i class="fe fe-package me-1"></i>{{ $purchase->lot->lot_number }}
+                                                {{ $purchase->lot->lot_number }}
                                             </a>
                                         </div>
                                     @endif
@@ -318,7 +317,6 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="javascript:void(0)"
                                                         onclick="openVendorPaymentModal('{{ $purchase->id }}', '{{ $due }}')">
-                                                        <i class="fe fe-credit-card text-success"></i>
                                                         <span>Pay Due</span>
                                                     </a>
                                                 </li>
@@ -338,7 +336,6 @@
                                             @if($purchase->lot_id)
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $purchase->lot_id) }}">
-                                                        <i class="fe fe-package text-primary"></i>
                                                         <span>View Lot</span>
                                                     </a>
                                                 </li>
@@ -350,7 +347,6 @@
                         @empty
                             <tr>
                                 <td colspan="7" class="text-center py-5 text-muted">
-                                    <i class="fe fe-truck fs-1 mb-2 text-secondary d-block"></i>
                                     <span>No purchase order transactions recorded for this vendor yet.</span>
                                 </td>
                             </tr>
@@ -365,7 +361,7 @@
     <div class="card border-0 shadow-sm rounded-3">
         <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
             <h5 class="fw-bold text-dark mb-0">
-                <i class="fe fe-dollar-sign text-success me-1"></i> Disbursement & Payment History
+                Disbursement & Payment History
             </h5>
             <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">{{ count($payments ?? []) }} Payments Made</span>
         </div>
@@ -408,7 +404,7 @@
                                     </span>
                                     @if($payment->bankDetail)
                                         <small class="text-muted d-block mt-1">
-                                            <i class="fe fe-layers me-1 text-primary"></i>{{ $payment->bankDetail->bank_name }} ({{ $payment->bankDetail->account_number }})
+                                            {{ $payment->bankDetail->bank_name }} ({{ $payment->bankDetail->account_number }})
                                         </small>
                                     @endif
                                 </td>
@@ -486,7 +482,7 @@
         <div class="modal-content rounded-3 border-0 shadow">
             <div class="modal-header border-bottom">
                 <h5 class="modal-title fw-bold text-dark" id="vendorPaymentModalLabel">
-                    <i class="fe fe-dollar-sign me-2 text-success"></i>Record Vendor Due Payment
+                    Record Vendor Due Payment
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -586,7 +582,7 @@
                 <div class="modal-footer border-top p-3">
                     <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-3" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success px-4 py-2 rounded-3 fw-semibold text-white">
-                        <i class="fe fe-check-circle me-1"></i>Confirm Disbursement
+                        Confirm Disbursement
                     </button>
                 </div>
             </form>

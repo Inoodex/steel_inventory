@@ -209,7 +209,7 @@
                             <span class="fw-bold text-dark">{{ $lots->count() }}</span> of {{ $lots->total() }} Lots
                         </span>
                         <!-- <button type="button" class="btn btn-sm btn-outline-primary rounded-3 px-2 py-1 shadow-none" id="toggleAllLotsBtn" onclick="toggleAllLots()" title="Expand or collapse all lot items">
-                            <i class="fe fe-maximize-2 me-1" id="toggleAllIcon"></i><span id="toggleAllText">Expand All</span>
+                            <span id="toggleAllText">Expand All</span>
                         </button> -->
                     </div>
                 </div>
@@ -278,7 +278,7 @@
                                     @endphp
                                     @if($uniqueVendors->count() > 1)
                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-8">
-                                            <i class="fe fe-users me-1"></i>{{ $uniqueVendors->count() }} Vendors
+                                            {{ $uniqueVendors->count() }} Vendors
                                         </span>
                                         <small class="text-muted d-block fs-8 mt-0.5" title="{{ $lot->vendor_names }}">
                                             {{ Str::limit($lot->vendor_names, 22) }}
@@ -348,7 +348,6 @@
                                             @if($lotPurchases->isNotEmpty())
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $lotPurchases->first()->id) }}">
-                                                        <i class="fe fe-shopping-cart text-info"></i>
                                                         <span>View Consignment</span>
                                                     </a>
                                                 </li>
@@ -374,7 +373,7 @@
                                         <div class="d-flex justify-content-between align-items-center mb-2 px-1">
                                             <div class="d-flex align-items-center gap-2">
                                                 <span class="badge bg-primary rounded-pill px-2.5 py-1 fs-8">
-                                                    <i class="fe fe-layers me-1"></i>Lot Items Breakdown
+                                                    Lot Items Breakdown
                                                 </span>
                                                 <span class="fw-bold text-dark fs-7">
                                                     Coils & Plates Intake Details for {{ $lot->lot_number }}
@@ -388,7 +387,7 @@
                                         @if($lotTotalExtra > 0 || $lotDiscount > 0)
                                             <div class="d-flex flex-wrap align-items-center gap-2 mb-2 px-2 py-1.5 bg-white rounded-2 border border-light-subtle small">
                                                 <span class="text-dark fw-semibold">
-                                                    <i class="fe fe-dollar-sign text-primary me-1"></i>Consignment Extra Charges:
+                                                    Consignment Extra Charges:
                                                 </span>
                                                 @if($lotDelivery > 0)
                                                     <span class="badge bg-light text-dark border">Delivery: <strong>৳{{ number_format($lotDelivery, 2) }}</strong></span>
@@ -433,25 +432,25 @@
                                                             <td class="ps-3 text-muted fw-semibold fs-8">{{ $loop->iteration }}</td>
                                                             <td>
                                                                 <span class="badge bg-light text-dark border fs-8">
-                                                                    <i class="fe fe-user text-primary me-1"></i>{{ $item->vendor->name ?? 'N/A' }}
+                                                                    {{ $item->vendor->name ?? 'N/A' }}
                                                                 </span>
                                                             </td>
                                                             <td>
                                                                 @if($item->product_name)
-                                                                    <div class="fw-bold text-dark fs-7 mb-1"><i class="fe fe-box text-primary me-1"></i>{{ $item->product_name }}</div>
+                                                                    <div class="fw-bold text-dark fs-7 mb-1">{{ $item->product_name }}</div>
                                                                 @endif
                                                                 <div class="d-flex flex-wrap align-items-center gap-1">
                                                                     @if($item->thickness)
-                                                                        <span class="badge bg-light text-dark border"><i class="fe fe-layers me-1 text-primary"></i>Thickness: {{ $item->thickness }}</span>
+                                                                        <span class="badge bg-light text-dark border">Thickness: {{ $item->thickness }}</span>
                                                                     @endif
                                                                     @if($item->size)
-                                                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><i class="fe fe-maximize-2 me-1"></i>{{ $item->size }} ({{ $item->size_type ?: 'ft' }})</span>
+                                                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">{{ $item->size }} ({{ $item->size_type ?: 'ft' }})</span>
                                                                     @else
                                                                         <span class="badge bg-light text-muted border">{{ $item->size_type ?: 'ft' }}</span>
                                                                     @endif
                                                                 </div>
                                                                 @if($item->notes)
-                                                                    <div class="small text-muted mt-0.5"><i class="fe fe-tag me-1 text-info"></i>{{ $item->notes }}</div>
+                                                                    <div class="small text-muted mt-0.5">{{ $item->notes }}</div>
                                                                 @endif
                                                             </td>
                                                             <td>
@@ -483,7 +482,6 @@
                                                                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                                                         <li>
                                                                             <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $item->id) }}">
-                                                                                <i class="fe fe-shopping-cart text-info"></i>
                                                                                 <span>View Consignment</span>
                                                                             </a>
                                                                         </li>
@@ -496,7 +494,6 @@
                                                                         @if($item->coils && $item->coils->count() > 0)
                                                                             <li>
                                                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('inventory.index') }}?search={{ $item->coils->first()->coil_number }}">
-                                                                                    <i class="fe fe-disc text-secondary"></i>
                                                                                     <span>Track Coil in Yard</span>
                                                                                 </a>
                                                                             </li>
@@ -722,7 +719,7 @@
         <div class="modal-content rounded-3 border-0 shadow">
             <div class="modal-header border-bottom">
                 <h5 class="modal-title fw-bold text-dark" id="purchaseDuePaymentModalLabel">
-                    <i class="fe fe-dollar-sign me-2 text-success"></i>Pay Purchase Due
+                    Pay Purchase Due
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -822,7 +819,7 @@
                 <div class="modal-footer border-top p-3">
                     <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-3" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success px-4 py-2 rounded-3 fw-semibold text-white">
-                        <i class="fe fe-check-circle me-1"></i>Confirm Disbursement
+                        Confirm Disbursement
                     </button>
                 </div>
             </form>

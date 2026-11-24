@@ -175,13 +175,13 @@
             <ul class="nav nav-tabs nav-tabs-custom px-3 pt-2" id="duesTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="customer-summary-tab" data-bs-toggle="tab" data-bs-target="#customerSummaryPane" type="button" role="tab" aria-selected="true">
-                        <i class="fe fe-users me-2"></i>By Customer Summary (Opening + Sales Dues)
+                        By Customer Summary (Opening + Sales Dues)
                         <span class="badge bg-primary ms-2 rounded-pill">{{ $customersWithDue->count() }}</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="invoice-dues-tab" data-bs-toggle="tab" data-bs-target="#invoiceDuesPane" type="button" role="tab" aria-selected="false">
-                        <i class="fe fe-file-text me-2"></i>By Sales Invoices (Orders)
+                        By Sales Invoices (Orders)
                         <span class="badge bg-danger ms-2 rounded-pill">{{ $sales->count() }}</span>
                     </button>
                 </li>
@@ -249,7 +249,7 @@
                                         @if(($cust->sales_count ?? 0) > 0)
                                             <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1 fs-7 fw-semibold shadow-none"
                                                 data-bs-toggle="collapse" data-bs-target="#custOrdersCollapse-{{ $cust->id }}" aria-expanded="false" title="Click to view invoice breakdown">
-                                                <i class="fe fe-shopping-cart me-1"></i>{{ $cust->sales_count }} {{ Str::plural('Order', $cust->sales_count) }}
+                                                {{ $cust->sales_count }} {{ Str::plural('Order', $cust->sales_count) }}
                                                 <i class="fe fe-chevron-down ms-1"></i>
                                             </button>
                                         @else
@@ -288,13 +288,11 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="javascript:void(0)"
                                                         onclick="openCustomerPaymentModal({{ $cust->id }}, '{{ addslashes($cust->name) }}', {{ $cust->opening_due }}, {{ $cust->total_due }})">
-                                                        <i class="fe fe-dollar-sign text-success"></i>
                                                         <span>Collect Due</span>
                                                     </a>
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.ledger', $cust->id) }}">
-                                                        <i class="fe fe-book-open text-primary"></i>
                                                         <span>View Ledger</span>
                                                     </a>
                                                 </li>
@@ -321,7 +319,7 @@
                                             <div class="card border border-light-subtle shadow-xs rounded-3 bg-white mb-0">
                                                 <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
                                                     <span class="fw-bold text-dark fs-7">
-                                                        <i class="fe fe-file-text text-primary me-1"></i> Unpaid Sales Orders for {{ $cust->name }}
+                                                        Unpaid Sales Orders for {{ $cust->name }}
                                                     </span>
                                                     <span class="badge bg-danger-light text-danger rounded-pill fs-8">
                                                         {{ $cust->sales_count }} {{ Str::plural('Order', $cust->sales_count) }} | Invoices Due: ৳{{ number_format($cust->sales_due, 2) }}
@@ -475,7 +473,6 @@
                                                 @if ($sale->due_payment > 0)
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="{{ route('sales.payments', $sale->id) }}">
-                                                            <i class="fe fe-credit-card text-success"></i>
                                                             <span>Pay Invoice</span>
                                                         </a>
                                                     </li>
@@ -488,14 +485,12 @@
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.invoice.pdf', $sale->id) }}" target="_blank">
-                                                        <i class="fe fe-file-text text-danger"></i>
                                                         <span>Invoice PDF</span>
                                                     </a>
                                                 </li>
                                                 @if($sale->customer_id)
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.ledger', $sale->customer_id) }}">
-                                                            <i class="fe fe-book-open text-primary"></i>
                                                             <span>Customer Ledger</span>
                                                         </a>
                                                     </li>

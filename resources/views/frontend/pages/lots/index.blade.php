@@ -85,7 +85,7 @@
                         <div class="d-flex align-items-center gap-2">
                             <h4 class="mb-0 fw-bold text-dark">{{ number_format($totalLots ?? $lots->total()) }} <span class="fs-7 fw-normal text-muted">Lots</span></h4>
                             <span class="badge badge-soft-success px-2 py-1 rounded-pill fs-8">
-                                <i class="fe fe-check-circle me-1"></i>{{ number_format($activeLots ?? 0) }} Active
+                                {{ number_format($activeLots ?? 0) }} Active
                             </span>
                         </div>
                         <small class="text-muted fs-8">All registered consignments</small>
@@ -195,7 +195,7 @@
                                 <tr>
                                     <td class="ps-3 fw-bold">
                                         <a href="{{ route('lots.show', $lot->id) }}" class="text-primary text-decoration-none">
-                                            <i class="fe fe-package me-1"></i> {{ $lot->lot_number }}
+                                            {{ $lot->lot_number }}
                                         </a>
                                     </td>
                                     <td title="{{ $lot->vendor ? $lot->vendor->name : 'N/A' }}">
@@ -228,7 +228,6 @@
                                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success" href="{{ route('purchase.create', ['lot_id' => $lot->id]) }}">
-                                                        <i class="fe fe-plus-circle text-success"></i>
                                                         <span>Add Coils</span>
                                                     </a>
                                                 </li>

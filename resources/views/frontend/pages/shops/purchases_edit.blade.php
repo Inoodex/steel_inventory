@@ -61,7 +61,7 @@
                         <i class="fe fe-edit text-primary me-2"></i>Edit Shop Purchase Order #PO-{{ $purchase->id }}
                     </h4>
                     <span class="badge bg-primary text-white px-2.5 py-1 rounded-pill">
-                        <i class="fe fe-shopping-cart me-1"></i>{{ $shop->name }}
+                        {{ $shop->name }}
                     </span>
                 </div>
                 <p class="text-muted small mb-0">Update intake specifications, consignment weights, vendor charges, and payments for retail shop stock</p>
@@ -91,7 +91,6 @@
     <!-- Sold Weight Protection Alert Banner -->
     @if($soldWeight > 0)
         <div class="alert alert-warning border-warning d-flex align-items-center gap-3 rounded-3 shadow-sm mb-4" role="alert">
-            <i class="fe fe-alert-triangle fs-3 text-warning flex-shrink-0"></i>
             <div class="flex-grow-1">
                 <h6 class="fw-bold mb-1 text-dark">Partial Shop Steel Stock Dispatched</h6>
                 <p class="mb-0 small text-secondary">
@@ -117,7 +116,7 @@
                 <!-- 1. Lot & Vendor Intake Setup Card -->
                 <div class="card border-0 shadow-sm rounded-3 mb-4 p-2">
                     <div class="pos-card-header rounded-top-3 d-flex justify-content-between align-items-center">
-                        <span><i class="fe fe-anchor text-primary me-2"></i>Lot &amp; Shop Intake Details</span>
+                        <span>Lot &amp; Shop Intake Details</span>
                         <span class="badge bg-light text-secondary border px-2.5 py-1 rounded-pill fs-8">
                             Shop: {{ $shop->name }}
                         </span>
@@ -177,10 +176,10 @@
                 <!-- 2. Physical Specifications & Stock Details Card -->
                 <div class="card border-0 shadow-sm rounded-3 mb-4 p-2">
                     <div class="pos-card-header rounded-top-3 d-flex justify-content-between align-items-center">
-                        <span><i class="fe fe-disc text-primary me-2"></i>Physical Steel Specifications &amp; Stock Details</span>
+                        <span>Physical Steel Specifications &amp; Stock Details</span>
                         @if($coil && !empty($coil->coil_number))
                             <span class="badge bg-dark rounded-pill px-3 py-1 fs-8 fw-bold font-monospace">
-                                <i class="fe fe-tag me-1 text-primary"></i>{{ $coil->coil_number }}
+                                {{ $coil->coil_number }}
                             </span>
                         @endif
                     </div>
@@ -269,7 +268,7 @@
                 <!-- 3. Procurement Charges & Adjustments Card -->
                 <div class="card border-0 shadow-sm rounded-3 mb-4 p-2">
                     <div class="pos-card-header rounded-top-3">
-                        <span><i class="fe fe-dollar-sign text-success me-1"></i>Procurement Charges &amp; Costs</span>
+                        <span>Procurement Charges &amp; Costs</span>
                     </div>
                     <div class="card-body p-3">
                         <div class="row g-3 align-items-end">
@@ -343,7 +342,7 @@
                     <!-- Payment Settlement Card -->
                     <div class="card border-0 shadow-sm rounded-3 mb-3">
                         <div class="pos-card-header rounded-top-3">
-                            <span><i class="fe fe-check-circle text-success me-1"></i>Payment Settlement</span>
+                            <span>Payment Settlement</span>
                         </div>
                         <div class="card-body p-3">
                             <div class="mb-3">
@@ -360,7 +359,7 @@
                                         value="{{ old('payment', $purchase->payment) }}" oninput="calculateFinancials()" required>
                                 </div>
                                 <div id="paymentErrorMsg" class="text-danger small mt-1 fw-semibold fs-8" style="display: none;">
-                                    <i class="fe fe-alert-triangle me-1"></i> Payment cannot exceed the total bill of <span id="maxBillFormatted">৳ 0.00</span>.
+                                    Payment cannot exceed the total bill of <span id="maxBillFormatted">৳ 0.00</span>.
                                 </div>
                             </div>
 
@@ -383,7 +382,7 @@
                             <div class="p-2.5 bg-light rounded-3 border mb-3">
                                 <div class="mb-2">
                                     <label class="form-label fs-8 text-secondary fw-semibold mb-1">
-                                        <i class="fe fe-layers me-1 text-primary"></i> Settlement Account / Method
+                                        Settlement Account / Method
                                     </label>
                                     <select id="shopPurchaseEditAccountSelector" class="form-select form-select-sm" onchange="handleAccountChange(this)">
                                         <optgroup label="Cash">

@@ -136,7 +136,6 @@
     <div class="card border-0 shadow-sm rounded-3">
         <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
             <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-                <i class="fe fe-list text-primary"></i>
                 <span>Statement Details</span>
             </h6>
             <span class="badge bg-light text-secondary border px-3 py-1 rounded-pill">
@@ -208,7 +207,6 @@
                         @empty
                             <tr>
                                 <td colspan="7" class="text-center py-5 text-muted">
-                                    <i class="fe fe-info fs-3 d-block mb-2 text-secondary opacity-50"></i>
                                     No transactions recorded for this vendor in the selected date range.
                                 </td>
                             </tr>

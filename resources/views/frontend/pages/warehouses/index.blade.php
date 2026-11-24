@@ -209,7 +209,7 @@
                                 </td>
                                 <td>
                                     <span class="text-muted small">
-                                        <i class="fe fe-map-pin text-secondary me-1"></i>{{ Str::limit ($wh->location, 20) ?? 'N/A' }}
+                                        {{ Str::limit ($wh->location, 20) ?? 'N/A' }}
                                     </span>
                                 </td>
                                 <!-- <td>
@@ -218,13 +218,13 @@
                                 </td>
                                 <td class="text-center">
                                     <span class="badge badge-soft-primary px-3 py-2 rounded-pill fs-7">
-                                        <i class="fe fe-disc me-1"></i> {{ $wh->coils_count ?? 0 }} Coils
+                                        {{ $wh->coils_count ?? 0 }} Coils
                                     </span>
                                 </td> -->
                                 <td>
                                     @if($wh->status === 'active')
                                         <span class="badge badge-soft-success px-3 py-2 rounded-pill fs-7">
-                                            <i class="fe fe-check-circle me-1"></i> Active
+                                            Active
                                         </span>
                                     @else
                                         <span class="badge badge-soft-danger px-3 py-2 rounded-pill fs-7">
@@ -278,7 +278,7 @@
                                     <h5 class="fw-bold text-dark mb-1">No stockyards or warehouses found</h5>
                                     <p class="text-muted small mb-3">Click "Add Stockyard / Warehouse" to add your first steel yard depot location.</p>
                                     <button type="button" class="btn btn-primary btn-sm px-3 rounded-2" data-bs-toggle="modal" data-bs-target="#addWarehouseModal">
-                                        <i class="fe fe-plus-circle me-1"></i> Add Stockyard
+                                        Add Stockyard
                                     </button>
                                 </td>
                             </tr>

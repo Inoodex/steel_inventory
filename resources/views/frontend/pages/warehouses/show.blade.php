@@ -100,7 +100,7 @@
                     </h4>
                     @if($warehouse->status === 'active')
                         <span class="badge badge-soft-success px-3 py-1 rounded-pill">
-                            <i class="fe fe-check-circle me-1"></i>Active Yard
+                            Active Yard
                         </span>
                     @else
                         <span class="badge badge-soft-danger px-3 py-1 rounded-pill">
@@ -109,9 +109,9 @@
                     @endif
                 </div>
                 <p class="text-muted small mb-0">
-                    <i class="fe fe-map-pin text-secondary me-1"></i>{{ $warehouse->location ?: 'Location not specified' }}
+                    {{ $warehouse->location ?: 'Location not specified' }}
                     @if($warehouse->contact_person)
-                        • <i class="fe fe-user text-secondary me-1 ms-1"></i>{{ $warehouse->contact_person }}
+                        • {{ $warehouse->contact_person }}
                         @if($warehouse->contact_phone)
                             (<a href="tel:{{ $warehouse->contact_phone }}" class="text-muted">{{ $warehouse->contact_phone }}</a>)
                         @endif
@@ -222,7 +222,7 @@
             <div class="card border-0 shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
                     <h5 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-info text-primary me-2"></i>Stockyard Profile
+                        Stockyard Profile
                     </h5>
                     <a href="{{ route('warehouses.edit', $warehouse->id) }}" class="btn btn-sm btn-light border px-2 py-1 rounded-2" title="Edit Stockyard">
                         <i class="fe fe-edit-2 text-muted"></i>
@@ -301,7 +301,7 @@
             <div class="card border-0 shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-header bg-white py-3 border-bottom border-light">
                     <h5 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-activity text-primary me-2"></i>Yard Activity Summary
+                        Yard Activity Summary
                     </h5>
                 </div>
                 <div class="card-body">
@@ -396,7 +396,6 @@
                             @if($thicknessBreakdown->isNotEmpty())
                                 <div class="p-3 bg-light-subtle border-bottom d-flex align-items-center justify-content-between">
                                     <div class="d-flex align-items-center gap-2">
-                                        <i class="fe fe-info text-primary fs-5"></i>
                                         <span class="small text-dark">
                                             <strong>Weighted Average Cost (AVCO)</strong> = Total Stock Valuation ÷ Total Available Weight (kg)
                                         </span>
@@ -549,13 +548,13 @@
                                                     </td>
                                                     <td class="text-end pe-4">
                                                         @if($coil->status === 'in_stock')
-                                                            <span class="badge badge-soft-success px-3 py-1 rounded-pill"><i class="fe fe-check-circle me-1"></i>In Stock</span>
+                                                            <span class="badge badge-soft-success px-3 py-1 rounded-pill">In Stock</span>
                                                         @elseif($coil->status === 'processing')
-                                                            <span class="badge badge-soft-warning px-3 py-1 rounded-pill"><i class="fe fe-activity me-1"></i>Processing</span>
+                                                            <span class="badge badge-soft-warning px-3 py-1 rounded-pill">Processing</span>
                                                         @elseif($coil->status === 'reserved')
-                                                            <span class="badge badge-soft-info px-3 py-1 rounded-pill"><i class="fe fe-bookmark me-1"></i>Reserved</span>
+                                                            <span class="badge badge-soft-info px-3 py-1 rounded-pill">Reserved</span>
                                                         @elseif($coil->status === 'exhausted')
-                                                            <span class="badge badge-soft-secondary px-3 py-1 rounded-pill"><i class="fe fe-archive me-1"></i>Exhausted</span>
+                                                            <span class="badge badge-soft-secondary px-3 py-1 rounded-pill">Exhausted</span>
                                                         @elseif($coil->status === 'scrapped')
                                                             <span class="badge badge-soft-danger px-3 py-1 rounded-pill"><i class="fe fe-trash-2 me-1"></i>Scrapped</span>
                                                         @else

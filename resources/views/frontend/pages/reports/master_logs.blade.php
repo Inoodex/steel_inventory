@@ -56,7 +56,7 @@
         <div class="content-page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
                 <h4 class="card-title fw-bold text-dark mb-1">
-                    <i class="fe fe-activity text-primary me-2"></i>Master Activity &amp; Transaction Logs
+                    Master Activity &amp; Transaction Logs
                 </h4>
                 <p class="text-muted small mb-0">Consolidated audit trail of sales, purchases, payments, inventory movements, expenses, and returns</p>
             </div>
@@ -221,7 +221,7 @@
         <div class="card-header bg-white py-3 px-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
             <div class="d-flex align-items-center gap-2">
                 <h6 class="fw-bold text-dark mb-0">
-                    <i class="fe fe-list text-primary me-1"></i>Master Activity Feed
+                    Master Activity Feed
                 </h6>
                 <span class="badge bg-primary rounded-pill px-2.5 py-1 fs-8">
                     Showing {{ $paginatedLogs->firstItem() ?? 0 }} - {{ $paginatedLogs->lastItem() ?? 0 }} of {{ $paginatedLogs->total() }} Events
@@ -331,7 +331,6 @@
                         @empty
                             <tr>
                                 <td colspan="11" class="text-center py-5 text-muted">
-                                    <i class="fe fe-inbox fs-1 text-secondary opacity-50 d-block mb-2"></i>
                                     <h6 class="fw-bold text-dark">No Activity or Transaction Logs Found</h6>
                                     <p class="small text-muted mb-0">Try selecting a wider date range or clearing your filter criteria.</p>
                                 </td>

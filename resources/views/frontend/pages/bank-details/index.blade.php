@@ -238,7 +238,6 @@
                                             @if($bank->chartOfAccount)
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('chart-of-accounts.index', ['search' => $bank->chartOfAccount->account_code]) }}">
-                                                        <i class="fe fe-layers text-info"></i>
                                                         <span>View Ledger</span>
                                                     </a>
                                                 </li>
@@ -248,7 +247,6 @@
                                                     <form action="{{ route('bank-details.set-default', $bank->id) }}" method="POST" class="d-inline">
                                                         @csrf
                                                         <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 border-0 bg-transparent">
-                                                            <i class="fe fe-check-circle text-success"></i>
                                                             <span>Make Default</span>
                                                         </button>
                                                     </form>

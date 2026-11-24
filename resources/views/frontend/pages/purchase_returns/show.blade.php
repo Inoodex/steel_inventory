@@ -46,10 +46,10 @@
             <div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <h4 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-rotate-ccw text-warning me-2"></i>Purchase Return #{{ $return->return_no }}
+                        Purchase Return #{{ $return->return_no }}
                     </h4>
                     <span class="badge badge-soft-success text-uppercase px-2.5 py-1">
-                        <i class="fe fe-check-circle me-1"></i>Completed
+                        Completed
                     </span>
                     @if($return->refund_type === 'reduce_due')
                         <span class="badge badge-soft-warning px-2.5 py-1">
@@ -57,15 +57,15 @@
                         </span>
                     @elseif($return->refund_type === 'advance_credit')
                         <span class="badge badge-soft-primary px-2.5 py-1">
-                            <i class="fe fe-plus-circle me-1"></i>Advance Credit
+                            Advance Credit
                         </span>
                     @elseif($return->refund_type === 'cash_refund')
                         <span class="badge badge-soft-success px-2.5 py-1">
-                            <i class="fe fe-dollar-sign me-1"></i>Cash Refund
+                            Cash Refund
                         </span>
                     @elseif($return->refund_type === 'bank_refund')
                         <span class="badge badge-soft-info px-2.5 py-1">
-                            <i class="fe fe-credit-card me-1"></i>Bank Refund
+                            Bank Refund
                         </span>
                     @endif
                 </div>
@@ -96,7 +96,7 @@
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4" role="alert">
-            <i class="fe fe-check-circle me-2"></i>{{ session('success') }}
+            {{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
@@ -107,7 +107,6 @@
             <div class="card border-0 shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-header bg-white py-3 border-bottom border-light">
                     <h5 class="card-title fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-                        <i class="fe fe-truck text-primary"></i>
                         <span>Vendor &amp; Consignment Information</span>
                     </h5>
                 </div>
@@ -169,7 +168,6 @@
             <div class="card border-0 shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-header bg-white py-3 border-bottom border-light">
                     <h5 class="card-title fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-                        <i class="fe fe-dollar-sign text-success"></i>
                         <span>Settlement &amp; Accounting Status</span>
                     </h5>
                 </div>
@@ -235,7 +233,6 @@
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-white py-3 border-bottom border-light">
                     <h5 class="card-title fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-                        <i class="fe fe-disc text-primary"></i>
                         <span>Returned Steel Item Specifications</span>
                     </h5>
                 </div>
@@ -315,7 +312,7 @@
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-white py-3 border-bottom border-light">
                     <h6 class="fw-bold text-dark mb-0">
-                        <i class="fe fe-file-text text-info me-2"></i>Gate Pass &amp; Transport Notes
+                        Gate Pass &amp; Transport Notes
                     </h6>
                 </div>
                 <div class="card-body p-3">

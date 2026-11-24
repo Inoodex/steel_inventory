@@ -414,7 +414,7 @@
                                             </a>
                                             @if($item->customers_count > 0)
                                                 <a class="dropdown-item py-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#lotCustomerModal-{{ $item->id }}">
-                                                    <i class="fe fe-users me-2 text-info"></i>View Customer
+                                                    View Customer
                                                 </a>
                                             @endif
                                             <a class="dropdown-item py-2" href="{{ route('lots.report.pdf', array_merge(request()->query(), ['lot_id' => $item->id])) }}" target="_blank">
@@ -428,7 +428,6 @@
                             <tr id="noLotRow">
                                 <td colspan="10" class="text-center py-5">
                                     <div class="py-3">
-                                        <i class="fe fe-layers text-muted fs-1 mb-2 d-block"></i>
                                         <h5 class="fw-bold text-dark mb-1">No Lot Data Found</h5>
                                         <p class="text-muted small mb-0">Try changing your filters or date range.</p>
                                     </div>
@@ -475,7 +474,7 @@
                 <div class="modal-header border-bottom px-4 py-3 bg-light rounded-top-4">
                     <div>
                         <h5 class="modal-title fw-bold text-dark" id="lotCustomerModalLabel-{{ $item->id }}">
-                            <i class="fe fe-users text-primary me-2"></i>Customer Breakdown &bull; {{ $item->lot_number }}
+                            Customer Breakdown &bull; {{ $item->lot_number }}
                         </h5>
                         <small class="text-muted">All customers and sales orders dispatched from this lot</small>
                     </div>

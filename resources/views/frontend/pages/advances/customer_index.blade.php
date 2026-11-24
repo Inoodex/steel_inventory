@@ -126,12 +126,12 @@
     <ul class="nav nav-tabs mb-3 border-bottom" id="advanceTab" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="balances-tab" data-bs-toggle="tab" data-bs-target="#balances-pane" type="button" role="tab">
-                <i class="fe fe-award me-1"></i>Active Customer Advance Balances ({{ $customersWithAdvance->count() }})
+                Active Customer Advance Balances ({{ $customersWithAdvance->count() }})
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-pane" type="button" role="tab">
-                <i class="fe fe-list me-1"></i>Advance Deposits History
+                Advance Deposits History
             </button>
         </li>
     </ul>
@@ -190,13 +190,11 @@
                                                     </li>
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.ledger', $cust->id) }}">
-                                                            <i class="fe fe-book-open text-info"></i>
                                                             <span>Account Ledger</span>
                                                         </a>
                                                     </li>
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-success fw-semibold" href="{{ route('customer-advances.create', ['customer_id' => $cust->id]) }}">
-                                                            <i class="fe fe-plus-circle text-success"></i>
                                                             <span>Receive Advance Deposit</span>
                                                         </a>
                                                     </li>
@@ -213,7 +211,6 @@
                                 @empty
                                     <tr>
                                         <td colspan="6" class="text-center py-5 text-muted">
-                                            <i class="fe fe-inbox fs-1 mb-2 text-secondary d-block"></i>
                                             <span>No customers currently have an active advance credit balance.</span>
                                         </td>
                                     </tr>
@@ -307,11 +304,11 @@
                                         <td>
                                             @if($deposit->payment_method === 'cash')
                                                 <span class="badge bg-light text-dark border px-2 py-1 rounded-2">
-                                                    <i class="fe fe-dollar-sign text-success me-1"></i>Cash in Hand
+                                                    Cash in Hand
                                                 </span>
                                             @elseif($deposit->bankDetail)
                                                 <span class="badge bg-light text-dark border px-2 py-1 rounded-2">
-                                                    <i class="fe fe-credit-card text-primary me-1"></i>{{ $deposit->bankDetail->bank_name }} ({{ $deposit->bankDetail->account_number }})
+                                                    {{ $deposit->bankDetail->bank_name }} ({{ $deposit->bankDetail->account_number }})
                                                 </span>
                                             @else
                                                 <span class="badge bg-light text-dark border px-2 py-1 rounded-2 text-capitalize">
@@ -343,7 +340,6 @@
                                 @empty
                                     <tr>
                                         <td colspan="8" class="text-center py-5 text-muted">
-                                            <i class="fe fe-inbox fs-1 mb-2 text-secondary d-block"></i>
                                             <span>No advance deposit history found.</span>
                                         </td>
                                     </tr>

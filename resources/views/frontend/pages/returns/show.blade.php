@@ -35,7 +35,7 @@
 
     @if(!$return)
         <div class="alert alert-warning rounded-3">
-            <i class="fe fe-alert-triangle me-2"></i> Return record not found.
+            Return record not found.
             <a href="{{ route('returns.index') }}" class="alert-link ms-2">Back to Returns</a>
         </div>
     @else
@@ -79,7 +79,7 @@
             <div class="col-lg-6 col-12">
                 <div class="card border-0 shadow-sm rounded-3 h-100 mb-0">
                     <div class="card-body p-4">
-                        <h6 class="fw-bold text-dark mb-3"><i class="fe fe-rotate-ccw me-2 text-primary"></i>Return Summary</h6>
+                        <h6 class="fw-bold text-dark mb-3">Return Summary</h6>
                         <table class="table table-borderless align-middle mb-0">
                             <tr>
                                 <td class="text-secondary small fw-semibold ps-0" style="width: 40%">Return Record ID:</td>
@@ -122,7 +122,7 @@
             <div class="col-lg-6 col-12">
                 <div class="card border-0 shadow-sm rounded-3 h-100 mb-0">
                     <div class="card-body p-4">
-                        <h6 class="fw-bold text-dark mb-3"><i class="fe fe-user me-2 text-primary"></i>Sale & Customer Details</h6>
+                        <h6 class="fw-bold text-dark mb-3">Sale & Customer Details</h6>
                         <table class="table table-borderless align-middle mb-0">
                             <tr>
                                 <td class="text-secondary small fw-semibold ps-0" style="width: 40%">Order Number:</td>
@@ -165,7 +165,7 @@
         <!-- Returned Items Table Card -->
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fe fe-box me-2 text-primary"></i>Returned Items Breakdown</h6>
+                <h6 class="fw-bold text-dark mb-3">Returned Items Breakdown</h6>
 
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -263,7 +263,7 @@
                             @method('PATCH')
                             <div class="modal-header border-bottom">
                                 <h5 class="modal-title fw-bold text-dark">
-                                    <i class="fe fe-check-circle text-success me-2"></i>Approve Return &amp; Refund
+                                    Approve Return &amp; Refund
                                 </h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
@@ -296,15 +296,15 @@
                                         </div>
                                         @if($saleDue >= $refundTotal)
                                             <div class="mt-2 pt-2 border-top text-success small">
-                                                <i class="fe fe-info me-1"></i>Full return amount will be adjusted against invoice due balance.
+                                                Full return amount will be adjusted against invoice due balance.
                                             </div>
                                         @elseif($saleDue > 0)
                                             <div class="mt-2 pt-2 border-top text-primary small">
-                                                <i class="fe fe-info me-1"></i>৳{{ number_format($saleDue, 2) }} will reduce invoice due. The remaining <strong>৳{{ number_format($refundTotal - $saleDue, 2) }}</strong> will be refunded from the account selected below.
+                                                ৳{{ number_format($saleDue, 2) }} will reduce invoice due. The remaining <strong>৳{{ number_format($refundTotal - $saleDue, 2) }}</strong> will be refunded from the account selected below.
                                             </div>
                                         @else
                                             <div class="mt-2 pt-2 border-top text-primary small">
-                                                <i class="fe fe-info me-1"></i>Full <strong>৳{{ number_format($refundTotal, 2) }}</strong> will be refunded to customer from the account selected below.
+                                                Full <strong>৳{{ number_format($refundTotal, 2) }}</strong> will be refunded to customer from the account selected below.
                                             </div>
                                         @endif
                                     @endif

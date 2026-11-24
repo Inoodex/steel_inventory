@@ -185,7 +185,7 @@
                                 <td>{{ $p->created_at?->format('d M Y') }}</td>
                                 <td>
                                     <span class="badge bg-light text-dark border">
-                                        <i class="fe fe-home text-primary me-1"></i> {{ $p->warehouse?->name ?? 'Shop' }}
+                                        {{ $p->warehouse?->name ?? 'Shop' }}
                                     </span>
                                 </td>
                                 <td>
@@ -225,7 +225,7 @@
                                     <h6 class="fw-bold">No Shop Purchases Found</h6>
                                     <p class="small text-muted mb-3">Record an inward purchase intake to assign material into a shop.</p>
                                     <a href="{{ route('shops.purchases.create') }}" class="btn btn-primary btn-sm px-3 rounded-3">
-                                        <i class="fe fe-plus-circle me-1"></i> New Stock Intake
+                                        New Stock Intake
                                     </a>
                                 </td>
                             </tr>

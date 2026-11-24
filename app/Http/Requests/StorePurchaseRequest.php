@@ -19,9 +19,23 @@ class StorePurchaseRequest extends FormRequest
         if ($this->boolean('is_quick_mode') || $this->input('is_quick_mode') === '1' || $this->input('is_quick_mode') === 1) {
             $totalWeight = (float) $this->input('total_weight', 0);
             $totalAmount = (float) $this->input('total_amount', 0);
-            $ratePerKg   = $totalWeight > 0 ? round($totalAmount / $totalWeight, 4) : (float) $this->input('unit_price', 0);
-            if ($totalAmount <= 0 && $totalWeight > 0 && $ratePerKg > 0) {
+            $inputUnitPrice = (float) $this->input('unit_price', 0);
+            $qty = max(1, (int) $this->input('quantity', 1));
+            $unitWeight = (float) $this->input('unit_weight', 0);
+
+            if ($unitWeight <= 0 && $qty > 0 && $totalWeight > 0) {
+                $unitWeight = round($totalWeight / $qty, 2);
+            } elseif ($totalWeight <= 0 && $unitWeight > 0 && $qty > 0) {
+                $totalWeight = round($unitWeight * $qty, 2);
+            }
+
+            if ($inputUnitPrice > 0 && $totalWeight > 0 && $totalAmount <= 0) {
+                $ratePerKg   = $inputUnitPrice;
                 $totalAmount = round($totalWeight * $ratePerKg, 2);
+            } elseif ($totalAmount > 0 && $totalWeight > 0) {
+                $ratePerKg   = round($totalAmount / $totalWeight, 4);
+            } else {
+                $ratePerKg   = $inputUnitPrice > 0 ? $inputUnitPrice : 0;
             }
 
             $vendorId = $defaultVendor ?: $this->input('vendor_id');
@@ -34,10 +48,10 @@ class StorePurchaseRequest extends FormRequest
                 'size'         => $this->input('size') ?: null,
                 'length'       => $this->input('size_type') ?: 'ft',
                 'size_type'    => $this->input('size_type') ?: 'ft',
-                'quantity'     => max(1, (int) $this->input('quantity', 1)),
-                'gross_weight' => $totalWeight,
-                'net_weight'   => $totalWeight,
-                'unit_weight'  => $totalWeight,
+                'quantity'     => $qty,
+                'gross_weight' => $unitWeight > 0 ? $unitWeight : $totalWeight,
+                'net_weight'   => $unitWeight > 0 ? $unitWeight : $totalWeight,
+                'unit_weight'  => $unitWeight > 0 ? $unitWeight : $totalWeight,
                 'total_weight' => $totalWeight,
                 'unit_price'   => $ratePerKg,
                 'sub_price'    => $totalAmount,

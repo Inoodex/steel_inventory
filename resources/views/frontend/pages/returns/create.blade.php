@@ -22,7 +22,6 @@
     @if ($errors->any())
         <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4" role="alert">
             <div class="d-flex align-items-center mb-2">
-                <i class="fe fe-alert-triangle fs-4 me-2"></i>
                 <strong class="fs-6">Please check the form below for errors:</strong>
             </div>
             <ul class="mb-0 ps-3">
@@ -41,7 +40,7 @@
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-4">
                 <div class="mb-3">
-                    <h6 class="fw-bold text-dark mb-0"><i class="fe fe-shopping-cart me-2 text-primary"></i>Sale & Customer Selection</h6>
+                    <h6 class="fw-bold text-dark mb-0">Sale & Customer Selection</h6>
                 </div>
 
                 <div class="row g-3">
@@ -68,7 +67,7 @@
         <!-- Section 2: Sale Items Display -->
         <div id="saleItemsSection" class="card border-0 shadow-sm rounded-3 mb-4 {{ ($sale && count($saleItems) > 0) ? '' : 'd-none' }}">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fe fe-box me-2 text-primary"></i>Select Items to Return</h6>
+                <h6 class="fw-bold text-dark mb-3">Select Items to Return</h6>
 
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -143,7 +142,7 @@
                 </div>
 
                 <div class="alert alert-info border-0 rounded-3 mt-3 mb-0" id="noItemsMessage" style="display: {{ ($sale && count($saleItems) > 0) ? 'none' : 'block' }}">
-                    <i class="fe fe-info me-2"></i>Select a sale order above to display available purchased items.
+                    Select a sale order above to display available purchased items.
                 </div>
             </div>
         </div>
@@ -151,7 +150,7 @@
         <!-- Section 3: Reason & Summary Breakdown -->
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fe fe-file-text me-2 text-primary"></i>Return Details & Financial Summary</h6>
+                <h6 class="fw-bold text-dark mb-3">Return Details & Financial Summary</h6>
 
                 <div class="row g-3 align-items-end mb-4">
                     <div class="col-lg-8 col-md-7 col-12">

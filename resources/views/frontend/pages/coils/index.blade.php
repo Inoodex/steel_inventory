@@ -220,7 +220,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <i class="fe fe-map-pin me-1 text-primary"></i>{{ Str::limit($coil->warehouse->name, 15) }}
+                                    {{ Str::limit($coil->warehouse->name, 15) }}
                                 </td>
                                 <td class="text-end pe-3">
                                     <button type="button" class="btn btn-sm btn-outline-primary rounded-2 py-1 px-2 d-inline-flex align-items-center gap-1"
@@ -233,7 +233,6 @@
                         @empty
                             <tr>
                                 <td colspan="7" class="text-center py-5 text-muted">
-                                    <i class="fe fe-disc fs-1 d-block mb-2 text-secondary opacity-50"></i>
                                     <p class="mb-1 fw-semibold">No steel coils or plates recorded yet.</p>
                                     <small class="text-muted">Receive your first steel lot in Inward Steel Purchase.</small>
                                 </td>
@@ -304,7 +303,6 @@
                     <div class="col-md-6 col-12">
                         <div class="p-3 rounded-3 border h-100 bg-white">
                             <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2 border-bottom pb-2">
-                                <i class="fe fe-sliders text-primary"></i>
                                 <span>Physical Specifications</span>
                             </h6>
                             <div class="d-flex flex-column gap-2 small">
@@ -332,7 +330,6 @@
                     <div class="col-md-6 col-12">
                         <div class="p-3 rounded-3 border h-100 bg-white">
                             <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2 border-bottom pb-2">
-                                <i class="fe fe-truck text-success"></i>
                                 <span>Commercial &amp; Source</span>
                             </h6>
                             <div class="d-flex flex-column gap-2 small">
@@ -368,7 +365,7 @@
                 <!-- Notes / Remarks -->
                 <div class="mb-2">
                     <label class="form-label small fw-semibold text-secondary mb-1">
-                        <i class="fe fe-file-text me-1"></i>Coil Notes &amp; Consignment Remarks:
+                        Coil Notes &amp; Consignment Remarks:
                     </label>
                     <div class="p-3 bg-light rounded-3 border small text-dark" id="modalNotes">
                         No special notes recorded.

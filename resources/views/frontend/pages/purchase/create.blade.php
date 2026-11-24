@@ -59,10 +59,10 @@
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <button type="button" class="btn btn-warning text-dark fw-bold px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-1.5" id="headerQuickBtn" onclick="switchPurchaseMode('quick')">
-                        <i class="fe fe-zap"></i> Quick Purchase
+                        Quick Purchase
                     </button>
                     <button type="button" class="btn btn-outline-primary fw-bold px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-1.5" id="headerDetailedBtn" style="display: none;" onclick="switchPurchaseMode('detailed')">
-                        <i class="fe fe-layers"></i> Detailed Form
+                        Detailed Form
                     </button>
                     <a href="{{ route('purchase.index') }}" class="btn btn-outline-secondary px-4 py-2 rounded-3 shadow-sm">
                         <i class="fe fe-arrow-left me-2"></i>Back to Purchases
@@ -82,19 +82,19 @@
                     <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom gap-2">
                         <div>
                             <h6 class="fw-bold text-dark mb-1">
-                                <i class="fe fe-anchor text-primary me-2"></i>Lot & Yard Intake Details
+                                Lot & Yard Intake Details
                             </h6>
                             <p class="text-muted small mb-0">Create a new ship lot on the fly or assign to an existing vessel batch</p>
                         </div>
                         <div class="btn-group shadow-sm rounded-3 gap-2" role="group" aria-label="Lot Mode Selection">
                             <input type="radio" class="btn-check" name="lot_type" id="lot_type_new" value="new" {{ old('lot_type', request('lot_id') ? 'existing' : 'new') === 'new' ? 'checked' : '' }} onchange="toggleLotMode('new')">
                             <label class="btn btn-outline-primary btn-sm px-3 py-2 fw-semibold" for="lot_type_new">
-                                <i class="fe fe-plus-circle me-1"></i> Create New Lot
+                                Create New Lot
                             </label>
 
                             <input type="radio" class="btn-check" name="lot_type" id="lot_type_existing" value="existing" {{ old('lot_type', request('lot_id') ? 'existing' : 'new') === 'existing' ? 'checked' : '' }} onchange="toggleLotMode('existing')">
                             <label class="btn btn-outline-primary btn-sm px-3 py-2 fw-semibold" for="lot_type_existing">
-                                <i class="fe fe-layers me-1"></i> Select Existing Lot
+                                Select Existing Lot
                             </label>
                         </div>
                     </div>
@@ -103,7 +103,7 @@
                     <div class="row g-3 mb-3 pb-3 border-bottom align-items-center">
                         <div class="col-lg-5 col-md-6 col-12">
                             <label for="default_vendor_id" class="form-label fw-semibold small text-secondary mb-1">
-                                <i class="fe fe-user text-primary me-1"></i><span id="vendorLabelTitle">Vendor / Supplier</span> <span class="text-danger" id="vendorRequiredAsterisk">*</span>
+                                <span id="vendorLabelTitle">Vendor / Supplier</span> <span class="text-danger" id="vendorRequiredAsterisk">*</span>
                             </label>
                             <select id="default_vendor_id" name="default_vendor_id" class="form-select select2" onchange="handleDefaultVendorChange(this.value)">
                                 <option value="">Select Vendor / Supplier</option>
@@ -116,7 +116,7 @@
                         </div>
                         <div class="col-lg-7 col-md-6 col-12">
                             <div class="text-muted small mt-md-4 pt-md-1" id="vendorHelpText">
-                                <i class="fe fe-info text-info me-1"></i>Primary supplier for this purchase intake.
+                                Primary supplier for this purchase intake.
                             </div>
                         </div>
                     </div>
@@ -145,7 +145,7 @@
                                 <label for="warehouse_id" class="form-label fw-semibold small text-secondary mb-1">
                                     Stockyard Location <span class="text-danger">*</span>
                                     @if($isLocked && $selectedWh)
-                                        <span class="badge bg-primary-subtle text-primary border ms-1"><i class="fe fe-shopping-cart me-1"></i>Shop Locked</span>
+                                        <span class="badge bg-primary-subtle text-primary border ms-1">Shop Locked</span>
                                     @endif
                                 </label>
                                 @if($isLocked && $selectedWh)
@@ -242,19 +242,19 @@
                 <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h6 class="fw-bold text-dark mb-0">
-                            <i class="fe fe-zap text-warning me-2"></i>Quick Steel Entry
+                            Quick Steel Entry
                         </h6>
                         <small class="text-muted">Enter Total Weight and Total Amount directly. Optional specifications and extra charges can be expanded below.</small>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold px-3 py-1.5 rounded-3 shadow-sm d-inline-flex align-items-center gap-1.5" onclick="switchPurchaseMode('detailed')">
-                            <i class="fe fe-layers"></i> Back to Detailed Form
+                            Back to Detailed Form
                         </button>
                     </div>
                 </div>
 
                 <div class="card-body p-3 p-md-4">
-                    <!-- Primary Minimal Fields (Total Weight, Total Amount, Unit Rate) -->
+                    <!-- Primary Minimal Fields (Total Weight, Rate, Total Amount) -->
                     <div class="row g-3 p-3 rounded-3 bg-light border border-light-subtle align-items-end mb-3">
                         <div class="col-lg-4 col-md-4 col-12">
                             <label for="quick_total_weight" class="form-label small text-secondary fw-bold mb-1">
@@ -263,98 +263,132 @@
                             <div class="input-group">
                                 <input type="number" step="any" min="0" name="total_weight" id="quick_total_weight"
                                     class="form-control form-control-lg text-end fw-bold text-primary"
-                                    value="{{ old('total_weight') }}" placeholder="0.00" oninput="calculateQuickTotals()">
+                                    value="{{ old('total_weight') }}" placeholder="0.00" oninput="calculateQuickFromWeight()" autocomplete="off" inputmode="decimal">
                                 <span class="input-group-text bg-white text-muted fw-semibold">kg</span>
                             </div>
                             <small class="text-muted fs-8">Total intake scale weight in kilograms</small>
                         </div>
 
                         <div class="col-lg-4 col-md-4 col-12">
+                            <label for="quick_unit_price" class="form-label small text-secondary fw-bold mb-1">
+                                Rate / Unit Price (৳/kg) <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white text-dark fw-bold">৳</span>
+                                <input type="number" step="any" min="0" name="unit_price" id="quick_unit_price"
+                                    class="form-control form-control-lg text-end fw-bold text-dark bg-white"
+                                    value="{{ old('unit_price') }}" placeholder="0.00" oninput="calculateQuickFromRate()" autocomplete="off" inputmode="decimal">
+                                <span class="input-group-text bg-white text-muted fs-8">/ kg</span>
+                            </div>
+                            <small class="text-muted fs-8">Set rate per kg to automatically calculate total</small>
+                        </div>
+
+                        <div class="col-lg-4 col-md-4 col-12">
                             <label for="quick_total_amount" class="form-label small text-secondary fw-bold mb-1">
-                                Total Amount (৳) <span class="text-danger">*</span>
+                                Total Amount (৳) <span class="badge bg-light text-muted border fw-normal fs-8">Auto-calculated</span>
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text bg-white text-success fw-bold">৳</span>
                                 <input type="number" step="any" min="0" name="total_amount" id="quick_total_amount"
-                                    class="form-control form-control-lg text-end fw-bold text-success"
-                                    value="{{ old('total_amount') }}" placeholder="0.00" oninput="calculateQuickTotals()">
+                                    class="form-control form-control-lg text-end fw-bold text-success bg-white"
+                                    value="{{ old('total_amount') }}" placeholder="0.00" oninput="calculateQuickFromAmount()" autocomplete="off" inputmode="decimal">
                             </div>
-                            <small class="text-muted fs-8">Total bill / gross cost for this steel</small>
-                        </div>
-
-                        <div class="col-lg-4 col-md-4 col-12">
-                            <label for="quick_unit_price" class="form-label small text-secondary fw-bold mb-1">
-                                Calculated Rate (৳/kg)
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-white text-muted">৳</span>
-                                <input type="number" step="any" min="0" name="unit_price" id="quick_unit_price"
-                                    class="form-control form-control-lg text-end fw-semibold text-dark bg-white"
-                                    value="{{ old('unit_price') }}" placeholder="0.00" oninput="calculateQuickFromRate()">
-                                <span class="input-group-text bg-white text-muted fs-8">/ kg</span>
-                            </div>
-                            <small class="text-muted fs-8">Auto-calculated or enter rate to compute amount</small>
+                            <small class="text-muted fs-8">Auto-computed (Weight × Rate) or editable directly</small>
                         </div>
                     </div>
 
-                    <!-- Expandable Usual Fields Accordion / Button -->
-                    <div class="pt-2">
-                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 rounded-3 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm"
-                            data-bs-toggle="collapse" data-bs-target="#quickUsualFields" aria-expanded="false" aria-controls="quickUsualFields" id="quickToggleSpecsBtn">
-                            <i class="fe fe-sliders text-primary"></i>
-                            <span id="quickToggleSpecsText">+ Add Usual Fields (Product Name, Thickness, Size, Coil No, Charges)</span>
+                    <!-- Single-Line Steel Specifications Row -->
+                    <div class="p-3 rounded-3 bg-white border border-light-subtle shadow-xs mb-3">
+                        <div class="row g-2 align-items-end">
+                            <!-- 1. Coil / Tag No -->
+                            <div class="col-xl-2 col-lg-2 col-md-4 col-6">
+                                <label for="quick_coil_number" class="form-label small text-secondary fw-semibold mb-1">
+                                    Coil No
+                                </label>
+                                <input type="text" name="coil_number" id="quick_coil_number"
+                                    class="form-control form-control-sm font-monospace"
+                                    value="{{ old('coil_number') }}" placeholder="e.g. C-101" autocomplete="off">
+                            </div>
+
+                            <!-- 2. Thickness -->
+                            <div class="col-xl-1 col-lg-1 col-md-2 col-6">
+                                <label for="quick_thickness" class="form-label small text-secondary fw-semibold mb-1">
+                                    Thickness
+                                </label>
+                                <input type="text" name="thickness" id="quick_thickness"
+                                    class="form-control form-control-sm text-center"
+                                    value="{{ old('thickness') }}" placeholder="e.g. 2.50" autocomplete="off">
+                            </div>
+
+                            <!-- 3. Size & Size Type -->
+                            <div class="col-xl-2 col-lg-2 col-md-3 col-6">
+                                <label for="quick_size" class="form-label small text-secondary fw-semibold mb-1">
+                                    Size
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" name="size" id="quick_size"
+                                        class="form-control text-center"
+                                        value="{{ old('size') }}" placeholder="e.g. 4x8" autocomplete="off">
+                                    <select name="size_type" id="quick_size_type" class="form-select px-1 text-center" style="max-width: 65px;">
+                                        <option value="ft" {{ old('size_type') === 'ft' ? 'selected' : '' }}>ft</option>
+                                        <option value="mm" {{ old('size_type') === 'mm' ? 'selected' : '' }}>mm</option>
+                                        <option value="inch" {{ old('size_type') === 'inch' ? 'selected' : '' }}>in</option>
+                                        <option value="m" {{ old('size_type') === 'm' ? 'selected' : '' }}>m</option>
+                                        <option value="pcs" {{ old('size_type') === 'pcs' ? 'selected' : '' }}>pcs</option>
+                                        <option value="ton" {{ old('size_type') === 'ton' ? 'selected' : '' }}>ton</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 4. Weight (per coil) -->
+                            <div class="col-xl-2 col-lg-2 col-md-3 col-6">
+                                <label for="quick_unit_weight" class="form-label small text-secondary fw-semibold mb-1">
+                                    Per Coil Wt (kg)
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" step="any" min="0" name="unit_weight" id="quick_unit_weight"
+                                        class="form-control text-end fw-semibold text-primary"
+                                        value="{{ old('unit_weight') }}" placeholder="0.00" oninput="calculateQuickFromUnitWeight()" autocomplete="off" inputmode="decimal">
+                                    <span class="input-group-text bg-white text-muted">kg</span>
+                                </div>
+                            </div>
+
+                            <!-- 5. Product Name -->
+                            <div class="col-xl-3 col-lg-3 col-md-8 col-12">
+                                <label for="quick_product_name" class="form-label small text-secondary fw-semibold mb-1">
+                                    Product Name
+                                </label>
+                                <input type="text" name="product_name" id="quick_product_name"
+                                    class="form-control form-control-sm"
+                                    value="{{ old('product_name') }}" placeholder="e.g. HR Steel Coil / Plate" autocomplete="off">
+                            </div>
+
+                            <!-- 6. Piece / Coil Qty -->
+                            <div class="col-xl-2 col-lg-2 col-md-4 col-12">
+                                <label for="quick_quantity" class="form-label small text-secondary fw-semibold mb-1">
+                                    Piece / Coil Qty
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" min="1" step="1" name="quantity" id="quick_quantity"
+                                        class="form-control text-center fw-bold text-dark"
+                                        value="{{ old('quantity', 1) }}" oninput="calculateQuickFromQuantity()" autocomplete="off">
+                                    <span class="input-group-text bg-white text-muted">pcs</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Collapsible Extra Charges (Transport, Labour, Scale, Discount) -->
+                    <div class="pt-1">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1.5 rounded-3 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm"
+                            data-bs-toggle="collapse" data-bs-target="#quickExtraCharges" aria-expanded="false" aria-controls="quickExtraCharges" id="quickToggleChargesBtn">
+                            <span>+ Optional Extra Charges (Transport, Labour, Scale, Discount)</span>
                         </button>
                     </div>
 
-                    <div class="collapse mt-3 border rounded-3 p-3 bg-white shadow-sm" id="quickUsualFields">
+                    <div class="collapse mt-2 border rounded-3 p-3 bg-white shadow-sm" id="quickExtraCharges">
                         <h6 class="fw-bold text-dark border-bottom pb-2 mb-3 fs-7">
-                            <i class="fe fe-disc text-primary me-1.5"></i>Optional Steel Specifications
-                        </h6>
-                        <!-- Line 1: Dimensions & Coil Info -->
-                        <div class="row g-2 mb-3">
-                            <div class="col-lg-3 col-md-6 col-12">
-                                <label for="quick_product_name" class="form-label small text-secondary fw-semibold mb-1">Product Name</label>
-                                <input type="text" name="product_name" id="quick_product_name" class="form-control form-control-sm" value="{{ old('product_name') }}">
-                            </div>
-
-                            <div class="col-lg-2 col-md-6 col-12">
-                                <label for="quick_coil_number" class="form-label small text-secondary fw-semibold mb-1">Coil / Tag No</label>
-                                <input type="text" name="coil_number" id="quick_coil_number" class="form-control form-control-sm font-monospace" value="{{ old('coil_number') }}">
-                            </div>
-
-                            <div class="col-lg-2 col-md-3 col-6">
-                                <label for="quick_thickness" class="form-label small text-secondary fw-semibold mb-1">Thickness</label>
-                                <input type="text" name="thickness" id="quick_thickness" class="form-control form-control-sm text-center" value="{{ old('thickness') }}">
-                            </div>
-
-                            <div class="col-lg-3 col-md-3 col-6">
-                                <label for="quick_size" class="form-label small text-secondary fw-semibold mb-1">Size / Width</label>
-                                <input type="text" name="size" id="quick_size" class="form-control form-control-sm text-center" value="{{ old('size') }}">
-                            </div>
-
-                            <div class="col-lg-2 col-md-6 col-6">
-                                <label for="quick_size_type" class="form-label small text-secondary fw-semibold mb-1">Size Type</label>
-                                <select name="size_type" id="quick_size_type" class="form-select form-select-sm">
-                                    <option value="ft" {{ old('size_type') === 'ft' ? 'selected' : '' }}>Feet (ft)</option>
-                                    <option value="mm" {{ old('size_type') === 'mm' ? 'selected' : '' }}>Millimeter (mm)</option>
-                                    <option value="inch" {{ old('size_type') === 'inch' ? 'selected' : '' }}>Inch (in)</option>
-                                    <option value="m" {{ old('size_type') === 'm' ? 'selected' : '' }}>Meter (m)</option>
-                                    <option value="pcs" {{ old('size_type') === 'pcs' ? 'selected' : '' }}>Pieces (pcs)</option>
-                                    <option value="ton" {{ old('size_type') === 'ton' ? 'selected' : '' }}>Ton</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row g-2 mb-3">
-                            <div class="col-lg-2 col-md-4 col-6">
-                                <label for="quick_quantity" class="form-label small text-secondary fw-semibold mb-1">Piece / Coil Qty</label>
-                                <input type="number" min="1" step="1" name="quantity" id="quick_quantity" class="form-control form-control-sm text-center fw-bold" value="{{ old('quantity', 1) }}" oninput="calculateQuickTotals()">
-                            </div>
-                        </div>
-
-                        <!-- Line 2: Extra Procurement Charges -->
-                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3 fs-7 pt-2">
-                            <i class="fe fe-dollar-sign text-success me-1.5"></i>Optional Extra Charges &amp; Adjustments
+                            Optional Extra Charges &amp; Adjustments
                         </h6>
                         <div class="row g-2 align-items-end">
                             <div class="col-lg-2 col-md-4 col-6">
@@ -387,13 +421,13 @@
                 <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h6 class="fw-bold text-dark mb-0">
-                            <i class="fe fe-disc text-primary me-2"></i>Steel Items & Coil Intake
+                            Steel Items & Coil Intake
                         </h6>
                         <small class="text-muted">Enter coil dimensions, weight, and rate, then click <strong>"Add to Table"</strong>. The entry form remains ready for your next coil.</small>
                     </div>
                     <div>
                         <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 py-1.5 rounded-3 shadow-sm d-inline-flex align-items-center gap-1.5" onclick="switchPurchaseMode('quick')">
-                            <i class="fe fe-zap text-warning"></i> Switch to Quick Purchase
+                            Switch to Quick Purchase
                         </button>
                     </div>
                 </div>
@@ -406,7 +440,7 @@
                         <div class="row g-3 mb-3 pb-3 border-bottom align-items-center" id="builderVendorRow">
                             <div class="col-lg-5 col-md-6 col-12">
                                 <label for="builder_vendor_id" class="form-label small text-secondary fw-bold mb-1">
-                                    <i class="fe fe-user text-primary me-1"></i>Vendor / Supplier <span class="text-danger">*</span>
+                                    Vendor / Supplier <span class="text-danger">*</span>
                                 </label>
                                 <select id="builder_vendor_id" class="form-select select2">
                                     <option value="">Select Vendor / Supplier</option>
@@ -419,7 +453,7 @@
                             </div>
                             <div class="col-lg-7 col-md-6 col-12">
                                 <div class="text-muted small mt-md-4 pt-md-1">
-                                    <i class="fe fe-info text-info me-1"></i>Select the supplier for the coils/steel plates you are adding below.
+                                    Select the supplier for the coils/steel plates you are adding below.
                                 </div>
                             </div>
                         </div>
@@ -490,10 +524,10 @@
 
                             <div class="col-lg-2 col-md-4 col-6">
                                 <label for="builder_total_weight" class="form-label small text-secondary fw-semibold mb-1">
-                                    Total Weight (kg)
+                                    Total Weight (kg) <span class="badge bg-light text-muted border fw-normal fs-8">Auto</span>
                                 </label>
                                 <div class="input-group input-group-sm">
-                                    <input type="number" step="0.01" id="builder_total_weight" class="form-control bg-white text-end fw-bold text-dark" readonly tabindex="-1">
+                                    <input type="number" step="0.01" id="builder_total_weight" class="form-control bg-light text-end fw-bold text-dark" readonly tabindex="-1" placeholder="Auto">
                                     <span class="input-group-text bg-white text-muted">kg</span>
                                 </div>
                             </div>
@@ -504,17 +538,17 @@
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white text-muted">৳</span>
-                                    <input type="number" step="0.01" min="0" id="builder_unit_price" class="form-control text-end fw-semibold" oninput="calculateBuilderPreview()">
+                                    <input type="number" step="0.01" min="0" id="builder_unit_price" class="form-control text-end fw-semibold" oninput="calculateBuilderPreview()" autocomplete="off" inputmode="decimal">
                                 </div>
                             </div>
 
                             <div class="col-lg-2 col-md-4 col-6">
                                 <label for="builder_sub_price" class="form-label small text-secondary fw-semibold mb-1">
-                                    Line Sub Total (৳)
+                                    Line Sub Total (৳) <span class="badge bg-light text-muted border fw-normal fs-8">Auto</span>
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white text-muted">৳</span>
-                                    <input type="number" step="0.01" id="builder_sub_price" class="form-control bg-white text-end fw-bold text-success" readonly tabindex="-1">
+                                    <input type="number" step="0.01" id="builder_sub_price" class="form-control bg-light text-end fw-bold text-success" readonly tabindex="-1" placeholder="Auto">
                                 </div>
                             </div>
 
@@ -539,7 +573,7 @@
                         <div class="card-header bg-light py-2.5 px-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                             <div class="d-flex align-items-center gap-2">
                                 <h6 class="fw-bold text-dark mb-0">
-                                    <i class="fe fe-list text-primary me-1"></i>Added Steel Items & Coils Table
+                                    Added Steel Items & Coils Table
                                 </h6>
                                 <span class="badge bg-primary rounded-pill px-2 py-0.5 fs-8" id="itemsCountBadge">0 Items</span>
                             </div>
@@ -598,28 +632,28 @@
                                                 </td>
                                                 <td class="vendor-col" style="{{ old('default_vendor_id') ? 'display: none;' : '' }}">
                                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 vendor-col-badge">
-                                                        <i class="fe fe-user me-1"></i>{{ $itemVendor ? $itemVendor->name : ($itemVendorId ? 'Vendor #'.$itemVendorId : 'Unassigned') }}
+                                                        {{ $itemVendor ? $itemVendor->name : ($itemVendorId ? 'Vendor #'.$itemVendorId : 'Unassigned') }}
                                                     </span>
                                                 </td>
                                                 <td>
                                                     @if($prodName)
-                                                        <div class="fw-bold text-dark fs-7 mb-1"><i class="fe fe-box text-primary me-1"></i>{{ $prodName }}</div>
+                                                        <div class="fw-bold text-dark fs-7 mb-1">{{ $prodName }}</div>
                                                     @endif
                                                     <div class="d-flex flex-wrap align-items-center gap-1">
                                                         @if($coilNo)
-                                                            <span class="badge bg-light text-dark font-monospace border"><i class="fe fe-tag me-1 text-primary"></i>#{{ $coilNo }}</span>
+                                                            <span class="badge bg-light text-dark font-monospace border">#{{ $coilNo }}</span>
                                                         @endif
                                                         @if($thk)
-                                                            <span class="badge bg-light text-dark border"><i class="fe fe-layers me-1 text-primary"></i>Thickness: {{ $thk }}</span>
+                                                            <span class="badge bg-light text-dark border">Thickness: {{ $thk }}</span>
                                                         @endif
                                                         @if($sz)
-                                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><i class="fe fe-maximize-2 me-1"></i>{{ $sz }} ({{ $stText }})</span>
+                                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">{{ $sz }} ({{ $stText }})</span>
                                                         @else
                                                             <span class="badge bg-light text-muted border">{{ $stText }}</span>
                                                         @endif
                                                     </div>
                                                     @if($nts)
-                                                        <div class="small text-muted mt-1"><i class="fe fe-file-text me-1 text-info"></i>{{ $nts }}</div>
+                                                        <div class="small text-muted mt-1">{{ $nts }}</div>
                                                     @endif
                                                 </td>
                                                 <td class="text-center fw-bold">{{ $qty }}</td>
@@ -651,7 +685,6 @@
 
                                     <tr id="emptyTablePlaceholder" style="{{ (!empty($oldItems) && count($oldItems) > 0) ? 'display: none;' : '' }}">
                                         <td colspan="9" class="text-center py-5 text-muted">
-                                            <i class="fe fe-inbox fs-2 d-block mb-2 text-secondary opacity-50"></i>
                                             <span class="fw-medium">No steel items added to this purchase yet.</span>
                                         </td>
                                     </tr>
@@ -678,7 +711,7 @@
                 <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h6 class="fw-bold text-dark mb-0">
-                            <i class="fe fe-dollar-sign text-primary me-2"></i>Procurement Charges & Financial Adjustments
+                            Procurement Charges & Financial Adjustments
                         </h6>
                         <small class="text-muted">Transport freight, yard crane/labour fees, weighbridge scale slips, and vendor discounts</small>
                     </div>
@@ -737,7 +770,7 @@
                     <div class="card border-0 shadow-sm rounded-3 h-100 summary-card">
                         <div class="card-body p-4">
                             <h6 class="fw-bold text-dark mb-3">
-                                <i class="fe fe-check-square text-primary me-2"></i>Intake Batch Summary
+                                Intake Batch Summary
                             </h6>
                             <div class="row g-3 text-center">
                                 <div class="col-sm-3 col-6">
@@ -777,10 +810,10 @@
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="fw-bold text-dark mb-0">
-                                    <i class="fe fe-dollar-sign text-success me-2"></i>Payment Settlement
+                                    Payment Settlement
                                 </h6>
                                 <span id="paymentModeBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-8" style="display: none;">
-                                    <i class="fe fe-users me-1"></i>Multi-Vendor Breakdown
+                                    Multi-Vendor Breakdown
                                 </span>
                             </div>
 
@@ -802,7 +835,7 @@
                                             value="{{ old('payment', '0.00') }}" oninput="recalculateSummary()" required>
                                     </div>
                                     <div id="paymentErrorMsg" class="text-danger small mt-1 fw-semibold" style="display: none;">
-                                        <i class="fe fe-alert-triangle me-1"></i> Payment cannot exceed the total bill of <span id="maxBillFormatted">৳ 0.00</span>.
+                                        Payment cannot exceed the total bill of <span id="maxBillFormatted">৳ 0.00</span>.
                                     </div>
                                 </div>
 
@@ -824,7 +857,7 @@
 
                                     <div class="mb-2">
                                         <label class="form-label fw-semibold small text-secondary mb-1">
-                                            <i class="fe fe-layers me-1 text-primary"></i> Bank / MFS Account
+                                            Bank / MFS Account
                                         </label>
                                         <select id="purchaseAccountSelector" class="form-select border-light-subtle mb-2" onchange="handlePurchaseAccountChange(this)">
                                             <optgroup label="Cash">
@@ -865,11 +898,11 @@
                             <div id="multiVendorPaymentSection" style="display: none;">
                                 <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                                     <span class="small text-muted fw-semibold">
-                                        <i class="fe fe-info text-info me-1"></i>Pay each vendor individually:
+                                        Pay each vendor individually:
                                     </span>
                                     <div class="d-flex gap-2">
                                         <button type="button" class="btn btn-outline-success btn-sm py-0.5 px-2 fs-8 rounded-pill" onclick="setAllVendorsFullPayment()">
-                                            <i class="fe fe-check-circle me-1"></i>Pay All Full
+                                            Pay All Full
                                         </button>
                                         <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 fs-8 rounded-pill" onclick="clearAllVendorPayments()">
                                             Clear All
@@ -949,7 +982,7 @@
                 // Update all existing items in table to use the new default vendor
                 $('#steelTableBody tr.item-row').each(function () {
                     $(this).find('.item-vendor-id-input').val(val);
-                    $(this).find('.vendor-col-badge').html(`<i class="fe fe-user me-1"></i>${escapeHtml(vendorName)}`);
+                    $(this).find('.vendor-col-badge').html(`${escapeHtml(vendorName)}`);
                 });
             } else {
                 $('#builderVendorRow').slideDown(150);
@@ -1070,23 +1103,23 @@
 
             let specHtml = '';
             if (productName) {
-                specHtml += `<div class="fw-bold text-dark fs-7 mb-1"><i class="fe fe-box text-primary me-1"></i>${escapeHtml(productName)}</div>`;
+                specHtml += `<div class="fw-bold text-dark fs-7 mb-1">${escapeHtml(productName)}</div>`;
             }
             let badges = [];
             if (coilNumber) {
-                badges.push(`<span class="badge bg-light text-dark font-monospace border"><i class="fe fe-tag me-1 text-primary"></i>#${escapeHtml(coilNumber)}</span>`);
+                badges.push(`<span class="badge bg-light text-dark font-monospace border">#${escapeHtml(coilNumber)}</span>`);
             }
             if (thickness) {
-                badges.push(`<span class="badge bg-light text-dark border"><i class="fe fe-layers me-1 text-primary"></i>Thickness: ${escapeHtml(thickness)}</span>`);
+                badges.push(`<span class="badge bg-light text-dark border">Thickness: ${escapeHtml(thickness)}</span>`);
             }
             if (size) {
-                badges.push(`<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><i class="fe fe-maximize-2 me-1"></i>${escapeHtml(size)} (${sizeTypeText})</span>`);
+                badges.push(`<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">${escapeHtml(size)} (${sizeTypeText})</span>`);
             } else {
                 badges.push(`<span class="badge bg-light text-muted border">${sizeTypeText}</span>`);
             }
             specHtml += `<div class="d-flex flex-wrap align-items-center gap-1">${badges.join(' ')}</div>`;
             if (notes) {
-                specHtml += `<div class="small text-muted mt-1"><i class="fe fe-file-text me-1 text-info"></i>${escapeHtml(notes)}</div>`;
+                specHtml += `<div class="small text-muted mt-1">${escapeHtml(notes)}</div>`;
             }
 
             const rowHtml = `
@@ -1096,7 +1129,7 @@
                     </td>
                     <td class="vendor-col" style="${defaultVendorId ? 'display: none;' : ''}">
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 vendor-col-badge">
-                            <i class="fe fe-user me-1"></i>${escapeHtml(vendorName)}
+                            ${escapeHtml(vendorName)}
                         </span>
                     </td>
                     <td>
@@ -1172,11 +1205,6 @@
             const weight = parseFloat($('#quick_total_weight').val()) || 0;
             const amount = parseFloat($('#quick_total_amount').val()) || 0;
 
-            if (weight > 0 && amount > 0) {
-                const rate = amount / weight;
-                $('#quick_unit_price').val(rate.toFixed(4));
-            }
-
             const del = parseFloat($('#quick_delivery_charge').val()) || 0;
             const lab = parseFloat($('#quick_labour_cost').val()) || 0;
             const sca = parseFloat($('#quick_weight_scale_cost').val()) || 0;
@@ -1234,8 +1262,96 @@
             const weight = parseFloat($('#quick_total_weight').val()) || 0;
             const rate = parseFloat($('#quick_unit_price').val()) || 0;
             if (weight > 0 && rate > 0) {
-                const amount = weight * rate;
+                const amount = roundTo2(weight * rate);
                 $('#quick_total_amount').val(amount.toFixed(2));
+            } else if (rate <= 0) {
+                $('#quick_total_amount').val('');
+            }
+            calculateQuickTotals();
+        }
+
+        function calculateQuickFromWeight() {
+            const weight = parseFloat($('#quick_total_weight').val()) || 0;
+            const rate = parseFloat($('#quick_unit_price').val()) || 0;
+            const amount = parseFloat($('#quick_total_amount').val()) || 0;
+            const qty = parseInt($('#quick_quantity').val()) || 1;
+
+            // Sync Per-Coil Weight if Total Weight changed
+            if (weight > 0 && qty > 0) {
+                const perCoil = roundTo2(weight / qty);
+                $('#quick_unit_weight').val(perCoil.toFixed(2));
+            } else if (weight <= 0) {
+                $('#quick_unit_weight').val('');
+            }
+
+            if (weight > 0 && rate > 0) {
+                const newAmount = roundTo2(weight * rate);
+                $('#quick_total_amount').val(newAmount.toFixed(2));
+            } else if (weight > 0 && amount > 0 && rate <= 0) {
+                const newRate = roundTo2(amount / weight);
+                $('#quick_unit_price').val(newRate.toFixed(2));
+            } else if (weight <= 0) {
+                $('#quick_total_amount').val('');
+            }
+            calculateQuickTotals();
+        }
+
+        function calculateQuickFromUnitWeight() {
+            const unitWeight = parseFloat($('#quick_unit_weight').val()) || 0;
+            const qty = parseInt($('#quick_quantity').val()) || 1;
+
+            if (unitWeight > 0) {
+                const totalWeight = roundTo2(unitWeight * qty);
+                $('#quick_total_weight').val(totalWeight.toFixed(2));
+                calculateQuickFromWeightDirect(totalWeight);
+            } else {
+                $('#quick_total_weight').val('');
+                calculateQuickFromWeightDirect(0);
+            }
+        }
+
+        function calculateQuickFromQuantity() {
+            const qty = parseInt($('#quick_quantity').val()) || 1;
+            const unitWeight = parseFloat($('#quick_unit_weight').val()) || 0;
+            const totalWeight = parseFloat($('#quick_total_weight').val()) || 0;
+
+            if (unitWeight > 0) {
+                const newTotalWeight = roundTo2(unitWeight * qty);
+                $('#quick_total_weight').val(newTotalWeight.toFixed(2));
+                calculateQuickFromWeightDirect(newTotalWeight);
+            } else if (totalWeight > 0) {
+                const newUnitWeight = roundTo2(totalWeight / qty);
+                $('#quick_unit_weight').val(newUnitWeight.toFixed(2));
+                calculateQuickTotals();
+            } else {
+                calculateQuickTotals();
+            }
+        }
+
+        function calculateQuickFromWeightDirect(weight) {
+            const rate = parseFloat($('#quick_unit_price').val()) || 0;
+            const amount = parseFloat($('#quick_total_amount').val()) || 0;
+
+            if (weight > 0 && rate > 0) {
+                const newAmount = roundTo2(weight * rate);
+                $('#quick_total_amount').val(newAmount.toFixed(2));
+            } else if (weight > 0 && amount > 0 && rate <= 0) {
+                const newRate = roundTo2(amount / weight);
+                $('#quick_unit_price').val(newRate.toFixed(2));
+            } else if (weight <= 0) {
+                $('#quick_total_amount').val('');
+            }
+            calculateQuickTotals();
+        }
+
+        function calculateQuickFromAmount() {
+            const weight = parseFloat($('#quick_total_weight').val()) || 0;
+            const amount = parseFloat($('#quick_total_amount').val()) || 0;
+            if (weight > 0 && amount > 0) {
+                const rate = roundTo2(amount / weight);
+                $('#quick_unit_price').val(rate.toFixed(2));
+            } else if (amount <= 0) {
+                $('#quick_unit_price').val('');
             }
             calculateQuickTotals();
         }
@@ -1249,7 +1365,7 @@
                 $('#headerQuickBtn').hide();
                 $('#headerDetailedBtn').show();
                 $('#vendorRequiredAsterisk').show();
-                $('#vendorHelpText').html('<i class="fe fe-info text-info me-1"></i>Primary supplier for this purchase intake.');
+                $('#vendorHelpText').html('Primary supplier for this purchase intake.');
                 calculateQuickTotals();
             } else {
                 $('#is_quick_mode').val('0');
@@ -1259,7 +1375,7 @@
                 $('#headerQuickBtn').show();
                 $('#headerDetailedBtn').hide();
                 $('#vendorRequiredAsterisk').hide();
-                $('#vendorHelpText').html('<i class="fe fe-info text-info me-1"></i>If selected, all steel items will automatically use this vendor and per-item vendor selection will be hidden.');
+                $('#vendorHelpText').html('If selected, all steel items will automatically use this vendor and per-item vendor selection will be hidden.');
                 recalculateSummary();
             }
         }
@@ -1452,7 +1568,7 @@
                         <div class="card border border-light-subtle rounded-3 p-3 mb-3 vendor-payment-card bg-white shadow-sm" data-vendor-id="${vId}">
                             <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                                 <div>
-                                    <h6 class="fw-bold text-dark mb-0"><i class="fe fe-user text-primary me-1"></i>${escapeHtml(vInfo.name)}</h6>
+                                    <h6 class="fw-bold text-dark mb-0">${escapeHtml(vInfo.name)}</h6>
                                     <small class="text-muted">${m.qty} ${m.qty === 1 ? 'item' : 'items'} • ${m.weight.toFixed(2)} kg</small>
                                 </div>
                                 <div class="text-end">
@@ -1473,7 +1589,7 @@
                                         <button type="button" class="btn btn-outline-success btn-sm px-2" onclick="setVendorPayFull(this)">Pay Full</button>
                                     </div>
                                     <div class="vendor-pay-error text-danger small mt-1 fs-8" style="${vPaid > m.bill + 0.009 ? '' : 'display: none;'}">
-                                        <i class="fe fe-alert-triangle me-1"></i>Exceeds bill (৳ ${m.bill.toFixed(2)})
+                                        Exceeds bill (৳ ${m.bill.toFixed(2)})
                                     </div>
                                 </div>
                                 <div class="col-sm-5 col-12">
@@ -1612,10 +1728,18 @@
             const isQuick = $('#is_quick_mode').val() === '1';
 
             if (isQuick) {
-                const qWeight = parseFloat($('#quick_total_weight').val()) || 0;
-                const qAmount = parseFloat($('#quick_total_amount').val()) || 0;
+                let qWeight = parseFloat($('#quick_total_weight').val()) || 0;
+                let qAmount = parseFloat($('#quick_total_amount').val()) || 0;
+                const qRate = parseFloat($('#quick_unit_price').val()) || 0;
                 const qVendor = $('#default_vendor_id').val();
                 const qWarehouse = $('#warehouse_id').val();
+                const qUnitWeight = parseFloat($('#quick_unit_weight').val()) || 0;
+                const qQty = parseInt($('#quick_quantity').val()) || 1;
+
+                if (qWeight <= 0 && qUnitWeight > 0) {
+                    qWeight = roundTo2(qUnitWeight * qQty);
+                    $('#quick_total_weight').val(qWeight.toFixed(2));
+                }
 
                 if (!qVendor) {
                     e.preventDefault();
@@ -1635,9 +1759,24 @@
                     $('#quick_total_weight').focus();
                     return false;
                 }
+
+                // If rate was entered but total_amount not yet calculated
+                if (qAmount <= 0 && qWeight > 0 && qRate > 0) {
+                    qAmount = roundTo2(qWeight * qRate);
+                    $('#quick_total_amount').val(qAmount.toFixed(2));
+                    calculateQuickTotals();
+                }
+
+                if (qRate <= 0 && qAmount <= 0) {
+                    e.preventDefault();
+                    alert('Please enter a valid Rate (৳/kg) or Total Amount (৳) for quick purchase.');
+                    $('#quick_unit_price').focus();
+                    return false;
+                }
+
                 if (qAmount <= 0) {
                     e.preventDefault();
-                    alert('Please enter a valid Total Amount (৳) for quick purchase.');
+                    alert('Please enter a valid Total Amount (৳) or Rate for quick purchase.');
                     $('#quick_total_amount').focus();
                     return false;
                 }

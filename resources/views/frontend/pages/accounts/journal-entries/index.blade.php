@@ -170,7 +170,6 @@
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger"
                                                             href="javascript:void(0)"
                                                             onclick="openReverseJournalModal('{{ $entry->id }}', '{{ $entry->journal_no }}')">
-                                                            <i class="fe fe-rotate-ccw text-danger"></i>
                                                             <span>Reverse Entry</span>
                                                         </a>
                                                     </li>
@@ -206,7 +205,7 @@
                     @csrf
                     <div class="modal-header bg-light py-3 border-bottom">
                         <h5 class="modal-title fw-bold text-dark">
-                            <i class="fe fe-rotate-ccw text-danger me-2"></i>Storno Reversal: <span id="reverseVoucherNo"></span>
+                            Storno Reversal: <span id="reverseVoucherNo"></span>
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -224,7 +223,7 @@
                     <div class="modal-footer border-top bg-light">
                         <button type="button" class="btn btn-light px-4 rounded-3 text-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-danger px-4 rounded-3 shadow-sm fw-semibold">
-                            <i class="fe fe-rotate-ccw me-1"></i>Confirm & Post Reversal
+                            Confirm & Post Reversal
                         </button>
                     </div>
                 </form>

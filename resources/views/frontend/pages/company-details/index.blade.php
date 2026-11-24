@@ -187,7 +187,7 @@
                                         <span><strong class="text-secondary">TIN:</strong> <code class="text-dark">{{ $company->tin_number ?: $company->tax_number }}</code></span>
                                     @endif
                                     @if ($company->trade_license)
-                                        <small class="text-muted"><i class="fe fe-file-text me-1"></i>{{ $company->trade_license }}</small>
+                                        <small class="text-muted">{{ $company->trade_license }}</small>
                                     @endif
                                     @if (!$company->bin_number && !$company->tin_number && !$company->trade_license)
                                         <span class="text-muted">—</span>
@@ -203,7 +203,7 @@
                                         <small class="text-muted"><i class="fe fe-mail me-1 text-muted"></i>{{ $company->email }}</small>
                                     @endif
                                     @if ($company->address)
-                                        <small class="text-muted text-truncate" style="max-width: 200px;" title="{{ $company->address }}"><i class="fe fe-map-pin me-1 text-muted"></i>{{ $company->address }}</small>
+                                        <small class="text-muted text-truncate" style="max-width: 200px;" title="{{ $company->address }}">{{ $company->address }}</small>
                                     @endif
                                 </div>
                             </td>

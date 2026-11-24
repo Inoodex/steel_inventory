@@ -165,7 +165,7 @@
                                 <td>{{ $ret->return_date?->format('d M Y') }}</td>
                                 <td>
                                     <span class="badge bg-light text-dark border">
-                                        <i class="fe fe-home text-primary me-1"></i> {{ $ret->sale?->warehouse?->name ?? 'Shop' }}
+                                        {{ $ret->sale?->warehouse?->name ?? 'Shop' }}
                                     </span>
                                 </td>
                                 <td>
@@ -204,7 +204,7 @@
                                             </a>
                                             @if($ret->sale)
                                                 <a class="dropdown-item py-2" href="{{ route('sales.show', $ret->sale->id) }}">
-                                                    <i class="fe fe-file-text me-2 text-secondary"></i> View Sale Invoice
+                                                    View Sale Invoice
                                                 </a>
                                             @endif
                                             @if($ret->isPending())
@@ -212,7 +212,7 @@
                                                     @csrf
                                                     @method('PATCH')
                                                     <button type="submit" class="dropdown-item py-2 text-success">
-                                                        <i class="far fa-check-circle me-2"></i> Approve Return
+                                                        Approve Return
                                                     </button>
                                                 </form>
                                                 <a class="dropdown-item py-2 text-warning" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#rejectModal{{ $ret->id }}">

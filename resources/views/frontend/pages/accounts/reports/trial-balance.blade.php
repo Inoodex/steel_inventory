@@ -127,7 +127,6 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2"
                                                         href="{{ route('ledger.index', ['account_id' => $r['account']->id]) }}">
-                                                        <i class="fe fe-book text-info"></i>
                                                         <span>General Ledger</span>
                                                     </a>
                                                 </li>

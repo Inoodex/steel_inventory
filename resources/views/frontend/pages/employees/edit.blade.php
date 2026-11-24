@@ -37,18 +37,18 @@
                     </div>
 
                     <div class="col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Email Address</label>
-                        <input type="email" name="email" value="{{ $employee->email }}" class="form-control border-light-subtle">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Email Address <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="email" name="email" value="{{ old('email', $employee->email) }}" class="form-control border-light-subtle">
                     </div>
 
                     <div class="col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Phone Number</label>
-                        <input type="text" name="phone" value="{{ $employee->phone }}" class="form-control border-light-subtle">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Phone Number <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="text" name="phone" value="{{ old('phone', $employee->phone) }}" class="form-control border-light-subtle">
                     </div>
 
                     <div class="col-md-6 col-12">
-                        <label class="form-label small text-secondary fw-semibold mb-1">Designation</label>
-                        <input type="text" name="designation" value="{{ $employee->designation }}" class="form-control border-light-subtle">
+                        <label class="form-label small text-secondary fw-semibold mb-1">Designation <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="text" name="designation" value="{{ old('designation', $employee->designation) }}" class="form-control border-light-subtle">
                     </div>
 
                     <div class="col-md-6 col-12">

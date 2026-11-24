@@ -99,11 +99,11 @@
             <div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <h4 class="card-title fw-bold text-dark mb-0">
-                        <i class="fe fe-package text-primary me-2"></i>Consignment Lot #{{ $lot->lot_number }}
+                        Consignment Lot #{{ $lot->lot_number }}
                     </h4>
                     @if($lot->status === 'active')
                         <span class="badge badge-soft-success px-2.5 py-1 rounded-pill fs-8">
-                            <i class="fe fe-check-circle me-1"></i>Active Consignment
+                            Active Consignment
                         </span>
                     @else
                         <span class="badge badge-soft-secondary px-2.5 py-1 rounded-pill fs-8">
@@ -250,7 +250,6 @@
             <div class="card border-0 shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-header bg-transparent border-bottom py-3">
                     <h6 class="card-title fw-bold m-0 text-dark d-flex align-items-center gap-2">
-                        <i class="fe fe-info text-primary"></i>
                         <span>Consignment Overview</span>
                     </h6>
                 </div>
@@ -295,7 +294,7 @@
 
                     @if($lot->notes)
                         <div class="mt-3 p-2.5 bg-light rounded-3 text-secondary small border border-light-subtle">
-                            <strong class="text-dark"><i class="fe fe-file-text me-1 text-muted"></i>Notes:</strong> {{ $lot->notes }}
+                            <strong class="text-dark">Notes:</strong> {{ $lot->notes }}
                         </div>
                     @endif
                 </div>
@@ -307,12 +306,11 @@
             <div class="card border-0 shadow-sm rounded-3 h-100 mb-0">
                 <div class="card-header bg-transparent border-bottom py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <h6 class="card-title fw-bold m-0 text-dark d-flex align-items-center gap-2">
-                        <i class="fe fe-dollar-sign text-primary"></i>
                         <span>Financial Summary & Procurement Charges</span>
                     </h6>
                     @if($firstPurchase)
                         <a href="{{ route('purchase.show', $firstPurchase->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-none fw-semibold">
-                            <i class="fe fe-external-link me-1"></i>Open Consignment Order
+                            Open Consignment Order
                         </a>
                     @endif
                 </div>
@@ -344,11 +342,11 @@
                     <!-- Extra Charges Detail Pills -->
                     <div class="p-3 bg-light rounded-3 border border-light-subtle">
                         <span class="text-dark small fw-bold d-block mb-2">
-                            <i class="fe fe-sliders me-1 text-primary"></i>Intake Logistics & Handling Breakdown:
+                            Intake Logistics & Handling Breakdown:
                         </span>
                         <div class="d-flex flex-wrap align-items-center gap-2">
                             <span class="badge bg-white text-dark border px-2.5 py-1.5 fs-8">
-                                <i class="fe fe-truck me-1 text-primary"></i>Transport Charge: 
+                                Transport Charge: 
                                 <strong class="ms-1 font-monospace">৳ {{ number_format($lotDelivery, 2) }}</strong>
                             </span>
                             <span class="badge bg-white text-dark border px-2.5 py-1.5 fs-8">
@@ -356,18 +354,18 @@
                                 <strong class="ms-1 font-monospace">৳ {{ number_format($lotLabour, 2) }}</strong>
                             </span>
                             <span class="badge bg-white text-dark border px-2.5 py-1.5 fs-8">
-                                <i class="fe fe-activity me-1 text-primary"></i>Scale & Labour Charge: 
+                                Scale & Labour Charge: 
                                 <strong class="ms-1 font-monospace">৳ {{ number_format($lotScale, 2) }}</strong>
                             </span>
                             @if($lotOther > 0)
                                 <span class="badge bg-white text-dark border px-2.5 py-1.5 fs-8">
-                                    <i class="fe fe-plus-circle me-1 text-secondary"></i>Other Charges: 
+                                    Other Charges: 
                                     <strong class="ms-1 font-monospace">৳ {{ number_format($lotOther, 2) }}</strong>
                                 </span>
                             @endif
                             @if($lotDiscount > 0)
                                 <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 fs-8">
-                                    <i class="fe fe-tag me-1 text-danger"></i>Discount: 
+                                    Discount: 
                                     <strong class="ms-1 font-monospace">-৳ {{ number_format($lotDiscount, 2) }}</strong>
                                 </span>
                             @endif
@@ -417,7 +415,7 @@
                                 <td class="ps-4 text-muted small fw-semibold">{{ $loop->iteration }}</td>
                                 <td>
                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-8">
-                                        <i class="fe fe-user me-1"></i>{{ $purchase->vendor->name ?? 'N/A' }}
+                                        {{ $purchase->vendor->name ?? 'N/A' }}
                                     </span>
                                 </td>
                                 <td class="text-dark small">
@@ -437,7 +435,7 @@
                                         <div class="d-flex flex-wrap gap-1 align-items-center" style="max-width: 280px;">
                                             @foreach($purchase->coils as $coil)
                                                 <span class="badge bg-light text-dark border font-monospace fs-8 px-2 py-1">
-                                                    <i class="fe fe-disc me-1 text-primary"></i>{{ $coil->coil_number }}
+                                                    {{ $coil->coil_number }}
                                                 </span>
                                             @endforeach
                                         </div>
@@ -447,7 +445,6 @@
                                 </td>
                                 <td>
                                     <div class="text-secondary small fw-medium">
-                                        <i class="fe fe-map-pin text-danger me-1"></i>
                                         {{ $purchase->warehouse ? $purchase->warehouse->name : 'Main Yard Depot' }}
                                     </div>
                                 </td>
@@ -483,11 +480,10 @@
                             <tr>
                                 <td colspan="9" class="text-center py-5 text-muted">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
-                                        <i class="fe fe-package fs-1 text-secondary mb-2" style="opacity: 0.3;"></i>
                                         <h6 class="fw-semibold text-secondary mb-1">No Purchase Line Items Attached</h6>
                                         <p class="small text-muted mb-3">No steel intake has been recorded under Lot #{{ $lot->lot_number }} yet.</p>
                                         <a href="{{ route('purchase.create', ['lot_id' => $lot->id]) }}" class="btn btn-sm btn-primary rounded-3 px-3">
-                                            <i class="fe fe-plus-circle me-1"></i>Add Steel Coils Now
+                                            Add Steel Coils Now
                                         </a>
                                     </div>
                                 </td>

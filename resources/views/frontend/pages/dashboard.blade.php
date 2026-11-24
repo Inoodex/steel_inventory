@@ -89,7 +89,6 @@
                     <span>Steel Inward</span>
                 </a>
                 <a href="{{ route('worker-payouts.index') }}" class="btn btn-outline-warning text-dark px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
-                    <i class="fe fe-users fs-6 text-warning"></i>
                     <span>Worker Payouts</span>
                 </a>
                 <a href="{{ route('dailyExpenses.create') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
@@ -106,8 +105,7 @@
         <div class="alert alert-warning border-0 shadow-sm rounded-3 d-flex flex-wrap align-items-center justify-content-between p-3 mb-4 gap-3">
             <div class="d-flex align-items-center gap-3">
                 <div class="avatar avatar-md bg-warning text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0">
-                    <i class="fe fe-users fs-5 text-dark"></i>
-                </div>
+                    </div>
                 <div>
                     <h6 class="fw-bold mb-0 text-dark">Unsettled Worker Charges Pending</h6>
                     <p class="text-muted small mb-0">
@@ -190,20 +188,20 @@
         <div class="mb-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold text-dark mb-0">
-                    <i class="fe fe-shield me-2 text-primary"></i>Financial Health & Balances
+                    Financial Health & Balances
                 </h5>
                 <!-- <div class="d-flex gap-2">
                     <a href="{{ route('chart-of-accounts.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                        <i class="fe fe-folder me-1"></i> Chart of Accounts
+                        Chart of Accounts
                     </a>
                     <a href="{{ route('journal-entries.create') }}" class="btn btn-sm btn-primary rounded-pill px-3">
                         <i class="fe fe-plus me-1"></i> New Voucher
                     </a>
                     <a href="{{ route('worker-payouts.index') }}" class="btn btn-sm btn-outline-warning rounded-pill px-3">
-                        <i class="fe fe-users me-1"></i> Worker Payouts
+                        Worker Payouts
                     </a>
                     <a href="{{ route('trial-balance.index') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
-                        <i class="fe fe-check-square me-1"></i> Trial Balance
+                        Trial Balance
                     </a>
                 </div> -->
             </div>
@@ -288,7 +286,7 @@
     <!-- ROW 3: Monthly & Daily Performance Overview -->
     <div class="mb-4">
         <h5 class="fw-bold text-dark mb-3">
-            <i class="fe fe-trending-up me-2 text-success"></i>Revenue & Operations Performance
+            Revenue & Operations Performance
         </h5>
         <div class="row g-3">
             <div class="col-xl-3 col-md-6 col-12">
@@ -353,7 +351,7 @@
             <div class="card border-0 shadow-sm rounded-3 flex-fill">
                 <div class="card-header bg-white py-3 border-bottom border-light">
                     <h6 class="fw-bold text-dark mb-0">
-                        <i class="fe fe-bar-chart-2 me-2 text-primary"></i>Monthly Sales & Procurement Trends ({{ date('Y') }})
+                        Monthly Sales & Procurement Trends ({{ date('Y') }})
                     </h6>
                 </div>
                 <div class="card-body">
@@ -365,7 +363,7 @@
             <div class="card border-0 shadow-sm rounded-3 flex-fill">
                 <div class="card-header bg-white py-3 border-bottom border-light">
                     <h6 class="fw-bold text-dark mb-0">
-                        <i class="fe fe-trending-up me-2 text-success"></i>Yearly Revenue Trajectory
+                        Yearly Revenue Trajectory
                     </h6>
                 </div>
                 <div class="card-body">
@@ -383,7 +381,7 @@
             <div class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
                     <h6 class="fw-bold text-dark mb-0">
-                        <i class="fe fe-disc me-2 text-primary"></i>Live In-Stock Coils in Yard
+                        Live In-Stock Coils in Yard
                     </h6>
                     <a href="{{ route('inventory.index') }}" class="btn btn-sm btn-outline-primary rounded-2 px-3">View All</a>
                 </div>
@@ -421,7 +419,7 @@
                                         </td>
                                         <td>
                                             <span class="text-muted small">
-                                                <i class="fe fe-map-pin text-secondary me-1"></i>{{ Str::limit($coil->warehouse->name ?? 'Main Yard', 18) }}
+                                                {{ Str::limit($coil->warehouse->name ?? 'Main Yard', 18) }}
                                             </span>
                                         </td>
                                         <td class="pe-3 text-end">
@@ -445,7 +443,7 @@
             <div class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-header bg-white py-3 border-bottom border-light d-flex justify-content-between align-items-center">
                     <h6 class="fw-bold text-dark mb-0">
-                        <i class="fe fe-shopping-cart me-2 text-success"></i>Recent Steel Sales Orders
+                        Recent Steel Sales Orders
                     </h6>
                     <a href="{{ route('sales.index') }}" class="btn btn-sm btn-outline-primary rounded-2 px-3">View All</a>
                 </div>
