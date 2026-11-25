@@ -313,6 +313,38 @@ class SaleWorkflowTest extends TestCase
         $this->assertEquals(0.00, (float)$sale->due_payment);
         $this->assertEquals('paid', $sale->status);
     }
+
+    public function test_sale_records_coil_type_full_coil_and_split(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('sales.store'), [
+            'client_type'        => 'existing',
+            'existing_client_id' => $this->customer->id,
+            'warehouse_id'       => $this->warehouse->id,
+            'delivery_status'    => 'delivered',
+            'order_date'         => now()->toDateString(),
+            'coil_id'            => [$this->coil->id],
+            'lot_id'             => [$this->lot->id],
+            'custom_size'        => ['4x8 ft full'],
+            'coil_type'          => ['full_coil'],
+            'qty'                => [10.000],
+            'unit_price'         => [95000.00],
+            'subTotal'           => 950000.00,
+            'discount'           => 0.00,
+            'grandTotal'         => 950000.00,
+            'advanced_payment'   => 950000.00,
+            'payment_method'     => 'cash',
+        ]);
+
+        $response->assertRedirect();
+
+        $item = SalesItem::where('coil_id', $this->coil->id)->latest()->first();
+        $this->assertNotNull($item);
+        $this->assertEquals('full_coil', $item->coil_type);
+
+        $showResponse = $this->actingAs($this->admin)->get(route('sales.show', $item->order_id));
+        $showResponse->assertStatus(200);
+        $showResponse->assertSee('Full Coil');
+    }
 }
 
 

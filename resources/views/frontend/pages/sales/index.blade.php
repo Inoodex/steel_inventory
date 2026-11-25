@@ -249,30 +249,26 @@
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2"
                                                     href="{{ route('sales.show', $service->id) }}">
-                                                    <i class="fe fe-eye text-primary"></i>
-                                                    <span>View Details</span>
+                                                                                                        <span>View Details</span>
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" target="_blank"
                                                     href="{{ route('sales.invoice.pdf', $service->id) }}">
-                                                    <i class="fe fe-download text-info"></i>
-                                                    <span>Download PDF</span>
+                                                                                                        <span>Download PDF</span>
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2"
                                                     href="{{ route('sales.edit', $service->id) }}">
-                                                    <i class="fe fe-edit text-warning"></i>
-                                                    <span>Edit Sale</span>
+                                                                                                        <span>Edit Sale</span>
                                                 </a>
                                             </li>
                                             <li><hr class="dropdown-divider opacity-50"></li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
                                                     onclick="if (confirm('Are you sure you want to delete this sales order?')) { document.getElementById('serviceDelete{{ $service->id }}').submit(); }">
-                                                    <i class="fe fe-trash-2 text-danger"></i>
-                                                    <span>Delete Sale</span>
+                                                                                                        <span>Delete Sale</span>
                                                 </a>
                                                 <form id="serviceDelete{{ $service->id }}" action="{{ route('sales.destroy', $service->id) }}" method="POST" class="d-none">
                                                     @csrf

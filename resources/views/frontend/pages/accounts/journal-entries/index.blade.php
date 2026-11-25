@@ -151,15 +151,13 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2"
                                                         href="{{ route('journal-entries.show', $entry->id) }}">
-                                                        <i class="fe fe-eye text-info"></i>
-                                                        <span>View Voucher</span>
+                                                                                                                <span>View Voucher</span>
                                                     </a>
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2"
                                                         href="{{ route('journal-entries.pdf', $entry->id) }}">
-                                                        <i class="fe fe-download text-primary"></i>
-                                                        <span>Download PDF</span>
+                                                                                                                <span>Download PDF</span>
                                                     </a>
                                                 </li>
                                                 @if($entry->status !== 'reversed')

@@ -243,22 +243,19 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('warehouses.show', $wh->id) }}">
-                                                    <i class="fe fe-eye text-info"></i>
-                                                    <span>View Details</span>
+                                                                                                        <span>View Details</span>
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#editWarehouseModal{{ $wh->id }}">
-                                                    <i class="fe fe-edit text-primary"></i>
-                                                    <span>Edit Stockyard</span>
+                                                                                                        <span>Edit Stockyard</span>
                                                 </a>
                                             </li>
                                             <li><hr class="dropdown-divider opacity-50"></li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
                                                     onclick="if (confirm('Are you sure you want to delete this stockyard?')) { document.getElementById('delete-wh-{{ $wh->id }}').submit(); }">
-                                                    <i class="fe fe-trash-2"></i>
-                                                    <span>Delete</span>
+                                                                                                        <span>Delete</span>
                                                 </a>
                                                 <form id="delete-wh-{{ $wh->id }}" action="{{ route('warehouses.destroy', $wh->id) }}" method="POST" class="d-none">
                                                     @csrf

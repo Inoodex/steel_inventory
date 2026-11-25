@@ -297,15 +297,13 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('dailyExpenses.edit', $item->id) }}">
-                                                    <i class="fe fe-edit text-primary"></i>
-                                                    <span>Edit Expense</span>
+                                                                                                        <span>Edit Expense</span>
                                                 </a>
                                             </li>
                                             <li><hr class="dropdown-divider opacity-50"></li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" onclick="if(confirm('Are you sure you want to delete this daily expense record?')) document.getElementById('del{{ $item->id }}').submit();">
-                                                    <i class="fe fe-trash-2 text-danger"></i>
-                                                    <span>Delete Expense</span>
+                                                                                                        <span>Delete Expense</span>
                                                 </a>
                                                 <form id="del{{ $item->id }}" method="POST" action="{{ route('dailyExpenses.destroy', $item->id) }}" class="d-none">
                                                     @csrf

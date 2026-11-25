@@ -66,7 +66,7 @@
         }
 
         .inventory-table thead th {
-            background-color: #103567;
+            background-color: #1e293b;
             color: #ffffff;
             font-size: 10px;
             font-weight: 700;
@@ -74,14 +74,14 @@
             letter-spacing: 0.3px;
             padding: 7px 6px;
             text-align: left;
-            border: none;
+            border: 1px solid #cbd5e1;
         }
 
         .inventory-table tbody td {
             padding: 6px 6px;
             font-size: 10px;
             color: #334155;
-            border-bottom: 1px solid #e2e8f0;
+            border: 1px solid #cbd5e1;
             vertical-align: middle;
         }
 
@@ -98,7 +98,7 @@
             font-weight: 700;
             font-size: 10px;
             padding: 7px 6px;
-            border-top: 1.5px solid #cbd5e1;
+            border: 1px solid #cbd5e1;
             color: #0f172a;
         }
 
@@ -170,14 +170,15 @@
         <thead>
             <tr>
                 <th style="width: 5%;" class="text-center">SI.</th>
-                <th style="width: 11%;">COIL NO</th>
-                <th style="width: 12%;">Thickness</th>
+                <th style="width: 10%;">COIL NO</th>
+                <th style="width: 7%;" class="text-center">DIS</th>
+                <th style="width: 10%;">Thickness</th>
                 <th style="width: 9%;">Size</th>
-                <th style="width: 13%;">Weight (Kg)</th>
-                <!-- <th style="width: 8%;">DIS</th> -->
-                <th style="width: 15%;">Lot Name</th>
-                <th style="width: 16%;">Cutting Name</th>
-                <th style="width: 11%;">Status</th>
+                <th style="width: 12%;">Weight (Kg)</th>
+                <th style="width: 13%;">Lot Name</th>
+                <th style="width: 13%;">Cutting Name</th>
+                <th style="width: 11%;">Booked To</th>
+                <th style="width: 10%;">Status</th>
             </tr>
         </thead>
         <tbody>
@@ -231,6 +232,8 @@
                     $disVal = trim($coil->length ?? '');
                     if (in_array(strtoupper($disVal), ['HR', 'PO', 'CR', 'GP', 'MS', 'GI', 'SS'])) {
                         $dis = strtoupper($disVal);
+                    } elseif (!empty($coil->product_name) && preg_match('/\b(HR|PO|CR|GP|MS|GI|SS)\b/i', $coil->product_name, $disMatch)) {
+                        $dis = strtoupper($disMatch[1]);
                     } elseif ($coil->purchase && !empty($coil->purchase->category?->name)) {
                         $dis = $coil->purchase->category->name;
                     } elseif (!empty($coil->notes) && in_array(strtoupper(trim($coil->notes)), ['HR', 'PO', 'CR', 'GP', 'MS', 'GI'])) {
@@ -267,12 +270,13 @@
                             <div style="font-size: 8.5px; font-weight: normal; color: #64748b;">{{ $coil->product_name }}</div>
                         @endif
                     </td>
+                    <td class="text-center fw-bold">{{ $dis }}</td>
                     <td class="fw-bold">{{ $thickness }}</td>
                     <td>{{ $size }}</td>
                     <td class="fw-bold">{{ $weight }}</td>
-                    <!-- <td>{{ $dis }}</td> -->
                     <td>{{ $lotName }}</td>
                     <td>{{ $cuttingName }}</td>
+                    <td>{{ $coil->bookedCustomer?->name ?: '—' }}</td>
                     <td>
                         <span class="{{ $statusText === 'Available' ? 'status-available' : '' }}">
                             {{ $statusText }}
@@ -281,7 +285,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" class="text-center" style="padding: 20px; color: #64748b;">
+                    <td colspan="10" class="text-center" style="padding: 20px; color: #64748b;">
                         No in-stock steel coils found in inventory.
                     </td>
                 </tr>
@@ -290,27 +294,21 @@
         @if($coils->count() > 0)
         <tfoot>
             <tr>
-                <td colspan="4" class="text-right fw-bold" style="text-transform: uppercase;">Total:</td>
+                <td colspan="5" class="text-right fw-bold" style="text-transform: uppercase;">Total:</td>
                 <td class="fw-bold">{{ number_format($coils->sum('remaining_weight'), 0) }} Kg</td>
-                <td colspan="3"></td>
+                <td colspan="4"></td>
             </tr>
         </tfoot>
         @endif
     </table>
 
     <!-- Signature Block -->
-    <!-- <table class="signature-table">
-        <tr>
-            <td style="width: 50%; text-align: center;">
-                <div class="signature-line"></div>
-                <div style="font-size: 9.5px; font-weight: 700; color: #475569; text-transform: uppercase;">Stock In-Charge</div>
-            </td>
-            <td style="width: 50%; text-align: center;">
-                <div class="signature-line"></div>
-                <div style="font-size: 9.5px; font-weight: 700; color: #475569; text-transform: uppercase;">Authorized Signature</div>
-            </td>
-        </tr>
-    </table> -->
+    <div style="width: 100%; margin-top: 30px;">
+        <div style="width: 180px; text-align: center; float: right;">
+            <div style="border-top: 1.5px solid #475569; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase;">Authorized Signature</div>
+        </div>
+    </div>
 
 </body>
 </html>

@@ -236,8 +236,7 @@
                                         <li>
                                             <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)"
                                                 onclick="document.getElementById('setDefaultForm{{ $company->id }}').submit();">
-                                                <i class="fe fe-star text-warning"></i>
-                                                <span>Set as Default</span>
+                                                                                                <span>Set as Default</span>
                                             </a>
                                             <form id="setDefaultForm{{ $company->id }}" action="{{ route('company-details.set-default', $company->id) }}" method="POST" class="d-none">
                                                 @csrf
@@ -247,16 +246,14 @@
                                         @endif
                                         <li>
                                             <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#edit-company-modal{{ $company->id }}">
-                                                <i class="fe fe-edit text-primary"></i>
-                                                <span>Edit Company</span>
+                                                                                                <span>Edit Company</span>
                                             </a>
                                         </li>
                                         <li><hr class="dropdown-divider opacity-50 my-1"></li>
                                         <li>
                                             <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
                                                 onclick="if (confirm('Are you sure you want to delete this company profile?')) { document.getElementById('deleteCompany{{ $company->id }}').submit(); }">
-                                                <i class="fe fe-trash-2 text-danger"></i>
-                                                <span>Delete Company</span>
+                                                                                                <span>Delete Company</span>
                                             </a>
                                             <form id="deleteCompany{{ $company->id }}" action="{{ route('company-details.destroy', $company->id) }}" method="POST" class="d-none">
                                                 @csrf

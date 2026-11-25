@@ -344,6 +344,7 @@ class SaleService
             $size       = $data['size'][$index] ?? null;
             $sizeType   = $data['size_type'][$index] ?? 'ft';
             $customSize = $data['custom_size'][$index] ?? null;
+            $coilType   = $data['coil_type'][$index] ?? 'split';
 
             $purchasePrice = 0;
             if ($coilId) {
@@ -415,6 +416,7 @@ class SaleService
                 'size'           => $size,
                 'size_type'      => $sizeType,
                 'custom_size'    => $customSize,
+                'coil_type'      => $coilType,
                 'unit_price'     => $unitPrice,
                 'qty'            => $qty,
                 'total_price'    => $total,

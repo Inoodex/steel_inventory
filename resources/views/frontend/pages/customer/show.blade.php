@@ -331,8 +331,7 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.show', $sale->id) }}">
-                                                    <i class="fe fe-eye text-info"></i>
-                                                    <span>View Details</span>
+                                                                                                        <span>View Details</span>
                                                 </a>
                                             </li>
                                             <li>
@@ -342,8 +341,7 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.invoice.pdf', $sale->id) }}" target="_blank">
-                                                    <i class="fe fe-download text-danger"></i>
-                                                    <span>Invoice PDF</span>
+                                                                                                        <span>Invoice PDF</span>
                                                 </a>
                                             </li>
                                             @if($saleDue > 0)
@@ -355,8 +353,7 @@
                                             @endif
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.edit', $sale->id) }}">
-                                                    <i class="fe fe-edit text-warning"></i>
-                                                    <span>Edit Sale</span>
+                                                                                                        <span>Edit Sale</span>
                                                 </a>
                                             </li>
                                         </ul>
@@ -623,23 +620,20 @@
                                                                                 'sale_id' => $pay->sale_id,
                                                                                 'order_no' => $pay->sale ? ($pay->sale->order_no ?? ('SO-' . $pay->sale->id)) : null,
                                                                             ]) }})">
-                                                                            <i class="fe fe-edit text-primary"></i>
-                                                                            <span>Edit Payment</span>
+                                                                                                                                                        <span>Edit Payment</span>
                                                                         </a>
                                                                     </li>
                                                                     @if(empty($pay->sale_id))
                                                                         <li>
                                                                             <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-info" href="{{ route('customer-advances.receipt-pdf', $pay->id) }}" target="_blank">
-                                                                                <i class="fe fe-download text-info"></i>
-                                                                                <span>Receipt PDF</span>
+                                                                                                                                                                <span>Receipt PDF</span>
                                                                             </a>
                                                                         </li>
                                                                     @endif
                                                                     <li>
                                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
                                                                             onclick="if (confirm('Are you sure you want to revert this payment of ৳{{ number_format($pay->amount, 2) }}? This will restore the customer due balance.')) { document.getElementById('delCustPayment{{ $pay->id }}').submit(); }">
-                                                                            <i class="fe fe-trash-2 text-danger"></i>
-                                                                            <span>Delete / Revert</span>
+                                                                                                                                                        <span>Delete / Revert</span>
                                                                         </a>
                                                                         <form id="delCustPayment{{ $pay->id }}" action="{{ route('delete.payment', $pay->id) }}" method="POST" class="d-none">
                                                                             @csrf
@@ -746,23 +740,20 @@
                                                                 'sale_id' => $pay->sale_id,
                                                                 'order_no' => $pay->sale ? ($pay->sale->order_no ?? ('SO-' . $pay->sale->id)) : null,
                                                             ]) }})">
-                                                            <i class="fe fe-edit text-primary"></i>
-                                                            <span>Edit Payment</span>
+                                                                                                                        <span>Edit Payment</span>
                                                         </a>
                                                     </li>
                                                     @if(empty($pay->sale_id))
                                                         <li>
                                                             <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-info" href="{{ route('customer-advances.receipt-pdf', $pay->id) }}" target="_blank">
-                                                                <i class="fe fe-download text-info"></i>
-                                                                <span>Receipt PDF</span>
+                                                                                                                                <span>Receipt PDF</span>
                                                             </a>
                                                         </li>
                                                     @endif
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
                                                             onclick="if (confirm('Are you sure you want to revert this payment of ৳{{ number_format($pay->amount, 2) }}? This will restore the customer due balance.')) { document.getElementById('delCustPaymentFlat{{ $pay->id }}').submit(); }">
-                                                            <i class="fe fe-trash-2 text-danger"></i>
-                                                            <span>Delete / Revert</span>
+                                                                                                                        <span>Delete / Revert</span>
                                                         </a>
                                                         <form id="delCustPaymentFlat{{ $pay->id }}" action="{{ route('delete.payment', $pay->id) }}" method="POST" class="d-none">
                                                             @csrf

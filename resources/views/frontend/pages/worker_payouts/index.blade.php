@@ -528,22 +528,19 @@
                                                 <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#viewPayoutModal{{ $payout->id }}">
-                                                            <i class="fe fe-eye text-info"></i>
-                                                            <span>View Breakdown</span>
+                                                                                                                        <span>View Breakdown</span>
                                                         </a>
                                                     </li>
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('worker-payouts.voucher-pdf', $payout->id) }}" target="_blank">
-                                                            <i class="fe fe-printer text-primary"></i>
-                                                            <span>Print PDF Voucher</span>
+                                                                                                                        <span>Print PDF Voucher</span>
                                                         </a>
                                                     </li>
                                                     <li><hr class="dropdown-divider opacity-50"></li>
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" 
                                                            onclick="if(confirm('Are you sure you want to void voucher #{{ $payout->payout_no }}? This will remove the journal entry and restore the unpaid charge balance.')) { document.getElementById('voidPayoutForm{{ $payout->id }}').submit(); }">
-                                                            <i class="fe fe-trash-2 text-danger"></i>
-                                                            <span>Cancel Payout</span>
+                                                                                                                        <span>Cancel Payout</span>
                                                         </a>
                                                         <form id="voidPayoutForm{{ $payout->id }}" action="{{ route('worker-payouts.void', $payout->id) }}" method="POST" class="d-none">
                                                             @csrf

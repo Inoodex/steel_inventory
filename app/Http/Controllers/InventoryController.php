@@ -250,7 +250,7 @@ class InventoryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Coil::with(['lot.vendor', 'vendor', 'warehouse', 'purchase']);
+        $query = Coil::with(['lot.vendor', 'vendor', 'warehouse', 'purchase', 'bookedCustomer']);
 
         // Search filter (coil number, thickness, width, length, vendor name, lot number)
         if ($request->filled('search')) {
@@ -271,7 +271,11 @@ class InventoryController extends Controller
 
         // Filter by Lot
         if ($request->filled('lot_id')) {
-            $query->where('lot_id', $request->lot_id);
+            if ($request->lot_id === 'direct_stock') {
+                $query->whereNull('lot_id');
+            } else {
+                $query->where('lot_id', $request->lot_id);
+            }
         }
 
         // Filter by Warehouse / Yard
@@ -390,12 +394,15 @@ class InventoryController extends Controller
             ];
         })->sortByDesc('total_weight');
 
+        $customers = \App\Models\Customer::orderBy('name')->get(['id', 'name', 'phone']);
+
         return view('frontend.pages.inventory.index', compact(
             'coils',
             'lotGroups',
             'lots',
             'warehouses',
             'vendors',
+            'customers',
             'totalInStockWeight',
             'totalIntakeWeight',
             'inStockCount',
@@ -406,7 +413,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * Update coil status (e.g. in_stock, processing, reserved, exhausted).
+     * Update coil status (e.g. in_stock, processing, reserved, exhausted) and optional customer booking.
      */
     public function updateStatus(Request $request, $id)
     {
@@ -414,14 +421,23 @@ class InventoryController extends Controller
         $request->merge(['status' => $status]);
 
         $request->validate([
-            'status' => 'required|in:in_stock,reserved,processing,exhausted,scrapped',
+            'status'             => 'required|in:in_stock,reserved,processing,exhausted,scrapped',
+            'booked_customer_id' => 'nullable|exists:customers,id',
         ]);
 
         $coil = Coil::findOrFail($id);
         $coil->status = $status;
+        if ($request->has('booked_customer_id')) {
+            $coil->booked_customer_id = $request->input('booked_customer_id') ?: null;
+        }
         $coil->save();
 
-        return redirect()->back()->with('success', "Coil {$coil->coil_number} status updated to " . ucfirst(str_replace('_', ' ', $coil->status)));
+        $statusLabel = $coil->status === 'reserved' ? 'Hold' : ucfirst(str_replace('_', ' ', $coil->status));
+        $bookingMsg = $coil->booked_customer_id
+            ? ' (Booked to ' . ($coil->bookedCustomer?->name ?? 'Customer') . ')'
+            : '';
+
+        return redirect()->back()->with('success', "Coil {$coil->coil_number} updated to {$statusLabel}{$bookingMsg}");
     }
 
     /**
@@ -436,11 +452,15 @@ class InventoryController extends Controller
             ->whereDoesntHave('warehouse', function ($q) {
                 $q->where('type', 'shop');
             })
-            ->with(['lot.vendor', 'warehouse', 'purchase', 'vendor'])
+            ->with(['lot.vendor', 'warehouse', 'purchase', 'vendor', 'bookedCustomer'])
             ->latest();
 
         if ($request->filled('lot_id')) {
-            $query->where('lot_id', $request->lot_id);
+            if ($request->lot_id === 'direct_stock') {
+                $query->whereNull('lot_id');
+            } else {
+                $query->where('lot_id', $request->lot_id);
+            }
         }
 
         if ($request->filled('warehouse_id')) {

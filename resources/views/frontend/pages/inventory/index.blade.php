@@ -380,7 +380,7 @@
                                                         <span>View Lot Profile</span>
                                                     </a>
                                                 @endif
-                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('inventory.pdf', ['lot_id' => $group['lot_id']]) }}" target="_blank">
+                                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('inventory.pdf', ['lot_id' => ($isDirect || !$group['lot_id']) ? 'direct_stock' : $group['lot_id']]) }}" target="_blank">
                                                     <span>Export PDF</span>
                                                 </a>
                                             </div>
@@ -452,7 +452,9 @@
                                                                 'total_price' => '৳ ' . number_format((float)$coil->remaining_weight * (float)$coil->rate_per_ton, 2),
                                                                 'initial_total' => '৳ ' . number_format($coil->total_price, 2),
                                                                 'status' => $coil->status,
-                                                                'status_label' => ucfirst(str_replace('_', ' ', $coil->status)),
+                                                                'status_label' => $coil->status === 'reserved' ? 'Hold' : ucfirst(str_replace('_', ' ', $coil->status)),
+                                                                'booked_customer_id' => $coil->booked_customer_id,
+                                                                'booked_customer_name' => $coil->bookedCustomer?->name,
                                                                 'notes' => $coil->notes ?: 'No additional notes recorded for this coil.'
                                                             ];
                                                         @endphp
@@ -462,6 +464,11 @@
                                                                     <i class="fe fe-disc fs-8"></i>
                                                                     <span>{{ $coil->coil_number }}</span>
                                                                 </a>
+                                                                @if($coil->bookedCustomer)
+                                                                    <div class="mt-0.5">
+                                                                        <span class="badge bg-info-subtle text-info border border-info-subtle fs-8">Booked: {{ $coil->bookedCustomer->name }}</span>
+                                                                    </div>
+                                                                @endif
                                                             </td>
                                                             <td>
                                                                 <span class="badge bg-light text-dark border px-2 py-0.5 fs-8">
@@ -509,14 +516,12 @@
                                                                     </a>
                                                                     <div class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" onclick='openCoilModal(@json($coilData))'>
-                                                                            <i class="fe fe-eye text-primary"></i>
-                                                                            <span>View Coil Specs</span>
+                                                                                                                                                        <span>View Coil Specs</span>
                                                                         </a>
 
                                                                         @if(!$coil->purchase_id)
                                                                             <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-primary" href="{{ route('inventory.opening-stock.edit', $coil->id) }}">
-                                                                                <i class="fe fe-edit"></i>
-                                                                                <span>Edit Opening Stock</span>
+                                                                                                                                                                <span>Edit Opening Stock</span>
                                                                             </a>
 
                                                                             @if((float)$coil->remaining_weight >= (float)$coil->net_weight)
@@ -525,8 +530,7 @@
                                                                                     @csrf
                                                                                     @method('DELETE')
                                                                                     <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger">
-                                                                                        <i class="fe fe-trash-2"></i>
-                                                                                        <span>Delete Coil</span>
+                                                                                                                                                                                <span>Delete Coil</span>
                                                                                     </button>
                                                                                 </form>
                                                                             @endif
@@ -694,23 +698,35 @@
                     </div>
                 </div>
 
-                <!-- Status Update inside Modal -->
+                <!-- Status & Booking Update inside Modal -->
                 <div class="p-3 bg-light rounded-3 border">
                     <form id="modalStatusForm" method="POST" action="">
                         @csrf
-                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div>
-                                <span class="fw-semibold text-dark small d-block">Update Coil Status:</span>
-                                <small class="text-muted">Current status: <strong class="text-primary" id="modalCurrentStatus">In Stock</strong></small>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <select name="status" id="modalStatusSelect" class="form-select form-select-sm" style="width: 170px;">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-5 col-12">
+                                <label class="form-label small fw-semibold text-dark mb-1">
+                                    Update Coil Status <span class="text-muted fw-normal">(Current: <strong class="text-primary" id="modalCurrentStatus">In Stock</strong>)</span>
+                                </label>
+                                <select name="status" id="modalStatusSelect" class="form-select form-select-sm">
                                     <option value="in_stock">In Stock</option>
                                     <option value="processing">In Processing</option>
-                                    <option value="reserved">Reserved</option>
+                                    <option value="reserved">Hold</option>
                                     <option value="exhausted">Exhausted</option>
                                 </select>
-                                <button type="submit" class="btn btn-sm btn-primary px-3 rounded-2">Update</button>
+                            </div>
+                            <div class="col-md-5 col-12">
+                                <label class="form-label small fw-semibold text-dark mb-1">
+                                    Book to Customer / Party <span class="text-muted fw-normal">(No sale restriction)</span>
+                                </label>
+                                <select name="booked_customer_id" id="modalBookedCustomerSelect" class="form-select form-select-sm">
+                                    <option value="">-- Not Booked --</option>
+                                    @foreach($customers ?? [] as $cust)
+                                        <option value="{{ $cust->id }}">{{ $cust->name }}{{ $cust->phone ? ' (' . $cust->phone . ')' : '' }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-12 text-end">
+                                <button type="submit" class="btn btn-sm btn-primary w-100 rounded-2">Save</button>
                             </div>
                         </div>
                     </form>
@@ -887,6 +903,10 @@ function openCoilModal(c) {
         sSelect.value = c.status;
     }
     const sForm = document.getElementById('modalStatusForm');
+    const bSelect = $('#modalBookedCustomerSelect');
+    if (bSelect.length) {
+        bSelect.val(c.booked_customer_id ? String(c.booked_customer_id) : '').trigger('change');
+    }
     if (sForm) {
         sForm.action = '{{ url("inventory") }}/' + c.id + '/status';
     }
@@ -899,6 +919,15 @@ function openCoilModal(c) {
 
 // Quick modal calculation
 $(document).ready(function() {
+    if ($.fn.select2) {
+        $('#modalBookedCustomerSelect').select2({
+            dropdownParent: $('#coilDetailModal'),
+            width: '100%',
+            placeholder: '-- Not Booked --',
+            allowClear: true
+        });
+    }
+
     function calcQuickModal() {
         const w = parseFloat($('#quickModalWeight').val()) || 0;
         const r = parseFloat($('#quickModalRate').val()) || 0;

@@ -552,7 +552,7 @@
                                                         @elseif($coil->status === 'processing')
                                                             <span class="badge badge-soft-warning px-3 py-1 rounded-pill">Processing</span>
                                                         @elseif($coil->status === 'reserved')
-                                                            <span class="badge badge-soft-info px-3 py-1 rounded-pill">Reserved</span>
+                                                            <span class="badge badge-soft-info px-3 py-1 rounded-pill">Hold</span>
                                                         @elseif($coil->status === 'exhausted')
                                                             <span class="badge badge-soft-secondary px-3 py-1 rounded-pill">Exhausted</span>
                                                         @elseif($coil->status === 'scrapped')

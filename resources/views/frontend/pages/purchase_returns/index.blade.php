@@ -302,8 +302,7 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase-returns.show', $ret->id) }}">
-                                                    <i class="fe fe-eye text-primary"></i>
-                                                    <span>View Return Voucher</span>
+                                                                                                        <span>View Return Voucher</span>
                                                 </a>
                                             </li>
                                             <li>

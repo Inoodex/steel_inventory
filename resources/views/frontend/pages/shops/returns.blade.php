@@ -200,7 +200,7 @@
                                         </a>
                                         <div class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                                             <a class="dropdown-item py-2" href="{{ route('shops.returns.show', $ret->id) }}">
-                                                <i class="far fa-eye me-2 text-primary"></i> View Return
+                                                View Return
                                             </a>
                                             @if($ret->sale)
                                                 <a class="dropdown-item py-2" href="{{ route('sales.show', $ret->sale->id) }}">
@@ -216,7 +216,7 @@
                                                     </button>
                                                 </form>
                                                 <a class="dropdown-item py-2 text-warning" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#rejectModal{{ $ret->id }}">
-                                                    <i class="far fa-times-circle me-2"></i> Reject Return
+                                                    Reject Return
                                                 </a>
                                             @endif
                                             @if($ret->isPending() || $ret->isRejected())
@@ -224,7 +224,7 @@
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="dropdown-item py-2 text-danger">
-                                                        <i class="far fa-trash-alt me-2"></i> Delete Return
+                                                        Delete Return
                                                     </button>
                                                 </form>
                                             @endif

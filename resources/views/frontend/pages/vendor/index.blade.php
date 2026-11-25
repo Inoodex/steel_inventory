@@ -273,8 +273,7 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('vendors.show', $vendor->id) }}">
-                                                    <i class="fe fe-eye text-info"></i>
-                                                    <span>View Details</span>
+                                                                                                        <span>View Details</span>
                                                 </a>
                                             </li>
                                             <li>
@@ -284,22 +283,19 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('vendors.ledger.pdf', $vendor->id) }}" target="_blank">
-                                                    <i class="fe fe-download text-danger"></i>
-                                                    <span>Statement PDF</span>
+                                                                                                        <span>Statement PDF</span>
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('vendors.edit', $vendor->id) }}">
-                                                    <i class="fe fe-edit text-secondary"></i>
-                                                    <span>Edit Profile</span>
+                                                                                                        <span>Edit Profile</span>
                                                 </a>
                                             </li>
                                             <li><hr class="dropdown-divider opacity-50"></li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
                                                     onclick="if (confirm('Are you sure you want to delete this vendor?')) { document.getElementById('delete{{ $vendor->id }}').submit(); }">
-                                                    <i class="fe fe-trash-2 text-danger"></i>
-                                                    <span>Delete Vendor</span>
+                                                                                                        <span>Delete Vendor</span>
                                                 </a>
                                                 <form id="delete{{ $vendor->id }}" action="{{ route('vendors.destroy', $vendor->id) }}" method="POST" class="d-none">
                                                     @csrf

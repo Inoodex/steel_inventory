@@ -271,15 +271,13 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2"
                                                         href="{{ route('chart-of-accounts.create', ['parent_id' => $acc->id]) }}">
-                                                        <i class="fe fe-plus text-success"></i>
-                                                        <span>Add Sub-Account</span>
+                                                                                                                <span>Add Sub-Account</span>
                                                     </a>
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2"
                                                         href="{{ route('chart-of-accounts.edit', $acc->id) }}">
-                                                        <i class="fe fe-edit text-primary"></i>
-                                                        <span>Edit Account</span>
+                                                                                                                <span>Edit Account</span>
                                                     </a>
                                                 </li>
                                                 @if(!$acc->is_system)
@@ -290,8 +288,7 @@
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger"
                                                             href="javascript:void(0)"
                                                             onclick="if(confirm('Are you sure you want to delete this account?')) { document.getElementById('accountDelete{{ $acc->id }}').submit(); }">
-                                                            <i class="fe fe-trash-2 text-danger"></i>
-                                                            <span>Delete Account</span>
+                                                                                                                        <span>Delete Account</span>
                                                         </a>
                                                         <form id="accountDelete{{ $acc->id }}"
                                                             action="{{ route('chart-of-accounts.destroy', $acc->id) }}"

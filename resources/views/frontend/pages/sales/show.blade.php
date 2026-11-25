@@ -359,6 +359,11 @@
                                     @if((!$item->lot_id && !$coil) || ($coil && ($coil->purchase_id === null || !$coil->lot_id)))
                                         <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-0 fs-8 ms-1">Opening Stock</span>
                                     @endif
+                                    @if($item->coil_type === 'full_coil')
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0 fs-8 ms-1">Full Coil</span>
+                                    @elseif($item->coil_type === 'split')
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0 fs-8 ms-1">Split</span>
+                                    @endif
                                 </td>
                                 <td>
                                     <div class="d-flex flex-wrap align-items-center gap-1">

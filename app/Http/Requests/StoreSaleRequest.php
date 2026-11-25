@@ -33,6 +33,8 @@ class StoreSaleRequest extends FormRequest
             'size_type'            => 'nullable|array',
             'custom_size'          => 'required|array',
             'custom_size.*'        => 'required|string|max:255',
+            'coil_type'            => 'nullable|array',
+            'coil_type.*'          => 'nullable|in:full_coil,split',
             'product'              => 'nullable|array',
             'product.*'            => 'nullable',
             'qty'                  => 'required|array',

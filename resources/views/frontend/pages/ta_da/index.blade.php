@@ -209,15 +209,13 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('ta-da.edit', $ta->id) }}">
-                                                    <i class="fe fe-edit text-primary"></i>
-                                                    <span>Edit Record</span>
+                                                                                                        <span>Edit Record</span>
                                                 </a>
                                             </li>
                                             <li><hr class="dropdown-divider opacity-50"></li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" onclick="if (confirm('Are you sure you want to delete this TA/DA record?')) { document.getElementById('delete{{ $ta->id }}').submit(); }">
-                                                    <i class="fe fe-trash-2 text-danger"></i>
-                                                    <span>Delete Record</span>
+                                                                                                        <span>Delete Record</span>
                                                 </a>
                                                 <form id="delete{{ $ta->id }}" action="{{ route('ta-da.destroy', $ta->id) }}" method="POST" class="d-none">
                                                     @csrf

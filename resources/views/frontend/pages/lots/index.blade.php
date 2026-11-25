@@ -233,22 +233,19 @@
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $lot->id) }}">
-                                                        <i class="fe fe-eye text-info"></i>
-                                                        <span>View Summary</span>
+                                                                                                                <span>View Summary</span>
                                                     </a>
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#editLotModal{{ $lot->id }}">
-                                                        <i class="fe fe-edit text-primary"></i>
-                                                        <span>Edit Lot</span>
+                                                                                                                <span>Edit Lot</span>
                                                     </a>
                                                 </li>
                                                 <li><hr class="dropdown-divider opacity-50"></li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
                                                         onclick="if (confirm('Are you sure you want to delete this lot?')) { document.getElementById('deleteLotForm{{ $lot->id }}').submit(); }">
-                                                        <i class="fe fe-trash-2 text-danger"></i>
-                                                        <span>Delete Lot</span>
+                                                                                                                <span>Delete Lot</span>
                                                     </a>
                                                     <form id="deleteLotForm{{ $lot->id }}" action="{{ route('lots.destroy', $lot->id) }}" method="POST" class="d-none">
                                                         @csrf

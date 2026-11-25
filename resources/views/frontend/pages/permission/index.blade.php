@@ -198,15 +198,13 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('permission.edit', $permission->id) }}">
-                                                    <i class="fe fe-edit text-primary"></i>
-                                                    <span>Edit Permission</span>
+                                                                                                        <span>Edit Permission</span>
                                                 </a>
                                             </li>
                                             <li><hr class="dropdown-divider opacity-50"></li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#deletePermissionModal{{ $permission->id }}">
-                                                    <i class="fe fe-trash-2 text-danger"></i>
-                                                    <span>Delete Permission</span>
+                                                                                                        <span>Delete Permission</span>
                                                 </a>
                                             </li>
                                         </ul>

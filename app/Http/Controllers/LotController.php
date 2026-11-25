@@ -254,7 +254,12 @@ class LotController extends Controller
             }
         }
 
-        // 2. Filter by Vendor
+        // 2. Filter by Specific Lot ID (for individual lot PDF export)
+        if ($request->filled('lot_id')) {
+            $query->where('id', $request->lot_id);
+        }
+
+        // 3. Filter by Vendor
         if ($request->filled('vendor_id')) {
             $query->where('vendor_id', $request->vendor_id);
         }

@@ -184,8 +184,7 @@
                                                 <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('vendors.show', $ven->id) }}">
-                                                            <i class="fe fe-eye text-primary"></i>
-                                                            <span>View Vendor Profile</span>
+                                                                                                                        <span>View Vendor Profile</span>
                                                         </a>
                                                     </li>
                                                     <li>
@@ -195,8 +194,7 @@
                                                     </li>
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger fw-semibold" href="javascript:void(0)" onclick="openRefundVendorAdvanceModal({{ $ven->id }}, '{{ addslashes($ven->name) }}', {{ (float)$ven->advance_balance }})">
-                                                            <i class="fe fe-corner-down-left text-danger"></i>
-                                                            <span>Return Advance Money</span>
+                                                                                                                        <span>Return Advance Money</span>
                                                         </a>
                                                     </li>
                                                 </ul>

@@ -1,134 +1,211 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Daily Expense Invoice</title>
+    <meta charset="UTF-8" />
+    <title>Daily Expense Report</title>
     <style>
         @page {
-            margin: 20px;
+            margin-top: 15mm;
+            margin-bottom: 25mm;
+            margin-left: 15mm;
+            margin-right: 15mm;
         }
 
-        /* ✅ Add safe margin */
         body {
-            font-family: sans-serif;
-            -webkit-print-color-adjust: exact;
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 11px;
+            color: #0f172a;
+            line-height: 1.4;
         }
 
-        .header,
-        .footer {
-            text-align: center;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 18px;
-            text-transform: uppercase;
-        }
-
-        .header p {
-            margin: 2px 0;
-            font-size: 12px;
-        }
-
-        .divider {
-            border-bottom: 1px dashed #000;
-            margin: 8px 0;
-        }
-
-        table {
+        .header-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
+            margin-bottom: 15px;
         }
 
-        th,
-        td {
-            border: 1px solid #000;
-            padding: 4px;
-            text-align: center;
-        }
-
-        th {
-            background: #f0f0f0;
-        }
-
-        .summary {
-            margin-top: 8px;
+        .report-title {
             text-align: right;
-            font-weight: bold;
         }
 
-        .no-print {
-            display: none;
+        .report-title h1 {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .report-title p {
+            font-size: 10px;
+            color: #64748b;
+            margin: 3px 0 0 0;
+        }
+
+        .filter-card {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 10px;
+            color: #475569;
+            margin-bottom: 15px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .items-table th {
+            background-color: #1e293b;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 8px 10px;
+            border: none;
+        }
+
+        .items-table td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 10px;
+        }
+
+        .items-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .summary-card {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 25px;
+        }
+
+        .summary-card table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .summary-card td {
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        .signature-section {
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .signature-box {
+            width: 180px;
+            text-align: center;
+            float: right;
+        }
+
+        .signature-line {
+            border-top: 1.5px solid #475569;
+            margin-bottom: 4px;
+        }
+
+        @media print {
+            .no-print { display: none; }
         }
     </style>
 </head>
-
 <body>
-    <div style="padding: 15px;"> <!-- ✅ Wrapper with padding -->
+    <table class="header-table" cellpadding="0" cellspacing="0">
+        <tr>
+            <td style="width: 50%;"></td>
+            <td style="width: 50%;" class="report-title">
+                <h1>Daily Expense Report</h1>
+                <p>Generated on: {{ now()->format('d M Y') }}</p>
+            </td>
+        </tr>
+    </table>
 
-        <div class="header">
-            <h1>Inoodex Inventory</h1>
-            <p>Daily Expense Report</p>
-            @if ($request->from && $request->to)
-                <p style="font-size:11px;">
-                    From: {{ \Carbon\Carbon::parse($request->from)->format('d M, Y') }}
-                    — To: {{ \Carbon\Carbon::parse($request->to)->format('d M, Y') }}
-                </p>
-            @endif
-            <p style="font-size:11px;">Generated: {{ now()->format('d M Y') }}</p>
-        </div>
+    <div class="filter-card">
+        @if (!empty($request->from) && !empty($request->to))
+            <strong>Period:</strong> {{ \Carbon\Carbon::parse($request->from)->format('d M Y') }} to {{ \Carbon\Carbon::parse($request->to)->format('d M Y') }} &nbsp;|&nbsp;
+        @else
+            <strong>Period:</strong> All Dates &nbsp;|&nbsp;
+        @endif
+        <strong>Total Entries:</strong> {{ $dailyExpense->count() }} &nbsp;|&nbsp;
+        <strong>Generated By:</strong> {{ auth()->user()->name ?? 'System' }}
+    </div>
 
-        <div class="divider"></div>
+    <table class="items-table" cellpadding="0" cellspacing="0">
+        <thead>
+            <tr>
+                <th style="width: 6%; text-align: center;">#</th>
+                <th style="width: 14%; text-align: left;">Date</th>
+                <th style="width: 22%; text-align: left;">Category</th>
+                <th style="width: 26%; text-align: left;">Remarks</th>
+                <th style="width: 16%; text-align: left;">Spend Method</th>
+                <th style="width: 16%; text-align: right;">Amount (BDT)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse ($dailyExpense as $i => $exp)
+                @php
+                    $spendMethodText = ucfirst(str_replace('_', ' ', $exp->spend_method));
+                    if ($exp->bankDetail) {
+                        $spendMethodText .= ' (' . $exp->bankDetail->bank_name . ')';
+                    }
+                @endphp
+                <tr style="background-color: {{ $loop->even ? '#f8fafc' : '#ffffff' }};">
+                    <td class="text-center">{{ $i + 1 }}</td>
+                    <td>{{ \Carbon\Carbon::parse($exp->date)->format('d M Y') }}</td>
+                    <td style="font-weight: 700; color: #1e293b;">{{ $exp->category_name ?? ($exp->category->name ?? 'N/A') }}</td>
+                    <td>{{ $exp->remarks ?: '—' }}</td>
+                    <td>{{ $spendMethodText }}</td>
+                    <td class="text-right" style="font-weight: 700;">{{ number_format($exp->amount, 2) }}</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="6" class="text-center" style="padding: 15px; color: #64748b;">No expense records found</td>
+                </tr>
+            @endforelse
+        </tbody>
+        @if($dailyExpense->isNotEmpty())
+        <tfoot>
+            <tr style="background-color: #f1f5f9; font-weight: 700; border-top: 1.5px solid #cbd5e1;">
+                <td colspan="5" style="text-align: right; text-transform: uppercase; font-size: 9px; padding: 7px 10px; color: #475569;">Total Expense:</td>
+                <td class="text-right" style="padding: 7px 10px;">{{ number_format($dailyExpense->sum('amount'), 2) }}</td>
+            </tr>
+        </tfoot>
+        @endif
+    </table>
 
+    <div class="summary-card">
         <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Date</th>
-                    <th>Category</th>
-                    <th>Remarks</th>
-                    <th>Amount</th>
-                    <th>Spend Method</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($dailyExpense as $i => $exp)
-                    @php
-                        $spendMethodText = ucfirst(str_replace('_', ' ', $exp->spend_method));
-                        if ($exp->bankDetail) {
-                            $spendMethodText .= ' (' . $exp->bankDetail->bank_name . ')';
-                        }
-                    @endphp
-                    <tr>
-                        <td>{{ $i + 1 }}</td>
-                        <td>{{ \Carbon\Carbon::parse($exp->date)->format('d M, Y') }}</td>
-                        <td>{{ $exp->category_name ?? ($exp->category->name ?? 'N/A') }}</td>
-                        <td>{{ $exp->remarks }}</td>
-                        <td>৳{{ number_format($exp->amount, 2) }}</td>
-                        <td>{{ $spendMethodText }}</td>
-                    </tr>
-                @endforeach
-                <tr>
-                    <td colspan="4" style="text-align:right;font-weight:bold;">Total</td>
-                    <td style="font-weight:bold;">৳{{ number_format($dailyExpense->sum('amount'), 2) }}</td>
-                    <td></td>
-                </tr>
-            </tbody>
+            <tr>
+                <td style="color: #475569;">Total Expense Entries: <span style="color: #0f172a;">{{ $dailyExpense->count() }}</span></td>
+                <td class="text-right" style="color: #475569;">Total Amount: <span style="color: #dc2626; font-size: 12px; font-weight: 800;">BDT {{ number_format($dailyExpense->sum('amount'), 2) }}</span></td>
+            </tr>
         </table>
+    </div>
 
-        <div class="divider"></div>
-
-        <div class="footer">
-            <p style="font-size:10px;">Generated by: {{ auth()->user()->name }}</p>
+    <div class="signature-section">
+        <div class="signature-box">
+            <div class="signature-line"></div>
+            <div style="font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase;">Authorized Signature</div>
         </div>
-
     </div>
 
     <script>
         window.print();
     </script>
 </body>
-
 </html>

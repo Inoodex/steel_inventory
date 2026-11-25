@@ -170,6 +170,13 @@
         </table>
     </div>
 
+    <div style="width: 100%; margin-top: 30px;">
+        <div style="width: 180px; text-align: center; float: right;">
+            <div style="border-top: 1.5px solid #475569; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase;">Authorized Signature</div>
+        </div>
+    </div>
+
     <div style="clear: both;"></div>
 
     <div class="footer">

@@ -410,7 +410,7 @@
                                         </a>
                                         <div class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
                                             <a class="dropdown-item py-2" href="{{ route('lots.show', $item->id) }}">
-                                                <i class="fe fe-eye me-2 text-primary"></i>View Lot Profile
+                                                View Lot Profile
                                             </a>
                                             @if($item->customers_count > 0)
                                                 <a class="dropdown-item py-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#lotCustomerModal-{{ $item->id }}">
@@ -418,7 +418,7 @@
                                                 </a>
                                             @endif
                                             <a class="dropdown-item py-2" href="{{ route('lots.report.pdf', array_merge(request()->query(), ['lot_id' => $item->id])) }}" target="_blank">
-                                                <i class="fe fe-download me-2 text-danger"></i>Export PDF
+                                                Export PDF
                                             </a>
                                         </div>
                                     </div>

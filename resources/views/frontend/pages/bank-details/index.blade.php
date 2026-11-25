@@ -231,8 +231,7 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('bank-details.edit', $bank->id) }}">
-                                                    <i class="fe fe-edit text-primary"></i>
-                                                    <span>Edit Details</span>
+                                                                                                        <span>Edit Details</span>
                                                 </a>
                                             </li>
                                             @if($bank->chartOfAccount)
@@ -256,8 +255,7 @@
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
                                                     onclick="if (confirm('Are you sure you want to delete this bank account?')) { document.getElementById('bankDelete{{ $bank->id }}').submit(); }">
-                                                    <i class="fe fe-trash-2 text-danger"></i>
-                                                    <span>Delete Account</span>
+                                                                                                        <span>Delete Account</span>
                                                 </a>
                                                 <form id="bankDelete{{ $bank->id }}" action="{{ route('bank-details.destroy', $bank->id) }}" method="POST" class="d-none">
                                                     @csrf

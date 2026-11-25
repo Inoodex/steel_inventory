@@ -467,10 +467,10 @@
                                         </a>
                                         <div class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                                             <a class="dropdown-item py-2" href="{{ route('purchase.show', $purchase->id) }}">
-                                                <i class="fe fe-eye me-2 text-primary"></i>View Consignment Order
+                                                View Consignment Order
                                             </a>
                                             <a class="dropdown-item py-2" href="{{ route('purchase.edit', $purchase->id) }}">
-                                                <i class="fe fe-edit me-2 text-success"></i>Edit Purchase Item
+                                                Edit Purchase Item
                                             </a>
                                         </div>
                                     </div>

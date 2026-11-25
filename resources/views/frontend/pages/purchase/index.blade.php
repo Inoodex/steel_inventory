@@ -341,8 +341,7 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $lot->id) }}">
-                                                    <i class="fe fe-eye text-primary"></i>
-                                                    <span>View Lot Details</span>
+                                                                                                        <span>View Lot Details</span>
                                                 </a>
                                             </li>
                                             @if($lotPurchases->isNotEmpty())
@@ -357,8 +356,7 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.create') }}?lot_id={{ $lot->id }}">
-                                                    <i class="fe fe-plus text-success"></i>
-                                                    <span>Add Coils to Lot</span>
+                                                                                                        <span>Add Coils to Lot</span>
                                                 </a>
                                             </li>
                                         </ul>
@@ -487,8 +485,7 @@
                                                                         </li>
                                                                         <li>
                                                                             <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.edit', $item->id) }}">
-                                                                                <i class="fe fe-edit text-primary"></i>
-                                                                                <span>Edit Specifications</span>
+                                                                                                                                                                <span>Edit Specifications</span>
                                                                             </a>
                                                                         </li>
                                                                         @if($item->coils && $item->coils->count() > 0)
@@ -501,8 +498,7 @@
                                                                         <li><hr class="dropdown-divider my-1"></li>
                                                                         <li>
                                                                             <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" onclick="if (confirm('Are you sure you want to delete purchase item #PO-{{ $item->id }}?')) { document.getElementById('deleteItem{{ $item->id }}').submit(); }">
-                                                                                <i class="fe fe-trash-2"></i>
-                                                                                <span>Delete Item</span>
+                                                                                                                                                                <span>Delete Item</span>
                                                                             </a>
                                                                         </li>
                                                                     </ul>

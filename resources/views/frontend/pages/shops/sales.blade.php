@@ -226,20 +226,17 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.show', $sale->id) }}">
-                                                    <i class="fe fe-eye text-info"></i>
-                                                    <span>View Details</span>
+                                                                                                        <span>View Details</span>
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.invoice.pdf', $sale->id) }}" target="_blank">
-                                                    <i class="fe fe-download text-danger"></i>
-                                                    <span>Invoice PDF</span>
+                                                                                                        <span>Invoice PDF</span>
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.edit', $sale->id) }}">
-                                                    <i class="fe fe-edit text-secondary"></i>
-                                                    <span>Edit Sale</span>
+                                                                                                        <span>Edit Sale</span>
                                                 </a>
                                             </li>
                                         </ul>

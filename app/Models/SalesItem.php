@@ -17,6 +17,7 @@ class SalesItem extends Model
         'size',
         'size_type',
         'custom_size',
+        'coil_type',
         'unit_price',
         'qty',
         'total_price',

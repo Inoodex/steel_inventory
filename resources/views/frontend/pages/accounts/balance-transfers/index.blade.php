@@ -258,22 +258,19 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('balance-transfers.show', $trf->id) }}">
-                                                    <i class="fe fe-eye text-primary"></i>
-                                                    <span>View Voucher</span>
+                                                                                                        <span>View Voucher</span>
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('balance-transfers.pdf', $trf->id) }}" target="_blank">
-                                                    <i class="fe fe-download text-success"></i>
-                                                    <span>Download Voucher</span>
+                                                                                                        <span>Download Voucher</span>
                                                 </a>
                                             </li>
                                             @if(!$isReversed)
                                                 <li><hr class="dropdown-divider my-1"></li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" onclick="openReverseModal({{ $trf->id }}, '{{ $trf->journal_no }}')">
-                                                        <i class="fe fe-rotate-ccw"></i>
-                                                        <span>Reverse Transfer</span>
+                                                                                                                <span>Reverse Transfer</span>
                                                     </a>
                                                 </li>
                                             @endif

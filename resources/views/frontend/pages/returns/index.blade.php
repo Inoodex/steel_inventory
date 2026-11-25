@@ -230,8 +230,7 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('returns.show', $return->id) }}">
-                                                    <i class="fe fe-eye text-primary"></i>
-                                                    <span>View Details</span>
+                                                                                                        <span>View Details</span>
                                                 </a>
                                             </li>
                                             @if($return->isPending())
@@ -246,8 +245,7 @@
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#rejectModal{{ $return->id }}">
-                                                        <i class="fe fe-x-circle text-danger"></i>
-                                                        <span>Reject Return</span>
+                                                                                                                <span>Reject Return</span>
                                                     </a>
                                                 </li>
                                             @endif
@@ -258,8 +256,7 @@
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger">
-                                                            <i class="fe fe-trash-2 text-danger"></i>
-                                                            <span>Delete Record</span>
+                                                                                                                        <span>Delete Record</span>
                                                         </button>
                                                     </form>
                                                 </li>

@@ -428,8 +428,7 @@
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $purchase->id) }}">
-                                                        <i class="fe fe-eye text-info"></i>
-                                                        <span>View Purchase Order</span>
+                                                                                                                <span>View Purchase Order</span>
                                                     </a>
                                                 </li>
                                                 @if($purchase->lot_id)

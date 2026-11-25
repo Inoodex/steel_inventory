@@ -298,14 +298,12 @@
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.show', $cust->id) }}">
-                                                        <i class="fe fe-eye text-info"></i>
-                                                        <span>Customer Profile</span>
+                                                                                                                <span>Customer Profile</span>
                                                     </a>
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.ledger.pdf', $cust->id) }}" target="_blank">
-                                                        <i class="fe fe-download text-secondary"></i>
-                                                        <span>Statement PDF</span>
+                                                                                                                <span>Statement PDF</span>
                                                     </a>
                                                 </li>
                                             </ul>
@@ -479,8 +477,7 @@
                                                 @endif
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('sales.show', $sale->id) }}">
-                                                        <i class="fe fe-eye text-info"></i>
-                                                        <span>View Order Details</span>
+                                                                                                                <span>View Order Details</span>
                                                     </a>
                                                 </li>
                                                 <li>

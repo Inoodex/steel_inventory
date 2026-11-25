@@ -184,69 +184,78 @@
 
                 <!-- Product Add Builder Card -->
                 <div class="p-3 bg-light rounded-3 mb-4 border" id="product_add_builder_card">
-                    <div class="row g-3 align-items-end">
+                    <div class="row g-2 align-items-end">
                         <!-- 1. Stock / Lot Source Select Dropdown -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <label class="form-label small text-secondary fw-semibold mb-0">
                                     Stock / Lot Source
-                                    <span id="lotAvgRateBadge" class="badge bg-primary-subtle text-primary border ms-1" style="display:none; font-size: 11px;"></span>
+                                    <span id="lotAvgRateBadge" class="badge bg-primary-subtle text-primary border ms-1" style="display:none; font-size: 10px;"></span>
                                 </label>
                             </div>
-                            <select id="builder_lot_id" class="form-select select2 border-light-subtle" onchange="handleLotSelection(this.value)">
+                            <select id="builder_lot_id" class="form-select form-select-sm select2 border-light-subtle" onchange="handleLotSelection(this.value)">
                                 <option value="">Select Warehouse first</option>
                             </select>
                         </div>
 
                         <!-- 2. Coil Selection -->
-                        <div class="col-lg-4 col-md-6 col-12">
+                        <div class="col-lg-3 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">
                                 Select Coil / Stock Piece <span class="text-danger">*</span>
                             </label>
-                            <select id="product1" class="form-select select2 border-light-subtle" onchange="getProduct(1)">
+                            <select id="product1" class="form-select form-select-sm select2 border-light-subtle" onchange="getProduct(1)">
                                 <option value="">Select Stock Source First</option>
                             </select>
                         </div>
 
                         <!-- 3. Available Total Weight -->
-                        <div class="col-lg-3 col-md-3 col-6">
+                        <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Total Available Stock</label>
-                            <input type="text" id="stock1" class="form-control border-light-subtle bg-white fw-bold text-primary" readonly placeholder="0.00 kg">
+                            <input type="text" id="stock1" class="form-control form-control-sm border-light-subtle bg-white fw-bold text-primary" readonly placeholder="0.00 kg">
                         </div>
 
-                        <!-- 4. Cost Rate -->
-                        <div class="col-lg-2 col-md-3 col-6">
+                        <!-- 4. Coil Type (Full Coil / Split) -->
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Coil Type</label>
+                            <select id="coil_type1" class="form-select form-select-sm border-light-subtle fw-semibold" onchange="handleCoilTypeChange()">
+                                <option value="split" selected>Split</option>
+                                <option value="full_coil">Full Coil</option>
+                            </select>
+                        </div>
+
+                        <!-- 5. Cost Rate -->
+                        <div class="col-lg-2 col-md-4 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Avg Cost Rate (৳)</label>
-                            <input type="number" id="purchase_price1" class="form-control border-light-subtle bg-white" readonly placeholder="0.00">
+                            <input type="number" id="purchase_price1" class="form-control form-control-sm border-light-subtle bg-white" readonly placeholder="0.00">
                         </div>
 
-                        <!-- 5. Custom Size / Specs -->
+                        <!-- 6. Custom Size / Specs -->
                         <div class="col-lg-3 col-md-6 col-12">
                             <label class="form-label small text-secondary fw-semibold mb-1">Custom Size / Specs</label>
-                            <input type="text" id="custom_size1" class="form-control border-light-subtle" placeholder="e.g. 4x8 ft cut">
-                        </div>
-
-                        <!-- 6. Selling Rate -->
-                        <div class="col-lg-2 col-md-3 col-6">
-                            <label class="form-label small text-secondary fw-semibold mb-1">Selling Rate (৳) <span class="text-danger">*</span></label>
-                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="unit_price1" class="form-control border-light-subtle" step="0.01" min="0" placeholder="0.00">
+                            <input type="text" id="custom_size1" class="form-control form-control-sm border-light-subtle" placeholder="e.g. 4x8 ft cut">
                         </div>
 
                         <!-- 7. Selling Quantity -->
                         <div class="col-lg-2 col-md-3 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Selling Qty / Wt (kg) <span class="text-danger">*</span></label>
-                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="qty1" class="form-control border-light-subtle text-dark fw-bold text-center" step="0.01" min="0.01" placeholder="0.00">
+                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="qty1" class="form-control form-control-sm border-light-subtle text-dark fw-bold text-center" step="0.01" min="0.01" placeholder="0.00">
                         </div>
 
-                        <!-- 8. Line Total Preview -->
+                        <!-- 8. Selling Rate -->
+                        <div class="col-lg-2 col-md-3 col-6">
+                            <label class="form-label small text-secondary fw-semibold mb-1">Selling Rate (৳) <span class="text-danger">*</span></label>
+                            <input oninput="updatePreviewTotal()" onchange="updatePreviewTotal()" type="number" id="unit_price1" class="form-control form-control-sm border-light-subtle" step="0.01" min="0" placeholder="0.00">
+                        </div>
+
+                        <!-- 9. Line Total Preview -->
                         <div class="col-lg-3 col-md-6 col-6">
                             <label class="form-label small text-secondary fw-semibold mb-1">Line Total (৳)</label>
-                            <input type="text" id="total1" class="form-control border-light-subtle bg-white fw-bold text-success text-end" readonly value="0.00">
+                            <input type="text" id="total1" class="form-control form-control-sm border-light-subtle bg-white fw-bold text-success text-end" readonly value="0.00">
                         </div>
 
-                        <!-- 9. Add Item Button -->
+                        <!-- 10. Add Item Button -->
                         <div class="col-lg-2 col-md-6 col-12">
-                            <button type="button" onclick="addItem()" class="btn btn-success w-100 rounded-3 d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm fw-semibold" style="height: 38px;">
+                            <button type="button" onclick="addItem()" class="btn btn-success btn-sm w-100 rounded-2 d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm fw-semibold" style="height: 31px;">
                                 <i class="fe fe-plus"></i>
                                 <span class="text-nowrap">Add Steel Item</span>
                             </button>
@@ -935,6 +944,15 @@ function getProduct(index) {
     updatePreviewTotal();
 }
 
+function handleCoilTypeChange() {
+    const coilType = $('#coil_type1').val();
+    const rawStock = parseFloat($('#stock1').data('raw-stock')) || 0;
+    if (coilType === 'full_coil' && rawStock > 0) {
+        $('#qty1').val(rawStock);
+        updatePreviewTotal();
+    }
+}
+
 function updatePreviewTotal() {
     const qty = parseFloat($('#qty1').val()) || 0;
     const price = parseFloat($('#unit_price1').val()) || 0;
@@ -950,6 +968,10 @@ function addItem() {
     const rawStock = parseFloat($('#stock1').data('raw-stock')) || 0;
     const purchasePrice = parseFloat($('#purchase_price1').val()) || 0;
     const customSize = $('#custom_size1').val().trim();
+    const coilType = $('#coil_type1').val() || 'split';
+    const coilTypeBadge = coilType === 'full_coil'
+        ? '<span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1 fs-8">Full Coil</span>'
+        : '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle ms-1 fs-8">Split</span>';
 
     if (!coilId) {
         alert('Please select a steel coil or piece first.');
@@ -1006,8 +1028,9 @@ function addItem() {
                 <input type="hidden" name="thickness[]" value="${escapeHtml(coil.thickness || '')}">
                 <input type="hidden" name="size[]" value="${escapeHtml(coil.size || '')}">
                 <input type="hidden" name="size_type[]" value="${escapeHtml(coil.size_type || 'ft')}">
+                <input type="hidden" name="coil_type[]" value="${escapeHtml(coilType)}">
                 <input type="hidden" name="purchase_price[]" value="${purchasePrice}">
-                <span class="fw-bold text-dark d-block">${escapeHtml(coil.coil_number || 'Coil #' + coilId)}</span>
+                <span class="fw-bold text-dark d-block">${escapeHtml(coil.coil_number || 'Coil #' + coilId)} ${coilTypeBadge}</span>
                 <small class="text-muted">${escapeHtml(specs || 'Standard Stock')}</small>
             </td>
             <td>
@@ -1039,6 +1062,7 @@ function addItem() {
     // Reset builder inputs
     $('#qty1').val('');
     $('#total1').val('0.00');
+    $('#coil_type1').val('split');
     $('#product1').val('').trigger('change');
 
     toggleSummarySection();

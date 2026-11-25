@@ -178,7 +178,7 @@
                     <select name="status" class="form-select form-select-sm border-light-subtle">
                         <option value="in_stock" {{ request('status', 'in_stock') == 'in_stock' ? 'selected' : '' }}>In Stock Only</option>
                         <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>Processing</option>
-                        <option value="reserved" {{ request('status') == 'reserved' ? 'selected' : '' }}>Reserved</option>
+                        <option value="reserved" {{ request('status') == 'reserved' ? 'selected' : '' }}>Hold</option>
                         <option value="exhausted" {{ request('status') == 'exhausted' ? 'selected' : '' }}>Exhausted</option>
                         <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All Records</option>
                     </select>
@@ -317,8 +317,7 @@
                                             </a>
                                             @if($group['lot'])
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('lots.show', $group['lot']->id) }}">
-                                                    <i class="fe fe-eye text-primary"></i>
-                                                    <span>View Lot Overview</span>
+                                                                                                        <span>View Lot Overview</span>
                                                 </a>
                                             @endif
                                         </div>
@@ -446,8 +445,7 @@
                                                                     </a>
                                                                     <div class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" onclick='openCoilModal(@json($coilData))'>
-                                                                            <i class="fe fe-eye text-primary"></i>
-                                                                            <span>View Specs</span>
+                                                                                                                                                        <span>View Specs</span>
                                                                         </a>
                                                                     </div>
                                                                 </div>

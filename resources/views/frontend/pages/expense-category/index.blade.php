@@ -170,15 +170,13 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#edit-expense-category-modal{{ $category->id }}">
-                                                    <i class="fe fe-edit text-primary"></i>
-                                                    <span>Edit Category</span>
+                                                                                                        <span>Edit Category</span>
                                                 </a>
                                             </li>
                                             <li><hr class="dropdown-divider opacity-50"></li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" onclick="if(confirm('Are you sure you want to delete this category?')) document.getElementById('deleteForm{{ $category->id }}').submit();">
-                                                    <i class="fe fe-trash-2 text-danger"></i>
-                                                    <span>Delete Category</span>
+                                                                                                        <span>Delete Category</span>
                                                 </a>
                                                 <form id="deleteForm{{ $category->id }}" method="POST" action="{{ route('expense-categories.destroy', $category->id) }}" class="d-none">
                                                     @csrf

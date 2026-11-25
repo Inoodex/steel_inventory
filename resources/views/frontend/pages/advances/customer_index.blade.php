@@ -184,8 +184,7 @@
                                                 <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('customers.show', $cust->id) }}">
-                                                            <i class="fe fe-eye text-primary"></i>
-                                                            <span>View Customer</span>
+                                                                                                                        <span>View Customer</span>
                                                         </a>
                                                     </li>
                                                     <li>
@@ -200,8 +199,7 @@
                                                     </li>
                                                     <li>
                                                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger fw-semibold" href="javascript:void(0)" onclick="openRefundCustomerAdvanceModal({{ $cust->id }}, '{{ addslashes($cust->name) }}', {{ (float)$cust->advance_credit }})">
-                                                            <i class="fe fe-corner-up-left text-danger"></i>
-                                                            <span>Refund Advance Payment</span>
+                                                                                                                        <span>Refund Advance Payment</span>
                                                         </a>
                                                     </li>
                                                 </ul>

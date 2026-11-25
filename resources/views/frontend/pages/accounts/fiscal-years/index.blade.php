@@ -119,8 +119,7 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
                                                         onclick="if(confirm('WARNING: Year-end closing will zero out all Revenue and Expense accounts into Retained Earnings and lock the period. Are you sure?')) { document.getElementById('closeYearForm{{ $fy->id }}').submit(); }">
-                                                        <i class="fe fe-lock text-danger"></i>
-                                                        <span>Close Fiscal Year</span>
+                                                                                                                <span>Close Fiscal Year</span>
                                                     </a>
                                                     <form id="closeYearForm{{ $fy->id }}" method="POST" action="{{ route('fiscal-years.close', $fy->id) }}" class="d-none">
                                                         @csrf
@@ -128,7 +127,7 @@
                                                 </li>
                                             @else
                                                 <li>
-                                                    <span class="dropdown-item py-2 text-muted small"><i class="fe fe-check me-1"></i> Year Closed</span>
+                                                    <span class="dropdown-item py-2 text-muted small">Year Closed</span>
                                                 </li>
                                             @endif
                                         </ul>

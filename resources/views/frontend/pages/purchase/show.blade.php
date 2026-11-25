@@ -433,8 +433,7 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ ($item->warehouse?->isShop()) ? route('shops.purchases.edit', $item->id) : route('purchase.edit', $item->id) }}">
-                                                    <i class="fe fe-edit text-warning"></i>
-                                                    <span>Edit Line Item</span>
+                                                                                                        <span>Edit Line Item</span>
                                                 </a>
                                             </li>
                                             @if($item->coils && $item->coils->count() > 0)
@@ -455,8 +454,7 @@
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger border-0 bg-transparent">
-                                                        <i class="fe fe-trash-2"></i>
-                                                        <span>Delete Item</span>
+                                                                                                                <span>Delete Item</span>
                                                     </button>
                                                 </form>
                                             </li>
@@ -709,7 +707,7 @@
                                         @elseif($coil->status === 'processing')
                                             <span class="badge badge-soft-warning px-3 py-1 rounded-pill">Processing</span>
                                         @elseif($coil->status === 'reserved')
-                                            <span class="badge badge-soft-info px-3 py-1 rounded-pill">Reserved</span>
+                                            <span class="badge badge-soft-info px-3 py-1 rounded-pill">Hold</span>
                                         @elseif($coil->status === 'exhausted')
                                             <span class="badge badge-soft-secondary px-3 py-1 rounded-pill">Exhausted</span>
                                         @elseif($coil->status === 'scrapped')

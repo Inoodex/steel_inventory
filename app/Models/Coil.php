@@ -31,6 +31,7 @@ class Coil extends Model
         'rate_per_ton',
         'total_price',
         'status',
+        'booked_customer_id',
         'notes',
         'created_by',
         'updated_by',
@@ -59,6 +60,11 @@ class Coil extends Model
     public function vendor()
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    public function bookedCustomer()
+    {
+        return $this->belongsTo(Customer::class, 'booked_customer_id');
     }
 
     public function warehouse()

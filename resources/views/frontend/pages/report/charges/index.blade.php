@@ -342,13 +342,13 @@
                                         </a>
                                         <div class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
                                             <a class="dropdown-item py-2" href="{{ route('sales.show', $item->id) }}">
-                                                <i class="fe fe-eye me-2 text-primary"></i>View Sale Order
+                                                View Sale Order
                                             </a>
                                             <a class="dropdown-item py-2" href="{{ route('worker-payouts.index') }}?search={{ $item->order_no }}">
-                                                <i class="fe fe-pocket me-2 text-success"></i>Record Payout
+                                                Record Payout
                                             </a>
                                             <a class="dropdown-item py-2" href="{{ route('charges.report.pdf', array_merge(request()->query(), ['customer_id' => $item->sale->customer_id])) }}" target="_blank">
-                                                <i class="fe fe-download me-2 text-danger"></i>Export PDF
+                                                Export PDF
                                             </a>
                                         </div>
                                     </div>

@@ -204,14 +204,12 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $p->id) }}">
-                                                    <i class="fe fe-eye text-info"></i>
-                                                    <span>View Details</span>
+                                                                                                        <span>View Details</span>
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('shops.purchases.edit', $p->id) }}">
-                                                    <i class="fe fe-edit text-secondary"></i>
-                                                    <span>Edit Purchase</span>
+                                                                                                        <span>Edit Purchase</span>
                                                 </a>
                                             </li>
                                         </ul>

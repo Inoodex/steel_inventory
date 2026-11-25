@@ -206,4 +206,105 @@ class InventoryStockPdfTest extends TestCase
         $this->assertTrue($pos030 < $pos040, '0.30 should appear before 0.40');
         $this->assertTrue($pos040 < $pos250, '0.40 should appear before 2.50');
     }
+
+    public function test_coil_booking_to_customer_shows_in_pdf_before_status_and_allows_sale_to_anyone(): void
+    {
+        $bookedCustomer = \App\Models\Customer::create([
+            'name' => 'Booked Party Ltd',
+            'phone' => '01700000011',
+            'status' => 'active',
+        ]);
+
+        $coil = Coil::create([
+            'coil_number' => 'YARD-BOOK-101',
+            'warehouse_id' => $this->yardWarehouse->id,
+            'thickness' => '1.50',
+            'width' => '4x8',
+            'gross_weight' => 1200,
+            'net_weight' => 1200,
+            'remaining_weight' => 1200,
+            'status' => 'in_stock',
+        ]);
+
+        // Book coil to customer while keeping in_stock
+        $resp = $this->actingAs($this->admin)->post(route('inventory.update_status', $coil->id), [
+            'status' => 'in_stock',
+            'booked_customer_id' => $bookedCustomer->id,
+        ]);
+
+        $resp->assertRedirect();
+        $resp->assertSessionHas('success');
+
+        $coil->refresh();
+        $this->assertEquals('in_stock', $coil->status);
+        $this->assertEquals($bookedCustomer->id, $coil->booked_customer_id);
+
+        // Verify PDF contains Booked To before Status and displays Booked Party Ltd
+        $html = view('pdf.inventory', [
+            'coils' => Coil::with('bookedCustomer')->where('id', $coil->id)->get(),
+        ])->render();
+
+        $posBookedHeader = strpos($html, 'Booked To');
+        $posStatusHeader = strpos($html, '>Status<');
+        $this->assertNotFalse($posBookedHeader);
+        $this->assertNotFalse($posStatusHeader);
+        $this->assertTrue($posBookedHeader < $posStatusHeader, 'Booked To column should appear before Status column');
+        $this->assertStringContainsString('Booked Party Ltd', $html);
+    }
+
+    public function test_individual_lot_report_pdf_filters_to_single_lot(): void
+    {
+        $vendor = \App\Models\Vendor::create([
+            'name' => 'Lot Filter Vendor',
+            'phone' => '01711223344',
+            'status' => 'active',
+        ]);
+
+        $lot1 = \App\Models\Lot::create([
+            'lot_number' => 'LOT-ONLY-ONE',
+            'vendor_id' => $vendor->id,
+            'lot_date' => now()->toDateString(),
+            'status' => 'active',
+        ]);
+
+        $lot2 = \App\Models\Lot::create([
+            'lot_number' => 'LOT-OTHER-TWO',
+            'vendor_id' => $vendor->id,
+            'lot_date' => now()->toDateString(),
+            'status' => 'active',
+        ]);
+
+        \App\Models\Purchase::create([
+            'lot_id' => $lot1->id,
+            'vendor_id' => $vendor->id,
+            'warehouse_id' => $this->yardWarehouse->id,
+            'total_weight' => 1000,
+            'unit_price' => 80,
+            'total_price' => 80000,
+            'payment' => 80000,
+            'due' => 0,
+        ]);
+
+        \App\Models\Purchase::create([
+            'lot_id' => $lot2->id,
+            'vendor_id' => $vendor->id,
+            'warehouse_id' => $this->yardWarehouse->id,
+            'total_weight' => 2000,
+            'unit_price' => 80,
+            'total_price' => 160000,
+            'payment' => 160000,
+            'due' => 0,
+        ]);
+
+        $html = view('frontend.pages.report.lots.pdf', (function () use ($lot1) {
+            $req = new \Illuminate\Http\Request(['lot_id' => $lot1->id]);
+            $ctrl = app(\App\Http\Controllers\LotController::class);
+            $ref = new \ReflectionMethod($ctrl, 'getLotReportData');
+            $ref->setAccessible(true);
+            return $ref->invoke($ctrl, $req);
+        })())->render();
+
+        $this->assertStringContainsString('LOT-ONLY-ONE', $html);
+        $this->assertStringNotContainsString('LOT-OTHER-TWO', $html);
+    }
 }

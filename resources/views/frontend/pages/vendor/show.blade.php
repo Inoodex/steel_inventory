@@ -323,14 +323,12 @@
                                             @endif
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.show', $purchase->id) }}">
-                                                    <i class="fe fe-eye text-info"></i>
-                                                    <span>View PO Details</span>
+                                                                                                        <span>View PO Details</span>
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('purchase.edit', $purchase->id) }}">
-                                                    <i class="fe fe-edit text-warning"></i>
-                                                    <span>Edit Purchase</span>
+                                                                                                        <span>Edit Purchase</span>
                                                 </a>
                                             </li>
                                             @if($purchase->lot_id)
@@ -443,15 +441,13 @@
                                                         'remarks' => $payment->remarks ?? '',
                                                         'purchase_id' => $payment->purchase_id,
                                                     ]) }})">
-                                                    <i class="fe fe-edit text-primary"></i>
-                                                    <span>Edit Payment</span>
+                                                                                                        <span>Edit Payment</span>
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)"
                                                     onclick="if (confirm('Are you sure you want to revert this payment of ৳{{ number_format($payment->amount, 2) }}? This will restore the purchase due balance.')) { document.getElementById('delVendorPayment{{ $payment->id }}').submit(); }">
-                                                    <i class="fe fe-trash-2 text-danger"></i>
-                                                    <span>Delete / Revert</span>
+                                                                                                        <span>Delete / Revert</span>
                                                 </a>
                                                 <form id="delVendorPayment{{ $payment->id }}" action="{{ route('vendor-payments.destroy', $payment->id) }}" method="POST" class="d-none">
                                                     @csrf

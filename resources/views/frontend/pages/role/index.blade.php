@@ -210,16 +210,14 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('role.edit', $role->id) }}">
-                                                    <i class="fe fe-edit text-primary"></i>
-                                                    <span>Edit Role</span>
+                                                                                                        <span>Edit Role</span>
                                                 </a>
                                             </li>
                                             @if(!$isSuperAdmin)
                                                 <li><hr class="dropdown-divider opacity-50"></li>
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#deleteRoleModal{{ $role->id }}">
-                                                        <i class="fe fe-trash-2 text-danger"></i>
-                                                        <span>Delete Role</span>
+                                                                                                                <span>Delete Role</span>
                                                     </a>
                                                 </li>
                                             @endif

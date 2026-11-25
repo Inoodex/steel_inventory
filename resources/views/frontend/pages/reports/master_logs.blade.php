@@ -317,8 +317,7 @@
                                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ $log['view_url'] }}">
-                                                        <i class="fe fe-eye text-info"></i>
-                                                        <span>View Details</span>
+                                                                                                                <span>View Details</span>
                                                     </a>
                                                 </li>
                                             </ul>

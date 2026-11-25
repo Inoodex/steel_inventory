@@ -207,15 +207,13 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ route('users.edit', $item->id) }}">
-                                                    <i class="fe fe-edit text-primary"></i>
-                                                    <span>Edit User</span>
+                                                                                                        <span>Edit User</span>
                                                 </a>
                                             </li>
                                             <li><hr class="dropdown-divider opacity-50"></li>
                                             <li>
                                                 <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $item->id }}">
-                                                    <i class="fe fe-trash-2 text-danger"></i>
-                                                    <span>Delete User</span>
+                                                                                                        <span>Delete User</span>
                                                 </a>
                                             </li>
                                         </ul>

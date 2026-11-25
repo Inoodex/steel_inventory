@@ -133,8 +133,7 @@
                                                 <li>
                                                     <a class="dropdown-item py-2 d-flex align-items-center gap-2"
                                                         href="{{ route('chart-of-accounts.edit', $r['account']->id) }}">
-                                                        <i class="fe fe-edit text-primary"></i>
-                                                        <span>Edit Account</span>
+                                                                                                                <span>Edit Account</span>
                                                     </a>
                                                 </li>
                                             </ul>

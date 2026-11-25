@@ -128,13 +128,13 @@
                                                                         'payment_date' => $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('Y-m-d') : ($payment->created_at ? $payment->created_at->format('Y-m-d') : date('Y-m-d')),
                                                                         'remarks' => $payment->remarks ?? '',
                                                                     ]) }})">
-                                                                    <i class="far fa-edit me-2 text-primary"></i>Edit
+                                                                    Edit
                                                                 </a>
                                                             </li>
                                                             <li>
                                                                 <a onclick="if (confirm('Are you sure to delete this payment record? This will adjust the sale due balance.')) { document.getElementById('serviceDelete{{ $payment->id }}').submit(); }"
                                                                     class="dropdown-item text-danger py-2 d-flex align-items-center" href="javascript:void(0)">
-                                                                    <i class="far fa-trash-alt me-2 text-danger"></i>Delete
+                                                                    Delete
                                                                 </a>
                                                                 <form id="serviceDelete{{ $payment->id }}"
                                                                     action="{{ route('delete.payment', $payment->id) }}"
