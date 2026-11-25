@@ -343,12 +343,18 @@
                     <div id="multipleCoilsContainer" style="{{ $isMultiCoils ? '' : 'display: none;' }}">
                         <div class="bg-white border rounded-3 p-3 shadow-sm">
                             <div class="alert alert-info py-2 px-3 border-0 rounded-3 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="small">Break down this purchase into individual physical coils (e.g. 250 kg, 350 kg, 400 kg). Each row registers its own coil tag in yard inventory.</span>
+                                <div class="d-flex flex-wrap align-items-center gap-3">
+                                    <span class="small">Break down this purchase into individual physical coils. Each row registers its own coil tag in yard inventory.</span>
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" id="keepOriginalWeightCheck" name="keep_original_weight" value="1" {{ old('keep_original_weight', '1') == '1' ? 'checked' : '' }} onchange="calculateBreakdownTotals()">
+                                        <label class="form-check-label small fw-bold text-dark" for="keepOriginalWeightCheck">
+                                            Keep Original Total Weight ({{ number_format($purchase->total_weight, 2) }} kg)
+                                        </label>
+                                    </div>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="badge bg-primary rounded-pill px-2.5 py-1 fs-8" id="breakdownCoilsCountBadge">{{ $purchase->coils->count() ?: 1 }} Coils</span>
-                                    <span class="badge bg-dark rounded-pill px-2.5 py-1 fs-8 font-monospace" id="breakdownTotalWeightBadge">{{ number_format($purchase->total_weight, 2) }} kg</span>
+                                    <span class="badge bg-dark rounded-pill px-2.5 py-1 fs-8 font-monospace" id="breakdownTotalWeightBadge">{{ number_format($purchase->coils->sum('net_weight') ?: $purchase->total_weight, 2) }} kg</span>
                                 </div>
                             </div>
 
@@ -421,6 +427,10 @@
                                 </table>
                             </div>
 
+                            <div id="breakdownOverweightAlert" class="alert alert-danger py-2 px-3 border-danger-subtle rounded-3 mb-3 small fw-semibold" style="display: none;">
+                                <span id="breakdownOverweightMessage"></span>
+                            </div>
+
                             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-1 border-top">
                                 <div>
                                     <button type="button" class="btn btn-outline-primary btn-sm rounded-2 fw-semibold d-inline-flex align-items-center gap-1.5" onclick="addCoilBreakdownRow()">
@@ -428,14 +438,22 @@
                                         <span>Add Another Coil</span>
                                     </button>
                                 </div>
-                                <div class="d-flex align-items-center gap-3">
+                                <div class="d-flex flex-wrap align-items-center gap-3">
                                     <div class="text-end small">
                                         <span class="text-secondary fw-semibold">Unit Rate:</span>
                                         <span class="fw-bold text-dark font-monospace ms-1" id="breakdownRateDisplay">৳ {{ number_format($purchase->unit_price, 2) }} /kg</span>
                                     </div>
                                     <div class="text-end small">
-                                        <span class="text-secondary fw-semibold">Breakdown Total:</span>
-                                        <span class="fw-bold text-primary fs-6 font-monospace ms-1" id="breakdownTotalWeightDisplay">{{ number_format($purchase->total_weight, 2) }} kg</span>
+                                        <span class="text-secondary fw-semibold">Original Total:</span>
+                                        <span class="fw-bold text-dark font-monospace ms-1" id="breakdownOriginalWeightDisplay">{{ number_format($purchase->total_weight, 2) }} kg</span>
+                                    </div>
+                                    <div class="text-end small">
+                                        <span class="text-secondary fw-semibold">Coils Allocated:</span>
+                                        <span class="fw-bold text-primary fs-6 font-monospace ms-1" id="breakdownTotalWeightDisplay">{{ number_format($purchase->coils->sum('net_weight') ?: $purchase->total_weight, 2) }} kg</span>
+                                    </div>
+                                    <div class="text-end small">
+                                        <span class="text-secondary fw-semibold">Remaining:</span>
+                                        <span class="fw-bold text-muted font-monospace ms-1" id="breakdownRemainingWeightDisplay">0.00 kg</span>
                                     </div>
                                 </div>
                             </div>
@@ -801,6 +819,8 @@
             if (countBadge) countBadge.textContent = `${rows.length} Coils`;
         }
 
+        const originalPurchaseWeight = {{ (float) $purchase->total_weight }};
+
         function calculateBreakdownTotals() {
             const isBreakdown = document.getElementById('breakdownModeInput')?.value === '1';
             if (!isBreakdown) return;
@@ -820,20 +840,45 @@
                 totalDisplay.textContent = sumWeight.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg';
             }
 
+            const remaining = originalPurchaseWeight - sumWeight;
+            const remainingDisplay = document.getElementById('breakdownRemainingWeightDisplay');
+            if (remainingDisplay) {
+                const sign = remaining < 0 ? '+' : '';
+                const cls = Math.abs(remaining) < 0.01 ? 'text-success' : (remaining > 0 ? 'text-warning' : 'text-danger');
+                remainingDisplay.className = `fw-bold font-monospace ms-1 ${cls}`;
+                remainingDisplay.textContent = (remaining < 0 ? '+' + Math.abs(remaining).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg over' : remaining.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg');
+            }
+
+            const keepOriginal = document.getElementById('keepOriginalWeightCheck')?.checked ?? true;
+            const isOverweight = keepOriginal && originalPurchaseWeight > 0 && (sumWeight > originalPurchaseWeight + 0.001);
+            const overweightAlert = document.getElementById('breakdownOverweightAlert');
+            const overweightMsg = document.getElementById('breakdownOverweightMessage');
+            if (overweightAlert && overweightMsg) {
+                if (isOverweight) {
+                    const excess = (sumWeight - originalPurchaseWeight).toFixed(2);
+                    overweightMsg.textContent = `Overweight! Total coil weights (${sumWeight.toFixed(2)} kg) exceed original purchase weight (${originalPurchaseWeight.toFixed(2)} kg) by ${excess} kg. Please reduce coil weights or uncheck "Keep Original Total Weight".`;
+                    overweightAlert.style.display = 'block';
+                } else {
+                    overweightAlert.style.display = 'none';
+                }
+            }
+
+            const effectiveTotalWeight = keepOriginal && originalPurchaseWeight > 0 ? originalPurchaseWeight : sumWeight;
+
             // Synchronize purchase master fields
-            $('#totalWeightInput').val(sumWeight > 0 ? sumWeight.toFixed(3) : '0.000');
+            $('#totalWeightInput').val(effectiveTotalWeight > 0 ? effectiveTotalWeight.toFixed(3) : '0.000');
             $('#quantityInput').val(inputs.length);
             if (inputs.length > 0) {
-                $('#unitWeightInput').val((sumWeight / inputs.length).toFixed(3));
+                $('#unitWeightInput').val((effectiveTotalWeight / inputs.length).toFixed(3));
             }
 
             const rate = parseFloat($('#unitPriceInput').val()) || 0;
-            const subPrice = sumWeight * rate;
+            const subPrice = effectiveTotalWeight * rate;
             $('#subPriceInput').val(subPrice > 0 ? subPrice.toFixed(2) : '0.00');
             $('#purchaseSubTotalDisplay').val(subPrice.toFixed(2));
 
             $('#displayTotalCoils').text(inputs.length);
-            $('#displayTotalWeight').text(sumWeight.toFixed(2));
+            $('#displayTotalWeight').text(effectiveTotalWeight.toFixed(2));
 
             calculateFinancials();
         }
@@ -943,6 +988,17 @@
                 if (hasInvalidWeight) {
                     e.preventDefault();
                     alert('Please enter a valid weight (kg) greater than 0 for each coil item.');
+                    return false;
+                }
+                const keepOriginal = document.getElementById('keepOriginalWeightCheck')?.checked ?? true;
+                let sumBreakdown = 0;
+                $('.coil-weight-input').each(function () {
+                    sumBreakdown += parseFloat($(this).val()) || 0;
+                });
+                if (keepOriginal && originalPurchaseWeight > 0 && (sumBreakdown > originalPurchaseWeight + 0.001)) {
+                    e.preventDefault();
+                    const excess = (sumBreakdown - originalPurchaseWeight).toFixed(2);
+                    alert(`Overweight! Total coil weight (${sumBreakdown.toFixed(2)} kg) exceeds the original purchase weight (${originalPurchaseWeight.toFixed(2)} kg) by ${excess} kg. Cannot save.`);
                     return false;
                 }
             }

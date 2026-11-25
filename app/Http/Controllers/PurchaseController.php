@@ -320,7 +320,18 @@ class PurchaseController extends Controller
                 }
 
                 $coilQty = count($submittedCoils);
-                $totalWeight = $totalBreakdownWeight;
+                $keepOriginalWeight = $request->boolean('keep_original_weight');
+                $requestedTotalWeight = (float) ($request->total_weight ?: $purchase->total_weight);
+                if ($keepOriginalWeight && $requestedTotalWeight > 0) {
+                    if ($totalBreakdownWeight > $requestedTotalWeight + 0.001) {
+                        $excess = round($totalBreakdownWeight - $requestedTotalWeight, 2);
+                        \Illuminate\Support\Facades\DB::rollBack();
+                        return redirect()->back()->withInput()->with('error', "Overweight! Total coil weight (" . number_format($totalBreakdownWeight, 2) . " kg) exceeds original purchase weight (" . number_format($requestedTotalWeight, 2) . " kg) by " . number_format($excess, 2) . " kg.");
+                    }
+                    $totalWeight = $requestedTotalWeight;
+                } else {
+                    $totalWeight = $totalBreakdownWeight;
+                }
                 $perCoilWeight = $coilQty > 0 ? round($totalWeight / $coilQty, 3) : $totalWeight;
             } else {
                 $coil = $existingCoils->first();

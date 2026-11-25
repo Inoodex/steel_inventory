@@ -530,6 +530,116 @@ class PurchaseWorkflowTest extends TestCase
         $this->assertEquals('in_stock', $coil3->status);
     }
 
+    public function test_breakdown_with_keep_original_weight_preserves_total_weight_and_bill(): void
+    {
+        // 1. Create a Quick Purchase of 5000 kg at 80/kg = 400,000
+        $this->actingAs($this->admin)->post(route('purchase.store'), [
+            'is_quick_mode'  => 1,
+            'vendor_id'      => $this->vendor->id,
+            'warehouse_id'   => $this->warehouse->id,
+            'lot_type'       => 'new',
+            'new_lot_number' => 'LOT-KEEP-WT-001',
+            'purchase_date'  => date('Y-m-d'),
+            'total_weight'   => 5000.00,
+            'unit_price'     => 80.00,
+            'payment'        => 100000.00,
+            'payment_method' => 'cash',
+        ])->assertRedirect(route('purchase.index'));
+
+        $purchase = Purchase::where('total_weight', 5000.00)->latest()->first();
+        $this->assertNotNull($purchase);
+
+        // 2. Break down into 2 coils totaling 3500 kg with keep_original_weight = 1
+        $editResponse = $this->actingAs($this->admin)->put(route('purchase.update', $purchase->id), [
+            'lot_id'               => $purchase->lot_id,
+            'warehouse_id'         => $this->warehouse->id,
+            'vendor_id'            => $this->vendor->id,
+            'breakdown_mode'       => '1',
+            'keep_original_weight' => '1',
+            'total_weight'         => 5000.00,
+            'unit_price'           => 80.00,
+            'payment'              => 100000.00,
+            'payment_method'       => 'cash',
+            'coils' => [
+                ['coil_number' => 'COIL-KEEP-1', 'weight' => 1500.00],
+                ['coil_number' => 'COIL-KEEP-2', 'weight' => 2000.00],
+            ],
+        ]);
+
+        $editResponse->assertSessionHasNoErrors();
+        $editResponse->assertRedirect(route('purchase.show', $purchase->id));
+
+        $purchase->refresh();
+        $this->assertEquals(5000.00, (float) $purchase->total_weight);
+        $this->assertEquals(400000.00, (float) $purchase->total_price);
+        $this->assertEquals(300000.00, (float) $purchase->due);
+        $this->assertEquals(2, $purchase->coils()->count());
+        $this->assertEquals(5000.00, (float) $purchase->lot->fresh()->total_quantity);
+    }
+
+    public function test_breakdown_blocks_overweight_single_or_multiple_coils_when_keeping_original_weight(): void
+    {
+        $this->actingAs($this->admin)->post(route('purchase.store'), [
+            'is_quick_mode'  => 1,
+            'vendor_id'      => $this->vendor->id,
+            'warehouse_id'   => $this->warehouse->id,
+            'lot_type'       => 'new',
+            'new_lot_number' => 'LOT-OVERWEIGHT-001',
+            'purchase_date'  => date('Y-m-d'),
+            'total_weight'   => 100.00,
+            'unit_price'     => 80.00,
+            'payment'        => 0.00,
+            'payment_method' => 'cash',
+        ])->assertRedirect(route('purchase.index'));
+
+        $purchase = Purchase::where('total_weight', 100.00)->latest()->first();
+        $this->assertNotNull($purchase);
+
+        // Case 1: Single coil 120 kg > 100 kg
+        $resp1 = $this->actingAs($this->admin)->put(route('purchase.update', $purchase->id), [
+            'lot_id'               => $purchase->lot_id,
+            'warehouse_id'         => $this->warehouse->id,
+            'vendor_id'            => $this->vendor->id,
+            'breakdown_mode'       => '1',
+            'keep_original_weight' => '1',
+            'total_weight'         => 100.00,
+            'unit_price'           => 80.00,
+            'payment'              => 0.00,
+            'payment_method'       => 'cash',
+            'coils' => [
+                ['coil_number' => 'COIL-OVER-120', 'weight' => 120.00],
+            ],
+        ]);
+
+        $resp1->assertSessionHas('error');
+        $this->assertStringContainsString('Overweight!', session('error'));
+        $this->assertEquals(1, $purchase->coils()->count());
+
+        // Case 2: Multiple coils 10 + 20 + 30 + 50 = 110 kg > 100 kg
+        $resp2 = $this->actingAs($this->admin)->put(route('purchase.update', $purchase->id), [
+            'lot_id'               => $purchase->lot_id,
+            'warehouse_id'         => $this->warehouse->id,
+            'vendor_id'            => $this->vendor->id,
+            'breakdown_mode'       => '1',
+            'keep_original_weight' => '1',
+            'total_weight'         => 100.00,
+            'unit_price'           => 80.00,
+            'payment'              => 0.00,
+            'payment_method'       => 'cash',
+            'coils' => [
+                ['coil_number' => 'COIL-10', 'weight' => 10.00],
+                ['coil_number' => 'COIL-20', 'weight' => 20.00],
+                ['coil_number' => 'COIL-30', 'weight' => 30.00],
+                ['coil_number' => 'COIL-50', 'weight' => 50.00],
+            ],
+        ]);
+
+        $resp2->assertSessionHas('error');
+        $this->assertStringContainsString('Overweight!', session('error'));
+        $this->assertEquals(1, $purchase->coils()->count());
+        $this->assertEquals(100.00, (float) $purchase->fresh()->total_weight);
+    }
+
     public function test_cannot_remove_sold_coil_during_breakdown(): void
     {
         $purchase = Purchase::create([
